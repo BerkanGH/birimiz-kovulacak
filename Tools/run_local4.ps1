@@ -12,7 +12,12 @@ param(
     [int]$Seed = 0,
     [string]$Scenario = "",
     [string]$Exe = "",
-    [string]$LogDir = ""
+    [string]$LogDir = "",
+    [int]$Port = 7777,
+    [string]$Client2Extra = "",
+    [string]$Client3Extra = "",
+    [string]$ExtraAll = "",
+    [string]$HostExtra = ""
 )
 $root = Split-Path -Parent $PSScriptRoot
 if (-not $Exe) { $Exe = Join-Path $root "Builds\BirimizKovulacak-Windows\BirimizKovulacak.exe" }
@@ -20,17 +25,21 @@ if (-not $LogDir) { $LogDir = Join-Path $root ("Builds\runs\" + (Get-Date -Forma
 New-Item -ItemType Directory -Force $LogDir | Out-Null
 $inv = [Globalization.CultureInfo]::InvariantCulture
 $common = @("-screen-fullscreen", "0", "-screen-width", "960", "-screen-height", "540", "-durationscale", $DurationScale.ToString($inv),
-            "-logdir", $LogDir, "-screenshots", "-mute", "-rematches", ($Matches - 1).ToString(), "-quitaftermatches", $Matches.ToString())
+            "-logdir", $LogDir, "-screenshots", "-mute", "-port", $Port.ToString(), "-rematches", ($Matches - 1).ToString(), "-quitaftermatches", $Matches.ToString())
 if ($Seed -ne 0) { $common += @("-seed", $Seed.ToString()) }
+if ($ExtraAll) { $common += $ExtraAll.Split(" ") }
 if ($Scenario) { $common += @("-scenario", $Scenario) }
 $names = @("Mavi", "Sari", "Pembe", "Yesil")
 $procs = @()
 $hostArgs = @("-autohost", "-autostart", "-name", $names[0], "-logFile", (Join-Path $LogDir "unity_host.log")) + $common
 if ($Bots) { $hostArgs += "-bot" }
+if ($HostExtra) { $hostArgs += $HostExtra.Split(" ") }
 $procs += Start-Process -FilePath $Exe -ArgumentList $hostArgs -PassThru
 Start-Sleep -Seconds 3
 for ($i = 1; $i -le 3; $i++) {
     $a = @("-autojoin", "127.0.0.1", "-bot", "-name", $names[$i], "-logFile", (Join-Path $LogDir ("unity_client$i.log"))) + $common
+    if ($i -eq 2 -and $Client2Extra) { $a += $Client2Extra.Split(" ") }
+    if ($i -eq 3 -and $Client3Extra) { $a += $Client3Extra.Split(" ") }
     $procs += Start-Process -FilePath $Exe -ArgumentList $a -PassThru
     Start-Sleep -Milliseconds 800
 }

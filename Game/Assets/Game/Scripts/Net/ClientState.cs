@@ -40,6 +40,7 @@ namespace BirimizKovulacak.Game
 
         uint _nextRequestId;
         int _loggedResultMatch = -1, _loggedVerdictMatch = -1;
+        float _nextRemember;
         readonly Dictionary<uint, ActionRequest> _pending = new Dictionary<uint, ActionRequest>();
 
         int IPlayerChannel.Slot => MySlot;
@@ -87,6 +88,8 @@ namespace BirimizKovulacak.Game
         {
             MySlot = w.Slot;
             ReconnectToken = w.ReconnectToken;
+            var cm = ConnectionManager.I;
+            if (cm != null && cm.HostController == null) ConnectionManager.RememberSession(w.ReconnectToken, cm.Address, cm.Port);
             if (!string.IsNullOrEmpty(configJson))
             {
                 try { HostConfig = Newtonsoft.Json.JsonConvert.DeserializeObject<MatchConfig>(configJson, GameConfig.JsonSettings); }
@@ -99,6 +102,12 @@ namespace BirimizKovulacak.Game
         public void ApplyLobby(LobbyView lobby)
         {
             Lobby = lobby;
+            // The host ended the match (return to lobby / abandoned): leave the match screens.
+            if (!lobby.MatchRunning && View != null)
+            {
+                MatchLog.Write("lobby: match closed by host");
+                ClearMatch();
+            }
             LobbyChanged?.Invoke(lobby);
         }
 
@@ -111,6 +120,16 @@ namespace BirimizKovulacak.Game
             if (!string.IsNullOrEmpty(v.Me.ReconnectToken)) ReconnectToken = v.Me.ReconnectToken;
             if (old == null || old.MatchId != v.MatchId)
                 MatchClock.MatchStart = v.Phase == MatchPhase.Briefing ? v.PhaseStartTime : (old == null ? v.PhaseStartTime : MatchClock.MatchStart);
+            var conn = ConnectionManager.I;
+            if (conn != null && conn.HostController == null)
+            {
+                if (v.Phase == MatchPhase.Results || v.Phase == MatchPhase.Abandoned) ConnectionManager.ForgetSession();
+                else if (!string.IsNullOrEmpty(ReconnectToken) && Time.unscaledTime > _nextRemember)
+                {
+                    _nextRemember = Time.unscaledTime + 5f;
+                    ConnectionManager.RememberSession(ReconnectToken, conn.Address, conn.Port);
+                }
+            }
             if (v.Phase == MatchPhase.Results && v.Result != null && _loggedResultMatch != v.MatchId)
             {
                 _loggedResultMatch = v.MatchId;

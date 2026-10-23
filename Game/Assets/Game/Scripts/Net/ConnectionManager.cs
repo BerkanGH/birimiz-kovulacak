@@ -104,7 +104,7 @@ namespace BirimizKovulacak.Game
 
         // ------------------------------------------------------------------ client
 
-        public bool StartClient(string playerName, string address, ushort port)
+        public bool StartClient(string playerName, string address, ushort port, string reconnectToken = "")
         {
             if (_nm.IsListening) return false;
             PlayerName = playerName;
@@ -112,7 +112,63 @@ namespace BirimizKovulacak.Game
             Port = port;
             LastErrorKey = "";
             ClientState.I.ResetSession();
-            return Connect("");
+            return Connect(reconnectToken ?? "");
+        }
+
+        // ---- crash-safe rejoin: the last match's token is kept locally for a short time
+        const string TokenKey = "reconnect.token", AddrKey = "reconnect.address", PortKey = "reconnect.port", TimeKey = "reconnect.time";
+
+        public static void RememberSession(string token, string address, ushort port)
+        {
+            if (string.IsNullOrEmpty(token)) return;
+            PlayerPrefs.SetString(TokenKey, token);
+            PlayerPrefs.SetString(AddrKey, address ?? "");
+            PlayerPrefs.SetInt(PortKey, port);
+            PlayerPrefs.SetString(TimeKey, DateTime.UtcNow.Ticks.ToString());
+        }
+
+        public static void ForgetSession()
+        {
+            PlayerPrefs.DeleteKey(TokenKey);
+            PlayerPrefs.DeleteKey(TimeKey);
+        }
+
+        /// <summary>A token from a match this machine dropped out of less than ~a minute ago, if any.</summary>
+        public static bool TryGetRecentSession(out string token, out string address, out ushort port)
+        {
+            token = PlayerPrefs.GetString(TokenKey, "");
+            address = PlayerPrefs.GetString(AddrKey, "");
+            port = (ushort)PlayerPrefs.GetInt(PortKey, 7777);
+            long ticks;
+            if (string.IsNullOrEmpty(token) || !long.TryParse(PlayerPrefs.GetString(TimeKey, "0"), out ticks)) return false;
+            return (DateTime.UtcNow - new DateTime(ticks, DateTimeKind.Utc)).TotalSeconds < 75;
+        }
+
+        /// <summary>Test hook (-simulatedrop): drop the transport as if the network failed, optionally rejoin.</summary>
+        public void SimulateNetworkDrop(bool rejoin, float downtime)
+        {
+            if (!_nm.IsConnectedClient || _nm.IsServer) return;
+            string token = ClientState.I.ReconnectToken;
+            MatchLog.Write("simulated network drop (rejoin=" + rejoin + ", downtime=" + downtime + "s)");
+            SetState(State.Reconnecting, "net.reconnecting");
+            if (rejoin)
+            {
+                _nm.Shutdown();
+                _reconnect = StartCoroutine(ReconnectLoop(token, downtime));
+            }
+            else
+            {
+                _intentionalShutdown = true;
+                _nm.Shutdown();
+                StartCoroutine(StayOffline());
+            }
+        }
+
+        IEnumerator StayOffline()
+        {
+            yield return new WaitForSecondsRealtime(1f);
+            _intentionalShutdown = false;
+            SetState(State.Failed, "net.host_lost");
         }
 
         bool Connect(string token)
@@ -231,11 +287,12 @@ namespace BirimizKovulacak.Game
             if (_nm.IsServer) SetState(State.Failed, "net.transport_failed");
         }
 
-        IEnumerator ReconnectLoop(string token)
+        IEnumerator ReconnectLoop(string token, float initialDelay = 0f)
         {
             float grace = (ClientState.I.Config != null ? ClientState.I.Config.Reconnect.GraceSeconds : 30f);
             float deadline = Time.realtimeSinceStartup + grace;
             SetState(State.Reconnecting, "net.reconnecting");
+            if (initialDelay > 0) yield return new WaitForSecondsRealtime(initialDelay);
             while (Time.realtimeSinceStartup < deadline)
             {
                 ReconnectRemaining = deadline - Time.realtimeSinceStartup;
@@ -250,6 +307,7 @@ namespace BirimizKovulacak.Game
                 if (_nm.IsConnectedClient)
                 {
                     _reconnect = null;
+                    MatchLog.Write("reconnected");
                     SetState(State.Connected, "");
                     yield break;
                 }

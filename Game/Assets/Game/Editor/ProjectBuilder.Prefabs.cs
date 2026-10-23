@@ -224,6 +224,13 @@ namespace BirimizKovulacak.EditorTools
                 handset.transform.localRotation = Quaternion.Euler(0, 0, 20);
                 handset.SetActive(false);
                 avatar.PhoneHandset = handset;
+                var boxModel = Model("Props", "ClutterBox");
+                if (boxModel != null)
+                {
+                    var box = Inst(boxModel, carry, new Vector3(0, -0.12f, 0.02f), 0, "FiredBox");
+                    box.SetActive(false);
+                    avatar.FiredBox = box;
+                }
                 var tag = Label3D(root.transform, "NameTag", new Vector3(0, 1.62f, 0), Vector3.zero, new Vector2(1.6f, 0.26f), fonts.Tmp, Color.white, "", 2.2f);
                 tag.outlineWidth = 0.25f;
                 tag.outlineColor = new Color32(30, 24, 60, 255);

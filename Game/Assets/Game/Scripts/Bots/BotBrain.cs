@@ -34,7 +34,8 @@ namespace BirimizKovulacak.Game
         readonly NavMeshPath _path = new NavMeshPath();
         Vector3[] _corners = new Vector3[0];
         int _corner;
-        float _repathAt, _nextDecision, _stuckSince;
+        float _repathAt, _nextDecision, _stuckSince, _unstickUntil;
+        Vector3 _unstickDir;
         Vector3 _lastPos;
         int _matchSeen = -1;
         float _phaseEnteredAt;
@@ -142,10 +143,17 @@ namespace BirimizKovulacak.Game
                 Vector3 next = _corner < _corners.Length ? _corners[_corner] : _plan.Goal;
                 Vector3 d = next - pos; d.y = 0;
                 if (d.magnitude < 0.35f && _corner < _corners.Length) _corner++;
-                avatar.Drive(d.normalized, raid && Rand() < 0.02f, dt);
+                avatar.Drive(Time.time < _unstickUntil ? _unstickDir : d.normalized, raid && Rand() < 0.02f, dt);
                 if ((pos - _lastPos).magnitude < 0.01f)
                 {
-                    if (Time.time - _stuckSince > 2.5f) { _plan = null; _stuckSince = Time.time; }
+                    if (Time.time - _stuckSince > 1.2f && Time.time > _unstickUntil)
+                    {
+                        // Side-step away from whatever blocks us, then re-plan.
+                        _unstickDir = Quaternion.Euler(0, Rand() < 0.5f ? 110f : -110f, 0) * d.normalized;
+                        _unstickUntil = Time.time + 0.6f;
+                        _repathAt = Time.time + 0.6f;
+                    }
+                    if (Time.time - _stuckSince > 6f) { _plan = null; _stuckSince = Time.time; }
                 }
                 else _stuckSince = Time.time;
                 _lastPos = pos;
@@ -173,7 +181,10 @@ namespace BirimizKovulacak.Game
             NavMeshHit hit;
             Vector3 g = goal;
             if (NavMesh.SamplePosition(goal, out hit, 1.5f, NavMesh.AllAreas)) g = hit.position;
-            if (NavMesh.CalculatePath(avatar.transform.position, g, NavMesh.AllAreas, _path) && _path.status != NavMeshPathStatus.PathInvalid)
+            // Next to furniture the avatar stands inside the NavMesh agent margin: snap the start point too.
+            Vector3 start = avatar.transform.position;
+            if (NavMesh.SamplePosition(start, out hit, 1.5f, NavMesh.AllAreas)) start = hit.position;
+            if (NavMesh.CalculatePath(start, g, NavMesh.AllAreas, _path) && _path.status != NavMeshPathStatus.PathInvalid)
             {
                 _corners = _path.corners;
                 _corner = _corners.Length > 1 ? 1 : 0;

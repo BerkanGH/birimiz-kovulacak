@@ -32,6 +32,7 @@ namespace BirimizKovulacak.Game
         public Material[] SkinMaterials;       // per slot
         public Material TieRed, TieGreen;
         public GameObject PhoneHandset;
+        public GameObject FiredBox;
         public TMPro.TextMeshPro NameTag;
 
         public const float WalkSpeed = 3.6f;
@@ -269,6 +270,7 @@ namespace BirimizKovulacak.Game
             }
             Animator.speed = (anim == "Walk" || anim == "CarryWalk") ? Mathf.Clamp(_visualSpeed / 2.4f, 0.5f, 1.6f) : 1f;
             if (PhoneHandset != null) PhoneHandset.SetActive(anim == "Phone");
+            if (FiredBox != null) FiredBox.SetActive(anim == "Fired");
         }
 
         static string ActivityAnim(PublicActivity a)

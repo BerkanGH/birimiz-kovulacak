@@ -13,6 +13,7 @@ namespace BirimizKovulacak.Game
     public sealed class MainMenuScreen : UiKit.Screen
     {
         readonly TextField _name, _address, _port;
+        readonly Button _rejoin;
         readonly Label _error;
         readonly VisualElement _help;
 
@@ -32,6 +33,8 @@ namespace BirimizKovulacak.Game
             _port = new TextField(Loc.T("menu.port")) { value = PlayerPrefs.GetString("join.port", "7777"), maxLength = 5 }.Cls("field").AddTo(row);
             _port.style.width = 190;
             Btn(Loc.T("menu.join"), Join).AddTo(card);
+            _rejoin = Btn(Loc.T("menu.rejoin"), Rejoin, "btn-primary").AddTo(card);
+            _rejoin.Show(false);
             _error = Text("", "warn").AddTo(card);
             var bottom = Box("row").AddTo(card);
             Btn(Loc.T("menu.how_to"), () => _help.Show(!_help.IsShown()), "btn-small").AddTo(bottom);
@@ -69,10 +72,19 @@ namespace BirimizKovulacak.Game
         void Host() { Save(); ConnectionManager.I.StartHost(_name.value, Port()); }
         void Join() { Save(); ConnectionManager.I.StartClient(_name.value, _address.value, Port()); }
 
+        void Rejoin()
+        {
+            string token, address; ushort port;
+            if (ConnectionManager.TryGetRecentSession(out token, out address, out port))
+                ConnectionManager.I.StartClient(_name.value, address, port, token);
+        }
+
         public override void Tick()
         {
             if (!Visible) return;
             var c = ConnectionManager.I;
+            string tk, ad; ushort po;
+            _rejoin.Show(ConnectionManager.TryGetRecentSession(out tk, out ad, out po));
             _error.text = c != null && c.Current == ConnectionManager.State.Failed && !string.IsNullOrEmpty(c.LastErrorKey) ? Loc.T(c.LastErrorKey) : "";
         }
     }

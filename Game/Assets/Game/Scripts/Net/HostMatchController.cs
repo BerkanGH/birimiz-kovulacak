@@ -55,6 +55,7 @@ namespace BirimizKovulacak.Game
         public Slot[] Slots => _slots;
         public int FillBots { get; private set; }
         public string ConfigJson { get; private set; }
+        public string DayModifier { get; private set; } = DayModifiers.Normal;
 
         public HostMatchController()
         {
@@ -271,7 +272,7 @@ namespace BirimizKovulacak.Game
         {
             string reason;
             CanStart(out reason);
-            var lv = new LobbyView { BuildId = GameConfig.BuildId, MatchRunning = MatchRunning, MatchId = _matchId, StatusKey = reason };
+            var lv = new LobbyView { BuildId = GameConfig.BuildId, MatchRunning = MatchRunning, MatchId = _matchId, StatusKey = MatchRunning ? DayModifier : reason };
             foreach (var s in _slots)
                 lv.Slots.Add(new LobbySlot { Slot = s.Index, Occupied = s.Occupied, Connected = s.Connected, Ready = s.Ready, IsHost = s.IsHost, Name = s.Name });
             return lv;
@@ -304,9 +305,18 @@ namespace BirimizKovulacak.Game
             ScenarioSetup.Apply(args.Scenario, setup);
             for (int i = 0; i < SlotCount; i++)
                 setup.Players.Add(new PlayerSlotInfo { Id = i, Name = _slots[i].Name, ColorIndex = i });
+            // Today's conditions: a per-match copy of the config (the first match of a session is a normal day).
+            var day = string.IsNullOrEmpty(args.Scenario) ? DayModifiers.Pick(_matchesCompleted, setup.Seed) : DayModifiers.All[0];
+            var config = JsonConvert.DeserializeObject<MatchConfig>(GameConfig.ToJson(GameConfig.Match), GameConfig.JsonSettings);
+            day.Apply(config);
+            DayModifier = day.Id;
+            ConfigJson = GameConfig.ToJson(config);
+            foreach (var s in _slots)
+                if (s.Occupied && !s.Virtual && s.Connected && _session != null)
+                    _session.SendWelcome(s.ClientId, new WelcomeMessage { Slot = s.Index, ReconnectToken = s.Token, MatchId = _matchId }, ConfigJson);
             try
             {
-                _engine = new MatchEngine(GameConfig.Match, GameConfig.Layout, setup, new UnityWorldQueries());
+                _engine = new MatchEngine(config, GameConfig.Layout, setup, new UnityWorldQueries());
             }
             catch (Exception e)
             {
@@ -320,7 +330,7 @@ namespace BirimizKovulacak.Game
             _lastSentVersion = -1;
             _abandonedAt = -1;
             _resultLogged = false;
-            MatchLog.Write("host: match " + _matchId + " started seed=" + setup.Seed);
+            MatchLog.Write("host: match " + _matchId + " started seed=" + setup.Seed + " day=" + DayModifier);
             BroadcastLobby();
             SendViewsToAll(true);
             return true;

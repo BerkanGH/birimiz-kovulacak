@@ -26,6 +26,7 @@ namespace BirimizKovulacak.Game
         Vector3 _velocity;
         float _menuAngle;
         float _shake;
+        float _effectivePitch;
 
         void Awake()
         {
@@ -96,13 +97,23 @@ namespace BirimizKovulacak.Game
                 if (Mathf.Abs(z) > 0.01f) Distance = Mathf.Clamp(Distance - Mathf.Sign(z) * 0.5f, MinDistance, MaxDistance);
             }
             Vector3 focus = _target.position + Vector3.up * TargetHeight;
-            rot = Quaternion.Euler(Pitch, Yaw, 0);
+            // Near a wall, tilt the camera up over it instead of pressing it against the wall.
+            float pitch = Pitch;
+            int wallMask = LayerMask.GetMask(Layers.WallsName);
+            for (int i = 0; i < 4; i++)
+            {
+                Vector3 probe = focus - Quaternion.Euler(pitch, Yaw, 0) * Vector3.forward * Distance;
+                if (!Physics.CheckSphere(probe, 0.3f, wallMask, QueryTriggerInteraction.Ignore) &&
+                    !Physics.Linecast(focus, probe, wallMask, QueryTriggerInteraction.Ignore)) break;
+                pitch = Mathf.Min(MaxPitch + 10f, pitch + 12f);
+            }
+            _effectivePitch = Mathf.Lerp(_effectivePitch <= 0 ? pitch : _effectivePitch, pitch, 1f - Mathf.Exp(-6f * dt));
+            rot = Quaternion.Euler(_effectivePitch, Yaw, 0);
             Vector3 desired = focus - rot * Vector3.forward * Distance;
-            // Pull in front of opaque walls.
             Vector3 dir = desired - focus;
             float dist = dir.magnitude;
             RaycastHit hit;
-            if (Physics.SphereCast(focus, 0.25f, dir.normalized, out hit, dist, LayerMask.GetMask(Layers.WallsName), QueryTriggerInteraction.Ignore))
+            if (Physics.SphereCast(focus, 0.25f, dir.normalized, out hit, dist, wallMask, QueryTriggerInteraction.Ignore))
                 desired = focus + dir.normalized * Mathf.Max(0.8f, hit.distance - 0.1f);
             pos = Vector3.SmoothDamp(transform.position, desired, ref _velocity, 0.06f);
             if ((pos - desired).sqrMagnitude > 25f) pos = desired;
@@ -117,8 +128,10 @@ namespace BirimizKovulacak.Game
                 if (a != null) c = a.transform.position + Vector3.up * 0.7f;
             }
             _menuAngle += dt * 10f;
-            pos = c + Quaternion.Euler(0, _menuAngle, 0) * new Vector3(0, 1.6f, -3.6f);
-            rot = Quaternion.LookRotation(c - pos);
+            var orbit = Quaternion.Euler(0, _menuAngle, 0);
+            pos = c + orbit * new Vector3(0, 1.6f, -3.6f);
+            // Aim right of the fired player so they stay visible beside the results panel (right side of the screen).
+            rot = Quaternion.LookRotation(c + orbit * Vector3.right * 1.5f - pos);
         }
     }
 }

@@ -147,9 +147,10 @@
 
 /* ---- Meeting / results ---- */
 .meeting-top { position: absolute; top: 12px; left: 0; right: 0; align-items: center; }
-.meeting-body { position: absolute; left: 1.5%; right: 1.5%; top: 120px; bottom: 16px; flex-direction: row; }
-.dossier { width: 52%; margin-right: 1%; }
-.side { flex-grow: 1; }
+.meeting-body { position: absolute; left: 1.2%; right: 1.2%; top: 120px; bottom: 16px; flex-direction: row; justify-content: space-between; }
+.dossier { width: 37%; }
+.side { width: 31%; }
+.results-modal { position: absolute; left: 40%; right: 2%; top: 5%; bottom: 5%; }
 .cand { border-radius: 12px; padding: 10px; margin: 4px 0; background-color: rgb(241, 236, 228); border-width: 2px; border-color: rgb(241, 236, 228); }
 .cand-speaking { border-color: rgb(242, 165, 65); background-color: rgb(255, 238, 200); }
 .verdict-name { font-size: 64px; color: rgb(214, 47, 59); -unity-text-align: middle-center; -unity-text-outline-width: 2px; -unity-text-outline-color: rgb(255, 255, 255); }

@@ -195,9 +195,9 @@ namespace BirimizKovulacak.Game
         MatchPhase _builtPhase;
         bool _played;
 
-        public ResultsScreen(VisualElement parent) : base(parent, "dim")
+        public ResultsScreen(VisualElement parent) : base(parent)
         {
-            var card = Box("card", "modal").AddTo(Root);
+            var card = Box("card", "results-modal").AddTo(Root);
             var head = Box("row").AddTo(card);
             Title(Loc.T("results.title"), "h1", "grow").AddTo(head);
             _timer = Bold("", "muted").AddTo(head);

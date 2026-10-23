@@ -50,8 +50,9 @@ Demand-driven so that work is a real choice and equipment is contested.
 | Phone | The single office phone rings every 28–42 s for 20 s; answer it while it rings. | 8 s | 1 |
 | Clean desk | Desks get dirty over time; take a spray from the cleaning closet and clean a dirty desk. | 7 s | 1 |
 
-Coffee/report orders accumulate (max 3 each); deliveries without an open order are rejected. Quota target: **18
-points** (tuning value, `QuotaTarget`). Quota is awarded exactly once per completion, on the host. Delivered mugs stay
+Coffee/report orders accumulate (max 3 each); deliveries without an open order are rejected. Quota target: **22
+points** (tuning value, `QuotaTarget`; first set to 18, raised after full-length bot matches reached 29–31
+points — bots are steadier workers than first-time players, so 22 keeps pressure without making failure routine). Quota is awarded exactly once per completion, on the host. Delivered mugs stay
 on the tray (reusable, "used"); delivered reports are archived.
 
 ## 5. Sabotage (config: `MatchConfig.Sabotage`)
@@ -168,3 +169,27 @@ victories. Host migration and replacement players are out of scope.
 Bean-style characters (as in the PDF art) with four silhouettes + colors: Mavi (blue, tall, tie), Sarı (yellow,
 round, glasses), Pembe (pink, hair bun), Yeşil (green, short, headset). Manager: larger brown bean in a suit with a
 moustache. Third-person elevated follow camera, WASD + mouse, remappable bindings stored in PlayerPrefs.
+
+## 14. Daily modifiers (added after the full match loop was verified)
+
+The first match of a hosting session is always a normal workday. Rematches draw one weighted "today's condition"
+(`Scripts/Boot/DayModifiers.cs`); each only tweaks a per-match copy of the config — no rule changes:
+
+| Id | Name (TR) | Effect | Weight |
+|---|---|---|---|
+| `day.normal` | Normal iş günü | none | 4 |
+| `day.coffee_crisis` | Kahve krizi | coffee orders ~2× as frequent, +1 max open order | 2 |
+| `day.printer_moody` | Yazıcı nazlı | printing 10 s, report worth +1 point | 2 |
+| `day.eagle_eye` | Müdür kartal gözlü | manager vision 85° half-angle, 12 m | 2 |
+| `day.phone_storm` | Telefon fırtınası | phone rings every 16–26 s | 2 |
+| `day.audit_day` | Denetim günü | Informant gets one extra Audit Scan | 1 |
+
+Clients learn the day from the lobby broadcast and receive the modified config with a refreshed welcome message, so
+prompts show correct durations. Scenario test runs always use a normal day.
+
+## 15. Deferred (documented, not implemented in this version)
+
+- Informant's category-level HR terminal and one-time meeting note (secondary tools in the PDF).
+- Informant "identity stayed secret" bonus — needs an explicit in-game rule before it can be scored.
+- Unity Relay/Lobby services (require a linked Unity Gaming Services project); direct IP + VPN is used instead.
+- Host migration, mid-match replacement players, proximity voice, Steam, dedicated servers (out of scope).

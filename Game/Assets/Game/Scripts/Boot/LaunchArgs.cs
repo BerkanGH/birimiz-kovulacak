@@ -28,6 +28,10 @@ namespace BirimizKovulacak.Game
         public bool Mute;
         public float BotAggression = -1f;
         public float QuitAfterSeconds;
+        public float SimulateDropAt;
+        public bool InputSim;
+        public bool DropRejoin = true;
+        public float DropDowntime = 5f;
 
         public static LaunchArgs Current { get; private set; } = new LaunchArgs();
 
@@ -58,6 +62,10 @@ namespace BirimizKovulacak.Game
                     case "-screenshots": a.Screenshots = true; break;
                     case "-debugtruth": a.DebugTruth = true; break;
                     case "-mute": a.Mute = true; break;
+                    case "-inputsim": a.InputSim = true; break;
+                    case "-simulatedrop": a.SimulateDropAt = float.Parse(next, CultureInfo.InvariantCulture); i++; break;
+                    case "-droprejoin": a.DropRejoin = next != "0"; i++; break;
+                    case "-dropdowntime": a.DropDowntime = float.Parse(next, CultureInfo.InvariantCulture); i++; break;
                     case "-botaggression": a.BotAggression = float.Parse(next, CultureInfo.InvariantCulture); i++; break;
                 }
             }

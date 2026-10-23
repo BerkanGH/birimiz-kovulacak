@@ -144,7 +144,9 @@ namespace BirimizKovulacak.Game
 
             // Quota
             var q = v.Quota;
-            _quotaText.text = Loc.F("hud.quota", q.Points.ToString("0"), q.Target.ToString("0"));
+            var lobbyView = ClientState.I.Lobby;
+            string dayKey = lobbyView != null && lobbyView.MatchRunning && lobbyView.StatusKey.StartsWith("day.") ? lobbyView.StatusKey : null;
+            _quotaText.text = Loc.F("hud.quota", q.Points.ToString("0"), q.Target.ToString("0")) + (dayKey != null && dayKey != DayModifiers.Normal ? "  ·  " + Loc.T(dayKey) : "");
             _quotaFill.style.width = Length.Percent(Mathf.Clamp01(q.Target > 0 ? q.Points / q.Target : 0) * 100f);
             _quotaFill.EnableInClassList("good", q.Points >= q.Target);
             _orders.Clear();

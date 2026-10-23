@@ -25,6 +25,7 @@ namespace BirimizKovulacak.Game
             GameInput.Initialize();
             if (args.Bot) gameObject.AddComponent<NetworkBotDriver>();
             if (args.Screenshots) gameObject.AddComponent<ScreenshotRecorder>();
+            if (args.InputSim && !args.Bot) gameObject.AddComponent<InputSimDriver>();
         }
 
         IEnumerator Start()
@@ -91,8 +92,18 @@ namespace BirimizKovulacak.Game
             Application.Quit();
         }
 
+        bool _dropped;
+
         void Update()
         {
+            var a = LaunchArgs.Current;
+            var view = ClientState.I != null ? ClientState.I.View : null;
+            if (!_dropped && a.SimulateDropAt > 0 && view != null && view.Phase >= MatchPhase.Work1 && view.Phase <= MatchPhase.Work2 &&
+                ClientState.I.Now - MatchClock.MatchStart > a.SimulateDropAt)
+            {
+                _dropped = true;
+                ConnectionManager.I.SimulateNetworkDrop(a.DropRejoin, a.DropDowntime);
+            }
             float q = LaunchArgs.Current.QuitAfterSeconds;
             if (q > 0 && Time.realtimeSinceStartup > q)
             {

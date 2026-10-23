@@ -42,7 +42,11 @@ namespace BirimizKovulacak.Game
             var me = ClientState.I.Me;
             Text(Loc.F("briefing.quota", v.Quota.Target.ToString("0")), "h3").AddTo(_body);
             if (me != null) Text(Loc.F("briefing.desk", me.DeskIndex + 1, Loc.T("player.default." + me.DeskIndex)), "label-wrap").AddTo(_body);
-            Text(Loc.T("briefing.conditions"), "muted").AddTo(_body);
+            var lobby = ClientState.I.Lobby;
+            string day = lobby != null && lobby.MatchRunning && lobby.StatusKey.StartsWith("day.") ? lobby.StatusKey : DayModifiers.Normal;
+            var dayCard = Box("objective-card").AddTo(_body);
+            Bold(Loc.F("briefing.day", Loc.T(day)), "h3").AddTo(dayCard);
+            Text(Loc.T(day + ".desc") + " " + Loc.T("briefing.conditions"), "label-wrap").AddTo(dayCard);
             PhonePanel.BuildRoleCards(_body, v);
             Text(Loc.T("briefing.tips"), "small", "label-wrap").AddTo(_body);
         }

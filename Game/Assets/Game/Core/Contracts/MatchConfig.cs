@@ -11,7 +11,7 @@ namespace BirimizKovulacak.Core
     public sealed class MatchConfig
     {
         public int PlayerCount = 4;
-        public float QuotaTarget = 18f;
+        public float QuotaTarget = 22f;
         /// <summary>When true, desks are shuffled per match; when false player N sits at desk N.</summary>
         public bool ShuffleDesks = false;
 
