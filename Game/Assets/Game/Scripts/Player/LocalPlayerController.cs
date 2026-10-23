@@ -117,6 +117,24 @@ namespace BirimizKovulacak.Game
             Sfx.Play("click");
         }
 
+        static bool Purposeful(ActionVerb verb, string label)
+        {
+            switch (verb)
+            {
+                case ActionVerb.BrewCoffee:
+                case ActionVerb.WriteReport:
+                case ActionVerb.AnswerPhone:
+                case ActionVerb.CleanDesk:
+                case ActionVerb.CleanSpill:
+                case ActionVerb.UnlockWorkstation:
+                    return true;
+                case ActionVerb.Place:
+                    return label == "verb.deliver";
+                default:
+                    return false;
+            }
+        }
+
         void UpdateFocus(PlayerView view, PlayerAvatar avatar)
         {
             List<string> ids;
@@ -126,8 +144,11 @@ namespace BirimizKovulacak.Game
             Vector3 fwd = CameraRig.I != null ? Quaternion.Euler(0, CameraRig.I.Yaw, 0) * Vector3.forward : avatar.transform.forward;
             Vector3 bodyFwd = avatar.transform.forward;
             var scored = new List<(float score, string id)>();
+            var carried = new HashSet<string>();
+            foreach (var it in view.Items) if (it.Location == ItemLocationKind.Carried) carried.Add(it.Id);
             foreach (var id in ids)
             {
+                if (carried.Contains(id)) continue; // never focus an item in someone's hands (including your own)
                 Vector3 tp;
                 if (!OfficeWorld.I.TryTargetPosition(id, out tp)) continue;
                 Vector3 d = tp - p; d.y = 0;
@@ -142,6 +163,7 @@ namespace BirimizKovulacak.Game
             string bestId = "";
             List<Affordance> best = null, bestBlocked = null;
             string bestBlockedId = "";
+            float bestScore = float.MaxValue;
             var myPos = new Vec3(p.x, p.y, p.z);
             for (int i = 0; i < scored.Count && i < 6; i++)
             {
@@ -149,9 +171,14 @@ namespace BirimizKovulacak.Game
                 try { opts = Affordances.For(view, ClientState.I.Config, GameConfig.Layout, scored[i].id, myPos); }
                 catch (Exception) { opts = null; }
                 if (opts == null || opts.Count == 0) continue;
-                bool anyFree = opts.Exists(o => o.BlockedBy == FailureCode.None);
-                if (anyFree) { best = opts; bestId = scored[i].id; break; }
-                if (bestBlocked == null) { bestBlocked = opts; bestBlockedId = scored[i].id; }
+                var free = opts.Find(o => o.BlockedBy == FailureCode.None);
+                if (free != null)
+                {
+                    // Prefer options that move work forward over generic take/put-back on a neighbouring shelf.
+                    float score = scored[i].score - (Purposeful(free.Verb, free.LabelKey) ? 0.9f : 0f);
+                    if (score < bestScore) { bestScore = score; best = opts; bestId = scored[i].id; }
+                }
+                else if (bestBlocked == null) { bestBlocked = opts; bestBlockedId = scored[i].id; }
             }
             if (best == null && bestBlocked != null) { best = bestBlocked; bestId = bestBlockedId; }
             FocusedId = bestId;

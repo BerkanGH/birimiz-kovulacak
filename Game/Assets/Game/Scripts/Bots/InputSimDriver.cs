@@ -36,6 +36,10 @@ namespace BirimizKovulacak.Game
             MatchLog.Write("inputsim: work pose " + (me != null && me.WorkPose ? "on" : "off"));
             MatchLog.Write("inputsim: done");
             Release();
+            // Like clicking "Rövanş!" on the results screen.
+            while (ClientState.I.View == null || ClientState.I.View.Phase != MatchPhase.Results || ClientState.I.View.Result == null) yield return null;
+            yield return new WaitForSeconds(2f);
+            if (LaunchArgs.Current.Rematches > 0) ClientState.I.Send(ActionVerb.RematchVote);
         }
 
         bool CarryingKind(ItemKind k)

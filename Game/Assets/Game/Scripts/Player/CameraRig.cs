@@ -127,11 +127,12 @@ namespace BirimizKovulacak.Game
                 var a = PlayerAvatar.BySlot(view.Result.FiredPlayer);
                 if (a != null) c = a.transform.position + Vector3.up * 0.7f;
             }
-            _menuAngle += dt * 10f;
-            var orbit = Quaternion.Euler(0, _menuAngle, 0);
-            pos = c + orbit * new Vector3(0, 1.6f, -3.6f);
-            // Aim right of the fired player so they stay visible beside the results panel (right side of the screen).
-            rot = Quaternion.LookRotation(c + orbit * Vector3.right * 1.5f - pos);
+            // Stay inside the meeting room (a slow sway, not a full orbit) and aim right of the fired player so they
+            // remain visible beside the results panel on the right side of the screen.
+            _menuAngle += dt;
+            pos = new Vector3(5.2f + Mathf.Sin(_menuAngle * 0.4f) * 0.6f, 2.9f, 2.9f);
+            Vector3 right = Quaternion.LookRotation(c - pos) * Vector3.right;
+            rot = Quaternion.LookRotation(c + right * 1.1f - pos);
         }
     }
 }

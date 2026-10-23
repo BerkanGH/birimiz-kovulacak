@@ -58,6 +58,13 @@ checks that every process saw every phase, logged no exceptions, and received th
 | `suite/duck` (first try) | ×0.6 | Scripted rubber-duck story | PASS for hashes, but the scripted nameplate swap never happened: a bot pathing bug (start point inside the NavMesh agent margin next to a desk). Fixed (start-point snapping + side-step) |
 | `suite2/duck` | ×0.6 | Scripted rubber-duck story, after the fix | PASS — hash `02806fa9d09cfc44` on all 4. Pembe planted the duck in Mavi's drawer; Sarı swapped the nameplates (desk 0 now showed Yeşil); the manager found the duck and blamed Yeşil; Yeşil (secretly the Informant) scanned and sealed it, presented the scan and accused Pembe; the others still voted Yeşil out. Reveal: PlantItem actor = Pembe, both NameplateSwaps actor = Sarı, Mavi and Yeşil true misconduct 0 |
 
+| `final/host_kill` | ×0.5 | Host process force-killed during Work 1 (no goodbye) | All 3 clients detect the loss after the 10 s transport timeout, retry for the 30 s grace period, then end with "Yeniden bağlanılamadı. Maç iptal edildi." (first attempt exposed a zombie "reconnected" state — fixed by tearing down the old connection and requiring a fresh approval) |
+| `final/inputsim` + `final/solo_modifier` | ×0.5 / ×0.35 | Human control path: real Input System keyboard events (W/E/R) through movement, focus, prompts and requests | Walk + focus + take mug + brew + work pose work through the human path. Found and fixed two focus issues: the adjacent mug shelf stole focus from the coffee machine; your own carried item could become the focus target |
+| `final/two_matches` | ×0.5 | Rematch in one session | PASS — hashes `810bd4fea8b37979` / `b241a3b1a4607df4` on all 4 |
+| `final/solo_modifier` | ×0.35 | Daily modifier on a rematch (seeded) | Match 2 ran as "Kahve krizi" (briefing card + HUD show it; modified config sent to clients) |
+| `release_check` | ×0.5 | Release build, 4 processes | PASS — hash `9159fc98946d4e27` on all 4, 8 incidents, Informant won |
+| ZIP check | — | `BirimizKovulacak-Windows-Playtest.zip` extracted to a temp folder and launched | Starts, hosts, fills seats, reaches Work 1, no errors |
+
 ## 3. Visual checks
 
 Screenshots are captured automatically by each process (`-screenshots`) at fixed moments of every phase

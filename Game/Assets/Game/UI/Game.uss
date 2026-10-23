@@ -155,7 +155,7 @@
 .cand-speaking { border-color: rgb(242, 165, 65); background-color: rgb(255, 238, 200); }
 .verdict-name { font-size: 64px; color: rgb(214, 47, 59); -unity-text-align: middle-center; -unity-text-outline-width: 2px; -unity-text-outline-color: rgb(255, 255, 255); }
 .score-table { margin-top: 8px; }
-.score-cell { width: 120px; -unity-text-align: middle-center; font-size: 15px; }
+.score-cell { width: 92px; -unity-text-align: middle-center; font-size: 15px; }
 .big-result { font-size: 44px; -unity-text-align: middle-center; }
 .outcome-row { flex-direction: row; align-items: center; padding: 6px 8px; margin: 3px 0; border-radius: 10px; background-color: rgb(241, 236, 228); }
 .outcome-win { background-color: rgb(214, 245, 220); }
