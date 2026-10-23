@@ -14,6 +14,9 @@ namespace BirimizKovulacak.Core
             }
             else if (item.View.Kind == ItemKind.Clutter && slot.Kind == SlotKind.DeskSurface && owner != p) { a.Sabotage = SabotageType.MoveClutter; duration = Config.GetSabotage(SabotageType.MoveClutter).DurationSeconds; }
             else if (item.View.Kind == ItemKind.Report && slot.Closed && item.View.ReportOwner != p) { a.Sabotage = SabotageType.HideReport; a.Victim = item.View.ReportOwner; duration = Config.GetSabotage(SabotageType.HideReport).DurationSeconds; }
+            // Integration review fix: your own report in another employee's drawer frames them (the manager files it
+            // as a hidden report against that desk), so it is a planted item, not a free action.
+            else if (item.View.Kind == ItemKind.Report && slot.Kind == SlotKind.Drawer && item.View.ReportOwner == p && PlayerIds.IsValid(owner) && owner != p) { a.Sabotage = SabotageType.PlantItem; duration = Config.GetSabotage(SabotageType.PlantItem).DurationSeconds; }
             else if (item.View.Kind == ItemKind.Nameplate && slot.Kind == SlotKind.NameplateHolder && item.View.NameplateOf != owner) { a.Sabotage = SabotageType.NameplateSwap; duration = Config.GetSabotage(SabotageType.NameplateSwap).DurationSeconds; }
         }
         private bool Effective(IncidentState i)
@@ -81,18 +84,27 @@ namespace BirimizKovulacak.Core
                 e.View.Status = EvidenceStatus.Moved; Emit(EventType.EvidenceUpdated, arg: e.View.Id);
                 if (!item.TamperedThisCarry) { RecordIncident(p, SabotageType.EvidenceTampering, e.View.AttributedTo, desk, item.View.Id, location); item.TamperedThisCarry = true; }
             }
-            bool recovered = false;
+            bool recovered = false; IncidentState hidden = null;
             // Do not iterate newly appended tampering records as candidates for reversal.
             foreach (IncidentState i in incidents)
             {
                 if (!Effective(i) || i.Reveal.ItemId != item.View.Id) continue;
                 if (i.Reveal.Type == SabotageType.PlantItem || i.Reveal.Type == SabotageType.MoveClutter || i.Reveal.Type == SabotageType.HideReport)
                 {
-                    if (i.Reveal.Actor != p) { ReverseEffect(p, i.Reveal.Id); if (i.Reveal.Type == SabotageType.HideReport) recovered = true; }
+                    if (i.Reveal.Actor != p) { ReverseEffect(p, i.Reveal.Id); if (i.Reveal.Type == SabotageType.HideReport) { recovered = true; hidden = i; } }
                     else i.Active = false;
                 }
             }
-            if (recovered) RecoverReportEvidence(p, item, location, desk);
+            if (recovered) { RecoverReportEvidence(p, item, location, desk); MarkRecoveredReport(hidden, desk); }
+        }
+        private void MarkRecoveredReport(IncidentState hidden, int desk)
+        {
+            if (hidden == null) return;
+            hidden.Reveal.Discovered = true;
+            int blamed = desk >= 0 ? ApparentOwner(desk) : PlayerIds.None;
+            if (PlayerIds.IsValid(blamed)) { hidden.Reveal.BlamedPlayer = blamed; if (!hidden.BlamedPlayers.Contains(blamed)) hidden.BlamedPlayers.Add(blamed); }
+            if (desk >= 0) ObserveConsequences(desk, blamed, false, false, "");
+            Changed();
         }
         partial void AfterPlacement(int p, ItemState item, SlotDef slot, InteractionState a)
         {

@@ -468,5 +468,7 @@
   "day.phone_storm": "Telefon fırtınası",
   "day.phone_storm.desc": "Ofis telefonu durmadan çalıyor.",
   "day.audit_day": "Denetim günü",
-  "day.audit_day.desc": "İK Muhbirinin bugün fazladan bir denetim taraması var."
+  "day.audit_day.desc": "İK Muhbirinin bugün fazladan bir denetim taraması var.",
+  "objective.flag.clean": "Henüz hiç sabotaj yapmadın.",
+  "objective.flag.sabotaged": "Sabotaj yaptın — Temiz Eller bozuldu."
 }

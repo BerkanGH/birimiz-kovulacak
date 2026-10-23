@@ -189,7 +189,7 @@ namespace BirimizKovulacak.Core
             item.View.FloorPosition = players[p].Avatar.Position + Vec3.FromYaw(players[p].Avatar.Yaw) * (forward ? Config.Interaction.DropForwardOffset : 0);
             item.View.FloorYaw = players[p].Avatar.Yaw; item.MovedAt = clock; item.LastPlacer = p; item.PlacedAt = clock; item.PlacementSlot = "";
             Array.Clear(item.KnownBy, 0, item.KnownBy.Length); players[p].Public.CarryingItemId = "";
-            Emit(EventType.ItemDropped, p, item: item.View.Id);
+            if (!forward) Emit(EventType.ItemDropped, p, item: item.View.Id);
         }
         private bool Reserved(string key, int except) { for (int p = 0; p < 4; p++) if (p != except && players[p].Interaction != null && players[p].Interaction.Reservation == key) return true; return false; }
         private bool ItemPositionReserved(ItemState item, int except) { return item.View.Location == ItemLocationKind.Slot && Reserved(item.View.SlotId + ":" + item.View.SlotIndex, except); }

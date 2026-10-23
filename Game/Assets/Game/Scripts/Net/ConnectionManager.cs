@@ -30,6 +30,7 @@ namespace BirimizKovulacak.Game
 
         NetworkManager _nm;
         bool _intentionalShutdown;
+        bool _freshConnect;
         Coroutine _reconnect;
 
         void Awake()
@@ -245,6 +246,7 @@ namespace BirimizKovulacak.Game
             if (_nm.IsServer) HostController?.OnClientConnected(clientId);
             if (clientId == _nm.LocalClientId && !_nm.IsServer)
             {
+                _freshConnect = true;
                 SetState(State.Connected, "");
                 ReconnectRemaining = 0;
             }
@@ -292,19 +294,28 @@ namespace BirimizKovulacak.Game
             float grace = (ClientState.I.Config != null ? ClientState.I.Config.Reconnect.GraceSeconds : 30f);
             float deadline = Time.realtimeSinceStartup + grace;
             SetState(State.Reconnecting, "net.reconnecting");
+            // The old connection may still look alive inside NGO when its disconnect callback fires: tear it down
+            // completely and only accept a brand-new approved connection as success.
+            yield return null;
+            if (_nm.IsListening && !_nm.ShutdownInProgress) _nm.Shutdown();
             if (initialDelay > 0) yield return new WaitForSecondsRealtime(initialDelay);
             while (Time.realtimeSinceStartup < deadline)
             {
                 ReconnectRemaining = deadline - Time.realtimeSinceStartup;
-                while (_nm.ShutdownInProgress) yield return null;
-                if (!_nm.IsListening) Connect(token);
+                while (_nm.ShutdownInProgress || _nm.IsListening)
+                {
+                    if (_nm.IsListening && !_nm.ShutdownInProgress) _nm.Shutdown();
+                    yield return null;
+                }
+                _freshConnect = false;
+                Connect(token);
                 float attemptEnd = Time.realtimeSinceStartup + 4f;
-                while (Time.realtimeSinceStartup < attemptEnd && !(_nm.IsConnectedClient))
+                while (Time.realtimeSinceStartup < attemptEnd && !_freshConnect)
                 {
                     ReconnectRemaining = deadline - Time.realtimeSinceStartup;
                     yield return null;
                 }
-                if (_nm.IsConnectedClient)
+                if (_freshConnect)
                 {
                     _reconnect = null;
                     MatchLog.Write("reconnected");

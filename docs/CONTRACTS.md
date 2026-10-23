@@ -256,3 +256,14 @@ notes and charges are restored and a full view is sent immediately. Grace expiry
 
 ## Changelog
 - v1 (2026-10-23): initial contract.
+- v1.1 (2026-10-23, integration review — wire format unchanged, `Protocol.Version` stays 1):
+  - Own report → **another employee's drawer** ⇒ `PlantItem` incident (victim = desk owner). Previously free framing.
+  - Manager observations that identify a person directly (`CaughtInAct`, `AtWrongDesk`) no longer trigger the
+    nameplate-swap "wrong attribution" consequence.
+  - Recovering a hidden report marks the `HideReport` incident discovered/blamed and applies nameplate consequences.
+  - Voluntary `Drop` no longer emits a public `ItemDropped` event (forced drops at meeting start/disconnect still do);
+    views carry at most the last 200 public log entries.
+  - Item `SlotIndex` inside closed containers is renumbered per recipient (no leak of unknown contents).
+  - An evidence item put back where it was found is re-activated at the next inspection instead of duplicated.
+  - `EvidenceTampering` is misconduct but does not count as sabotage for Clean Hands or the sabotage stat;
+    a suspicious item found on your desk at the final inspection counts as an Under Pressure penalty.

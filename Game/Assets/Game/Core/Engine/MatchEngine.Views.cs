@@ -20,6 +20,21 @@ namespace BirimizKovulacak.Core
             {
                 ItemView iv = Snapshot.Copy(item.View); iv.IsEvidence = evidence.Exists(e => e.View.ItemId == iv.Id && e.View.Status == EvidenceStatus.Active); view.Items.Add(iv);
             }
+            var closed = new Dictionary<string, List<ItemView>>();
+            foreach (ItemView iv in view.Items)
+            {
+                if (iv.Location != ItemLocationKind.Slot) continue;
+                SlotDef sd = Layout.GetSlot(iv.SlotId);
+                if (sd == null || !sd.Closed) continue;
+                List<ItemView> group;
+                if (!closed.TryGetValue(iv.SlotId, out group)) { group = new List<ItemView>(); closed[iv.SlotId] = group; }
+                group.Add(iv);
+            }
+            foreach (List<ItemView> group in closed.Values)
+            {
+                group.Sort((x, y) => x.SlotIndex.CompareTo(y.SlotIndex));
+                for (int k = 0; k < group.Count; k++) group[k].SlotIndex = k;
+            }
             foreach (StationDef s in Layout.Stations)
             {
                 var sv = new StationView { Id = s.Id, Kind = s.Kind };
@@ -28,7 +43,7 @@ namespace BirimizKovulacak.Core
             }
             foreach (EvidenceState e in evidence) { EvidenceView ev = Snapshot.Copy(e.View); ev.RiskWeight = EvidenceWeight(ev); view.Evidence.Add(ev); }
             foreach (ObservationView o in observations) view.Observations.Add(Snapshot.Copy(o));
-            foreach (LogEntry entry in log) view.Log.Add(Snapshot.Copy(entry));
+            for (int k = Math.Max(0, log.Count - MaxLogEntriesInView); k < log.Count; k++) view.Log.Add(Snapshot.Copy(log[k]));
             view.Manager = Snapshot.Copy(manager); view.Meeting = Snapshot.Copy(meeting);
             view.Me = Snapshot.Copy(players[recipient].Private);
             ObjectiveView objective = view.Me.Objective; RefreshObjective(recipient, ref objective); view.Me.Objective = objective;
@@ -45,6 +60,7 @@ namespace BirimizKovulacak.Core
             foreach (ItemState item in items) result.ItemHandlers.Add(item.View.Id, new List<int>(item.Handlers));
             return result;
         }
+        private const int MaxLogEntriesInView = 200;
         private float Misconduct(int p) { float sum = 0; foreach (IncidentState i in incidents) if (i.Reveal.Actor == p) sum += i.Reveal.Misconduct; return sum; }
         private float EvidenceWeight(EvidenceView e)
         {

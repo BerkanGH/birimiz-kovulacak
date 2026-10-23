@@ -16,8 +16,22 @@ Date: 2026-10-23 · Build: Windows x64, Unity 6000.6.3f1 · Machine: i5-12500H, 
 
 | Suite | Result |
 |---|---|
-| `dotnet test` (Tools/CoreTests: core compiled as netstandard2.1 / C# 9) | **118 passed, 0 failed** |
-| Unity Test Runner, EditMode, same sources inside Unity's NUnit | **118 passed, 0 failed** (`Builds/logs/editmode_results.xml`) |
+| `dotnet test` (Tools/CoreTests: core compiled as netstandard2.1 / C# 9) | **125 passed, 0 failed** |
+| Unity Test Runner, EditMode, same sources inside Unity's NUnit | **125 passed, 0 failed** (`Builds/logs/editmode_results.xml`) |
+
+118 tests were delivered by the Codex work package; 7 regression tests were added during integration for the
+review findings below (each was confirmed to fail when its fix is reverted).
+
+### Independent engine review
+A separate read-only reviewer read the contracts and engine, then fuzzed ~4,000 random four-player matches against
+invariants (single carrier per item, slot capacity, sealed items immobile, incident actors and attributions
+immutable, Informant charges bounded, quota = sum of performance and frozen at the meeting, nothing completes after
+the meeting starts, closed-container privacy, Informant/win results equal a recomputation from host truth): zero
+violations, zero exceptions. Confirmed findings, all fixed with tests (`IntegrationReviewTests.cs`, CONTRACTS v1.1):
+framing with your *own* report cost no misconduct (now a PlantItem incident); voluntary drops grew the public log
+without bound (now private, log capped at 200 in views); a direct sighting could charge a nameplate swapper; recovered
+hidden reports skipped discovery bookkeeping; closed-container slot indices leaked the presence of unknown items;
+evidence put back where it was found was counted twice; Clean Hands / Under Pressure edge cases.
 
 Coverage includes every check requested in the brief: exactly one Informant (many seeds, no repeat when avoidable);
 private information only to eligible recipients (views and encoded bytes scanned for leaks; closed containers;
@@ -40,8 +54,9 @@ checks that every process saw every phase, logged no exceptions, and received th
 | `net1` | ×0.5 | Full match over the network | PASS — hash `9e9327d68b3c00b3` on all 4; 5 incidents (plant, 2× lock, hide report, clutter); framed player blamed while the true actor stayed recorded |
 | `suite/reconnect` | ×0.5 | Client 2 loses its connection at 55.7 s, rejoins 6 s later | PASS — rejoined as a new connection mapped to the same slot (`reconnected=True`), match completed, hash `ce92333d2ce7e465` on all 4; Informant won |
 | `suite/grace_expiry` | ×0.5 | Client 3 drops and never returns | Expected outcome — host abandons exactly 30 s after the drop (`MatchAbandoned`), all remaining clients show the Abandoned screen, no results/winners |
-| `suite/duck` | ×0.6 | Scripted rubber-duck story | _pending_ |
-| `suite/full_rematch` | ×1.0 (8 min) | Full-length match + rematch in one session | _pending_ |
+| `suite/full_rematch` | ×1.0 (8 min) | Full-length match + rematch in one session | PASS — match 1 hash `e18f85d8b28ab0e4` (6 incidents, quota 31/18), match 2 hash `ea23e1e52b7e0edd` (13 incidents, quota 29/18) identical on all 4; Informant rotated Mavi → Sarı |
+| `suite/duck` (first try) | ×0.6 | Scripted rubber-duck story | PASS for hashes, but the scripted nameplate swap never happened: a bot pathing bug (start point inside the NavMesh agent margin next to a desk). Fixed (start-point snapping + side-step) |
+| `suite2/duck` | ×0.6 | Scripted rubber-duck story, after the fix | PASS — hash `02806fa9d09cfc44` on all 4. Pembe planted the duck in Mavi's drawer; Sarı swapped the nameplates (desk 0 now showed Yeşil); the manager found the duck and blamed Yeşil; Yeşil (secretly the Informant) scanned and sealed it, presented the scan and accused Pembe; the others still voted Yeşil out. Reveal: PlantItem actor = Pembe, both NameplateSwaps actor = Sarı, Mavi and Yeşil true misconduct 0 |
 
 ## 3. Visual checks
 

@@ -151,7 +151,12 @@ namespace BirimizKovulacak.Core
                 bool hidden = drawer && item.View.Kind == ItemKind.Report && item.View.ReportOwner != desk.View.AssignedOwner;
                 if (!suspicious && !hidden) continue;
                 bool covered = evidence.Exists(e => e.View.ItemId == item.View.Id && e.View.DeskIndex == index && e.View.Status == EvidenceStatus.Active);
-                if (!covered) AddEvidence(suspicious ? EvidenceKind.SuspiciousItemFound : EvidenceKind.HiddenReportFound, item, item.View.SlotId, index, DiscoverySource.Manager);
+                if (!covered)
+                {
+                    EvidenceState moved = evidence.Find(e => e.View.ItemId == item.View.Id && e.View.DeskIndex == index && e.View.Status == EvidenceStatus.Moved && !e.View.Sealed && e.View.LocationId == item.View.SlotId);
+                    if (moved != null) { moved.View.Status = EvidenceStatus.Active; moved.View.RiskWeight = EvidenceWeight(moved.View); Emit(EventType.EvidenceUpdated, arg: moved.View.Id); }
+                    else AddEvidence(suspicious ? EvidenceKind.SuspiciousItemFound : EvidenceKind.HiddenReportFound, item, item.View.SlotId, index, DiscoverySource.Manager);
+                }
                 if (suspicious) AddObservation(ObservationKind.SuspiciousItemAtDesk, owner, index, 0, item.View.Variant);
                 ObserveConsequences(index, owner, true, false, item.View.Id);
             }
@@ -181,7 +186,7 @@ namespace BirimizKovulacak.Core
             var observation = new ObservationView { Id = ++observationSerial, Kind = kind, Subject = subject, DeskIndex = desk, Time = clock, Phase = Phase, Severity = severity, Detail = detail };
             observations.Add(observation); manager.ReactionObservation = observation.Id; manager.ReactionUntil = clock + Config.Manager.ReactionSeconds;
             Emit(EventType.ManagerObservation, target: desk < 0 ? "" : EntityIds.Desk(desk), arg: observation.Id);
-            if (desk >= 0 && subject == ApparentOwner(desk)) ObserveConsequences(desk, subject, false, false, "");
+            if (desk >= 0 && subject == ApparentOwner(desk) && kind != ObservationKind.CaughtInAct && kind != ObservationKind.AtWrongDesk) ObserveConsequences(desk, subject, false, false, "");
         }
 
         private EvidenceState AddEvidence(EvidenceKind kind, ItemState item, string location, int desk, DiscoverySource source, int sourcePlayer = -1, int attribution = -2)

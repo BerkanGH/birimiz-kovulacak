@@ -91,7 +91,7 @@ namespace BirimizKovulacak.Core
 
         private int SabotageCount(int p)
         {
-            int count = 0; foreach (IncidentState incident in incidents) if (incident.Reveal.Actor == p) count++; return count;
+            int count = 0; foreach (IncidentState incident in incidents) if (incident.Reveal.Actor == p && incident.Reveal.Type != SabotageType.EvidenceTampering) count++; return count;
         }
 
         private int TaskTypesCompleted(int p)
@@ -123,7 +123,7 @@ namespace BirimizKovulacak.Core
             return !observations.Exists(o => o.Kind == ObservationKind.SuspiciousItemAtDesk && o.DeskIndex == desk && o.Phase == phase);
         }
 
-        private bool FinalPenalty(int p) { return observations.Exists(o => o.Subject == p && o.Phase == MatchPhase.FinalInspection && o.Severity > 0); }
+        private bool FinalPenalty(int p) { return observations.Exists(o => o.Subject == p && o.Phase == MatchPhase.FinalInspection && (o.Severity > 0 || o.Kind == ObservationKind.SuspiciousItemAtDesk)); }
 
         private bool ObjectiveSatisfied(int p, int fired)
         {

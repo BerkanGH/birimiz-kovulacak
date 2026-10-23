@@ -18,7 +18,9 @@ namespace BirimizKovulacak.Game
         IEnumerator Start()
         {
             InputSystem.settings.backgroundBehavior = InputSettings.BackgroundBehavior.IgnoreFocus;
-            _kb = Keyboard.current ?? InputSystem.AddDevice<Keyboard>();
+            // A dedicated device: the real keyboard may already be disabled because this window is not focused.
+            _kb = InputSystem.AddDevice<Keyboard>("InputSimKeyboard");
+            InputSystem.EnableDevice(_kb);
             while (ClientState.I.View == null || ClientState.I.View.Phase != MatchPhase.Work1) yield return null;
             yield return new WaitForSeconds(1.5f);
             MatchLog.Write("inputsim: start");
