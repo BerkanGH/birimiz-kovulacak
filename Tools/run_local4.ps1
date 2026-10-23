@@ -1,0 +1,39 @@
+<#
+.SYNOPSIS
+  Launches one host and three clients on this PC (four windows) for local multiplayer testing.
+  With -Bots every process is driven by the automated test player; without it you control the host window.
+.EXAMPLE
+  powershell -ExecutionPolicy Bypass -File Tools\run_local4.ps1 -Bots -DurationScale 0.5 -Matches 1
+#>
+param(
+    [switch]$Bots,
+    [double]$DurationScale = 1.0,
+    [int]$Matches = 1,
+    [int]$Seed = 0,
+    [string]$Scenario = "",
+    [string]$Exe = "",
+    [string]$LogDir = ""
+)
+$root = Split-Path -Parent $PSScriptRoot
+if (-not $Exe) { $Exe = Join-Path $root "Builds\BirimizKovulacak-Windows\BirimizKovulacak.exe" }
+if (-not $LogDir) { $LogDir = Join-Path $root ("Builds\runs\" + (Get-Date -Format "yyyyMMdd_HHmmss")) }
+New-Item -ItemType Directory -Force $LogDir | Out-Null
+$inv = [Globalization.CultureInfo]::InvariantCulture
+$common = @("-screen-fullscreen", "0", "-screen-width", "960", "-screen-height", "540", "-durationscale", $DurationScale.ToString($inv),
+            "-logdir", $LogDir, "-screenshots", "-mute", "-rematches", ($Matches - 1).ToString(), "-quitaftermatches", $Matches.ToString())
+if ($Seed -ne 0) { $common += @("-seed", $Seed.ToString()) }
+if ($Scenario) { $common += @("-scenario", $Scenario) }
+$names = @("Mavi", "Sari", "Pembe", "Yesil")
+$procs = @()
+$hostArgs = @("-autohost", "-autostart", "-name", $names[0], "-logFile", (Join-Path $LogDir "unity_host.log")) + $common
+if ($Bots) { $hostArgs += "-bot" }
+$procs += Start-Process -FilePath $Exe -ArgumentList $hostArgs -PassThru
+Start-Sleep -Seconds 3
+for ($i = 1; $i -le 3; $i++) {
+    $a = @("-autojoin", "127.0.0.1", "-bot", "-name", $names[$i], "-logFile", (Join-Path $LogDir ("unity_client$i.log"))) + $common
+    $procs += Start-Process -FilePath $Exe -ArgumentList $a -PassThru
+    Start-Sleep -Milliseconds 800
+}
+Write-Host "Launched 4 processes; logs in $LogDir"
+$procs | Wait-Process
+python (Join-Path $PSScriptRoot "scripts\verify_logs.py") $LogDir

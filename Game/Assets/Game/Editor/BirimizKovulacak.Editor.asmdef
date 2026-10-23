@@ -1,0 +1,31 @@
+{
+    "name": "BirimizKovulacak.Editor",
+    "rootNamespace": "BirimizKovulacak.EditorTools",
+    "references": [
+        "BirimizKovulacak.Core",
+        "BirimizKovulacak.Game",
+        "Unity.Netcode.Runtime",
+        "Unity.Networking.Transport",
+        "Unity.InputSystem",
+        "Unity.TextMeshPro",
+        "UnityEngine.UI",
+        "Unity.RenderPipelines.Universal.Runtime",
+        "Unity.RenderPipelines.Universal.Editor",
+        "Unity.RenderPipelines.Core.Runtime",
+        "Unity.AI.Navigation",
+        "Unity.AI.Navigation.Editor"
+    ],
+    "includePlatforms": [
+        "Editor"
+    ],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": true,
+    "precompiledReferences": [
+        "Newtonsoft.Json.dll"
+    ],
+    "autoReferenced": true,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false
+}

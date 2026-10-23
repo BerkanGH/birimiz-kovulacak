@@ -1,0 +1,162 @@
+/* Birimiz Kovulacak — UI Toolkit theme. Palette follows the concept PDF: deep indigo, warm orange, office cream. */
+
+.root { flex-grow: 1; position: absolute; left: 0; top: 0; right: 0; bottom: 0; color: rgb(33, 28, 61); font-size: 17px; }
+
+.screen { position: absolute; left: 0; top: 0; right: 0; bottom: 0; }
+.dim { background-color: rgba(18, 14, 40, 0.72); }
+.center { align-items: center; justify-content: center; }
+.row { flex-direction: row; align-items: center; }
+.col { flex-direction: column; }
+.grow { flex-grow: 1; }
+.wrap { flex-wrap: wrap; }
+.gap > * { margin-right: 8px; }
+.hidden { display: none; }
+
+.card {
+    background-color: rgb(251, 248, 240);
+    border-radius: 16px;
+    border-width: 3px;
+    border-color: rgb(46, 34, 87);
+    padding: 18px 22px;
+}
+.card-dark {
+    background-color: rgba(31, 26, 61, 0.92);
+    border-radius: 14px;
+    border-width: 2px;
+    border-color: rgb(242, 165, 65);
+    padding: 12px 16px;
+    color: rgb(250, 246, 236);
+}
+.title-logo {
+    font-size: 92px; color: rgb(255, 196, 46);
+    -unity-text-outline-width: 4px; -unity-text-outline-color: rgb(46, 34, 87);
+    text-shadow: 4px 6px 0px rgb(46, 34, 87);
+    -unity-text-align: middle-center;
+}
+.tagline { font-size: 24px; color: rgb(250, 246, 236); -unity-text-align: middle-center; margin-bottom: 18px; }
+.h1 { font-size: 34px; color: rgb(46, 34, 87); margin-bottom: 8px; }
+.h2 { font-size: 24px; color: rgb(46, 34, 87); margin-bottom: 6px; }
+.h3 { font-size: 19px; color: rgb(46, 34, 87); margin-bottom: 4px; }
+.light { color: rgb(250, 246, 236); }
+.muted { color: rgb(120, 112, 140); font-size: 15px; }
+.small { font-size: 14px; }
+.warn { color: rgb(214, 47, 59); }
+.good { color: rgb(39, 150, 80); }
+.accent { color: rgb(242, 140, 30); }
+.label-wrap { white-space: normal; }
+
+.btn {
+    background-color: rgb(46, 34, 87);
+    color: rgb(255, 255, 255);
+    border-radius: 12px;
+    border-width: 0;
+    padding: 9px 18px;
+    margin: 5px;
+    font-size: 19px;
+    -unity-text-align: middle-center;
+}
+.btn:hover { background-color: rgb(73, 56, 135); }
+.btn:active { background-color: rgb(30, 22, 60); }
+.btn:disabled { background-color: rgb(150, 146, 165); color: rgb(225, 222, 232); }
+.btn-primary { background-color: rgb(242, 140, 30); }
+.btn-primary:hover { background-color: rgb(255, 165, 60); }
+.btn-danger { background-color: rgb(214, 47, 59); }
+.btn-danger:hover { background-color: rgb(236, 72, 84); }
+.btn-small { font-size: 15px; padding: 4px 10px; margin: 2px; border-radius: 8px; }
+.btn-selected { background-color: rgb(39, 150, 80); }
+
+.field { margin: 4px 0; }
+.field > .unity-base-text-field__input { font-size: 19px; padding: 6px 10px; border-radius: 8px; background-color: rgb(255, 255, 255); border-color: rgb(46, 34, 87); border-width: 2px; color: rgb(33, 28, 61); }
+.field > Label { min-width: 120px; font-size: 16px; color: rgb(46, 34, 87); }
+
+.chip { width: 22px; height: 22px; border-radius: 11px; margin-right: 8px; border-width: 2px; border-color: rgb(255, 255, 255); }
+.chip-big { width: 34px; height: 34px; border-radius: 17px; }
+
+.slot-card {
+    width: 230px; height: 150px; margin: 8px;
+    background-color: rgb(251, 248, 240); border-radius: 14px; border-width: 3px; border-color: rgb(200, 192, 214);
+    padding: 12px; justify-content: space-between;
+}
+.slot-card.ready { border-color: rgb(39, 150, 80); }
+.slot-name { font-size: 22px; color: rgb(46, 34, 87); }
+
+/* ---- HUD ---- */
+.hud { position: absolute; left: 0; top: 0; right: 0; bottom: 0; }
+.hud-top { position: absolute; top: 12px; left: 0; right: 0; align-items: center; }
+.phase-box { background-color: rgba(31, 26, 61, 0.9); border-radius: 14px; padding: 6px 22px; align-items: center; border-width: 2px; border-color: rgb(242, 165, 65); }
+.phase-name { font-size: 20px; color: rgb(255, 214, 120); }
+.timer { font-size: 38px; color: rgb(255, 255, 255); -unity-text-align: middle-center; }
+.timer-urgent { color: rgb(255, 90, 90); }
+
+.quota { position: absolute; left: 14px; top: 12px; width: 300px; }
+.bar { height: 18px; background-color: rgba(255, 255, 255, 0.25); border-radius: 9px; overflow: hidden; margin: 4px 0; }
+.bar-fill { height: 100%; background-color: rgb(255, 196, 46); border-radius: 9px; }
+.bar-fill.good { background-color: rgb(64, 190, 100); }
+.orders { flex-direction: row; flex-wrap: wrap; }
+.order { background-color: rgba(255, 255, 255, 0.14); border-radius: 8px; padding: 2px 8px; margin: 2px; color: rgb(250, 246, 236); font-size: 15px; }
+.order.alert { background-color: rgb(214, 47, 59); }
+
+.players { position: absolute; right: 14px; top: 12px; width: 280px; }
+.player-row { flex-direction: row; align-items: center; padding: 3px 0; }
+.player-name { flex-grow: 1; font-size: 16px; color: rgb(250, 246, 236); }
+.player-perf { width: 44px; -unity-text-align: middle-right; color: rgb(255, 214, 120); font-size: 15px; }
+.pips { flex-direction: row; margin-left: 8px; }
+.pip { width: 9px; height: 14px; margin-left: 2px; border-radius: 3px; background-color: rgba(255, 255, 255, 0.2); }
+.pip-on { background-color: rgb(255, 92, 70); }
+.offline { opacity: 0.45; }
+
+.prompt-area { position: absolute; bottom: 90px; left: 0; right: 0; align-items: center; }
+.prompt { flex-direction: row; align-items: center; background-color: rgba(31, 26, 61, 0.88); border-radius: 12px; padding: 6px 14px; margin: 3px; }
+.prompt-blocked { opacity: 0.55; }
+.key { background-color: rgb(255, 255, 255); color: rgb(46, 34, 87); border-radius: 6px; padding: 1px 8px; margin-right: 10px; font-size: 17px; min-width: 26px; -unity-text-align: middle-center; }
+.prompt-text { color: rgb(255, 255, 255); font-size: 18px; }
+.prompt-time { color: rgb(255, 214, 120); font-size: 15px; margin-left: 8px; }
+.tag-sabotage { background-color: rgb(214, 47, 59); color: white; border-radius: 6px; padding: 0 6px; margin-left: 8px; font-size: 13px; }
+.progress { width: 340px; height: 16px; background-color: rgba(31, 26, 61, 0.8); border-radius: 8px; margin-top: 6px; border-width: 2px; border-color: rgb(255, 255, 255); }
+.progress-fill { height: 100%; background-color: rgb(242, 165, 65); border-radius: 6px; }
+
+.carry { position: absolute; left: 14px; bottom: 14px; }
+.hints { position: absolute; right: 14px; bottom: 14px; align-items: flex-end; }
+.hint { color: rgb(250, 246, 236); font-size: 14px; -unity-text-align: middle-right; text-shadow: 1px 1px 0px rgb(20, 16, 40); }
+
+.feed { position: absolute; right: 14px; top: 250px; width: 380px; align-items: flex-end; }
+.toast { background-color: rgba(31, 26, 61, 0.9); color: rgb(250, 246, 236); border-radius: 10px; padding: 6px 12px; margin: 3px 0; font-size: 15px; white-space: normal; max-width: 380px; border-left-width: 5px; border-color: rgb(242, 165, 65); }
+.toast-warning { border-color: rgb(214, 47, 59); }
+.toast-good { border-color: rgb(64, 190, 100); }
+.toast-manager { border-color: rgb(176, 116, 68); background-color: rgba(70, 40, 24, 0.92); }
+.toast-private { border-color: rgb(120, 170, 255); }
+
+.banner { position: absolute; top: 110px; left: 0; right: 0; align-items: center; }
+.banner-box { background-color: rgb(214, 47, 59); border-radius: 14px; padding: 10px 26px; border-width: 3px; border-color: rgb(255, 255, 255); }
+.banner-text { font-size: 34px; color: rgb(255, 255, 255); -unity-text-align: middle-center; }
+
+/* ---- Panels ---- */
+.modal { position: absolute; left: 6%; right: 6%; top: 7%; bottom: 7%; }
+.tabs { flex-direction: row; margin-bottom: 8px; }
+.tab { background-color: rgb(225, 219, 236); color: rgb(46, 34, 87); border-radius: 10px; padding: 6px 14px; margin-right: 6px; font-size: 17px; border-width: 0; }
+.tab-active { background-color: rgb(46, 34, 87); color: rgb(255, 255, 255); }
+.list-row { flex-direction: row; align-items: center; padding: 6px 8px; margin: 2px 0; background-color: rgb(241, 236, 228); border-radius: 8px; }
+.list-row-text { flex-grow: 1; flex-shrink: 1; white-space: normal; font-size: 15px; }
+.badge { border-radius: 6px; padding: 1px 7px; margin-left: 6px; font-size: 13px; color: white; background-color: rgb(46, 34, 87); }
+.badge-seal { background-color: rgb(196, 140, 20); }
+.badge-moved { background-color: rgb(120, 112, 140); }
+.badge-gone { background-color: rgb(150, 70, 70); }
+.role-card { border-radius: 14px; padding: 14px; margin: 6px 0; background-color: rgb(46, 34, 87); color: white; }
+.role-card.informant { background-color: rgb(196, 54, 64); }
+.objective-card { border-radius: 14px; padding: 14px; margin: 6px 0; background-color: rgb(255, 238, 200); border-width: 2px; border-color: rgb(242, 165, 65); }
+
+/* ---- Meeting / results ---- */
+.meeting-top { position: absolute; top: 12px; left: 0; right: 0; align-items: center; }
+.meeting-body { position: absolute; left: 1.5%; right: 1.5%; top: 120px; bottom: 16px; flex-direction: row; }
+.dossier { width: 52%; margin-right: 1%; }
+.side { flex-grow: 1; }
+.cand { border-radius: 12px; padding: 10px; margin: 4px 0; background-color: rgb(241, 236, 228); border-width: 2px; border-color: rgb(241, 236, 228); }
+.cand-speaking { border-color: rgb(242, 165, 65); background-color: rgb(255, 238, 200); }
+.verdict-name { font-size: 64px; color: rgb(214, 47, 59); -unity-text-align: middle-center; -unity-text-outline-width: 2px; -unity-text-outline-color: rgb(255, 255, 255); }
+.score-table { margin-top: 8px; }
+.score-cell { width: 120px; -unity-text-align: middle-center; font-size: 15px; }
+.big-result { font-size: 44px; -unity-text-align: middle-center; }
+.outcome-row { flex-direction: row; align-items: center; padding: 6px 8px; margin: 3px 0; border-radius: 10px; background-color: rgb(241, 236, 228); }
+.outcome-win { background-color: rgb(214, 245, 220); }
+.outcome-lose { background-color: rgb(250, 222, 224); }
+.mis-bar { height: 12px; background-color: rgb(214, 47, 59); border-radius: 6px; }

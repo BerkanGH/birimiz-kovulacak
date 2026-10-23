@@ -1,0 +1,301 @@
+{
+  "PlayerCount": 4,
+  "QuotaTarget": 18.0,
+  "ShuffleDesks": false,
+  "Durations": {
+    "Briefing": 30.0,
+    "Work1": 180.0,
+    "Raid": 30.0,
+    "RaidWarning": 8.0,
+    "Work2": 90.0,
+    "FinalInspection": 30.0,
+    "FinalWarning": 5.0,
+    "MeetingDiscussion": 30.0,
+    "MeetingDefense": 20.0,
+    "MeetingVote": 10.0,
+    "MeetingVerdict": 10.0,
+    "Results": 30.0
+  },
+  "Interaction": {
+    "Range": 1.8,
+    "RangeSlack": 0.6,
+    "MoveCancelDistance": 0.9,
+    "PickUpOpenSeconds": 0.0,
+    "PickUpContainerSeconds": 1.0,
+    "PickUpNameplateSeconds": 1.5,
+    "PlaceSurfaceSeconds": 1.0,
+    "PlaceDrawerSeconds": 1.5,
+    "PlaceNameplateSeconds": 2.0,
+    "PlaceHidingSpotSeconds": 2.5,
+    "PlaceShelfSeconds": 0.5,
+    "PlaceBinSeconds": 1.0,
+    "DeliverSeconds": 2.0,
+    "SearchSeconds": 2.0,
+    "DropForwardOffset": 0.5
+  },
+  "Tasks": {
+    "BrewSeconds": 6.0,
+    "WriteReportSeconds": 5.0,
+    "PrintSeconds": 6.0,
+    "PrinterTrayCapacity": 3,
+    "AnswerPhoneSeconds": 8.0,
+    "PhoneRingSeconds": 20.0,
+    "PhoneIntervalMin": 28.0,
+    "PhoneIntervalMax": 42.0,
+    "CleanDeskSeconds": 7.0,
+    "CleanSpillSeconds": 5.0,
+    "DirtIntervalSeconds": 45.0,
+    "InitialDirtyDesks": 1,
+    "InitialCoffeeOrders": 1,
+    "CoffeeOrderInterval": 35.0,
+    "MaxCoffeeOrders": 3,
+    "InitialReportOrders": 1,
+    "ReportOrderInterval": 40.0,
+    "MaxReportOrders": 3,
+    "CoffeePoints": 1.0,
+    "ReportPoints": 2.0,
+    "PhonePoints": 1.0,
+    "CleanPoints": 1.0
+  },
+  "Sabotage": [
+    {
+      "Type": "NameplateSwap",
+      "DurationSeconds": 2.0,
+      "ActorCooldownSeconds": 20.0,
+      "SameTargetCooldownSeconds": 60.0,
+      "BaseMisconduct": 2.0,
+      "ConsequenceMisconduct": 1.0,
+      "MaxActivePerDesk": 1,
+      "EffectSeconds": 0.0,
+      "ReverseSeconds": 0.0
+    },
+    {
+      "Type": "PlantItem",
+      "DurationSeconds": 3.0,
+      "ActorCooldownSeconds": 25.0,
+      "SameTargetCooldownSeconds": 60.0,
+      "BaseMisconduct": 3.0,
+      "ConsequenceMisconduct": 1.0,
+      "MaxActivePerDesk": 2,
+      "EffectSeconds": 0.0,
+      "ReverseSeconds": 0.0
+    },
+    {
+      "Type": "LockWorkstation",
+      "DurationSeconds": 4.0,
+      "ActorCooldownSeconds": 30.0,
+      "SameTargetCooldownSeconds": 30.0,
+      "BaseMisconduct": 2.0,
+      "ConsequenceMisconduct": 1.0,
+      "MaxActivePerDesk": 1,
+      "EffectSeconds": 45.0,
+      "ReverseSeconds": 5.0
+    },
+    {
+      "Type": "HideReport",
+      "DurationSeconds": 2.5,
+      "ActorCooldownSeconds": 30.0,
+      "SameTargetCooldownSeconds": 60.0,
+      "BaseMisconduct": 2.0,
+      "ConsequenceMisconduct": 1.0,
+      "MaxActivePerDesk": 3,
+      "EffectSeconds": 0.0,
+      "ReverseSeconds": 0.0
+    },
+    {
+      "Type": "SpillCoffee",
+      "DurationSeconds": 2.0,
+      "ActorCooldownSeconds": 30.0,
+      "SameTargetCooldownSeconds": 45.0,
+      "BaseMisconduct": 2.0,
+      "ConsequenceMisconduct": 1.0,
+      "MaxActivePerDesk": 1,
+      "EffectSeconds": 0.0,
+      "ReverseSeconds": 5.0
+    },
+    {
+      "Type": "MoveClutter",
+      "DurationSeconds": 1.0,
+      "ActorCooldownSeconds": 15.0,
+      "SameTargetCooldownSeconds": 45.0,
+      "BaseMisconduct": 1.0,
+      "ConsequenceMisconduct": 1.0,
+      "MaxActivePerDesk": 2,
+      "EffectSeconds": 0.0,
+      "ReverseSeconds": 0.0
+    },
+    {
+      "Type": "EvidenceTampering",
+      "DurationSeconds": 0.0,
+      "ActorCooldownSeconds": 0.0,
+      "SameTargetCooldownSeconds": 0.0,
+      "BaseMisconduct": 1.0,
+      "ConsequenceMisconduct": 0.0,
+      "MaxActivePerDesk": 99,
+      "EffectSeconds": 0.0,
+      "ReverseSeconds": 0.0
+    }
+  ],
+  "AntiGrief": {
+    "MaxActiveEffectsPerVictim": 3,
+    "MaxActiveEffectsPerActor": 4,
+    "WorkstationImmunitySeconds": 30.0,
+    "MaxSuspiciousItemsPerDesk": 2,
+    "MaxClutterPerDesk": 2
+  },
+  "Witness": {
+    "Range": 8.0,
+    "HalfAngle": 120.0,
+    "RequireLineOfSight": true
+  },
+  "Manager": {
+    "WalkSpeed": 2.6,
+    "VisionRange": 10.0,
+    "VisionHalfAngle": 70.0,
+    "AtDeskRadius": 2.5,
+    "MovingSpeedThreshold": 1.2,
+    "MovingNoticeSeconds": 0.75,
+    "ReactionSeconds": 1.5,
+    "ExpectedPerformanceAtRaid": 1.0,
+    "ExpectedPerformanceAtFinal": 3.0
+  },
+  "Risk": {
+    "SuspiciousItem": 3.0,
+    "HiddenReportInDrawer": 2.0,
+    "WitnessStatement": 1.5,
+    "MovedEvidenceFactor": 0.5,
+    "DirtyDesk": 0.5,
+    "SpillOnDesk": 1.0,
+    "ClutterEach": 0.5,
+    "MessyDeskCap": 2.0,
+    "NotAtDesk": 1.0,
+    "AtWrongDesk": 0.5,
+    "MovingDuringInspection": 1.5,
+    "CarryingSuspicious": 2.0,
+    "CaughtInAct": 3.0,
+    "BehindOnWork": 1.0,
+    "WorkingHard": -0.5,
+    "MeterThresholds": [
+      1.5,
+      3.0,
+      5.0,
+      8.0
+    ]
+  },
+  "Informant": {
+    "AuditScans": 2,
+    "SealedReports": 1,
+    "MovedRecentlySeconds": 90.0,
+    "ItemScanRange": 2.5,
+    "AvoidRepeatInformant": true
+  },
+  "Verdict": {
+    "VoteWeight": 0.45,
+    "RiskWeight": 0.35,
+    "PerformanceWeight": 0.2,
+    "RiskScale": 6.0,
+    "PerformanceScale": 4.0,
+    "FalseAccusationPenalty": 1.0
+  },
+  "Objectives": [
+    {
+      "Id": "DISMISSAL_PLAN",
+      "Type": "DismissalPlan",
+      "RequiresTarget": true,
+      "Count": 0,
+      "Count2": 0,
+      "Enabled": true
+    },
+    {
+      "Id": "PROTECTION_DEAL",
+      "Type": "ProtectionDeal",
+      "RequiresTarget": true,
+      "Count": 0,
+      "Count2": 0,
+      "Enabled": true
+    },
+    {
+      "Id": "SCAPEGOAT",
+      "Type": "Scapegoat",
+      "RequiresTarget": true,
+      "Count": 2,
+      "Count2": 0,
+      "Enabled": true
+    },
+    {
+      "Id": "QUIET_STAR",
+      "Type": "QuietStar",
+      "RequiresTarget": false,
+      "Count": 0,
+      "Count2": 0,
+      "Enabled": true
+    },
+    {
+      "Id": "CHAOS_COORDINATOR",
+      "Type": "ChaosCoordinator",
+      "RequiresTarget": false,
+      "Count": 3,
+      "Count2": 0,
+      "Enabled": true
+    },
+    {
+      "Id": "CLEAN_HANDS",
+      "Type": "CleanHands",
+      "RequiresTarget": false,
+      "Count": 4,
+      "Count2": 2,
+      "Enabled": true
+    },
+    {
+      "Id": "OFFICE_ALL_ROUNDER",
+      "Type": "OfficeAllRounder",
+      "RequiresTarget": false,
+      "Count": 4,
+      "Count2": 0,
+      "Enabled": true
+    },
+    {
+      "Id": "FIXER",
+      "Type": "Fixer",
+      "RequiresTarget": false,
+      "Count": 2,
+      "Count2": 0,
+      "Enabled": true
+    },
+    {
+      "Id": "DESK_GUARDIAN",
+      "Type": "DeskGuardian",
+      "RequiresTarget": true,
+      "Count": 0,
+      "Count2": 0,
+      "Enabled": true
+    },
+    {
+      "Id": "UNNOTICED",
+      "Type": "Unnoticed",
+      "RequiresTarget": false,
+      "Count": 0,
+      "Count2": 0,
+      "Enabled": true
+    },
+    {
+      "Id": "PERFORMANCE_RIVAL",
+      "Type": "PerformanceRival",
+      "RequiresTarget": true,
+      "Count": 0,
+      "Count2": 0,
+      "Enabled": true
+    },
+    {
+      "Id": "UNDER_PRESSURE",
+      "Type": "UnderPressure",
+      "RequiresTarget": false,
+      "Count": 2,
+      "Count2": 0,
+      "Enabled": true
+    }
+  ],
+  "Reconnect": {
+    "GraceSeconds": 30.0
+  }
+}

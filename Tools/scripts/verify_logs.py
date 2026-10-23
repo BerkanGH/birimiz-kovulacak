@@ -1,0 +1,46 @@
+"""Checks a multi-process run directory: every process completed the same matches, received identical
+result hashes, saw the full phase sequence, and logged no exceptions. Exit code 0 = pass."""
+import glob
+import os
+import re
+import sys
+
+PHASES = ["Briefing", "Work1", "Raid", "Work2", "FinalInspection", "MeetingDiscussion", "MeetingDefense1",
+          "MeetingDefense2", "MeetingVote", "MeetingVerdict", "Results"]
+
+run = sys.argv[1]
+logs = sorted(f for f in glob.glob(os.path.join(run, "*.log")) if not os.path.basename(f).startswith("unity_"))
+if not logs:
+    print("FAIL: no game logs in", run)
+    sys.exit(1)
+ok = True
+results = {}   # match -> {log: hash}
+for path in logs:
+    name = os.path.basename(path)
+    text = open(path, encoding="utf-8", errors="replace").read()
+    phases = {}
+    for m in re.finditer(r"phase (\w+) -> (\w+) match=(\d+)", text):
+        phases.setdefault(int(m.group(3)), []).append(m.group(2))
+    for m in re.finditer(r"results match=(\d+) hash=(\w+) fired=(-?\d+) company=(\w+) quota=([\d.]+)/([\d.]+) informant=(-?\d+) informantWon=(\w+) incidents=(\d+) winners=([\d,]*)", text):
+        results.setdefault(int(m.group(1)), {})[name] = m.groups()[1:]
+    errors = re.findall(r"unity-(?:Exception|Error) .*", text)
+    print("%-22s matches=%s errors=%d" % (name, sorted(phases), len(errors)))
+    for match, seq in sorted(phases.items()):
+        missing = [p for p in PHASES if p not in seq]
+        if missing:
+            ok = False
+            print("   match %d missing phases: %s" % (match, missing))
+    for e in errors[:5]:
+        print("   ", e[:200])
+    if errors:
+        ok = False
+for match, per_log in sorted(results.items()):
+    hashes = {v[0] for v in per_log.values()}
+    sample = next(iter(per_log.values()))
+    print("match %d: %d processes reported results, hashes=%s fired=%s company=%s quota=%s/%s informant=%s informantWon=%s incidents=%s winners=%s"
+          % (match, len(per_log), sorted(hashes), sample[1], sample[2], sample[3], sample[4], sample[5], sample[6], sample[7], sample[8]))
+    if len(hashes) != 1 or len(per_log) != len(logs):
+        ok = False
+        print("   MISMATCH: not every process received the same result")
+print("PASS" if ok and results else "FAIL")
+sys.exit(0 if ok and results else 1)
