@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.IO;
 using BirimizKovulacak.Core;
 using Newtonsoft.Json;

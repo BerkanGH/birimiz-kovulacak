@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
@@ -480,7 +480,14 @@ namespace BirimizKovulacak.EditorTools
         static void WriteStreamingAssets()
         {
             string cfgPath = "Assets/StreamingAssets/Config/match_config.json";
-            if (!File.Exists(cfgPath)) File.WriteAllText(cfgPath, GameConfig.ToJson(MatchConfig.CreateDefault()));
+            // (Re)write the balance file when it is missing or was written for another protocol version.
+            bool current = false;
+            if (File.Exists(cfgPath))
+            {
+                try { var c = Newtonsoft.Json.JsonConvert.DeserializeObject<MatchConfig>(File.ReadAllText(cfgPath), GameConfig.JsonSettings); current = c != null && c.ConfigVersion == Protocol.Version; }
+                catch (Exception) { current = false; }
+            }
+            if (!current) { File.WriteAllText(cfgPath, GameConfig.ToJson(MatchConfig.CreateDefault())); Log("match_config.json (re)written for protocol " + Protocol.Version); }
             string id = DateTime.UtcNow.ToString("yyyyMMddHHmm") + "-" + Guid.NewGuid().ToString("N").Substring(0, 6);
             File.WriteAllText(Root + "/Resources/build_id.txt", id);
             if (!File.Exists("Assets/StreamingAssets/Localization/tr.json")) Log("WARNING: tr.json missing");
