@@ -78,7 +78,7 @@ namespace BirimizKovulacak.Core.Tests
             var request = new ActionRequest(0x01020304, 0x11223344, ActionVerb.Place, "é", -1);
             var expected = new byte[]
             {
-                2, 1, 0, 1, 4, 3, 2, 1, 0x44, 0x33, 0x22, 0x11, 2, 3, 0xc3, 0xa9, 255, 255, 255, 255
+                2, 2, 0, 1, 4, 3, 2, 1, 0x44, 0x33, 0x22, 0x11, 2, 3, 0xc3, 0xa9, 255, 255, 255, 255
             };
             CollectionAssert.AreEqual(expected, WireCodec.EncodeRequest(request));
             for (int length = 0; length < expected.Length; length++)
@@ -129,6 +129,67 @@ namespace BirimizKovulacak.Core.Tests
             Assert.That(first, Does.Match("^[0-9a-f]{16}$"));
             result.Incidents[0].Actor++;
             Assert.AreNotEqual(first, WireCodec.HashResult(result));
+        }
+
+        [Test]
+        public void ResultHashCoversEveryResultFieldIncludingNestedV2Fields()
+        {
+            int serial = 1;
+            var result = (MatchResultView)Populate(typeof(MatchResultView), ref serial);
+            string hash = WireCodec.HashResult(result);
+            int mutations = 0;
+            VisitLeaves(result, "Result", (type, original, assign, path) =>
+            {
+                if (path == "Result.ResultHash") return;
+                assign(DifferentValue(type, original));
+                Assert.AreNotEqual(hash, WireCodec.HashResult(result), path);
+                assign(original);
+                mutations++;
+            });
+            Assert.That(mutations, Is.GreaterThan(100));
+            Assert.AreEqual(hash, WireCodec.HashResult(result));
+        }
+
+        [TestCase(typeof(MatchConfig))]
+        [TestCase(typeof(OfficeLayout))]
+        [TestCase(typeof(MatchSetup))]
+        [TestCase(typeof(SessionHistory))]
+        [TestCase(typeof(PlayerView))]
+        [TestCase(typeof(HostDebugView))]
+        public void SnapshotsCopyEveryContractFieldWithoutSharingMutableObjects(Type type)
+        {
+            int serial = 1;
+            object original = Populate(type, ref serial);
+            Type snapshots = typeof(MatchEngine).Assembly.GetType("BirimizKovulacak.Core.Snapshot", true);
+            MethodInfo copy = snapshots.GetMethod("Copy", BindingFlags.NonPublic | BindingFlags.Static,
+                null, new[] { type }, null);
+            Assert.IsNotNull(copy, type.Name);
+            object snapshot = copy.Invoke(null, new[] { original });
+            AssertFields(original, snapshot, type.Name);
+            AssertDetached(original, snapshot, type.Name);
+            Assert.IsNull(copy.Invoke(null, new object[] { null }));
+        }
+
+        [Test]
+        public void V2EnumsAndNestedNullListsRoundTrip()
+        {
+            foreach (ActionVerb verb in Enum.GetValues(typeof(ActionVerb)))
+                Assert.AreEqual(verb, WireCodec.DecodeRequest(WireCodec.EncodeRequest(new ActionRequest(1, 1, verb))).Verb);
+            foreach (FailureCode code in Enum.GetValues(typeof(FailureCode)))
+                Assert.AreEqual(code, WireCodec.DecodeResult(WireCodec.EncodeResult(ActionResult.Fail(1, code))).Failure);
+            foreach (EventType type in Enum.GetValues(typeof(EventType)))
+                Assert.AreEqual(type, WireCodec.DecodeEvents(WireCodec.EncodeEvents(new List<GameEvent> { new GameEvent { Type = type } }))[0].Type);
+            var view = new PlayerView
+            {
+                Features = null,
+                Office = null,
+                Inbox = new List<EmailView> { null },
+                Evidence = new List<EvidenceView> { new EvidenceView { Contents = null, Calls = null, Sightings = new List<FootageSighting> { null } } },
+                Me = new PrivateView { Cards = null, Call = null, Notes = new List<PrivateNote> { new PrivateNote { Calls = null, ItemId = null } } },
+                Result = new MatchResultView { Calls = new List<CallRecordView> { null }, Favourites = null, EmployeeOfTheMonth = null,
+                    Players = new List<PlayerOutcome> { new PlayerOutcome { Cards = null } } }
+            };
+            AssertFields(view, WireCodec.DecodeView(WireCodec.EncodeView(view)), "view");
         }
 
         private static Type MessageType(string message)
@@ -195,6 +256,18 @@ namespace BirimizKovulacak.Core.Tests
                 for (int i = 0; i < 2; i++) list.Add(Populate(type.GetGenericArguments()[0], ref serial));
                 return list;
             }
+            if (type.IsArray)
+            {
+                var array = Array.CreateInstance(type.GetElementType(), 2);
+                for (int i = 0; i < 2; i++) array.SetValue(Populate(type.GetElementType(), ref serial), i);
+                return array;
+            }
+            if (type.IsGenericType && type.GetGenericTypeDefinition() == typeof(Dictionary<,>))
+            {
+                var dictionary = (IDictionary)Activator.CreateInstance(type);
+                for (int i = 0; i < 2; i++) dictionary.Add(Populate(type.GetGenericArguments()[0], ref serial), Populate(type.GetGenericArguments()[1], ref serial));
+                return dictionary;
+            }
             object result = Activator.CreateInstance(type);
             foreach (FieldInfo field in type.GetFields(BindingFlags.Public | BindingFlags.Instance))
                 field.SetValue(result, Populate(field.FieldType, ref serial));
@@ -216,8 +289,66 @@ namespace BirimizKovulacak.Core.Tests
                 for (int i = 0; i < expectedList.Count; i++) AssertFields(expectedList[i], actualList[i], path + "[" + i + "]");
                 return;
             }
+            if (expected is IDictionary expectedDictionary)
+            {
+                var actualDictionary = (IDictionary)actual;
+                Assert.AreEqual(expectedDictionary.Count, actualDictionary.Count, path);
+                foreach (object key in expectedDictionary.Keys) AssertFields(expectedDictionary[key], actualDictionary[key], path + "[" + key + "]");
+                return;
+            }
             foreach (FieldInfo field in type.GetFields(BindingFlags.Public | BindingFlags.Instance))
                 AssertFields(field.GetValue(expected), field.GetValue(actual), path + "." + field.Name);
+        }
+
+        private static void AssertDetached(object original, object copy, string path)
+        {
+            if (original == null || original is string || original.GetType().IsValueType) return;
+            Assert.AreNotSame(original, copy, path);
+            if (original is IList list)
+            {
+                for (int i = 0; i < list.Count; i++) AssertDetached(list[i], ((IList)copy)[i], path + "[" + i + "]");
+                return;
+            }
+            if (original is IDictionary dictionary)
+            {
+                foreach (object key in dictionary.Keys) AssertDetached(dictionary[key], ((IDictionary)copy)[key], path + "[" + key + "]");
+                return;
+            }
+            foreach (FieldInfo field in original.GetType().GetFields(BindingFlags.Public | BindingFlags.Instance))
+                AssertDetached(field.GetValue(original), field.GetValue(copy), path + "." + field.Name);
+        }
+
+        private static object DifferentValue(Type type, object value)
+        {
+            if (type == typeof(string)) return (string)value + "_changed";
+            if (type == typeof(bool)) return !(bool)value;
+            if (type == typeof(float)) return (float)value + 1;
+            if (type == typeof(double)) return (double)value + 1;
+            if (type.IsEnum) return Enum.ToObject(type, (Convert.ToInt32(value) + 1) % Enum.GetValues(type).Length);
+            return Convert.ChangeType(Convert.ToInt64(value) + 1, type);
+        }
+
+        private static void VisitLeaves(object value, string path, Action<Type, object, Action<object>, string> visit)
+        {
+            if (value is IList list)
+            {
+                for (int i = 0; i < list.Count; i++)
+                {
+                    int index = i;
+                    Type type = list[i].GetType();
+                    if (type.IsPrimitive || type.IsEnum || type == typeof(string))
+                        visit(type, list[i], changed => list[index] = changed, path + "[" + i + "]");
+                    else VisitLeaves(list[i], path + "[" + i + "]", visit);
+                }
+                return;
+            }
+            foreach (FieldInfo field in value.GetType().GetFields(BindingFlags.Public | BindingFlags.Instance))
+            {
+                Type type = field.FieldType;
+                if (type.IsPrimitive || type.IsEnum || type == typeof(string))
+                    visit(type, field.GetValue(value), changed => field.SetValue(value, changed), path + "." + field.Name);
+                else VisitLeaves(field.GetValue(value), path + "." + field.Name, visit);
+            }
         }
     }
 }

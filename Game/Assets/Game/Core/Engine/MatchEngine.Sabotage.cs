@@ -16,7 +16,7 @@ namespace BirimizKovulacak.Core
             else if (item.View.Kind == ItemKind.Report && slot.Closed && item.View.ReportOwner != p) { a.Sabotage = SabotageType.HideReport; a.Victim = item.View.ReportOwner; duration = Config.GetSabotage(SabotageType.HideReport).DurationSeconds; }
             // Integration review fix: your own report in another employee's drawer frames them (the manager files it
             // as a hidden report against that desk), so it is a planted item, not a free action.
-            else if (item.View.Kind == ItemKind.Report && slot.Kind == SlotKind.Drawer && item.View.ReportOwner == p && PlayerIds.IsValid(owner) && owner != p) { a.Sabotage = SabotageType.PlantItem; duration = Config.GetSabotage(SabotageType.PlantItem).DurationSeconds; }
+            else if (item.View.Kind == ItemKind.Report && slot.Kind == SlotKind.Drawer && item.View.ReportOwner == p && Present(owner) && owner != p) { a.Sabotage = SabotageType.PlantItem; duration = Config.GetSabotage(SabotageType.PlantItem).DurationSeconds; }
             else if (item.View.Kind == ItemKind.Nameplate && slot.Kind == SlotKind.NameplateHolder && item.View.NameplateOf != owner) { a.Sabotage = SabotageType.NameplateSwap; duration = Config.GetSabotage(SabotageType.NameplateSwap).DurationSeconds; }
         }
         private bool Effective(IncidentState i)
@@ -31,13 +31,14 @@ namespace BirimizKovulacak.Core
                 case SabotageType.MoveClutter: return item != null && item.View.Location == ItemLocationKind.Slot && item.View.SlotId == d?.Def.SurfaceSlotId;
                 case SabotageType.HideReport: return item != null && item.View.Location == ItemLocationKind.Slot && item.View.SlotId == i.LocationId;
                 case SabotageType.NameplateSwap: return item != null && item.View.Location == ItemLocationKind.Slot && item.View.SlotId == d?.Def.NameplateSlotId && item.View.NameplateOf != d.View.AssignedOwner;
-                default: return false;
+                default: return EffectiveV2(i);
             }
         }
         partial void CheckSabotage(int p, InteractionState a, ref FailureCode failure)
         {
             if (!a.Sabotage.HasValue) return;
             SabotageType type = a.Sabotage.Value; SabotageDef def = Config.GetSabotage(type);
+            failure = CheckCardAndLimitV2(p, type); if (failure != FailureCode.None) return;
             if (players[p].Private.SabotageCooldowns[(int)type] > clock) { failure = FailureCode.Cooldown; return; }
             int deskCount = 0, actorCount = 0, typeCount = 0;
             foreach (IncidentState i in incidents)
@@ -102,7 +103,7 @@ namespace BirimizKovulacak.Core
             if (hidden == null) return;
             hidden.Reveal.Discovered = true;
             int blamed = desk >= 0 ? ApparentOwner(desk) : PlayerIds.None;
-            if (PlayerIds.IsValid(blamed)) { hidden.Reveal.BlamedPlayer = blamed; if (!hidden.BlamedPlayers.Contains(blamed)) hidden.BlamedPlayers.Add(blamed); }
+            if (Present(blamed)) { hidden.Reveal.BlamedPlayer = blamed; if (!hidden.BlamedPlayers.Contains(blamed)) hidden.BlamedPlayers.Add(blamed); }
             if (desk >= 0) ObserveConsequences(desk, blamed, false, false, "");
             Changed();
         }
@@ -147,7 +148,7 @@ namespace BirimizKovulacak.Core
                 bool discovered = (suspicious && i.Reveal.ItemId == itemId && (i.Reveal.Type == SabotageType.PlantItem || i.Reveal.Type == SabotageType.HideReport)) || (messy && (i.Reveal.Type == SabotageType.SpillCoffee || i.Reveal.Type == SabotageType.MoveClutter)) || i.Reveal.Type == SabotageType.NameplateSwap;
                 if (!discovered) continue;
                 i.Reveal.Discovered = true; i.Reveal.BlamedPlayer = apparentOwner;
-                if (PlayerIds.IsValid(apparentOwner) && !i.BlamedPlayers.Contains(apparentOwner)) i.BlamedPlayers.Add(apparentOwner);
+                if (Present(apparentOwner) && !i.BlamedPlayers.Contains(apparentOwner)) i.BlamedPlayers.Add(apparentOwner);
                 if ((i.Reveal.Type == SabotageType.NameplateSwap && apparentOwner != OwnerOfDesk(desk)) || (i.Reveal.Type != SabotageType.NameplateSwap && i.Reveal.Type != SabotageType.HideReport && apparentOwner != i.Reveal.Actor)) Consequence(i);
             }
         }

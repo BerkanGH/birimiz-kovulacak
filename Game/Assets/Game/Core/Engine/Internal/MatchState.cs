@@ -8,7 +8,7 @@ namespace BirimizKovulacak.Core
         internal AvatarSample Avatar;
         internal InteractionState Interaction;
         internal readonly Queue<uint> Requests = new Queue<uint>();
-        internal readonly int[] TaskCounts = new int[4];
+        internal readonly int[] TaskCounts = new int[5];
         internal int Work2Tasks;
         internal ObjectiveDef Objective;
         internal int ObjectiveTarget = PlayerIds.None;
@@ -17,7 +17,7 @@ namespace BirimizKovulacak.Core
     internal sealed class ItemState
     {
         internal ItemView View = new ItemView();
-        internal readonly bool[] KnownBy = new bool[4];
+        internal readonly bool[] KnownBy = new bool[Protocol.MaxPlayers];
         internal readonly List<int> Handlers = new List<int>();
         internal int LastPlacer = PlayerIds.None;
         internal double PlacedAt = double.NegativeInfinity, MovedAt = double.NegativeInfinity;
