@@ -1,0 +1,18 @@
+[
+  {
+    "id": "phone_frame",
+    "path": "Art/UI/phone/phone_frame.png",
+    "w": 600,
+    "h": 1200,
+    "category": "phone",
+    "nineSlice": null,
+    "screenRect": [
+      48,
+      108,
+      504,
+      984
+    ],
+    "hasText": false,
+    "description": "Stationery-toned smartphone bezel. Place screen content in the exact transparent rectangle [48,108,504,984]; coordinates use top-left origin."
+  }
+]

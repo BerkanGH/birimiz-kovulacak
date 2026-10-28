@@ -1,0 +1,68 @@
+[
+  {
+    "id": "stamp_ayin_elemani",
+    "path": "Art/UI/stamps/stamp_ayin_elemani.png",
+    "w": 960,
+    "h": 320,
+    "category": "stamps",
+    "nineSlice": null,
+    "screenRect": null,
+    "hasText": true,
+    "description": "Distressed transparent rubber stamp. Turkish glyphs rendered deterministically."
+  },
+  {
+    "id": "stamp_gizli",
+    "path": "Art/UI/stamps/stamp_gizli.png",
+    "w": 960,
+    "h": 320,
+    "category": "stamps",
+    "nineSlice": null,
+    "screenRect": null,
+    "hasText": true,
+    "description": "Distressed transparent rubber stamp. Turkish glyphs rendered deterministically."
+  },
+  {
+    "id": "stamp_kovuldu",
+    "path": "Art/UI/stamps/stamp_kovuldu.png",
+    "w": 960,
+    "h": 320,
+    "category": "stamps",
+    "nineSlice": null,
+    "screenRect": null,
+    "hasText": true,
+    "description": "Distressed transparent rubber stamp. Turkish glyphs rendered deterministically."
+  },
+  {
+    "id": "stamp_kurtuldu",
+    "path": "Art/UI/stamps/stamp_kurtuldu.png",
+    "w": 960,
+    "h": 320,
+    "category": "stamps",
+    "nineSlice": null,
+    "screenRect": null,
+    "hasText": true,
+    "description": "Distressed transparent rubber stamp. Turkish glyphs rendered deterministically."
+  },
+  {
+    "id": "stamp_onaylandi",
+    "path": "Art/UI/stamps/stamp_onaylandi.png",
+    "w": 960,
+    "h": 320,
+    "category": "stamps",
+    "nineSlice": null,
+    "screenRect": null,
+    "hasText": true,
+    "description": "Distressed transparent rubber stamp. Turkish glyphs rendered deterministically."
+  },
+  {
+    "id": "stamp_reddedildi",
+    "path": "Art/UI/stamps/stamp_reddedildi.png",
+    "w": 960,
+    "h": 320,
+    "category": "stamps",
+    "nineSlice": null,
+    "screenRect": null,
+    "hasText": true,
+    "description": "Distressed transparent rubber stamp. Turkish glyphs rendered deterministically."
+  }
+]
