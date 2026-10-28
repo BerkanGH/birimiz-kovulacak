@@ -59,7 +59,12 @@ namespace BirimizKovulacak.Game
         int _promptSig = int.MinValue, _lastMicQ = -1;
         VoiceRoute _lastRoute = (VoiceRoute)255;
         string _carryText = "";
-        bool _officeVisible = true, _meetingFeed;
+        bool _officeVisible = true;
+        // change caches for Rebuild (keeps the ~10 Hz view updates nearly allocation-free)
+        int _qPoints = -1, _qTarget = -1, _mgrKey = int.MinValue, _carryKey = int.MinValue, _susLevel = -1, _dayKey = -1, _meBadgeId = -99;
+        string _mgrProfile;
+        VisualElement _susIcon;
+        static readonly string[] SusIcons = { "suspicion_0", "suspicion_1", "suspicion_2", "suspicion_3", "suspicion_4" };
 
         public Hud(VisualElement parent, VisualElement feedLayer) : base(parent, "hud")
         {
@@ -123,7 +128,7 @@ namespace BirimizKovulacak.Game
             Text(Loc.T("hud.favor"), "meter-label").NoPick().AddTo(_favorRow);
             Bar(0, out _favorFill, "bar-bad").NoPick().AddTo(_favorRow);
             var susRow = Box("meter-row").NoPick().AddTo(meters);
-            Icon("suspicion_0").AddTo(susRow);
+            _susIcon = Icon("suspicion_0").AddTo(susRow);
             Text(Loc.T("hud.suspicion"), "meter-label").NoPick().AddTo(susRow);
             _myPips = Pips(0).AddTo(susRow);
             _carry = Text("", "carry-text").NoPick().AddTo(meters);
@@ -396,25 +401,33 @@ namespace BirimizKovulacak.Game
             int my = cs.MySlot;
 
             // phase + day
-            _phase.text = Loc.Phase(v.Phase);
+            _phase.SetText(Loc.Phase(v.Phase));
             bool week = v.Mode == GameMode.Week;
             _dayChip.Show(week);
-            if (week) _dayChip.text = v.Features.CareerMultiplier > 1.01f ? Loc.F("hud.day_bonus", Loc.DayName(v.WeekDay), v.Features.CareerMultiplier.ToString("0.#")) : Loc.DayName(v.WeekDay);
+            int dayKey = week ? v.MatchId * 16 + v.WeekDay : -1;
+            if (week && dayKey != _dayKey) _dayChip.text = v.Features.CareerMultiplier > 1.01f ? Loc.F("hud.day_bonus", Loc.DayName(v.WeekDay), v.Features.CareerMultiplier.ToString("0.#")) : Loc.DayName(v.WeekDay);
+            _dayKey = dayKey;
 
             // manager chip + banner
             var m = v.Manager;
             bool inspectionPhase = v.Phase == MatchPhase.Raid || v.Phase == MatchPhase.FinalInspection || m.Surprise;
             bool angry = m.State == ManagerState.Reacting || m.Surprise;
-            SetManagerPortrait(_mgrBadge, v.ManagerProfileId, angry);
-            _mgrState.text = m.Surprise ? Loc.T("mgr.state.surprise") : Loc.T("mgr.state." + m.State);
-            _mgrChip.EnableInClassList("mgr-warning", m.State == ManagerState.Warning);
-            _mgrChip.EnableInClassList("mgr-walking", !m.Surprise && (m.State == ManagerState.Walking || m.State == ManagerState.Inspecting || m.State == ManagerState.Reacting));
-            _mgrChip.EnableInClassList("mgr-surprise", m.Surprise);
-            bool walking = m.State == ManagerState.Warning || m.State == ManagerState.Walking || m.State == ManagerState.Inspecting || m.State == ManagerState.Reacting;
-            _bannerMgr.Show(inspectionPhase && walking);
-            if (m.State == ManagerState.Warning) _bannerMgrText.text = Loc.T("hud.manager_coming");
-            else if (m.Surprise) _bannerMgrText.text = Loc.T("hud.surprise");
-            else _bannerMgrText.text = Loc.T(v.Phase == MatchPhase.Raid ? "hud.raid" : "hud.final_inspection");
+            int mgrKey = (int)m.State * 4 + (m.Surprise ? 1 : 0) + (angry ? 2 : 0) + (int)v.Phase * 64;
+            if (mgrKey != _mgrKey || !ReferenceEquals(_mgrProfile, v.ManagerProfileId))
+            {
+                _mgrKey = mgrKey;
+                _mgrProfile = v.ManagerProfileId;
+                SetManagerPortrait(_mgrBadge, v.ManagerProfileId, angry);
+                _mgrState.text = m.Surprise ? Loc.T("mgr.state.surprise") : Loc.T("mgr.state." + m.State);
+                _mgrChip.EnableInClassList("mgr-warning", m.State == ManagerState.Warning);
+                _mgrChip.EnableInClassList("mgr-walking", !m.Surprise && (m.State == ManagerState.Walking || m.State == ManagerState.Inspecting || m.State == ManagerState.Reacting));
+                _mgrChip.EnableInClassList("mgr-surprise", m.Surprise);
+                bool walking = m.State == ManagerState.Warning || m.State == ManagerState.Walking || m.State == ManagerState.Inspecting || m.State == ManagerState.Reacting;
+                _bannerMgr.Show(inspectionPhase && walking);
+                if (m.State == ManagerState.Warning) _bannerMgrText.text = Loc.T("hud.manager_coming");
+                else if (m.Surprise) _bannerMgrText.text = Loc.T("hud.surprise");
+                else _bannerMgrText.text = Loc.T(v.Phase == MatchPhase.Raid ? "hud.raid" : "hud.final_inspection");
+            }
 
             // office status
             _bannerNet.Show(v.Office.InternetDown);
@@ -424,16 +437,21 @@ namespace BirimizKovulacak.Game
 
             // quota + orders
             var q = v.Quota;
-            _quotaText.text = Loc.F("hud.quota", q.Points.ToString("0"), q.Target.ToString("0"));
-            SetFill(_quotaFill, q.Target > 0 ? q.Points / q.Target : 0);
-            _quotaFill.EnableInClassList("good", q.Points >= q.Target);
-            _orderCoffee.Set(q.CoffeeOrders > 0, false, Loc.F("hud.order_n", q.CoffeeOrders));
-            _orderReport.Set(q.ReportOrders > 0, false, Loc.F("hud.order_n", q.ReportOrders));
-            _orderPhone.Set(q.PhoneRinging, true, null);
+            int qp = Mathf.RoundToInt(q.Points), qt = Mathf.RoundToInt(q.Target);
+            if (qp != _qPoints || qt != _qTarget)
+            {
+                _qPoints = qp; _qTarget = qt;
+                _quotaText.text = Loc.F("hud.quota", qp, qt);
+                SetFill(_quotaFill, q.Target > 0 ? q.Points / q.Target : 0);
+                _quotaFill.EnableInClassList("good", q.Points >= q.Target);
+            }
+            _orderCoffee.SetCount(q.CoffeeOrders, false);
+            _orderReport.SetCount(q.ReportOrders, false);
+            _orderPhone.Set(q.PhoneRinging, true);
             _orderPhone.Root.Show(q.PhoneRinging);
-            _orderDirty.Set(q.DirtyDesks > 0, false, Loc.F("hud.order_n", q.DirtyDesks));
+            _orderDirty.SetCount(q.DirtyDesks, false);
             _orderDirty.Root.Show(q.DirtyDesks > 0);
-            _orderMail.Set(q.OpenMail > 0, false, Loc.F("hud.order_n", q.OpenMail));
+            _orderMail.SetCount(q.OpenMail, false);
             _orderMail.Root.Show(v.Features.Mail);
 
             // crew
@@ -449,15 +467,25 @@ namespace BirimizKovulacak.Game
             var me = GameInfo.Player(v, my);
             if (me != null)
             {
-                SetBadge(_meBadge, me.Id, me.Name);
+                if (_meBadgeId != me.Id) { _meBadgeId = me.Id; SetBadge(_meBadge, me.Id, me.Name); }
                 _favorRow.Show(favor);
-                SetFill(_favorFill, me.Favor / GameInfo.MaxFavor(v));
-                SetPips(_myPips, me.SuspicionLevel);
-                string carrying = "";
+                if (favor) SetFill(_favorFill, me.Favor / GameInfo.MaxFavor(v));
+                if (me.SuspicionLevel != _susLevel)
+                {
+                    _susLevel = me.SuspicionLevel;
+                    SetPips(_myPips, _susLevel);
+                    SetIcon(_susIcon, SusIcons[Mathf.Clamp(_susLevel, 0, SusIcons.Length - 1)]);
+                }
+                ItemView carried = null;
                 if (!string.IsNullOrEmpty(me.CarryingItemId))
-                    foreach (var it in v.Items) if (it.Id == me.CarryingItemId) { carrying = ItemLabel(it, v); break; }
-                string ct = string.IsNullOrEmpty(carrying) ? Loc.T("hud.hands_empty") : Loc.F("hud.carrying", carrying);
-                if (ct != _carryText) { _carryText = ct; _carry.text = ct; }
+                    for (int i = 0; i < v.Items.Count; i++) if (v.Items[i].Id == me.CarryingItemId) { carried = v.Items[i]; break; }
+                int carryKey = carried == null ? 0 : carried.Id.GetHashCode() * 31 + (int)carried.Fill * 7 + (carried.KnownSalted ? 3 : 0) + carried.ReportOwner * 131 + carried.NameplateOf * 17;
+                if (carryKey != _carryKey)
+                {
+                    _carryKey = carryKey;
+                    _carryText = carried == null ? Loc.T("hud.hands_empty") : Loc.F("hud.carrying", ItemLabel(carried, v));
+                    _carry.text = _carryText;
+                }
                 _hintPose.EnableInClassList("hint-on", me.WorkPose);
                 _crouchTag.Show(me.Crouched);
                 _hintCrouch.EnableInClassList("hint-on", me.Crouched);
@@ -621,13 +649,21 @@ namespace BirimizKovulacak.Game
                 Icon(icon).AddTo(Root);
                 _text = Bold("", "order-text").NoPick().AddTo(Root);
             }
-            public void Set(bool active, bool alert, string text)
+            int _count = -1;
+            static readonly string[] Counts = { "×0", "×1", "×2", "×3", "×4", "×5", "×6", "×7", "×8", "×9" };
+            public void Set(bool active, bool alert)
             {
                 Root.EnableInClassList("order-off", !active);
                 Root.EnableInClassList("order-alert", alert && active);
-                if (text != null) _text.text = text;
             }
-            public void SetCount(string text) { _text.SetText(text); }
+            public void SetCount(int n, bool alert)
+            {
+                Set(n > 0, alert);
+                if (n == _count) return;
+                _count = n;
+                _text.text = n >= 0 && n < Counts.Length ? Counts[n] : "×" + n;
+            }
+            public void SetCount(string text) { _count = -1; _text.SetText(text); }
         }
 
         sealed class CrewRow
@@ -637,6 +673,8 @@ namespace BirimizKovulacak.Game
             readonly Label _name, _perf, _favorText;
             public int Player = -1;
             bool _speaking;
+            int _nameKey = int.MinValue;
+            float _favorValue = float.NaN;
 
             public CrewRow(VisualElement parent)
             {
@@ -660,9 +698,14 @@ namespace BirimizKovulacak.Game
             {
                 Root.Show(true);
                 if (Player != p.Id) { Player = p.Id; SetBadge(_badge, p.Id, p.Name); }
-                string name = p.Id == my ? p.Name + " " + Loc.T("hud.you") : p.Name;
-                if (!p.Connected) name += " " + Loc.F("hud.offline", Clock(p.DisconnectDeadline - now));
-                _name.SetText(name);
+                int nameKey = (p.Name != null ? p.Name.GetHashCode() : 0) * 31 + (p.Id == my ? 1 : 0) + (p.Connected ? 0 : 2 + 4 * (int)System.Math.Ceiling(System.Math.Max(0, p.DisconnectDeadline - now)));
+                if (nameKey != _nameKey)
+                {
+                    _nameKey = nameKey;
+                    string name = p.Id == my ? p.Name + " " + Loc.T("hud.you") : p.Name;
+                    if (!p.Connected) name += " " + Loc.F("hud.offline", Clock(p.DisconnectDeadline - now));
+                    _name.text = name;
+                }
                 Root.EnableInClassList("offline", !p.Connected);
                 Root.EnableInClassList("crew-me", p.Id == my);
                 _perf.SetText(Num(Mathf.RoundToInt(p.Performance)));
@@ -671,10 +714,10 @@ namespace BirimizKovulacak.Game
                 _ringFlag.Show(p.Ringing);
                 _crown.Show(v.Favourite == p.Id);
                 _favor.Show(favor);
-                if (favor) _favorText.SetText(p.Favor.ToString("0.#"));
+                if (favor && p.Favor != _favorValue) { _favorValue = p.Favor; _favorText.text = p.Favor.ToString("0.#"); }
             }
 
-            public void Hide() { Root.Show(false); Player = -1; }
+            public void Hide() { Root.Show(false); Player = -1; _nameKey = int.MinValue; }
 
             int _alphaQ = 10;
             public void TickVisibility(bool los)
