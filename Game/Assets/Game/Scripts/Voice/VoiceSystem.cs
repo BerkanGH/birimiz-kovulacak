@@ -303,7 +303,9 @@ namespace BirimizKovulacak.Game
                 if (cmm != null) BeginSession(nm, cmm);
             }
             int slot = ClientState.I != null ? ClientState.I.MySlot : -1;
-            _localSlot = slot >= 0 && slot < Slots ? slot : -1;
+            slot = slot >= 0 && slot < Slots ? slot : -1;
+            if (slot != _localSlot && slot >= 0 && _synthetic != null) _synthetic.SetSlot(slot); // players take turns
+            _localSlot = slot;
             _inSession = _registered != null && _localSlot >= 0;
 
             if (_registered != null && _nm.IsServer && !_customProviders)

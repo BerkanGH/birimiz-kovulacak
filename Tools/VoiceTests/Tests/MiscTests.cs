@@ -187,6 +187,9 @@ namespace BirimizKovulacak.VoiceTests
             bool differs = false;
             for (long s = 0; s < 16000 * 6; s += 1600) differs |= a.IsTalkingAt(s) != b.IsTalkingAt(s);
             Assert.IsTrue(differs, "players do not all talk at the same time");
+            var c = SyntheticVoiceSource.Create("sine", 0);
+            c.SetSlot(2);
+            for (long s = 0; s < 16000 * 6; s += 1600) Assert.AreEqual(b.IsTalkingAt(s), c.IsTalkingAt(s), "phase follows the slot");
             var buf = new float[16000];
             a.Read(buf, 0, buf.Length);
             Assert.Greater(Signals.Rms(buf, 0, buf.Length), 0.05f);

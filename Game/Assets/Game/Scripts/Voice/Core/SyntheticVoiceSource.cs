@@ -28,7 +28,7 @@ namespace BirimizKovulacak.Voice
         int _wavPos;
         double _phase, _f1Phase, _f2Phase;
         Biquad _f1, _f2;
-        readonly long _offsetSamples;
+        long _offsetSamples;
 
         public string Description { get; }
 
@@ -66,6 +66,13 @@ namespace BirimizKovulacak.Voice
         }
 
         public bool IsTalking => IsTalkingAt(_sample);
+
+        /// <summary>Re-phases the talk pattern for a player slot (called once the slot is known).</summary>
+        public void SetSlot(int slot)
+        {
+            if (slot < 0) return;
+            _offsetSamples = (long)((slot % 6) * 1.1 * SampleRate);
+        }
 
         /// <summary>Fills buffer[offset..offset+count) with the next samples (16 kHz).</summary>
         public void Read(float[] buffer, int offset, int count)
