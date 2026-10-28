@@ -1,0 +1,27 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <!-- Voice core tests: codec round trips (native libopus + managed Concentus), wire format, jitter buffer,
+       routing rules, VAD, capture gating, resampling, end-to-end simulation and allocation checks. -->
+  <PropertyGroup>
+    <TargetFramework>net8.0</TargetFramework>
+    <LangVersion>9.0</LangVersion>
+    <Nullable>disable</Nullable>
+    <IsPackable>false</IsPackable>
+    <PlatformTarget>x64</PlatformTarget>
+    <EnableDefaultCompileItems>false</EnableDefaultCompileItems>
+  </PropertyGroup>
+  <ItemGroup>
+    <Compile Include="*.cs" />
+  </ItemGroup>
+  <ItemGroup>
+    <PackageReference Include="Microsoft.NET.Test.Sdk" Version="17.11.1" />
+    <PackageReference Include="NUnit" Version="3.14.0" />
+    <PackageReference Include="NUnit3TestAdapter" Version="4.6.0" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="../Core/VoiceCore.csproj" />
+    <Reference Include="Concentus">
+      <HintPath>../../../Game/Assets/Plugins/Concentus/Concentus.dll</HintPath>
+    </Reference>
+    <None Include="../../../Game/Assets/Plugins/Concentus/x86_64/opus.dll" CopyToOutputDirectory="PreserveNewest" Link="opus.dll" />
+  </ItemGroup>
+</Project>
