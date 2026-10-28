@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Globalization;
 using System.IO;
 using BirimizKovulacak.Core;
 using Newtonsoft.Json;
@@ -15,6 +16,23 @@ namespace BirimizKovulacak.Game
     {
         static Dictionary<string, string> _table;
         public static string Language { get; private set; } = "tr";
+
+        static CultureInfo _culture;
+        /// <summary>Turkish casing rules (i -> İ, ı -> I) for upper-case headings.</summary>
+        public static CultureInfo Culture
+        {
+            get
+            {
+                if (_culture == null)
+                {
+                    try { _culture = CultureInfo.GetCultureInfo("tr-TR"); }
+                    catch (Exception) { _culture = CultureInfo.InvariantCulture; }
+                }
+                return _culture;
+            }
+        }
+
+        public static string Upper(string s) { return string.IsNullOrEmpty(s) ? "" : s.ToUpper(Culture); }
 
         static Dictionary<string, string> Table
         {
@@ -48,6 +66,9 @@ namespace BirimizKovulacak.Game
             return Table.TryGetValue(key, out v) ? v : key;
         }
 
+        /// <summary>Value or fallback key's value when the key is missing.</summary>
+        public static string TOr(string key, string fallbackKey) { return Has(key) ? T(key) : T(fallbackKey); }
+
         public static string F(string key, params object[] args)
         {
             try { return string.Format(T(key), args); }
@@ -65,7 +86,7 @@ namespace BirimizKovulacak.Game
             return T("player.default." + id);
         }
 
-        public static string Item(string variant) { return T("item." + variant); }
+        public static string Item(string variant) { return string.IsNullOrEmpty(variant) ? T("common.nothing") : T("item." + variant); }
         public static string Phase(MatchPhase p) { return T("phase." + p); }
         public static string Failure(FailureCode c) { return T("fail." + c); }
         public static string Task(TaskType t) { return T("task." + t); }
@@ -73,6 +94,21 @@ namespace BirimizKovulacak.Game
         public static string Desk(int index) { return F("desk.name", index + 1); }
         public static string ObjectiveName(ObjectiveType t) { return T("objective." + t + ".name"); }
         public static string ObjectiveDesc(ObjectiveType t) { return T("objective." + t + ".desc"); }
+
+        public static string CardName(SabotageType t) { return T("card." + t + ".name"); }
+        public static string CardDesc(SabotageType t) { return T("card." + t + ".desc"); }
+
+        public static string ManagerName(string profileId) { return string.IsNullOrEmpty(profileId) ? T("manager.default.name") : T("manager." + profileId + ".name"); }
+        public static string ManagerTitle(string profileId) { return string.IsNullOrEmpty(profileId) ? T("manager.default.title") : T("manager." + profileId + ".title"); }
+
+        public static string DayName(int day) { return T("week.day." + day); }
+        public static string DayShort(int day) { return T("week.day_short." + day); }
+
+        /// <summary>"room.office" -> "Açık ofis".</summary>
+        public static string Room(string roomId) { return string.IsNullOrEmpty(roomId) ? "" : T(roomId); }
+
+        /// <summary>"cam.office_w" -> "Açık ofis (batı)".</summary>
+        public static string Camera(string cameraId) { return string.IsNullOrEmpty(cameraId) ? "" : T(cameraId); }
 
         public static string Location(string id)
         {
@@ -95,33 +131,44 @@ namespace BirimizKovulacak.Game
                 }
                 return ItemFromId(id);
             }
+            if (id.StartsWith("cam.") || id.StartsWith("room.")) return T(id);
             return Has("loc." + id) ? T("loc." + id) : id;
         }
 
         public static string ItemFromId(string id)
         {
+            if (string.IsNullOrEmpty(id)) return "";
             if (id.StartsWith("item.report")) return Item(ItemVariants.Report);
             if (id.StartsWith("item.mug")) return Item(ItemVariants.Mug);
             if (id.StartsWith("item.nameplate")) return Item(ItemVariants.Nameplate);
             if (id.StartsWith("item.spray")) return Item(ItemVariants.Spray);
             if (id.StartsWith("item.clutter")) return Item(ItemVariants.ClutterPapers);
+            if (id.StartsWith("item.mail")) return Item(ItemVariants.Mail);
             int dot = id.LastIndexOf('.');
             return Item(dot >= 0 ? id.Substring(dot + 1) : id);
         }
 
+        /// <summary>Match clock "mm:ss" since the briefing started (the in-world office clock).</summary>
         public static string Time(double hostTime, PlayerView v)
         {
-            // Match clock (mm:ss since the briefing started) — the in-world "office clock".
-            double start = v != null ? MatchClock.MatchStart : 0;
-            double t = Math.Max(0, hostTime - start);
+            double t = Math.Max(0, hostTime - MatchClock.MatchStart);
             int m = (int)(t / 60), s = (int)(t % 60);
             return m.ToString("00") + ":" + s.ToString("00");
         }
+
+        public static string MatchSeconds(int seconds)
+        {
+            if (seconds < 0) seconds = 0;
+            return (seconds / 60).ToString("00") + ":" + (seconds % 60).ToString("00");
+        }
     }
 
-    /// <summary>Remembers when the current match started (host time of the Briefing start).</summary>
+    /// <summary>Remembers when the current match started (host time of the Briefing start) and when the meeting began.</summary>
     public static class MatchClock
     {
         public static double MatchStart;
+        /// <summary>Host time the meeting (dossier freeze) started; 0 before the meeting.</summary>
+        public static double MeetingStart;
+        public static int MeetingMatchId = -1;
     }
 }
