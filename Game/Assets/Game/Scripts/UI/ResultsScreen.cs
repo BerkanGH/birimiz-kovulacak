@@ -25,7 +25,7 @@ namespace BirimizKovulacak.Game
         readonly ScrollView _scroll;
         readonly HighlightPlayer _clip;
         Tab _tab = Tab.People;
-        int _builtMatch = -1, _builtState = -1, _lastSec = -1, _eotmShownFor = -1, _rematchKey = -1;
+        int _builtMatch = -1, _builtState = -1, _autoTabFor = -1, _lastSec = -1, _eotmShownFor = -1, _rematchKey = -1;
         bool _hasClip, _saving, _cctv;
 
         public ResultsScreen(VisualElement parent) : base(parent)
@@ -103,8 +103,9 @@ namespace BirimizKovulacak.Game
             SetCctv(_tab == Tab.Clip && _hasClip && _clip.Playing);
 
             int state = (v.Result != null ? 1 : 0) + (v.Phase == MatchPhase.Abandoned ? 2 : 0) + (int)_tab * 10;
-            if (_builtMatch != v.MatchId && v.Result != null)
+            if (_autoTabFor != v.MatchId && v.Result != null)
             {
+                _autoTabFor = v.MatchId;
                 // New result: open on the replay when there is one, else on the people reveal.
                 bool clip = v.Result.Highlight != null && v.Result.Highlight.Samples.Count > 0;
                 _tab = clip ? Tab.Clip : Tab.People;
