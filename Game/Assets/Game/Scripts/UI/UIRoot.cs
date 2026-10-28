@@ -1,4 +1,3 @@
-using System;
 using BirimizKovulacak.Core;
 using UnityEngine;
 using UnityEngine.UIElements;
@@ -6,11 +5,12 @@ using UnityEngine.UIElements;
 namespace BirimizKovulacak.Game
 {
     /// <summary>
-    /// UI Toolkit root. All screens are built in code (UiKit helpers + Game.uss) so the UI is reproducible from
-    /// source. Owns cursor policy: the cursor is locked only during free movement in the office.
+    /// UI Toolkit root. All screens are built in code (UiKit + Game.uss) so the UI is reproducible from source.
+    /// Owns screen visibility, Esc / Tab routing and the cursor policy: the cursor is locked only during free
+    /// movement in the office.
     /// </summary>
     [RequireComponent(typeof(UIDocument))]
-    public sealed class UIRoot : MonoBehaviour
+    public sealed class UIRoot : MonoBehaviour, IFeelUi
     {
         public static UIRoot I { get; private set; }
         public StyleSheet Style;
@@ -19,7 +19,7 @@ namespace BirimizKovulacak.Game
         public Font TitleFont;
 
         public static bool PointerOverUI { get; private set; }
-        /// <summary>True when a modal panel (phone, pause, meeting, lobby...) takes the mouse.</summary>
+        /// <summary>True when a modal panel (phone, pause, meeting, lobby...) takes the mouse; gameplay input is ignored.</summary>
         public static bool BlocksGameplay { get; private set; }
 
         VisualElement _root;
@@ -31,9 +31,39 @@ namespace BirimizKovulacak.Game
         ResultsScreen _results;
         PauseMenu _pause;
         BriefingScreen _briefing;
+        SettingsScreen _settings;
+        HowToPlayScreen _howTo;
+        EmailPicker _email;
+        ConfirmDialog _confirm;
         StatusOverlay _status;
+        bool _built;
 
-        void Awake() { I = this; }
+        void Awake()
+        {
+            I = this;
+            UiInput.Initialize();
+            FeelHooks.Ui = this;
+            FeelHooks.UiDrivesResultsStamp = true;
+        }
+
+        // ---- IFeelUi (docs/FEEL.md)
+        public bool TextInputFocused
+        {
+            get
+            {
+                var fc = _root != null && _root.panel != null ? _root.panel.focusController : null;
+                var f = fc != null ? fc.focusedElement as VisualElement : null;
+                return f != null && (f is TextField || f.GetFirstAncestorOfType<TextField>() != null);
+            }
+        }
+
+        public bool DrawsEmoteWheel => _built;
+
+        public void PickEmailTemplate(string pcTargetId, System.Action<int> onPicked)
+        {
+            if (!_built) { onPicked?.Invoke(-1); return; }
+            EmailPicker.Open(pcTargetId, onPicked);
+        }
 
         void Start()
         {
@@ -41,50 +71,77 @@ namespace BirimizKovulacak.Game
             _root = doc.rootVisualElement;
             if (Style != null) _root.styleSheets.Add(Style);
             UiKit.BodyFont = BodyFont; UiKit.BoldFont = BoldFont; UiKit.TitleFont = TitleFont;
+            UiKit.LoadExtraFonts();
             if (BodyFont != null) _root.style.unityFontDefinition = new StyleFontDefinition(BodyFont);
             _root.AddToClassList("root");
+            if (UiArt.KitAvailable) _root.AddToClassList("art");
             _root.pickingMode = PickingMode.Ignore;
 
-            _hud = new Hud(_root);
+            // Layers, bottom to top.
+            var feedLayer = new VisualElement { pickingMode = PickingMode.Ignore };
+            _hud = new Hud(_root, feedLayer);
             _briefing = new BriefingScreen(_root);
             _phone = new PhonePanel(_root);
             _meeting = new MeetingScreen(_root);
             _results = new ResultsScreen(_root);
             _lobby = new LobbyScreen(_root);
             _menu = new MainMenuScreen(_root);
+            feedLayer.style.position = Position.Absolute;
+            feedLayer.style.left = 0; feedLayer.style.top = 0; feedLayer.style.right = 0; feedLayer.style.bottom = 0;
+            _root.Add(feedLayer);
             _pause = new PauseMenu(_root);
+            _howTo = new HowToPlayScreen(_root);
+            _settings = new SettingsScreen(_root);
+            _email = new EmailPicker(_root);
+            _confirm = new ConfirmDialog(_root);
             _status = new StatusOverlay(_root);
-            _root.RegisterCallback<PointerEnterEvent>(_ => { }, TrickleDown.TrickleDown);
+            _built = true;
         }
 
         void Update()
         {
+            if (!_built) return;
             var cs = ClientState.I;
             var conn = ConnectionManager.I;
             var view = cs != null ? cs.View : null;
             bool online = conn != null && (conn.Current == ConnectionManager.State.Hosting || conn.Current == ConnectionManager.State.Connected || conn.Current == ConnectionManager.State.Reconnecting || conn.Current == ConnectionManager.State.Connecting);
             bool inMatch = view != null;
+            MatchPhase phase = inMatch ? view.Phase : MatchPhase.None;
+            bool office = inMatch && GameInfo.OfficePhase(phase);
+            bool meeting = inMatch && GameInfo.MeetingPhase(phase);
+            bool results = inMatch && (phase == MatchPhase.Results || phase == MatchPhase.Abandoned);
 
+            // ---- Esc: close the top-most thing first
             if (GameInput.Pause != null && GameInput.Pause.WasPressedThisFrame())
             {
-                if (_phone.Visible) _phone.Hide();
+                if (Modal.CloseTop()) { }
+                else if (_settings.Visible) _settings.Hide();
+                else if (_howTo.Visible) _howTo.Hide();
+                else if (_phone.Visible) _phone.Hide();
+                else if (!online && _menu.JoinOpen) _menu.ShowJoin(false);
                 else if (online) _pause.Toggle();
             }
-            if (GameInput.Phone != null && GameInput.Phone.WasPressedThisFrame() && inMatch && !_pause.Visible && view.Phase < MatchPhase.MeetingDiscussion)
+            bool overlay = _pause.Visible || _settings.Visible || _howTo.Visible || Modal.AnyOpen;
+            if (GameInput.Phone != null && GameInput.Phone.WasPressedThisFrame() && office && !overlay)
                 _phone.Toggle();
 
             _menu.SetVisible(!online);
             _lobby.SetVisible(online && !inMatch && conn.Current != ConnectionManager.State.Connecting);
             _hud.SetVisible(inMatch);
-            _briefing.SetVisible(inMatch && view.Phase == MatchPhase.Briefing);
-            bool meeting = inMatch && view.Phase >= MatchPhase.MeetingDiscussion && view.Phase <= MatchPhase.MeetingVerdict;
+            _hud.SetOfficeVisible(office);
+            _briefing.SetVisible(inMatch && phase == MatchPhase.Briefing);
             _meeting.SetVisible(meeting);
-            _results.SetVisible(inMatch && (view.Phase == MatchPhase.Results || view.Phase == MatchPhase.Abandoned));
-            if (!inMatch || meeting || view.Phase == MatchPhase.Results) _phone.Hide();
+            _results.SetVisible(results);
+            if (!office) _phone.Hide();
+            if (!online && _pause.Visible) _pause.Hide();
+            if (!inMatch && _email.Visible) _email.Close();
 
-            _menu.Tick(); _lobby.Tick(); _hud.Tick(); _briefing.Tick(); _phone.Tick(); _meeting.Tick(); _results.Tick(); _pause.Tick(); _status.Tick();
+            bool inputAllowed = inMatch && !overlay;
+            _hud.Tick(inputAllowed);
+            _menu.Tick(); _lobby.Tick(); _briefing.Tick(); _phone.Tick(); _meeting.Tick(); _results.Tick(); _pause.Tick();
+            _settings.Tick(); _howTo.Tick(); _email.Tick(); _confirm.Tick(); _status.Tick();
 
-            bool modal = !online || _lobby.Visible || _phone.Visible || _pause.Visible || meeting || _results.Visible || _briefing.Visible && _briefing.WantsCursor;
+            bool modal = !online || _lobby.Visible || _phone.Visible || overlay || meeting || _results.Visible || (_briefing.Visible && _briefing.WantsCursor);
             BlocksGameplay = modal;
             bool wantLock = !modal && inMatch && Application.isFocused && !LaunchArgs.Current.Bot;
             UnityEngine.Cursor.lockState = wantLock ? CursorLockMode.Locked : CursorLockMode.None;
