@@ -87,7 +87,8 @@ namespace BirimizKovulacak.Game
         {
             Section(_body, Loc.T("settings.volumes"), "speaker");
             SliderRow(_body, "settings.volume", 0f, 1f, Sfx.Volume, v => Sfx.Volume = v);
-            SliderRow(_body, "settings.sfx_volume", 0f, 1f, UiSettings.GetFloat(UiSettings.SfxVolumeKey, 1f), v => UiSettings.SetFloat(UiSettings.SfxVolumeKey, v));
+            SliderRow(_body, "settings.sfx_volume", 0f, 1f, Sfx.EffectsVolume, v => Sfx.EffectsVolume = v);
+            SliderRow(_body, "settings.ambience_volume", 0f, 1f, Sfx.AmbienceVolume, v => Sfx.AmbienceVolume = v);
             SliderRow(_body, "settings.voice_volume", 0f, 1f, UiSettings.GetFloat(UiSettings.VoiceVolumeKey, 1f), v => UiSettings.SetFloat(UiSettings.VoiceVolumeKey, v));
 
             Section(_body, Loc.T("settings.player_volumes"), "contacts");
@@ -152,20 +153,19 @@ namespace BirimizKovulacak.Game
                 PlayerPrefs.SetFloat("settings.sensitivity", v);
                 if (CameraRig.I != null) CameraRig.I.Sensitivity = v;
             }, false);
-            Section(_body, Loc.T("settings.bindings"), "info");
-            foreach (var (action, index, label) in GameInput.Rebindable) BindRow(action, index, label, false);
-            foreach (var (action, index, label) in UiInput.Rebindable) BindRow(action, index, label, true);
-            if (UiServices.Voice.Available)
+            SliderRow(_body, "settings.camera_shake", 0f, 1f, PlayerPrefs.GetFloat(UiSettings.CameraShakeKey, 1f), v =>
             {
-                var r = Box("bind-row").AddTo(_body);
-                Text(Loc.T("input.ptt"), "bind-label").AddTo(r);
-                KeyCap(UiServices.Voice.PttKeyLabel).AddTo(r);
-            }
+                PlayerPrefs.SetFloat(UiSettings.CameraShakeKey, v);
+                if (CameraRig.I != null) CameraRig.I.JuiceScale = v;
+            });
+            Section(_body, Loc.T("settings.bindings"), "info");
+            foreach (var (action, index, label) in GameInput.Rebindable) BindRow(action, index, label);
+            Text(Loc.T("settings.quick_emotes"), "t-small", "t-muted").AddTo(_body);
             var row = Box("row", "mt-m").AddTo(_body);
-            Btn(Loc.T("settings.reset_bindings"), () => { GameInput.ResetBindings(); UiInput.ResetBindings(); Build(); }, "btn-small", "btn-ghost").AddTo(row);
+            Btn(Loc.T("settings.reset_bindings"), () => { GameInput.ResetBindings(); Build(); }, "btn-small", "btn-ghost").AddTo(row);
         }
 
-        void BindRow(UnityEngine.InputSystem.InputAction action, int index, string label, bool ui)
+        void BindRow(UnityEngine.InputSystem.InputAction action, int index, string label)
         {
             var r = Box("bind-row").AddTo(_body);
             Text(Loc.T(label), "bind-label").AddTo(r);
@@ -173,8 +173,7 @@ namespace BirimizKovulacak.Game
             b = Btn(GameInput.DisplayName(action, index), () =>
             {
                 b.text = Loc.T("settings.press_key");
-                if (ui) UiInput.StartRebind(action, index, Build);
-                else GameInput.StartRebind(action, index, Build);
+                GameInput.StartRebind(action, index, Build);
             }, "btn-small").AddTo(r);
             b.style.minWidth = 160;
         }

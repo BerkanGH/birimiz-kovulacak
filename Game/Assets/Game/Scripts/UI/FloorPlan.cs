@@ -213,6 +213,7 @@ namespace BirimizKovulacak.Game
         float _speed = 1f;
         int _lastSec = -1;
         bool _playing, _revealed;
+        public bool Playing => _playing;
         string _captionText = "";
 
         public HighlightPlayer(VisualElement parent, float width, float height)

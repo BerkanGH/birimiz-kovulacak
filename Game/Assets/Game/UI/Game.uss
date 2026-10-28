@@ -638,3 +638,4 @@
 .status-text { font-size: 26px; color: rgb(244, 239, 227); }
 .pause { width: 640px; }
 .feed-meeting { top: auto; bottom: 16px; left: 16px; right: auto; align-items: flex-start; }
+.emote-cursor { position: absolute; width: 18px; height: 18px; margin-left: -9px; margin-top: -9px; border-radius: 9px; background-color: rgb(255, 224, 102); border-width: 3px; border-color: rgb(31, 42, 68); }

@@ -66,6 +66,7 @@ namespace BirimizKovulacak.Game
         readonly VisualElement _grid;
         string _target = "";
         int _matchId = -1;
+        Action<int> _onPicked;
 
         public EmailPicker(VisualElement parent) : base(parent)
         {
@@ -82,16 +83,20 @@ namespace BirimizKovulacak.Game
             Btn(Loc.T("common.cancel"), Close, "btn-ghost").AddTo(actions);
         }
 
-        public static void Open(string pcTargetId)
+        /// <summary>Opens the picker; <paramref name="onPicked"/> gets the template index, or -1 when cancelled (exactly once).
+        /// Without a callback the picker sends the request itself.</summary>
+        public static void Open(string pcTargetId, Action<int> onPicked = null)
         {
-            if (_i == null) return;
-            _i.Show(pcTargetId);
+            if (_i == null) { onPicked?.Invoke(-1); return; }
+            _i.Show(pcTargetId, onPicked);
         }
 
-        void Show(string target)
+        void Show(string target, Action<int> onPicked)
         {
+            if (Visible) Finish(-1);
+            _onPicked = onPicked;
             var v = ClientState.I != null ? ClientState.I.View : null;
-            if (v == null) return;
+            if (v == null) { Finish(-1); return; }
             _target = target ?? "";
             _matchId = v.MatchId;
             int desk = EntityIds.DeskIndexOf(_target);
@@ -116,9 +121,23 @@ namespace BirimizKovulacak.Game
         void Pick(int index)
         {
             var v = ClientState.I.View;
-            if (v != null && v.MatchId == _matchId && !string.IsNullOrEmpty(_target))
-                ClientState.I.Send(ActionVerb.SendFakeEmail, _target, index);
+            bool valid = v != null && v.MatchId == _matchId && !string.IsNullOrEmpty(_target);
+            Finish(valid ? index : -1);
             Close();
+        }
+
+        void Finish(int index)
+        {
+            var cb = _onPicked;
+            _onPicked = null;
+            if (cb != null) cb(index);
+            else if (index >= 0) ClientState.I.Send(ActionVerb.SendFakeEmail, _target, index);
+        }
+
+        public override void Close()
+        {
+            if (Visible && _onPicked != null) Finish(-1);
+            base.Close();
         }
 
         public override void Tick()

@@ -1,6 +1,5 @@
 using System;
 using System.Collections.Generic;
-using BirimizKovulacak.Core;
 using UnityEngine;
 using UnityEngine.InputSystem;
 
@@ -48,8 +47,10 @@ namespace BirimizKovulacak.Game
     /// </summary>
     public static class UiSettings
     {
-        public const string MasterVolumeKey = "settings.volume";      // existing (Sfx.Volume -> AudioListener.volume)
-        public const string SfxVolumeKey = "audio.sfx_volume";        // 0..1
+        public const string MasterVolumeKey = "settings.volume";      // Sfx.Volume -> AudioListener.volume
+        public const string AmbienceVolumeKey = "settings.ambience_volume"; // Sfx.AmbienceVolume
+        public const string CameraShakeKey = "settings.camera_shake"; // CameraRig.JuiceScale
+        public const string SfxVolumeKey = "settings.sfx_volume";     // 0..1 (Sfx.EffectsVolume)
         public const string VoiceVolumeKey = "voice.volume";          // 0..1 incoming voice
         public const string VoiceModeKey = "voice.mode";              // 0 = push-to-talk, 1 = open mic (VAD)
         public const string VadThresholdKey = "voice.vad_threshold";  // 0..1 of MicLevel
@@ -76,84 +77,23 @@ namespace BirimizKovulacak.Game
         public static void Save() { PlayerPrefs.Save(); }
     }
 
-    /// <summary>UI-owned keys (separate action map so the gameplay map stays untouched). Rebindable in Settings.</summary>
+    /// <summary>
+    /// UI-only keys. Gameplay keys (emote wheel T + 1-5, answer Y, decline/hang up N, use item G, crouch, push-to-talk)
+    /// live in GameInput and are handled by LocalPlayerController (feel); the UI only displays them.
+    /// </summary>
     public static class UiInput
     {
-        const string PrefsKey = "ui.input.overrides";
         static InputActionAsset _asset;
-        public static InputAction EmoteWheel, AnswerCall, DeclineCall, Confirm;
-        public static readonly List<(InputAction action, int binding, string labelKey)> Rebindable = new List<(InputAction, int, string)>();
+        public static InputAction Confirm;
 
         public static void Initialize()
         {
             if (_asset != null) return;
             _asset = ScriptableObject.CreateInstance<InputActionAsset>();
             var map = _asset.AddActionMap("UI");
-            EmoteWheel = map.AddAction("EmoteWheel", InputActionType.Button, "<Keyboard>/g");
-            AnswerCall = map.AddAction("AnswerCall", InputActionType.Button, "<Keyboard>/y");
-            DeclineCall = map.AddAction("DeclineCall", InputActionType.Button, "<Keyboard>/n");
             Confirm = map.AddAction("Confirm", InputActionType.Button, "<Keyboard>/enter");
-            Rebindable.Clear();
-            Rebindable.Add((EmoteWheel, 0, "input.emote_wheel"));
-            Rebindable.Add((AnswerCall, 0, "input.answer_call"));
-            Rebindable.Add((DeclineCall, 0, "input.decline_call"));
-            string json = PlayerPrefs.GetString(PrefsKey, "");
-            if (!string.IsNullOrEmpty(json))
-            {
-                try { _asset.LoadBindingOverridesFromJson(json); }
-                catch (Exception e) { Debug.LogWarning("[UiInput] " + e.Message); }
-            }
+            Confirm.AddBinding("<Keyboard>/numpadEnter");
             map.Enable();
-        }
-
-        public static string KeyLabel(InputAction a)
-        {
-            if (a == null) return "?";
-            return a.GetBindingDisplayString(0).ToUpperInvariant();
-        }
-
-        public static void StartRebind(InputAction action, int bindingIndex, Action onDone)
-        {
-            action.Disable();
-            action.PerformInteractiveRebinding(bindingIndex)
-                .WithControlsExcluding("<Mouse>/position")
-                .WithControlsExcluding("<Mouse>/delta")
-                .WithCancelingThrough("<Keyboard>/escape")
-                .OnComplete(op => { op.Dispose(); action.Enable(); Save(); onDone?.Invoke(); })
-                .OnCancel(op => { op.Dispose(); action.Enable(); onDone?.Invoke(); })
-                .Start();
-        }
-
-        public static void ResetBindings()
-        {
-            if (_asset == null) return;
-            _asset.RemoveAllBindingOverrides();
-            PlayerPrefs.DeleteKey(PrefsKey);
-        }
-
-        static void Save()
-        {
-            PlayerPrefs.SetString(PrefsKey, _asset.SaveBindingOverridesAsJson());
-            PlayerPrefs.Save();
-        }
-    }
-
-    /// <summary>Hooks the gameplay code calls into the UI.</summary>
-    public static class UiHooks
-    {
-        /// <summary>
-        /// Call from LocalPlayerController.TryOption before sending an affordance. Returns true when the UI took over
-        /// (e.g. SendFakeEmail with IntParam -1 opens the template picker, which sends the request itself).
-        /// </summary>
-        public static bool TryHandleAffordance(Affordance o)
-        {
-            if (o == null) return false;
-            if (o.Verb == ActionVerb.SendFakeEmail && o.IntParam < 0 && o.BlockedBy == FailureCode.None)
-            {
-                EmailPicker.Open(o.TargetId);
-                return true;
-            }
-            return false;
         }
     }
 }

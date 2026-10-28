@@ -109,6 +109,15 @@ namespace BirimizKovulacak.Game
         }
 
         protected override void OnShow() { _lastVersion = -1; }
+        protected override void OnHide() { SetCctv(false); }
+
+        bool _cctv;
+        void SetCctv(bool on)
+        {
+            if (on == _cctv) return;
+            _cctv = on;
+            ScreenFx.SetCctv(on);
+        }
 
         public override void Tick()
         {
@@ -124,6 +133,7 @@ namespace BirimizKovulacak.Game
             if (_cacheMatch != v.MatchId) { _cacheMatch = v.MatchId; _footageCache.Clear(); _lastFootageCount = 0; }
             int sec = (int)System.Math.Ceiling(System.Math.Max(0, v.PhaseEndTime - cs.Now));
             if (sec != _lastSec) { _lastSec = sec; _timer.text = ClockInt(sec); _timer.EnableInClassList("timer-urgent", sec <= 5); }
+            SetCctv(_slide == Slide.Footage && _lastFootageCount > 0);
             if (v.StateVersion == _lastVersion && v.Phase == _lastPhase && !_dirty) return;
             bool phaseChanged = v.Phase != _lastPhase;
             _lastVersion = v.StateVersion;

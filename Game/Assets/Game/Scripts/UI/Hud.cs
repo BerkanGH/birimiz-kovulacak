@@ -18,10 +18,10 @@ namespace BirimizKovulacak.Game
         public enum ToastKind { Info, Good, Warning, Manager, Private }
         static Hud _i;
 
-        /// <summary>The emote wheel is open (UIRoot frees the cursor while it is).</summary>
-        public static bool WheelOpen => _i != null && _i._wheel.Open;
+        /// <summary>The emote wheel is open (state owned by LocalPlayerController; the HUD only draws it).</summary>
+        public static bool WheelOpen => LocalPlayerController.I != null && LocalPlayerController.I.EmoteWheelOpen;
 
-        readonly VisualElement _office, _feed, _darkness;
+        readonly VisualElement _office, _feed;
         // top
         readonly Label _phase, _timer, _dayChip;
         readonly VisualElement _phaseIcon, _mgrChip, _mgrBadge;
@@ -37,17 +37,17 @@ namespace BirimizKovulacak.Game
         readonly VisualElement _crew;
         readonly List<CrewRow> _rows = new List<CrewRow>();
         // prompts
-        readonly PromptRow[] _prompts = new PromptRow[2];
+        readonly PromptRow[] _prompts = new PromptRow[3];
         readonly VisualElement _hold, _holdFill;
         readonly Label _holdLabel;
         // me card
         readonly VisualElement _meBadge, _favorFill, _favorRow, _myPips, _mic, _micIcon, _micFill;
-        readonly Label _carry, _micKey, _micRoute;
+        readonly Label _carry, _micKey, _micRoute, _crouchTag;
         // call
         readonly CallWidget _call;
         // hints
-        readonly Label _hintPhoneKey, _hintDropKey, _hintPoseKey, _hintEmoteKey, _inboxBadge;
-        readonly VisualElement _hintPose;
+        readonly Label _hintPhoneKey, _hintDropKey, _hintPoseKey, _hintEmoteKey, _hintCrouchKey, _inboxBadge;
+        readonly VisualElement _hintPose, _hintCrouch;
         // emotes
         readonly EmoteWheel _wheel;
         // toasts
@@ -66,8 +66,6 @@ namespace BirimizKovulacak.Game
             _i = this;
             Root.pickingMode = PickingMode.Ignore;
             _office = Box("hud").NoPick().AddTo(Root);
-            _darkness = Box("dark-vignette").NoPick().AddTo(_office);
-            _darkness.Show(false);
 
             // ---- phase pill + manager chip
             var top = Box("hud-top").NoPick().AddTo(_office);
@@ -129,6 +127,8 @@ namespace BirimizKovulacak.Game
             Text(Loc.T("hud.suspicion"), "meter-label").NoPick().AddTo(susRow);
             _myPips = Pips(0).AddTo(susRow);
             _carry = Text("", "carry-text").NoPick().AddTo(meters);
+            _crouchTag = Tag(Loc.T("hud.crouched"), "tag-teal").AddTo(meters);
+            _crouchTag.Show(false);
             _mic = Box("mic").NoPick().AddTo(me);
             _micIcon = Icon("mic_on").AddTo(_mic);
             var lvl = Box("mic-level").NoPick().AddTo(_mic);
@@ -144,6 +144,7 @@ namespace BirimizKovulacak.Game
 
             // ---- hints
             var hints = Box("hints").NoPick().AddTo(_office);
+            _hintCrouchKey = Hint(hints, "hint.crouch", out _hintCrouch);
             _hintEmoteKey = Hint(hints, "hint.emote", out _);
             _hintDropKey = Hint(hints, "hint.drop", out _);
             _hintPoseKey = Hint(hints, "hint.work_pose", out _hintPose);
@@ -191,7 +192,8 @@ namespace BirimizKovulacak.Game
             _i._hintPhoneKey.text = GameInput.KeyLabel(GameInput.Phone);
             _i._hintDropKey.text = GameInput.KeyLabel(GameInput.Drop);
             _i._hintPoseKey.text = GameInput.KeyLabel(GameInput.WorkPose);
-            _i._hintEmoteKey.text = UiInput.KeyLabel(UiInput.EmoteWheel);
+            _i._hintEmoteKey.text = GameInput.KeyLabel(GameInput.EmoteWheel);
+            _i._hintCrouchKey.text = GameInput.KeyLabel(GameInput.Crouch) + " / " + GameInput.KeyLabel(GameInput.CrouchToggle);
             _i._call.RefreshKeys();
             _i._promptSig = int.MinValue;
         }
@@ -203,11 +205,11 @@ namespace BirimizKovulacak.Game
             _officeVisible = office;
             _office.Show(office);
             _feed.EnableInClassList("feed-meeting", !office);
-            if (!office) _wheel.Close();
+
         }
 
         protected override void OnShow() { _lastVersion = -1; _feed.Show(true); RefreshKeys(); }
-        protected override void OnHide() { _feed.Show(false); _wheel.Close(); }
+        protected override void OnHide() { _feed.Show(false); }
 
         // ------------------------------------------------------------------ toasts
 
@@ -256,13 +258,8 @@ namespace BirimizKovulacak.Game
                 case EventType.InteractionCompleted: Sfx.Play("place", 0.6f); break;
                 case EventType.AccusationFiled: Sfx.Play("evidence", 0.7f); break;
                 case EventType.BallotCast: Sfx.Play("vote"); break;
-                case EventType.IncomingCall: if (e.Actor == ClientState.I.MySlot) Sfx.Play("phone_ring"); break;
-                case EventType.SurpriseInspection: Sfx.Play("siren", 0.8f); CameraRig.I?.Shake(0.3f); break;
-                case EventType.InternetDown:
-                case EventType.PowerDown: Sfx.Play("sabotage"); break;
-                case EventType.EmailSent: Sfx.Play("toast"); break;
                 case EventType.FavorChanged: FlashFavour(e.Actor); break;
-                case EventType.CoffeeTasted: Sfx.Play(e.IntArg == 1 ? "deny" : "complete", 0.6f); break;
+                // IncomingCall, calls, e-mail, outages, plugs, surprise, mail, tasting: FeelDirector plays those sounds.
             }
         }
 
@@ -352,12 +349,13 @@ namespace BirimizKovulacak.Game
                 Rebuild(v, now);
             }
 
-            _wheel.Tick(inputAllowed && v.Phase != MatchPhase.Abandoned && v.Phase != MatchPhase.None);
+            _wheel.Tick(LocalPlayerController.I);
             if (!_officeVisible) return;
             TickTimers(v, now);
             TickPrompts(v, now);
-            _call.Tick(v, now, inputAllowed);
+            _call.Tick(v, now);
             TickVoice(v);
+            TickVisibility(v);
         }
 
         public override void Tick() { Tick(true); }
@@ -421,7 +419,6 @@ namespace BirimizKovulacak.Game
             // office status
             _bannerNet.Show(v.Office.InternetDown);
             _bannerPower.Show(v.Office.PowerDown);
-            _darkness.Show(v.Office.PowerDown);
             if (!v.Office.InternetDown) _lastNetSec = -1;
             if (!v.Office.PowerDown) _lastPowerSec = -1;
 
@@ -462,6 +459,8 @@ namespace BirimizKovulacak.Game
                 string ct = string.IsNullOrEmpty(carrying) ? Loc.T("hud.hands_empty") : Loc.F("hud.carrying", carrying);
                 if (ct != _carryText) { _carryText = ct; _carry.text = ct; }
                 _hintPose.EnableInClassList("hint-on", me.WorkPose);
+                _crouchTag.Show(me.Crouched);
+                _hintCrouch.EnableInClassList("hint-on", me.Crouched);
             }
 
             // inbox badge
@@ -472,33 +471,38 @@ namespace BirimizKovulacak.Game
             _call.Rebuild(v);
         }
 
+        static int Sig(int sig, Affordance o)
+        {
+            sig = sig * 31 + (int)o.Verb;
+            sig = sig * 31 + (o.LabelKey != null ? o.LabelKey.GetHashCode() : 0);
+            sig = sig * 31 + (o.TargetId != null ? o.TargetId.GetHashCode() : 0);
+            return sig * 31 + (int)o.BlockedBy + (o.IsSabotage ? 1000 : 0);
+        }
+
         void TickPrompts(PlayerView v, double now)
         {
+            var lp = LocalPlayerController.I;
             var me = v.Me;
             var active = me != null ? me.ActiveInteraction : null;
             bool busy = active != null && active.Verb != ActionVerb.None;
-            var lp = LocalPlayerController.I;
-            var options = lp != null && LocalPlayerController.OfficePhase(v.Phase) && !busy ? lp.Options : null;
+            bool office = LocalPlayerController.OfficePhase(v.Phase);
+            var options = lp != null && office && !busy ? lp.Options : null;
+            var held = lp != null && office && !busy ? lp.HeldOption : null;
 
             int sig = busy ? (int)active.Verb * 7919 + 1 : 17;
-            if (options != null)
-                for (int i = 0; i < options.Count && i < 2; i++)
-                {
-                    var o = options[i];
-                    sig = sig * 31 + (int)o.Verb;
-                    sig = sig * 31 + (o.LabelKey != null ? o.LabelKey.GetHashCode() : 0);
-                    sig = sig * 31 + (o.TargetId != null ? o.TargetId.GetHashCode() : 0);
-                    sig = sig * 31 + (int)o.BlockedBy + (o.IsSabotage ? 1000 : 0);
-                }
+            if (options != null) for (int i = 0; i < options.Count && i < 2; i++) sig = Sig(sig, options[i]);
+            if (held != null) sig = Sig(sig * 7, held);
             if (sig != _promptSig)
             {
                 _promptSig = sig;
-                string k0 = GameInput.KeyLabel(GameInput.Interact), k1 = GameInput.KeyLabel(GameInput.Secondary);
-                for (int i = 0; i < _prompts.Length; i++)
+                int row = 0;
+                if (options != null)
                 {
-                    if (options != null && i < options.Count) _prompts[i].Set(options[i], i == 0 ? k0 : k1);
-                    else _prompts[i].Hide();
+                    string k0 = GameInput.KeyLabel(GameInput.Interact), k1 = GameInput.KeyLabel(GameInput.Secondary);
+                    for (int i = 0; i < options.Count && i < 2; i++) _prompts[row++].Set(options[i], i == 0 ? k0 : k1);
                 }
+                if (held != null) _prompts[row++].Set(held, GameInput.KeyLabel(GameInput.UseItem));
+                for (; row < _prompts.Length; row++) _prompts[row].Hide();
                 _hold.Show(busy);
                 _holdLabel.Show(busy);
                 if (busy)
@@ -509,10 +513,22 @@ namespace BirimizKovulacak.Game
             }
             if (busy)
             {
-                double total = active.EndTime - active.StartTime;
-                float f = total <= 0 ? 1f : (float)((now - active.StartTime) / total);
+                float f;
+                if (lp != null && lp.InteractionProgress >= 0f) f = lp.InteractionProgress;
+                else
+                {
+                    double total = active.EndTime - active.StartTime;
+                    f = total <= 0 ? 1f : (float)((now - active.StartTime) / total);
+                }
                 _holdFill.style.width = Length.Percent(Mathf.Clamp01(f) * 100f);
             }
+        }
+
+        /// <summary>Per-player overlays (speaking ring, on-call / ringing flags) fade with line of sight so the HUD never leaks what walls hide.</summary>
+        void TickVisibility(PlayerView v)
+        {
+            bool los = AvatarVisibility.AppliesIn(v.Phase);
+            for (int i = 0; i < _rows.Count; i++) _rows[i].TickVisibility(los);
         }
 
         void TickVoice(PlayerView v)
@@ -658,6 +674,18 @@ namespace BirimizKovulacak.Game
 
             public void Hide() { Root.Show(false); Player = -1; }
 
+            int _alphaQ = 10;
+            public void TickVisibility(bool los)
+            {
+                int q = los && Player >= 0 ? Mathf.RoundToInt(AvatarVisibility.Alpha(Player) * 10f) : 10;
+                if (q == _alphaQ) return;
+                _alphaQ = q;
+                float a = q / 10f;
+                _callFlag.style.opacity = a;
+                _ringFlag.style.opacity = a;
+                _ring.style.opacity = a;
+            }
+
             public void TickSpeaking(IVoiceUi voice)
             {
                 bool s = voice != null && Player >= 0 && voice.IsSpeaking(Player);
@@ -733,11 +761,11 @@ namespace BirimizKovulacak.Game
             }
         }
 
-        /// <summary>Incoming / outgoing / active call with hotkeys (answer, decline / hang up).</summary>
+        /// <summary>Incoming / outgoing / active call. Keys (answer / decline-hang up) are handled by LocalPlayerController; the buttons work when the cursor is free.</summary>
         sealed class CallWidget
         {
             readonly VisualElement _root, _badge;
-            readonly Label _title, _name, _timer;
+            readonly Label _title, _name, _timer, _declineLabel;
             readonly Button _answer, _decline;
             readonly Label _answerKey, _declineKey;
             CallState _state;
@@ -753,20 +781,19 @@ namespace BirimizKovulacak.Game
                 _name = Title("", "call-name").AddTo(col);
                 _timer = Bold("", "call-timer").AddTo(col);
                 var actions = Box("call-actions").AddTo(col);
-                _answer = IconBtn("call", "", Answer, "btn-primary", "btn-small").AddTo(actions);
+                _answer = Btn("", Answer, "btn-primary", "btn-small", "btn-icon").AddTo(actions);
                 _answerKey = KeyCap("Y").AddTo(_answer);
-                _answer.Q<Label>(className: "btn-label")?.RemoveFromHierarchy();
                 Bold(Loc.T("call.answer"), "btn-label").NoPick().AddTo(_answer);
-                _decline = IconBtn("hang_up", "", Decline, "btn-danger", "btn-small").AddTo(actions);
+                _decline = Btn("", Decline, "btn-danger", "btn-small", "btn-icon").AddTo(actions);
                 _declineKey = KeyCap("N").AddTo(_decline);
-                Bold("", "btn-label").NoPick().AddTo(_decline);
+                _declineLabel = Bold("", "btn-label").NoPick().AddTo(_decline);
                 _root.Show(false);
             }
 
             public void RefreshKeys()
             {
-                _answerKey.text = UiInput.KeyLabel(UiInput.AnswerCall);
-                _declineKey.text = UiInput.KeyLabel(UiInput.DeclineCall);
+                _answerKey.text = GameInput.KeyLabel(GameInput.AnswerCall);
+                _declineKey.text = GameInput.KeyLabel(GameInput.HangUp);
             }
 
             public void Rebuild(PlayerView v)
@@ -785,12 +812,11 @@ namespace BirimizKovulacak.Game
                 _root.EnableInClassList("call-active", st == CallState.Active);
                 _title.text = Loc.T("call.state." + st);
                 _answer.Show(st == CallState.RingingIn);
-                var declineLabel = _decline.Q<Label>(className: "btn-label");
-                if (declineLabel != null) declineLabel.text = Loc.T(st == CallState.Active ? "call.hang_up" : st == CallState.RingingOut ? "call.cancel" : "call.decline");
+                _declineLabel.text = Loc.T(st == CallState.Active ? "call.hang_up" : st == CallState.RingingOut ? "call.cancel" : "call.decline");
                 Pop(_root);
             }
 
-            public void Tick(PlayerView v, double now, bool inputAllowed)
+            public void Tick(PlayerView v, double now)
             {
                 if (_state == CallState.None) return;
                 var c = v.Me.Call;
@@ -800,106 +826,79 @@ namespace BirimizKovulacak.Game
                     _lastSec = sec;
                     _timer.text = _state == CallState.Active ? ClockInt(sec) + " / " + ClockInt((int)(c.Until - c.Since)) : ClockInt(sec);
                 }
-                if (!inputAllowed || Time.unscaledTime - _sentAt < 0.4f) return;
-                if (_state == CallState.RingingIn && UiInput.AnswerCall.WasPressedThisFrame()) Answer();
-                else if (UiInput.DeclineCall.WasPressedThisFrame()) Decline();
             }
 
             void Answer()
             {
-                if (_state != CallState.RingingIn) return;
+                if (_state != CallState.RingingIn || Time.unscaledTime - _sentAt < 0.4f) return;
                 _sentAt = Time.unscaledTime;
                 ClientState.I.Send(ActionVerb.AnswerCall);
             }
 
             void Decline()
             {
-                if (_state == CallState.None) return;
+                if (_state == CallState.None || Time.unscaledTime - _sentAt < 0.4f) return;
                 _sentAt = Time.unscaledTime;
                 ClientState.I.Send(_state == CallState.Active ? ActionVerb.HangUp : ActionVerb.DeclineCall);
             }
         }
 
-        /// <summary>Hold the emote key: wheel with five emotes (mouse direction or 1-5), release to send.</summary>
+        /// <summary>
+        /// Draws LocalPlayerController's emote wheel (hold T, mouse direction, release; 1-5 quick keys). Input and sending
+        /// stay in the player controller; this only mirrors its state (open / selection / cursor), allocation-free.
+        /// </summary>
         sealed class EmoteWheel
         {
-            readonly VisualElement _root;
+            readonly VisualElement _root, _cursor;
             readonly VisualElement[] _slots = new VisualElement[5];
-            int _hot = -1;
-            float _openedAt;
-            public bool Open { get; private set; }
+            int _hot = -2;
+            bool _open;
+            Vector2 _lastCursor = new Vector2(float.NaN, 0f);
 
             public EmoteWheel(VisualElement parent)
             {
-                _root = Box("emote-wheel").AddTo(parent);
+                _root = Box("emote-wheel").NoPick().AddTo(parent);
                 Box("emote-ring").NoPick().AddTo(_root);
                 Bold(Loc.T("emote.title"), "emote-center").NoPick().AddTo(_root);
-                for (int i = 0; i < 5; i++)
+                var emotes = LocalPlayerController.WheelEmotes;
+                for (int i = 0; i < _slots.Length; i++)
                 {
-                    int index = i;
                     float a = i * 72f * Mathf.Deg2Rad;
-                    var s = Box("emote-slot").AddTo(_root);
+                    var s = Box("emote-slot").NoPick().AddTo(_root);
                     s.style.left = 210f + 150f * Mathf.Sin(a);
                     s.style.top = 210f - 150f * Mathf.Cos(a);
-                    Icon(UiArt.EmoteIcon(i)).AddTo(s);
-                    Bold((i + 1) + " · " + Loc.T("emote." + (EmoteId)i), "emote-label").NoPick().AddTo(s);
-                    s.RegisterCallback<PointerEnterEvent>(_ => SetHot(index));
-                    s.RegisterCallback<ClickEvent>(_ => { Send(index); Close(); });
+                    int emote = i < emotes.Length ? (int)emotes[i] : i;
+                    Icon(UiArt.EmoteIcon(emote)).AddTo(s);
+                    Bold((i + 1) + " · " + Loc.T("emote." + (EmoteId)emote), "emote-label").NoPick().AddTo(s);
                     _slots[i] = s;
                 }
+                _cursor = Box("emote-cursor").NoPick().AddTo(_root);
                 _root.Show(false);
             }
 
-            public void Close()
+            public void Tick(LocalPlayerController lp)
             {
-                if (!Open) return;
-                Open = false;
-                _root.Show(false);
-                SetHot(-1);
-            }
-
-            void SetHot(int i)
-            {
-                if (i == _hot) return;
-                _hot = i;
-                for (int k = 0; k < _slots.Length; k++) _slots[k].EnableInClassList("emote-slot-hot", k == i);
-            }
-
-            static void Send(int i)
-            {
-                if (i < 0) return;
-                ClientState.I.Send(ActionVerb.Emote, "", i);
-                Sfx.Play("click");
-            }
-
-            public void Tick(bool allowed)
-            {
-                var key = UiInput.EmoteWheel;
-                if (!allowed || key == null) { Close(); return; }
-                if (!Open)
+                bool open = lp != null && lp.EmoteWheelOpen;
+                if (open != _open)
                 {
-                    if (key.WasPressedThisFrame()) { Open = true; _openedAt = Time.unscaledTime; _root.Show(true); Pop(_root); SetHot(-1); }
-                    return;
+                    _open = open;
+                    _root.Show(open);
+                    if (open) Pop(_root);
                 }
-                var kb = Keyboard.current;
-                if (kb != null)
-                    for (int i = 0; i < 5; i++)
-                        if (kb[Key.Digit1 + i].wasPressedThisFrame) { Send(i); Close(); return; }
-                var mouse = Mouse.current;
-                if (mouse != null)
+                if (!open) return;
+                int sel = lp.EmoteWheelSelection;
+                if (sel != _hot)
                 {
-                    Vector2 d = mouse.position.ReadValue() - new Vector2(UnityEngine.Screen.width * 0.5f, UnityEngine.Screen.height * 0.5f);
-                    if (d.sqrMagnitude > 40f * 40f)
-                    {
-                        float ang = Mathf.Atan2(d.x, d.y) * Mathf.Rad2Deg; // 0 = up, clockwise
-                        if (ang < 0) ang += 360f;
-                        SetHot(Mathf.RoundToInt(ang / 72f) % 5);
-                    }
+                    _hot = sel;
+                    for (int k = 0; k < _slots.Length; k++) _slots[k].EnableInClassList("emote-slot-hot", k == sel);
                 }
-                if (key.WasReleasedThisFrame())
+                Vector2 c = lp.EmoteWheelCursor;
+                if (c != _lastCursor)
                 {
-                    if (_hot >= 0 && Time.unscaledTime - _openedAt > 0.12f) Send(_hot);
-                    Close();
+                    _lastCursor = c;
+                    float scale = 150f / LocalPlayerController.EmoteWheelRadius;
+                    _cursor.style.left = 210f + c.x * scale;
+                    _cursor.style.top = 210f - c.y * scale;
                 }
             }
         }

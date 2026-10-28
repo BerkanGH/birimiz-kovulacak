@@ -26,7 +26,7 @@ namespace BirimizKovulacak.Game
         readonly HighlightPlayer _clip;
         Tab _tab = Tab.People;
         int _builtMatch = -1, _builtState = -1, _lastSec = -1, _eotmShownFor = -1, _rematchKey = -1;
-        bool _hasClip, _saving;
+        bool _hasClip, _saving, _cctv;
 
         public ResultsScreen(VisualElement parent) : base(parent, "dim-soft")
         {
@@ -99,6 +99,7 @@ namespace BirimizKovulacak.Game
                 _timer.text = v.Phase == MatchPhase.Results ? Loc.F("results.next_in", ClockInt(sec)) : "";
             }
             if (_tab == Tab.Clip && _hasClip) _clip.Tick(Time.unscaledDeltaTime);
+            SetCctv(_tab == Tab.Clip && _hasClip && _clip.Playing);
 
             int state = (v.Result != null ? 1 : 0) + (v.Phase == MatchPhase.Abandoned ? 2 : 0) + (int)_tab * 10;
             if (_builtMatch != v.MatchId && v.Result != null)
@@ -222,13 +223,32 @@ namespace BirimizKovulacak.Game
             _stamp.EnableInClassList("stamp-fallback", !art);
             if (!art) StampText(Loc.T(fired >= 0 ? "results.stamp_fired" : "results.stamp_saved")).AddTo(_stamp);
             _stamp.AddToClassList("stamp-start");
+            _stamp.schedule.Execute(() => _stamp.RemoveFromClassList("stamp-start")).StartingIn(700);
             _stamp.schedule.Execute(() =>
             {
-                _stamp.RemoveFromClassList("stamp-start");
-                Sfx.Play("fired");
-                CameraRig.I?.Shake(0.25f);
-            }).StartingIn(700);
+                // The stamp lands: feel plays the thump, ink burst and camera punch at this screen point.
+                FeelHooks.ResultsStamp(ScreenPoint(_stamp));
+                if (fired >= 0) _stamp.schedule.Execute(() => Sfx.Play("fired", 0.8f)).StartingIn(350);
+            }).StartingIn(920);
         }
+
+        /// <summary>Centre of an element in screen pixels (origin bottom-left).</summary>
+        static Vector2 ScreenPoint(VisualElement e)
+        {
+            Rect wb = e.worldBound;
+            float w = e.panel != null ? e.panel.visualTree.worldBound.width : UnityEngine.Screen.width;
+            float scale = w > 0 ? UnityEngine.Screen.width / w : 1f;
+            return new Vector2(wb.center.x * scale, UnityEngine.Screen.height - wb.center.y * scale);
+        }
+
+        void SetCctv(bool on)
+        {
+            if (on == _cctv) return;
+            _cctv = on;
+            ScreenFx.SetCctv(on);
+        }
+
+        protected override void OnHide() { SetCctv(false); }
 
         static string Reason(PlayerView v, MatchResultView r)
         {

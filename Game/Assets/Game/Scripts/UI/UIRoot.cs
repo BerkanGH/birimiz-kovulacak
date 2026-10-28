@@ -10,7 +10,7 @@ namespace BirimizKovulacak.Game
     /// movement in the office.
     /// </summary>
     [RequireComponent(typeof(UIDocument))]
-    public sealed class UIRoot : MonoBehaviour
+    public sealed class UIRoot : MonoBehaviour, IFeelUi
     {
         public static UIRoot I { get; private set; }
         public StyleSheet Style;
@@ -42,6 +42,27 @@ namespace BirimizKovulacak.Game
         {
             I = this;
             UiInput.Initialize();
+            FeelHooks.Ui = this;
+            FeelHooks.UiDrivesResultsStamp = true;
+        }
+
+        // ---- IFeelUi (docs/FEEL.md)
+        public bool TextInputFocused
+        {
+            get
+            {
+                var fc = _root != null && _root.panel != null ? _root.panel.focusController : null;
+                var f = fc != null ? fc.focusedElement as VisualElement : null;
+                return f != null && (f is TextField || f.GetFirstAncestorOfType<TextField>() != null);
+            }
+        }
+
+        public bool DrawsEmoteWheel => _built;
+
+        public void PickEmailTemplate(string pcTargetId, System.Action<int> onPicked)
+        {
+            if (!_built) { onPicked?.Invoke(-1); return; }
+            EmailPicker.Open(pcTargetId, onPicked);
         }
 
         void Start()
@@ -96,7 +117,6 @@ namespace BirimizKovulacak.Game
                 if (Modal.CloseTop()) { }
                 else if (_settings.Visible) _settings.Hide();
                 else if (_howTo.Visible) _howTo.Hide();
-                else if (Hud.WheelOpen) { }
                 else if (_phone.Visible) _phone.Hide();
                 else if (!online && _menu.JoinOpen) _menu.ShowJoin(false);
                 else if (online) _pause.Toggle();
@@ -121,7 +141,7 @@ namespace BirimizKovulacak.Game
             _menu.Tick(); _lobby.Tick(); _briefing.Tick(); _phone.Tick(); _meeting.Tick(); _results.Tick(); _pause.Tick();
             _settings.Tick(); _howTo.Tick(); _email.Tick(); _confirm.Tick(); _status.Tick();
 
-            bool modal = !online || _lobby.Visible || _phone.Visible || overlay || meeting || _results.Visible || (_briefing.Visible && _briefing.WantsCursor) || Hud.WheelOpen;
+            bool modal = !online || _lobby.Visible || _phone.Visible || overlay || meeting || _results.Visible || (_briefing.Visible && _briefing.WantsCursor);
             BlocksGameplay = modal;
             bool wantLock = !modal && inMatch && Application.isFocused && !LaunchArgs.Current.Bot;
             UnityEngine.Cursor.lockState = wantLock ? CursorLockMode.Locked : CursorLockMode.None;

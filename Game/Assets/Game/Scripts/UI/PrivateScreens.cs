@@ -140,11 +140,12 @@ namespace BirimizKovulacak.Game
             Ctl(s, GameInput.KeyLabel(GameInput.Interact) + " / " + GameInput.KeyLabel(GameInput.Secondary), "ctl.interact");
             Ctl(s, GameInput.KeyLabel(GameInput.Drop), "ctl.drop");
             Ctl(s, GameInput.KeyLabel(GameInput.WorkPose), "ctl.work_pose");
-            Ctl(s, GameInput.KeyLabel(GameInput.Slow), "ctl.slow");
+            Ctl(s, GameInput.KeyLabel(GameInput.UseItem), "ctl.use_item");
+            Ctl(s, GameInput.KeyLabel(GameInput.Crouch) + " / " + GameInput.KeyLabel(GameInput.CrouchToggle), "ctl.crouch");
             Ctl(s, GameInput.KeyLabel(GameInput.Phone), "ctl.phone");
-            Ctl(s, UiInput.KeyLabel(UiInput.EmoteWheel), "ctl.emote");
-            Ctl(s, UiInput.KeyLabel(UiInput.AnswerCall) + " / " + UiInput.KeyLabel(UiInput.DeclineCall), "ctl.call");
-            if (UiServices.Voice.Available) Ctl(s, UiServices.Voice.PttKeyLabel, "ctl.ptt");
+            Ctl(s, GameInput.KeyLabel(GameInput.EmoteWheel) + " · 1–5", "ctl.emote");
+            Ctl(s, GameInput.KeyLabel(GameInput.AnswerCall) + " / " + GameInput.KeyLabel(GameInput.HangUp), "ctl.call");
+            Ctl(s, GameInput.KeyLabel(GameInput.PushToTalk), "ctl.ptt");
         }
 
         static void Ctl(VisualElement parent, string key, string labelKey)

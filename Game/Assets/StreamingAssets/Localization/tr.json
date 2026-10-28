@@ -3,7 +3,6 @@
   "game.title_1": "BİRİMİZ",
   "game.title_2": "KOVULACAK",
   "game.tagline": "Ofisi birlikte kurtar. Sonra suçu arkadaşına at.",
-
   "player.default.0": "Mavi",
   "player.default.1": "Sarı",
   "player.default.2": "Pembe",
@@ -16,7 +15,6 @@
   "player.bot.3": "Bot Yeşil",
   "player.bot.4": "Bot Turuncu",
   "player.bot.5": "Bot Mor",
-
   "common.nobody": "kimse",
   "common.player": "Çalışan",
   "common.nothing": "hiçbir şey",
@@ -26,7 +24,6 @@
   "common.back": "Geri",
   "common.cancel": "Vazgeç",
   "common.unknown": "bilinmiyor",
-
   "menu.name": "Adın",
   "menu.host": "Lobi Kur",
   "menu.join": "Lobiye Katıl",
@@ -38,7 +35,6 @@
   "menu.address": "Adres (IP)",
   "menu.port": "Port",
   "menu.version": "Sürüm {0}",
-
   "join.title": "Lobiye Katıl",
   "join.port_help": "Lobi kurarken de bu port kullanılır (UDP).",
   "join.connect": "Bağlan",
@@ -46,7 +42,6 @@
   "join.no_recent": "Henüz kimseye bağlanmadın.",
   "join.use": "Bağlan",
   "join.need_address": "Önce bir adres yaz.",
-
   "lobby.title": "Lobi",
   "lobby.empty": "Boş koltuk",
   "lobby.look": "Karakter: {0}",
@@ -75,10 +70,8 @@
   "lobby.running": "Maç sürüyor.",
   "lobby.host_addresses": "Arkadaşların şu adreslerden birine bağlanabilir: {0} (port {1}, UDP). İnternetten oynamak için portu yönlendir ya da Tailscale / ZeroTier gibi bir sanal ağ kullan.",
   "lobby.connected_to": "Bağlanılan ev sahibi: {0}",
-
   "mode.QuickPlay": "Hızlı Oyun",
   "mode.Week": "İş Haftası",
-
   "net.connecting": "Bağlanılıyor…",
   "net.reconnecting": "Bağlantı koptu, yeniden bağlanılıyor…",
   "net.reconnecting_s": "Bağlantı koptu — yeniden bağlanılıyor ({0} sn)",
@@ -92,14 +85,12 @@
   "reject.full": "Lobi dolu (6/6).",
   "reject.in_progress": "Maç zaten başladı.",
   "reject.not_host": "Bu adreste bir lobi yok.",
-
   "pause.title": "Mola",
   "pause.resume": "Devam et",
   "pause.return_lobby": "Maçı bitir, lobiye dön",
   "pause.return_lobby_confirm": "Maç bitirilip herkes lobiye dönsün mü?",
   "pause.leave": "Ana menüye dön",
   "pause.leave_confirm": "Maçtan ayrılıyorsun. 30 saniye içinde dönmezsen maç herkes için iptal olur. Emin misin?",
-
   "settings.tab.audio": "Ses",
   "settings.tab.mic": "Mikrofon",
   "settings.tab.controls": "Kontroller",
@@ -133,7 +124,6 @@
   "settings.language": "Dil",
   "settings.lang_tr": "Türkçe",
   "settings.language_soon": "Başka diller yakında. (Belki.)",
-
   "input.move_up": "İleri",
   "input.move_down": "Geri",
   "input.move_left": "Sol",
@@ -142,15 +132,13 @@
   "input.secondary": "Etkileşim (ikincil)",
   "input.drop": "Bırak",
   "input.work_pose": "Çalışıyormuş gibi yap",
-  "input.slow": "Yavaş yürü",
+  "input.slow": "Eğil (basılı tut)",
   "input.phone": "Telefon",
   "input.emote_wheel": "Mimik çarkı (basılı tut)",
   "input.answer_call": "Aramayı aç",
   "input.decline_call": "Aramayı reddet / kapat",
   "input.ptt": "Bas-konuş",
-
   "help.title": "Nasıl oynanır?",
-
   "howto.prev": "Geri",
   "howto.next": "İleri",
   "howto.done": "Anladım!",
@@ -160,7 +148,7 @@
   "howto.0.line.2": "Herkesin gizli bir hedefi var: birini kovdurmak, birini korumak, en çalışkan görünmek…",
   "howto.0.line.3": "İçinizden biri gizlice İK Muhbiri: gerçekte en çok suistimal yapanı kovdurmaya çalışır.",
   "howto.1.title": "İş yap, kotayı doldur",
-  "howto.1.line.0": "Kahve: kupayı al, makinede demle, müdürün evrak tepsisine teslim et.",
+  "howto.1.line.0": "Kahve: kupayı al, makinede demle, müdürün evrak tepsisine teslim et. Şüphelenirsen önce tadına bak (G).",
   "howto.1.line.1": "Rapor: masandaki bilgisayarda yaz, yazıcıdan al, müdüre götür.",
   "howto.1.line.2": "Ofis telefonu çalınca koş ve aç.",
   "howto.1.line.3": "Posta: resepsiyondan zarfı al, üstündeki masaya bırak. Başkasının masasında dolaşmak için harika bahane.",
@@ -169,23 +157,22 @@
   "howto.2.line.0": "Herkes temel sabotaj yapabilir: isimlik değiştir, şüpheli eşya bırak, rapor sakla, kahve dök.",
   "howto.2.line.1": "Gizli kartların ek sabotajlar açar: sahte e-posta, fiş çekme, tuzlu kahve, internet ya da elektrik kesintisi.",
   "howto.2.line.2": "Rapor yazınca ekranın bir dakika açık kalır. Kilitlemezsen biri senin adına e-posta atar!",
-  "howto.2.line.3": "Görülürsen tanıkların telefonuna not düşer. Elektrik kesikken kimse uzağı göremez, kameralar kayıt yapmaz.",
+  "howto.2.line.3": "Görülürsen tanıkların telefonuna not düşer. Eğilerek (Sol Ctrl / C) sinsi yürürsen daha az fark edilirsin. Elektrik kesikken kimse uzağı göremez.",
   "howto.3.title": "Müdür ve denetimler",
   "howto.3.line.0": "Her gün başka bir müdür: Paragöz, Disiplinci, Kayırmacı, Paranoyak. Neyi sevdiğini brifingde oku.",
   "howto.3.line.1": "Alarm çalınca müdür tura çıkar: masana dön, çalışıyormuş gibi yap (R), delilleri sakla.",
   "howto.3.line.2": "Müdür gördüğüne inanır — isimliklere bile. Gözlemleri şüphe göstergeni doldurur.",
   "howto.3.line.3": "Bazı müdürler torpil dağıtır: en çok torpili olanın kovulma puanı düşer.",
   "howto.4.title": "Telefon: konuş, kandır, kovdur",
-  "howto.4.line.0": "Tab ile telefonu aç. Rehber'den bir iş arkadaşını ara: konuşmanızı sadece ikiniz duyarsınız.",
+  "howto.4.line.0": "Tab ile telefonu aç. Rehber'den bir iş arkadaşını ara: konuşmanızı sadece ikiniz duyarsınız. Gelen aramayı Y ile aç, N ile reddet ya da kapat.",
   "howto.4.line.1": "Ama dikkat: yakınındakiler senin sesini yine duyar. Tuvalet iyi bir sığınaktır.",
   "howto.4.line.2": "Gelen kutusunu takip et: kim kimin adına ne yazdı? Ya da yazmadı?",
-  "howto.4.line.3": "Ofiste sesin yakındakilere gider (bas-konuş). Toplantıda herkes herkesi duyar.",
+  "howto.4.line.3": "Ofiste sesin yakındakilere gider (bas-konuş: V). Toplantıda herkes herkesi duyar. T'ye basılı tutup mimik yap (ya da 1–5).",
   "howto.5.title": "İK toplantısı ve İş Haftası",
   "howto.5.line.0": "Herkesin tek bir resmi suçlama hakkı var. En çok suçlanan iki kişi savunma yapar.",
   "howto.5.line.1": "Savunmadaki kişi bir kamera kaydı isteyebilir: o dakikada o odada kim vardı?",
   "howto.5.line.2": "Son oy! Karar = oy payı + müdürün gördüğü risk + performans açığı.",
   "howto.5.line.3": "İş Haftası: Pazartesi'den Cuma'ya beş gün, her gün yeni bir şey açılır. Kariyer puanını topla; Cuma günü Ayın Elemanı seçilir.",
-
   "phase.None": "",
   "phase.Briefing": "Sabah Brifingi",
   "phase.Work1": "Çalışma Saati",
@@ -199,7 +186,6 @@
   "phase.MeetingVerdict": "Karar",
   "phase.Results": "Gün Sonu",
   "phase.Abandoned": "Maç İptal",
-
   "hud.quota": "Kota: {0} / {1}",
   "hud.order_n": "×{0}",
   "hud.day_bonus": "{0} · kariyer ×{1}",
@@ -225,12 +211,10 @@
   "hud.order_report": "Rapor talebi: {0}",
   "hud.phone_ringing": "Telefon çalıyor! {0}",
   "hud.dirty_desks": "Kirli masa: {0}",
-
   "hint.emote": "Mimik",
   "hint.drop": "Bırak",
   "hint.work_pose": "Çalış",
   "hint.phone": "Telefon",
-
   "mgr.state.InOffice": "Odasında",
   "mgr.state.Warning": "Geliyor!",
   "mgr.state.Walking": "Turda",
@@ -239,7 +223,6 @@
   "mgr.state.Returning": "Odasına dönüyor",
   "mgr.state.InMeeting": "Toplantıda",
   "mgr.state.surprise": "SÜRPRİZ DENETİM!",
-
   "call.state.None": "",
   "call.state.RingingIn": "Gelen arama",
   "call.state.RingingOut": "Aranıyor…",
@@ -251,36 +234,31 @@
   "call.tip": "{0} — {1} ihbar hattını aradı: {2}.",
   "call.answered": "{0} — {1}, {2} adlı çalışanı aradı ({3} sn konuştular).",
   "call.missed": "{0} — {1}, {2} adlı çalışanı aradı; açılmadı.",
-
   "voice.route.None": "",
   "voice.route.Proximity": "Yakındakiler duyuyor",
   "voice.route.Call": "Telefondasın",
   "voice.route.Everyone": "Herkes duyuyor",
-
   "emote.title": "Mimik",
   "emote.Wave": "El salla",
   "emote.Point": "İşaret et",
   "emote.Facepalm": "Yok artık",
   "emote.Shrug": "Omuz silk",
   "emote.Laugh": "Kahkaha",
-
   "ctl.move": "yürü",
   "ctl.interact": "etkileşim",
   "ctl.drop": "bırak",
   "ctl.work_pose": "çalışıyormuş gibi yap",
-  "ctl.slow": "yavaş yürü",
+  "ctl.slow": "eğil / sinsi yürü",
   "ctl.phone": "telefon",
-  "ctl.emote": "mimik (basılı tut)",
-  "ctl.call": "aramayı aç / kapat",
+  "ctl.emote": "mimik çarkı (basılı tut) · hızlı mimik",
+  "ctl.call": "aramayı aç / reddet-kapat",
   "ctl.ptt": "bas-konuş",
-
   "feature.cards": "Gizli kartlar",
   "feature.calls": "Telefon aramaları",
   "feature.tipline": "İhbar hattı",
   "feature.footage": "Kamera kayıtları",
   "feature.mail": "Posta",
   "feature.off": "(kapalı)",
-
   "briefing.title": "Günaydın!",
   "briefing.title_day": "Günaydın! Bugün {0}.",
   "briefing.starts_in": "Mesai başlıyor:",
@@ -294,7 +272,6 @@
   "briefing.conditions": "Müdür bir baskın ve bir son denetim yapacak.",
   "briefing.tips": "İpucu: Tab ile telefonunu aç — hedefin, kartların, rehberin ve notların orada. Görüşmeler, ihbarlar ve e-postalar da.",
   "briefing.go": "İşe koyul!",
-
   "manager.default.name": "Müdür",
   "manager.default.title": "Müdür",
   "manager.favourite_is": "Gözdesi bugün: {0}",
@@ -323,7 +300,6 @@
   "manager.paranoyak.hate.0": "Suçüstü yakalananlar ve şüpheli eşya taşıyanlar (×1,5)",
   "manager.paranoyak.note.0": "Her denetimde bütün çekmeceleri açar ve daha geniş görür.",
   "manager.paranoyak.note.1": "Toplantıda herkese +1 kamera kaydı hakkı.",
-
   "manager.bubble.coming": "Geliyorum!",
   "manager.bubble.item": "{0}?! Bu {1} masasında ne arıyor?",
   "manager.bubble.messy": "{0}, bu masa ne böyle?!",
@@ -340,7 +316,6 @@
   "manager.bubble.tip_clean": "Tertemiz. İhbarcı utansın.",
   "manager.bubble.tip_found": "İhbar doğruymuş!",
   "manager.bubble.surprise": "Sürpriiiz!",
-
   "week.title": "İş Haftası",
   "week.day.0": "Pazartesi",
   "week.day.1": "Salı",
@@ -361,7 +336,6 @@
   "week.unlock.4": "Cuma finali: puanlar ×2",
   "week.standings": "Kariyer tablosu",
   "week.points": "{0} puan",
-
   "verb.take": "Al",
   "verb.place": "Bırak",
   "verb.place_surface": "Masaya koy",
@@ -395,7 +369,6 @@
   "verb.tip_manager": "Müdüre ihbar ediliyor",
   "verb.AuditScanEvidence": "Delil taranıyor",
   "verb.SealEvidence": "Delil mühürleniyor",
-
   "fail.None": "",
   "fail.WrongMatch": "Bu istek eski bir maça ait.",
   "fail.WrongPhase": "Şu an bunu yapamazsın.",
@@ -439,7 +412,6 @@
   "fail.FeatureDisabled": "Bugün bu özellik kapalı.",
   "fail.AlreadyActive": "Zaten kesik.",
   "fail.NotActive": "Düzeltilecek bir şey yok.",
-
   "item.mug": "Kupa",
   "item.report": "Rapor",
   "item.nameplate": "İsimlik",
@@ -456,7 +428,6 @@
   "mug.Full": "dolu",
   "mug.Used": "kullanılmış",
   "mug.salted": "TUZLU!",
-
   "task.Coffee": "kahve getirdi",
   "task.Report": "rapor teslim etti",
   "task.Phone": "telefona baktı",
@@ -467,7 +438,6 @@
   "order.Phone": "telefon",
   "order.CleanDesk": "masa temizliği",
   "order.Mail": "posta",
-
   "activity.None": "ortalıkta dolaştı",
   "activity.Brewing": "kahve demledi",
   "activity.Typing": "bilgisayarda bir şeyler yaptı",
@@ -484,7 +454,6 @@
   "activity.ServerWork": "modemle uğraştı",
   "activity.FuseWork": "sigorta kutusuyla uğraştı",
   "activity.Drinking": "kahveden bir yudum aldı",
-
   "desk.name": "Masa {0}",
   "desk.unassigned": "boş masa",
   "loc.desk_drawer": "Masa {0} çekmecesi",
@@ -510,7 +479,6 @@
   "loc.spot.plant": "büyük saksı",
   "loc.spot.cabinet": "dosya dolabı",
   "loc.spot.toilet": "klozet rezervuarı",
-
   "room.manager": "Müdür odası",
   "room.meeting": "Toplantı odası",
   "room.kitchen": "Mutfak",
@@ -526,7 +494,6 @@
   "cam.kitchen": "Mutfak",
   "cam.reception": "Resepsiyon",
   "cam.copy": "Fotokopi odası",
-
   "evt.item": "Şüpheli eşya: {0}",
   "evt.SuspiciousItemFound": "Şüpheli eşya",
   "evt.HiddenReportFound": "Saklanmış rapor",
@@ -538,7 +505,6 @@
   "evt.CctvFootage": "Kamera kaydı",
   "evt.CallLogStatement": "Arama kayıtları",
   "evt.TasteStatement": "Tadım ifadesi",
-
   "ev.by_manager": "Müdür",
   "ev.by_system": "Sistem",
   "ev.item_found": "{0} — {1}, {2} içinde bulundu. İsimliğe göre sahibi: {3}. Bulan: {4}.",
@@ -557,7 +523,6 @@
   "ev.status.sealed": "MÜHÜRLÜ",
   "ev.status.moved": "YERİ DEĞİŞTİ",
   "ev.status.disposed": "İMHA EDİLDİ",
-
   "footage.sighting": "{0} — {1} {2}{3}{4}.",
   "footage.idle": "ortalıkta dolaşıyordu",
   "footage.carrying": ", elinde {0}",
@@ -569,7 +534,6 @@
   "footage.left": "Kalan hak: {0}. Kamerayı ve dakikayı seç; ±5 saniye gösterilir.",
   "footage.time": "Maç saati",
   "footage.request": "Kaydı göster",
-
   "obs.messy": "{0} — Müdür: {1} masası dağınık ({2}).",
   "obs.not_at_desk": "{0} — Müdür: {1} masasında değildi.",
   "obs.wrong_desk": "{0} — Müdür: {1} başkasının masasındaydı ({2}).",
@@ -587,7 +551,6 @@
   "mess.dirty": "kirli",
   "mess.spill": "kahve lekesi",
   "mess.clutter": "{0} parça dağınıklık",
-
   "note.kind.Witness": "Tanıklık",
   "note.kind.SearchResult": "Arama",
   "note.kind.ScanResult": "Denetim taraması",
@@ -608,7 +571,6 @@
   "signal.NameplateChangedAfterPlacement": "eşya konduktan sonra masanın isimliği değişmiş",
   "signal.MovedRecently": "eşya yakın zamanda taşınmış",
   "signal.HandledByMultiple": "eşyaya birden fazla kişi dokunmuş",
-
   "feed.phase": "Yeni aşama: {0}",
   "feed.task": "{0} {1}.",
   "feed.quota_reached": "Kota doldu! Şirket kurtuldu… şimdilik.",
@@ -651,7 +613,6 @@
   "feed.mail": "Posta geldi: {0} için. Resepsiyondan alıp masasına bırakın.",
   "feed.taste_salted": "Bu kahve TUZLU! Az kalsın müdüre götürüyordun.",
   "feed.taste_ok": "Kahve normal. Bir yudum eksik ama olsun.",
-
   "phone.title": "Telefon",
   "phone.app.Objective": "Görev",
   "phone.app.Cards": "Kartlar",
@@ -675,7 +636,6 @@
   "phone.no_evidence": "Henüz delil yok.",
   "phone.observations": "Müdürün gözlemleri",
   "phone.no_observations": "Henüz gözlem yok.",
-
   "cards.help": "Kartların gizli. Aynı kart başkasında da olabilir — yani bir sabotaj, kimin yaptığını kanıtlamaz. Kartlar gün sonunda açıklanır.",
   "cards.mine": "Senin kartların",
   "cards.basic": "Herkesin yapabildikleri",
@@ -684,7 +644,6 @@
   "cards.cooldown": "Bekle {0}",
   "cards.ready": "Hazır",
   "cards.max_per_match": "Ofiste en fazla {0} kez",
-
   "card.NameplateSwap.name": "İsimlik değiştir",
   "card.NameplateSwap.desc": "İki masanın isimliğini değiştir: müdür delilin sahibini isimliğe bakarak belirler.",
   "card.PlantItem.name": "Şüpheli eşya bırak",
@@ -715,7 +674,6 @@
   "card.PowerCut.name": "Elektrik kesintisi",
   "card.PowerCut.desc": "Sigortayı indir: 25 saniye karanlık; kimse uzağı göremez, kameralar kayıt yapmaz.",
   "card.PowerCut.where": "Nerede: depodaki sigorta kutusu",
-
   "contacts.help": "Bir iş arkadaşını ara: konuşmanızı sadece ikiniz duyarsınız. Ama yakınındakiler senin sesini yine duyar!",
   "contacts.cooldown": "Yeniden arayabilmek için: {0}",
   "contacts.offline": "Bağlantı yok",
@@ -725,7 +683,6 @@
   "contacts.call": "Ara",
   "contacts.wrong_phase": "Aramalar mesai saatinde açık (brifingden son denetime kadar).",
   "contacts.disabled_today": "Bugün telefon aramaları kapalı.",
-
   "tip.title": "İhbar Hattı",
   "tip.help": "Müdüre isimsiz ihbar: bir sonraki denetimde müdür önce o masaya gider ve çekmecesini açar. Temiz çıkarsa ihbar ters teper! Kalan hak: {0}",
   "tip.used": "İhbar hakkını kullandın.",
@@ -734,11 +691,9 @@
   "tip.confirm_title": "İsimsiz ihbar",
   "tip.confirm": "{0} ({1}) müdüre ihbar edilsin mi? {2} saniye telefonda kalacaksın — kımıldama.",
   "tip.confirm_ok": "İhbar et",
-
   "inbox.empty": "Gelen kutun boş. Şimdilik…",
   "inbox.from": "{0} · {1}",
   "inbox.lesson": "İpucu: Rapor yazınca bilgisayarının ekranı bir dakika açık kalır. Masandaki bilgisayarda “Ekranı kilitle” — yoksa biri senin adına e-posta atar!",
-
   "email.unknown": "(konu yok)",
   "email.picker.title": "Sahte e-posta yaz",
   "email.picker.from": "Gönderen olarak görünecek: {0} ({1})",
@@ -764,12 +719,10 @@
   "email.8.body": "Kırmızı zımbamı alan kişi bilsin ki onu kokusundan tanırım. Yarın sabaha kadar yerine konmazsa her toplantıda ilk ben konuşacağım. Uyarmadı demeyin. — {1}",
   "email.9.subject": "İstifa mektubu (TASLAK — gönderme!!)",
   "email.9.body": "Sevgili {0}, bugün itibarıyla… şaka şaka. Ama bir an hayal ettim, çok güzeldi. Dönüş yapmanıza gerek yok. Sevgiler, {1}",
-
   "role.employee": "Çalışan",
   "role.employee.desc": "Ofis kotasına katkı ver, kovulma ve gizli hedefini tamamla. Herkes gibi sen de sabotaj yapabilirsin.",
   "role.informant": "İK Muhbiri",
   "role.informant.desc": "Kimliğin gizli. Şirketi kurtar ve GERÇEKTE en çok suistimal yapan kişiyi kovdur. Denetim taraması, mühür, arama kayıtları ve bir kamera kaydı hakkın var. Taramalar kimin yaptığını söylemez — sadece delilin ne kadar tutarlı olduğunu.",
-
   "objective.secret": "GİZLİ HEDEF",
   "objective.DismissalPlan.name": "Kovdurma Planı",
   "objective.DismissalPlan.desc": "{0} kovulsun.",
@@ -821,7 +774,6 @@
   "objective.flag.final:pending": "Son denetim: henüz denetlenmedi.",
   "objective.gate": "Kazanmak için ayrıca: kota tutmalı ve sen kovulmamalısın.",
   "objective.informant_gate": "Kota tutmazsa ya da sen kovulursan kazanamazsın.",
-
   "informant.scans": "Tarama: {0}",
   "informant.seals": "Mühür: {0}",
   "informant.call_logs": "Arama kaydı: {0}",
@@ -839,7 +791,6 @@
   "informant.sealed": "Mühürlediğin delil: #{0}",
   "informant.scan_btn": "Tara ({0})",
   "informant.seal_btn": "Mühürle ({0})",
-
   "meeting.dossier": "Toplantı dosyası",
   "meeting.slide.Evidence": "Deliller",
   "meeting.slide.Footage": "Kamera",
@@ -900,7 +851,6 @@
   "meeting.tiebreak.ObservedRisk": "Beraberlik görülen riske göre bozuldu.",
   "meeting.tiebreak.Performance": "Beraberlik performansa göre bozuldu.",
   "meeting.tiebreak.SeededDraw": "Tam beraberlik: kura çekildi.",
-
   "letter.dept": "İNSAN KAYNAKLARI DEPARTMANI",
   "letter.ref": "Sayı: BK/{0} · {1}",
   "letter.today": "Bugün",
@@ -930,7 +880,6 @@
   "letter.obs.SaltyCoffee": "müdüre götürdüğünüz tuzlu kahve",
   "letter.obs.TipClean": "temiz çıkan bir ihbar",
   "letter.obs.TipFound": "ihbar üzerine bulunan eşya",
-
   "results.title": "Gün Sonu",
   "results.waiting": "Sonuçlar hesaplanıyor…",
   "results.abandoned": "MAÇ İPTAL EDİLDİ",
@@ -982,12 +931,10 @@
   "results.eotm_none": "Bu hafta kimse puan toplayamadı. İK yine şaşırdı.",
   "results.eotm_note": "Plaket hazırlanıyor. (Hazırlanmıyor.)",
   "results.eotm_close": "Alkışlar!",
-
   "clip.help": "Olay anının güvenlik kamerası görüntüsü — gerçek konumlar, gerçek suçlu.",
   "clip.skip": "Sona atla",
   "clip.replay": "Tekrar oynat",
   "clip.caption": "Olay anı: {0}",
-
   "outcome.company_failed": "Kota tutmadı.",
   "outcome.fired": "Kovuldu.",
   "outcome.objective_failed": "Gizli hedef tutmadı.",
@@ -995,7 +942,6 @@
   "outcome.informant_won": "Doğru kişiyi kovdurdu.",
   "outcome.informant_wrong_target": "Yanlış kişi kovuldu.",
   "outcome.no_misconduct": "Kimse suistimal yapmamıştı.",
-
   "title.coffee_master": "Kahve Ustası",
   "title.printer_enemy": "Yazıcı Düşmanı",
   "title.pro_scapegoat": "Profesyonel Günah Keçisi",
@@ -1006,7 +952,6 @@
   "title.salt_bae": "Tuz Baba",
   "title.it_hero": "Bilgi İşlem Kahramanı",
   "title.favourite": "Müdürün Gözdesi",
-
   "incident.NameplateSwap": "{0} isimlikleri değiştirdi ({1}).",
   "incident.PlantItem": "{0} şüpheli bir eşya bıraktı: {3} ({1}, sahibi {2}).",
   "incident.LockWorkstation": "{0}, {1} bilgisayarının şifresini değiştirdi.",
@@ -1022,7 +967,6 @@
   "incident.blamed": "Deliller {0} adlı çalışanı gösterdi.",
   "incident.reversed": "{0} durumu düzeltti.",
   "incident.undiscovered": "(Kimse fark etmedi.)",
-
   "recap.planted": "{4} — {0} bir {2} bıraktı ({3}).",
   "recap.nameplate_swapped": "{4} — {0} isimlikleri değiştirdi ({3}).",
   "recap.workstation_locked": "{4} — {0} bir bilgisayarın şifresini değiştirdi ({3}).",
@@ -1043,12 +987,10 @@
   "recap.tip_clean": "{4} — İhbar ters tepti: {1} temiz çıktı ({3}).",
   "recap.call": "{4} — {0}, {1} adlı çalışanı aradı.",
   "recap.highlight": "{4} — kritik an",
-
   "abandon.None": "",
   "abandon.PlayerTimedOut": "Bir oyuncu 30 saniye içinde geri dönmedi.",
   "abandon.HostLeft": "Ev sahibi oyundan ayrıldı.",
   "abandon.HostAborted": "Ev sahibi maçı bitirdi.",
-
   "day.normal": "Normal iş günü",
   "day.normal.desc": "Her şey her zamanki gibi (yani kaotik).",
   "day.coffee_crisis": "Kahve krizi",
@@ -1060,5 +1002,24 @@
   "day.phone_storm": "Telefon fırtınası",
   "day.phone_storm.desc": "Ofis telefonu durmadan çalıyor.",
   "day.audit_day": "Denetim günü",
-  "day.audit_day.desc": "İK Muhbirinin bugün fazladan bir denetim taraması var."
+  "day.audit_day.desc": "İK Muhbirinin bugün fazladan bir denetim taraması var.",
+  "hud.crouched": "EĞİLİYORSUN",
+  "hint.crouch": "Eğil",
+  "hint.slow": "Eğil / sinsi yürü: {0}",
+  "ctl.use_item": "elindekini kullan (tadına bak)",
+  "ctl.crouch": "eğil / sinsi yürü (basılı tut / aç-kapa)",
+  "input.crouch": "Eğil (basılı tut)",
+  "input.crouch_toggle": "Eğil (aç / kapa)",
+  "input.emote": "Mimik çarkı (basılı tut)",
+  "input.hang_up": "Reddet / kapat",
+  "input.use_item": "Elindekini kullan",
+  "input.push_to_talk": "Bas-konuş",
+  "emote.wave": "El salla",
+  "emote.point": "İşaret et",
+  "emote.facepalm": "Yok artık",
+  "emote.shrug": "Omuz silk",
+  "emote.laugh": "Kahkaha",
+  "settings.ambience_volume": "Ofis ortam sesi",
+  "settings.camera_shake": "Kamera sarsıntısı",
+  "settings.quick_emotes": "1–5 tuşları: hızlı mimik (el salla, işaret et, yok artık, omuz silk, kahkaha)."
 }
