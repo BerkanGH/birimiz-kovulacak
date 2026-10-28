@@ -155,7 +155,7 @@ namespace BirimizKovulacak.Core
 
         public static readonly Vec3 SurfaceOffset = new Vec3(0.45f, 0.76f, -0.1f);
         public static readonly Vec3 DrawerOffset = new Vec3(0.55f, 0.45f, -0.3f);
-        public static readonly Vec3 NameplateOffset = new Vec3(-0.6f, 0.76f, 0.35f);
+        public static readonly Vec3 NameplateOffset = new Vec3(-0.55f, 1.16f, 0.5f);
         public static readonly Vec3 ComputerOffset = new Vec3(-0.25f, 0.76f, 0.1f);
         public static readonly Vec3 SeatOffset = new Vec3(0f, 0f, -0.85f);
 
@@ -205,7 +205,7 @@ namespace BirimizKovulacak.Core
             l.Stations.Add(new StationDef { Id = EntityIds.CoffeeMachine, Kind = StationKind.CoffeeMachine, Position = new Vec3(5.5f, 0f, 9.3f), Yaw = 0f });
             l.Stations.Add(new StationDef { Id = EntityIds.Printer, Kind = StationKind.Printer, Position = new Vec3(13.0f, 0f, 9.2f), Yaw = 0f });
             l.Stations.Add(new StationDef { Id = EntityIds.Phone, Kind = StationKind.Phone, Position = new Vec3(10.5f, 0f, -0.5f), Yaw = 90f });
-            l.Stations.Add(new StationDef { Id = EntityIds.DeliveryPoint, Kind = StationKind.DeliveryPoint, Position = new Vec3(-11.0f, 0f, 6.4f), Yaw = 0f });
+            l.Stations.Add(new StationDef { Id = EntityIds.DeliveryPoint, Kind = StationKind.DeliveryPoint, Position = new Vec3(-9.2f, 0f, 6.8f), Yaw = 90f });
             l.Stations.Add(new StationDef { Id = EntityIds.CleaningCloset, Kind = StationKind.CleaningCloset, Position = new Vec3(-15.2f, 0f, -9.2f), Yaw = 225f });
             l.Stations.Add(new StationDef { Id = EntityIds.Router, Kind = StationKind.Router, Position = new Vec3(-1.0f, 0f, -9.3f), Yaw = 180f });
             l.Stations.Add(new StationDef { Id = EntityIds.FuseBox, Kind = StationKind.FuseBox, Position = new Vec3(-12.8f, 0f, -9.5f), Yaw = 180f });
@@ -213,7 +213,7 @@ namespace BirimizKovulacak.Core
             // Shared slots / containers
             l.Slots.Add(new SlotDef { Id = EntityIds.MugShelf, Kind = SlotKind.MugShelf, Position = new Vec3(7.0f, 0.95f, 9.6f), Yaw = 0f, Capacity = MugCount });
             l.Slots.Add(new SlotDef { Id = EntityIds.PrinterTray, Kind = SlotKind.PrinterTray, Position = new Vec3(13.0f, 1.0f, 9.15f), Yaw = 0f, Capacity = 3 });
-            l.Slots.Add(new SlotDef { Id = EntityIds.DeliveryTray, Kind = SlotKind.DeliveryTray, Position = new Vec3(-11.0f, 0.95f, 6.45f), Yaw = 0f, Capacity = 10 });
+            l.Slots.Add(new SlotDef { Id = EntityIds.DeliveryTray, Kind = SlotKind.DeliveryTray, Position = new Vec3(-8.32f, 0.95f, 6.8f), Yaw = 90f, Capacity = 10 });
             l.Slots.Add(new SlotDef { Id = EntityIds.JunkBin, Kind = SlotKind.JunkBin, Position = new Vec3(8.0f, 0f, -9.3f), Yaw = 180f, Capacity = 8 });
             l.Slots.Add(new SlotDef { Id = EntityIds.LostAndFound, Kind = SlotKind.LostAndFound, Position = new Vec3(-10.9f, 0.35f, -9.4f), Yaw = 180f, Capacity = 6 });
             l.Slots.Add(new SlotDef { Id = EntityIds.SprayRack, Kind = SlotKind.SprayRack, Position = new Vec3(-15.2f, 0.9f, -9.2f), Yaw = 225f, Capacity = SprayCount });

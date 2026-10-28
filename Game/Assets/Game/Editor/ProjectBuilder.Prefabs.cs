@@ -27,6 +27,7 @@ namespace BirimizKovulacak.EditorTools
             { ItemVariants.Spray, "Spray" }, { ItemVariants.ClutterPapers, "ClutterPapers" }, { ItemVariants.ClutterBox, "ClutterBox" },
             { ItemVariants.Duck, "RubberDuck" }, { ItemVariants.Stapler, "Stapler" }, { ItemVariants.RivalCv, "RivalCv" },
             { ItemVariants.BossMug, "BossMug" }, { ItemVariants.SalaryList, "SalaryList" },
+            { ItemVariants.Mail, "MailEnvelope" },
         };
 
         public static GameObject Model(string category, string name)
@@ -150,6 +151,14 @@ namespace BirimizKovulacak.EditorTools
                     var front = Label3D(root.transform, "LabelFront", new Vector3(0, 0.064f, -0.028f), new Vector3(26.6f, 0, 0), new Vector2(0.3f, 0.075f), fonts.Tmp, Color.white, "İSİM");
                     var back = Label3D(root.transform, "LabelBack", new Vector3(0, 0.064f, 0.028f), new Vector3(26.6f, 180, 0), new Vector2(0.3f, 0.075f), fonts.Tmp, Color.white, "İSİM");
                     visual.Labels = new[] { front, back };
+                }
+                if (kv.Key == ItemVariants.Mail)
+                {
+                    // Envelope stripe + name in the addressee's colour (ItemVisual resolves the desk owner).
+                    var stripe = FindDeep(inst.transform, "Stripe");
+                    if (stripe != null) visual.StripeRenderer = stripe.GetComponent<Renderer>();
+                    var ml = Label3D(root.transform, "Label", new Vector3(-0.03f, 0.0185f, 0.02f), new Vector3(90, 0, 0), new Vector2(0.16f, 0.04f), fonts.Tmp, new Color(0.14f, 0.19f, 0.37f), "");
+                    visual.Labels = new[] { ml };
                 }
                 if (kv.Key == ItemVariants.Report)
                 {
