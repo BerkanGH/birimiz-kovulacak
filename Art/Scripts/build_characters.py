@@ -1,537 +1,311 @@
-"""Builds the shared employee rig (4 appearances via accessories + skin material) and the manager.
+"""Builds the bean characters: one shared player rig with 6 looks, one manager rig with 4 profile looks (+ the
+classic fallback), the face expression atlas, all animation clips, FBX exports and preview contact sheets.
 
 Run:  blender -b --factory-startup -P Art/Scripts/build_characters.py [-- --previews]
-Outputs: Art/Blender/characters.blend, Game/Assets/Game/Art/Models/Characters/{Employee,Manager}.fbx,
-         Art/Previews/characters/*.png
+Outputs:
+  Game/Assets/Game/Art/Models/Characters/{Employee,Manager}.fbx, FaceAtlas.png   (Unity imports these)
+  Art/Export/{Employee,Manager}.fbx, FaceAtlas.png                                (archive copies)
+  Art/Blender/{employee,manager}.blend                                            (editable sources)
+  Art/character_looks.json      looks, material swap groups, clip list (read by ProjectBuilder.Characters.cs)
+  Art/Previews/characters/*.png + sheet_*.png                                      (with --previews)
 
-Characters face Blender +Y (= Unity +Z, transform.forward). Bones (all roll 0):
-  Root (ground) -> Body (vertical) -> Head (vertical); Body -> Arm.L / Arm.R (horizontal, pointing outward);
-  Root -> Foot.L / Foot.R (pointing forward).
-Local rotation conventions used by the actions below (degrees, XYZ Euler):
-  Body/Head: -X leans forward, +Y turns to the character's left, +Z rolls to the character's left.
-  Arm.L: -Y swings forward, +Y backward; Arm.R: +Y swings forward, -Y backward; +X raises either arm outward/up.
-  Foot: location +Y steps forward, +Z lifts.
+Modules: char_rig (bones, pose solver, actions), char_models (shape math, primitives, face patches),
+char_parts (bodies, outline hulls, accessories, props), char_anims (clips), char_face_atlas, char_preview, char_png.
+Art direction: Art/UI/portraits (2D portraits by the UI art run) - capsule beans, cream collars, navy outline.
 """
-import bpy
+import json
 import math
 import os
+import shutil
 import sys
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+for _m in ("char_rig", "char_models", "char_parts", "char_anims", "char_face_atlas", "char_preview", "char_png"):
+    sys.modules.pop(_m, None)
+
+import bpy  # noqa: E402
+
 import bk_common as bk  # noqa: E402
-from mathutils import Vector  # noqa: E402
+import char_anims as ca  # noqa: E402
+import char_face_atlas as fa  # noqa: E402
+import char_models as cm  # noqa: E402
+import char_parts as cp  # noqa: E402
+import char_png as png  # noqa: E402
+import char_preview as pv  # noqa: E402
+import char_rig as cr  # noqa: E402
 
-FPS = 30
-BONES = ["Root", "Body", "Head", "Arm.L", "Arm.R", "Foot.L", "Foot.R"]
+CHAR_DIR = os.path.join(bk.UNITY_MODELS, "Characters")
+ATLAS_PATH = os.path.join(CHAR_DIR, "FaceAtlas.png")
+LOOKS_JSON = os.path.join(bk.ROOT, "Art", "character_looks.json")
+PREV = os.path.join(bk.PREVIEW_DIR, "characters", "_frames")   # individual renders (git-ignored); sheets go to Art/Previews
+PLAYER_TRI_BUDGET = 4000
+MANAGER_TRI_BUDGET = 6000
 
-EMPLOYEE_PROFILE = [(0, 0.06), (0.18, 0.065), (0.28, 0.10), (0.335, 0.18), (0.355, 0.32), (0.35, 0.48),
-                    (0.33, 0.64), (0.295, 0.78), (0.24, 0.90), (0.16, 1.0), (0.08, 1.06), (0, 1.08)]
-MANAGER_PROFILE = [(0, 0.06), (0.2, 0.065), (0.31, 0.10), (0.37, 0.18), (0.395, 0.32), (0.39, 0.50),
-                   (0.37, 0.66), (0.33, 0.80), (0.27, 0.92), (0.18, 1.02), (0.08, 1.08), (0, 1.10)]
-DEPTH = 0.88  # front-back flattening
+# Player slot order = colour index 0..5. scale is Unity-style (x, height, depth).
+PLAYER_LOOKS = [
+    {"id": "Mavi", "accessories": ["Acc_Collar", "Acc_Tie"], "swaps": {"skin": "M_BeanBlue", "tie": "M_TieGreenDark"}, "scale": (1.0, 1.08, 1.0)},
+    {"id": "Sari", "accessories": ["Acc_Collar", "Acc_GlassesRound"], "swaps": {"skin": "M_BeanYellow"}, "scale": (1.1, 0.95, 1.1)},
+    {"id": "Pembe", "accessories": ["Acc_CollarRound", "Acc_HairBun"], "swaps": {"skin": "M_BeanPink"}, "scale": (1.0, 1.0, 1.0)},
+    {"id": "Yesil", "accessories": ["Acc_Collar", "Acc_Tie", "Acc_Headset"], "swaps": {"skin": "M_BeanGreen", "tie": "M_TieForest"}, "scale": (0.98, 0.9, 0.98)},
+    {"id": "Turuncu", "accessories": ["Acc_Collar", "Acc_Tie", "Acc_Beanie"], "swaps": {"skin": "M_BeanOrange", "tie": "M_TieOrange"}, "scale": (1.0, 1.0, 1.0)},
+    {"id": "Mor", "accessories": ["Acc_Curls", "Acc_Scarf"], "swaps": {"skin": "M_BeanPurple"}, "scale": (1.0, 0.98, 1.0)},
+]
+PLAYER_GROUPS = {"skin": ["M_BeanBlue", "M_BeanYellow", "M_BeanPink", "M_BeanGreen", "M_BeanOrange", "M_BeanPurple", "M_BeanSlate"],
+                 "tie": ["M_TieGreenDark", "M_TieForest", "M_TieOrange"]}
+PLAYER_PROPS = ["Prop_Handset", "Prop_Mobile", "Prop_Box"]
 
-
-def radius_at(profile, z):
-    for (r0, z0), (r1, z1) in zip(profile, profile[1:]):
-        if z0 <= z <= z1:
-            t = 0 if z1 == z0 else (z - z0) / (z1 - z0)
-            return r0 + (r1 - r0) * t
-    return 0.0
-
-
-# ----------------------------------------------------------------------------------------------------- rig
-
-def make_rig(coll, parent, s=1.0):
-    data = bpy.data.armatures.new("RigData")
-    rig = bpy.data.objects.new("Rig", data)
-    coll.objects.link(rig)
-    rig.parent = parent
-    bpy.context.view_layer.objects.active = rig
-    bpy.ops.object.mode_set(mode="EDIT")
-
-    def bone(n, h, t, par=None):
-        b = data.edit_bones.new(n)
-        b.head = Vector(h) * s
-        b.tail = Vector(t) * s
-        b.roll = 0.0
-        if par:
-            b.parent = data.edit_bones[par]
-        return b
-
-    bone("Root", (0, 0, 0), (0, 0, 0.12))
-    bone("Body", (0, 0, 0.12), (0, 0, 0.62), "Root")
-    bone("Head", (0, 0, 0.62), (0, 0, 1.12), "Body")
-    bone("Arm.L", (-0.30, 0, 0.56), (-0.42, 0, 0.56), "Body")
-    bone("Arm.R", (0.30, 0, 0.56), (0.42, 0, 0.56), "Body")
-    bone("Foot.L", (-0.13, -0.06, 0.05), (-0.13, 0.10, 0.05), "Root")
-    bone("Foot.R", (0.13, -0.06, 0.05), (0.13, 0.10, 0.05), "Root")
-    bpy.ops.object.mode_set(mode="OBJECT")
-    for pb in rig.pose.bones:
-        pb.rotation_mode = "XYZ"
-    return rig
+MANAGER_LOOKS = [
+    {"id": "default", "name": "Müdür", "accessories": ["Acc_MgrTie", "Acc_Moustache"],
+     "swaps": {"skin": "M_BeanBrown", "suit": "M_SuitDefault", "tie": "M_TieRed"}, "face": "Stern", "idle": "Idle"},
+    {"id": "paragoz", "name": "Hasan Bey", "accessories": ["Acc_MgrTie", "Acc_Handlebar", "Acc_Watch"],
+     "swaps": {"skin": "M_BeanGold", "suit": "M_SuitNavy", "tie": "M_TieGold"}, "face": "Smug", "idle": "IdleCrossed", "scale": (1.08, 0.98, 1.08)},
+    {"id": "disiplinci", "name": "Nermin Hanım", "accessories": ["Acc_GlassesCatEye", "Acc_TightBun", "Prop_Clipboard"],
+     "swaps": {"skin": "M_BeanTeal", "suit": "M_SuitGreen"}, "face": "Stern", "idle": "IdleClipboard", "scale": (0.95, 1.05, 0.95)},
+    {"id": "kayirmaci", "name": "Selin Hanım", "accessories": ["Acc_SunglassesUp", "Acc_SilkScarf", "Acc_Earrings"],
+     "swaps": {"skin": "M_BeanCoral", "suit": "M_SuitGreen"}, "face": "Cheerful", "idle": "IdleHips"},
+    {"id": "paranoyak", "name": "Kemal Bey", "accessories": ["Acc_MgrTie", "Acc_DarkGlasses", "Acc_Trench"],
+     "swaps": {"skin": "M_BeanViolet", "suit": "M_SuitTrench", "tie": "M_TieGreenDark"}, "face": "Sneaky", "idle": "IdleSteeple",
+     "scale": (1.03, 0.95, 1.03), "tilt": 7},
+]
+MANAGER_GROUPS = {"skin": ["M_BeanBrown", "M_BeanGold", "M_BeanTeal", "M_BeanCoral", "M_BeanViolet"],
+                  "suit": ["M_SuitDefault", "M_SuitNavy", "M_SuitGreen", "M_SuitTrench"],
+                  "tie": ["M_TieRed", "M_TieGold", "M_TieGreenDark"]}
+MANAGER_PROPS = ["Prop_Clipboard"]
 
 
-def assign_group(obj, bone):
-    vg = obj.vertex_groups.new(name=bone)
-    vg.add(list(range(len(obj.data.vertices))), 1.0, "REPLACE")
+def load_palettes():
+    with open(os.path.join(bk.ROOT, "Art", "palette_characters.json"), encoding="utf-8") as f:
+        extra = json.load(f)["materials"]
+    bk.palette()["materials"].update(extra)
 
 
-def assign_body_head_blend(obj, z_body, z_head):
-    vb = obj.vertex_groups.new(name="Body")
-    vh = obj.vertex_groups.new(name="Head")
-    mw = obj.matrix_world
-    for v in obj.data.vertices:
-        z = (mw @ v.co).z
-        t = min(1.0, max(0.0, (z - z_body) / (z_head - z_body)))
-        if t < 1.0:
-            vb.add([v.index], 1.0 - t, "REPLACE")
-        if t > 0.0:
-            vh.add([v.index], t, "REPLACE")
+def build_atlas():
+    os.makedirs(CHAR_DIR, exist_ok=True)
+    page = fa.build_atlas()
+    png.write_png(ATLAS_PATH, page)
+    os.makedirs(bk.EXPORT_DIR, exist_ok=True)
+    shutil.copy2(ATLAS_PATH, os.path.join(bk.EXPORT_DIR, "FaceAtlas.png"))
+    os.makedirs(PREV, exist_ok=True)
+    png.write_png(os.path.join(bk.PREVIEW_DIR, "characters", "face_atlas_cells.png"), fa.preview_sheet(page, ["#2F8FDE", "#F6CF55", "#A872D0", "#33BEC4"], 1))
 
 
-def join(objs, name):
-    bpy.ops.object.select_all(action="DESELECT")
-    for o in objs:
-        o.select_set(True)
-    bpy.context.view_layer.objects.active = objs[0]
-    bpy.ops.object.join()
-    o = objs[0]
-    o.name = name
-    o.data.name = name
-    return o
+def tri(o):
+    return cm.tri_count(o)
 
 
-def bind(obj, rig):
-    mw = obj.matrix_world.copy()
-    obj.parent = rig
-    obj.matrix_world = mw
-    m = obj.modifiers.new("Armature", "ARMATURE")
-    m.object = rig
-    return obj
+def look_tris(ch, look):
+    base = tri(ch.body) + tri(ch.eyes) + tri(ch.mouth)
+    return base + sum(tri(ch.acc[a]) for a in look["accessories"] if a in ch.acc) + sum(tri(ch.props[a]) for a in look["accessories"] if a in ch.props)
 
 
-# ----------------------------------------------------------------------------------------------- meshes
+def export(root, name):
+    path = os.path.join(CHAR_DIR, name + ".fbx")
+    bk.export_fbx(root, path, animations=True)
+    shutil.copy2(path, os.path.join(bk.EXPORT_DIR, name + ".fbx"))
 
-def build_employee(coll):
+
+# ------------------------------------------------------------------------------------------------ build
+
+def build_employee():
+    bk.reset_scene()
+    bpy.context.scene.render.fps = cr.FPS
+    coll = bk.collection("Employee")
     root = bk.empty("Employee", coll)
-    rig = make_rig(coll, root)
-    parts = []
-
-    body = bk.lathe("BodyMesh", EMPLOYEE_PROFILE, coll, "M_SkinBlue", segments=28, scale=(1, DEPTH, 1))
-    assign_body_head_blend(body, 0.56, 0.70)
-    parts.append(body)
-
-    face = []
-    for sx in (-1, 1):
-        face.append(bk.sphere("EyeWhite", 0.075, coll, "M_Eye", location=(0.095 * sx, 0.235, 0.80), scale=(1, 0.6, 1.15), segments=16, rings=10))
-        face.append(bk.sphere("Pupil", 0.036, coll, "M_Pupil", location=(0.095 * sx, 0.276, 0.79), scale=(1, 0.5, 1.1), segments=12, rings=8))
-        brow = bk.box("Brow", (0.075, 0.018, 0.016), coll, "M_Brow", location=(0.095 * sx, 0.215, 0.925))
-        brow.rotation_euler = (0, math.radians(-10 * sx), 0)
-        face.append(brow)
-    face.append(bk.torus("Mouth", 0.035, 0.009, coll, "M_Mouth", location=(0, 0.275, 0.68),
-                         rotation=(math.radians(-90), 0, 0), arc=math.pi, major_seg=10, minor_seg=6))
-    for o in face:
-        assign_group(o, "Head")
-    parts.extend(face)
-
-    for sx, bone in ((-1, "Arm.L"), (1, "Arm.R")):
-        arm = bk.cylinder("Arm", 0.042, 0.29, coll, "M_SkinBlue", location=(0.35 * sx, 0.0, 0.42), segments=12)
-        shoulder = bk.sphere("Shoulder", 0.046, coll, "M_SkinBlue", location=(0.33 * sx, 0, 0.56), segments=12, rings=8)
-        hand = bk.sphere("Hand", 0.064, coll, "M_SkinBlue", location=(0.36 * sx, 0.01, 0.255), segments=14, rings=10)
-        for o in (arm, shoulder, hand):
-            assign_group(o, bone)
-            parts.append(o)
-    for sx, bone in ((-1, "Foot.L"), (1, "Foot.R")):
-        foot = bk.sphere("Shoe", 0.085, coll, "M_Shoe", location=(0.13 * sx, 0.04, 0.042), scale=(0.8, 1.25, 0.5), segments=14, rings=8)
-        assign_group(foot, bone)
-        parts.append(foot)
-
-    body = join(parts, "Body")
-    bind(body, rig)
-
-    # Accessories (toggled per appearance in Unity). Each is a separate rigidly skinned mesh.
-    acc = {}
-    # Collar + tie (Mavi red, Sarı green via material swap in Unity)
-    collar_parts = []
-    for sx in (-1, 1):
-        c = bk.box("CollarFlap", (0.09, 0.03, 0.055), coll, "M_Collar", location=(0.055 * sx, 0.29, 0.6))
-        c.rotation_euler = (math.radians(-10), math.radians(28 * sx), 0)
-        collar_parts.append(c)
-    for o in collar_parts:
-        assign_group(o, "Body")
-    acc["Acc_Collar"] = join(collar_parts, "Acc_Collar")
-
-    import bmesh
-    bm = bmesh.new()
-    pts = [(0, 0.555), (-0.038, 0.50), (0, 0.36), (0.038, 0.50)]
-    front = [bm.verts.new((x, 0.0, z)) for x, z in pts]
-    back = [bm.verts.new((x, -0.016, z)) for x, z in pts]
-    bm.faces.new(front)
-    bm.faces.new(list(reversed(back)))
-    for i in range(4):
-        j = (i + 1) % 4
-        bm.faces.new((back[i], back[j], front[j], front[i]))
-    bmesh.ops.recalc_face_normals(bm, faces=bm.faces)
-    blade = bk.mesh_obj("TieBlade", bm, coll, "M_TieRed", location=(0, 0.322, 0))
-    knot = bk.box("TieKnot", (0.05, 0.03, 0.04), coll, "M_TieRed", location=(0, 0.30, 0.575))
-    for o in (blade, knot):
-        assign_group(o, "Body")
-    acc["Acc_Tie"] = join([blade, knot], "Acc_Tie")
-
-    tuft = [
-        bk.sphere("Tuft", 0.09, coll, "M_HairDark", location=(0, 0.05, 1.05), scale=(1.35, 0.9, 0.42)),
-        bk.sphere("Tuft2", 0.06, coll, "M_HairDark", location=(0.07, 0.13, 1.02), scale=(1.2, 0.8, 0.45)),
-        bk.sphere("Tuft3", 0.05, coll, "M_HairDark", location=(-0.06, 0.12, 1.035), scale=(1.1, 0.8, 0.5)),
-    ]
-    tuft[0].rotation_euler = (math.radians(12), 0, math.radians(10))
-    for o in tuft:
-        assign_group(o, "Head")
-    acc["Acc_HairTuft"] = join(tuft, "Acc_HairTuft")
-
-    glasses = []
-    for sx in (-1, 1):
-        glasses.append(bk.torus("Rim", 0.078, 0.011, coll, "M_Glasses", location=(0.095 * sx, 0.29, 0.80),
-                                rotation=(math.radians(90), 0, 0), major_seg=20, minor_seg=6))
-        t = bk.box("Temple", (0.012, 0.2, 0.012), coll, "M_Glasses", location=(0.215 * sx, 0.18, 0.815))
-        t.rotation_euler = (0, 0, math.radians(-28 * sx))
-        glasses.append(t)
-    glasses.append(bk.box("Bridge", (0.04, 0.012, 0.012), coll, "M_Glasses", location=(0, 0.295, 0.815)))
-    for o in glasses:
-        assign_group(o, "Head")
-    acc["Acc_Glasses"] = join(glasses, "Acc_Glasses")
-
-    bun = [
-        bk.sphere("Bun", 0.105, coll, "M_Hair", location=(0, -0.05, 1.10)),
-        bk.sphere("Cap", 0.2, coll, "M_Hair", location=(0, 0.02, 0.97), scale=(1.22, 1.08, 0.55)),
-        bk.sphere("BowL", 0.045, coll, "M_Bow", location=(-0.055, -0.04, 1.2), scale=(1.25, 0.55, 0.8)),
-        bk.sphere("BowR", 0.045, coll, "M_Bow", location=(0.055, -0.04, 1.2), scale=(1.25, 0.55, 0.8)),
-        bk.sphere("BowC", 0.024, coll, "M_Bow", location=(0, -0.035, 1.2)),
-    ]
-    for o in bun:
-        assign_group(o, "Head")
-    acc["Acc_HairBun"] = join(bun, "Acc_HairBun")
-
-    headset = [
-        bk.torus("Band", 0.285, 0.016, coll, "M_Headset", location=(0, 0, 0.84), rotation=(math.radians(90), 0, 0),
-                 arc=math.pi, major_seg=18, minor_seg=6),
-    ]
-    for sx in (-1, 1):
-        headset.append(bk.cylinder("Cup", 0.058, 0.045, coll, "M_Headset", location=(0.29 * sx, 0, 0.83),
-                                   rotation=(0, math.radians(90), 0), segments=14))
-    boom = bk.cylinder("Boom", 0.008, 0.2, coll, "M_Headset", location=(0.25, 0.12, 0.74),
-                       rotation=(math.radians(70), 0, math.radians(35)), segments=6)
-    headset.append(boom)
-    headset.append(bk.sphere("Mic", 0.022, coll, "M_PlasticDark", location=(0.17, 0.235, 0.69)))
-    for o in headset:
-        assign_group(o, "Head")
-    acc["Acc_Headset"] = join(headset, "Acc_Headset")
-
-    for o in acc.values():
-        bind(o, rig)
-    return root, rig, body, acc
+    rig = cr.make_rig(coll, root, 1.0)
+    shape = cm.BeanShape(cm.EMPLOYEE_CTRL, 0.9, 1.0)
+    body, eyes, mouth = cp.build_base(coll, rig, shape, "employee", "M_BeanBlue", "M_ShoeNavy", cm.EMP_FACE, ATLAS_PATH)
+    ctx = cp.Ctx(coll, rig, shape, cm.EMP_FACE)
+    acc = {
+        "Acc_Collar": cp.acc_collar(ctx),
+        "Acc_CollarRound": cp.acc_collar(ctx, round_tips=True, name="Acc_CollarRound"),
+        "Acc_Tie": cp.acc_tie(ctx),
+        "Acc_GlassesRound": cp.acc_glasses_round(ctx),
+        "Acc_HairBun": cp.acc_hair_bun(ctx),
+        "Acc_Headset": cp.acc_headset(ctx),
+        "Acc_Beanie": cp.acc_beanie(ctx),
+        "Acc_Curls": cp.acc_curls(ctx),
+        "Acc_Scarf": cp.acc_scarf(ctx),
+    }
+    props = {}
+    cr.apply_pose(rig, ca.pose_phone())
+    props["Prop_Handset"] = cp.prop_handset(ctx, coll)
+    props["Prop_Mobile"] = cp.prop_mobile(ctx, coll)
+    cr.apply_pose(rig, ca.pose_fired())
+    props["Prop_Box"] = cp.prop_box(ctx, coll)
+    cr.reset_pose(rig)
+    clips = ca.player_clips(rig)
+    cr.reset_pose(rig)
+    pv.fix_outline_material()
+    ch = pv.Character(root, rig, body, eyes, mouth, acc, props, PLAYER_GROUPS)
+    return ch, clips
 
 
-def build_manager(coll):
+def build_manager():
+    bk.reset_scene()
+    bpy.context.scene.render.fps = cr.FPS
     s = 1.2
+    coll = bk.collection("Manager")
     root = bk.empty("Manager", coll)
-    rig = make_rig(coll, root, s)
-    parts = []
-    prof = [(r * s, z * s) for r, z in MANAGER_PROFILE]
-    body = bk.lathe("BodyMesh", prof, coll, "M_SkinManager", segments=28, scale=(1, DEPTH, 1))
-    assign_body_head_blend(body, 0.56 * s, 0.70 * s)
-    parts.append(body)
-
-    # Suit shell over the lower body, open at the front by a shirt V.
-    suit_prof = [(0, 0.055 * s), (0.21 * s, 0.06 * s)] + [(radius_at(MANAGER_PROFILE, z) * s + 0.014, z * s) for z in (0.1, 0.18, 0.32, 0.5, 0.62)] + [(0.3 * s, 0.68 * s), (0.0, 0.70 * s)]
-    suit = bk.lathe("Suit", suit_prof, coll, "M_Suit", segments=28, scale=(1, DEPTH, 1))
-    assign_group(suit, "Body")
-    parts.append(suit)
-    zf = 0.5 * s
-    yf = radius_at(MANAGER_PROFILE, 0.5) * s * DEPTH + 0.02
-    shirt = bk.box("Shirt", (0.16, 0.02, 0.3), coll, "M_Collar", location=(0, yf, 0.62 * s))
-    assign_group(shirt, "Body")
-    parts.append(shirt)
-    for sx in (-1, 1):
-        lapel = bk.box("Lapel", (0.08, 0.025, 0.3), coll, "M_Suit", location=(0.09 * sx, yf + 0.008, 0.6 * s))
-        lapel.rotation_euler = (0, math.radians(18 * sx), 0)
-        assign_group(lapel, "Body")
-        parts.append(lapel)
-    tie = bk.box("Tie", (0.06, 0.02, 0.26), coll, "M_TieRed", location=(0, yf + 0.012, 0.6 * s))
-    knot = bk.box("Knot", (0.065, 0.03, 0.05), coll, "M_TieRed", location=(0, yf + 0.012, 0.74 * s))
-    for o in (tie, knot):
-        assign_group(o, "Body")
-        parts.append(o)
-
-    face = []
-    ez = 0.82 * s
-    ey = radius_at(MANAGER_PROFILE, 0.82) * s * DEPTH - 0.04
-    for sx in (-1, 1):
-        face.append(bk.sphere("EyeWhite", 0.068, coll, "M_Eye", location=(0.105 * sx, ey, ez), scale=(1, 0.6, 1.0)))
-        face.append(bk.sphere("Pupil", 0.032, coll, "M_Pupil", location=(0.1 * sx, ey + 0.038, ez - 0.005), scale=(1, 0.5, 1.0)))
-        brow = bk.box("Brow", (0.12, 0.03, 0.035), coll, "M_Brow", location=(0.1 * sx, ey + 0.02, ez + 0.085))
-        brow.rotation_euler = (0, math.radians(22 * sx), 0)
-        face.append(brow)
-        mus = bk.sphere("Mustache", 0.07, coll, "M_Mustache", location=(0.065 * sx, ey + 0.035, ez - 0.13), scale=(1.45, 0.55, 0.45))
-        mus.rotation_euler = (0, math.radians(-14 * sx), 0)
-        face.append(mus)
-    face.append(bk.torus("Mouth", 0.04, 0.01, coll, "M_Mouth", location=(0, ey + 0.03, ez - 0.21),
-                         rotation=(math.radians(90), 0, 0), arc=math.pi, major_seg=10, minor_seg=6))
-    for o in face:
-        assign_group(o, "Head")
-    parts.extend(face)
-
-    for sx, bone in ((-1, "Arm.L"), (1, "Arm.R")):
-        sleeve = bk.cylinder("Sleeve", 0.06, 0.27, coll, "M_Suit", location=(0.4 * sx, 0.0, 0.52), segments=12)
-        shoulder = bk.sphere("Shoulder", 0.065, coll, "M_Suit", location=(0.38 * sx, 0, 0.67), segments=12, rings=8)
-        hand = bk.sphere("Hand", 0.07, coll, "M_SkinManager", location=(0.41 * sx, 0.01, 0.36))
-        for o in (sleeve, shoulder, hand):
-            assign_group(o, bone)
-            parts.append(o)
-    for sx, bone in ((-1, "Foot.L"), (1, "Foot.R")):
-        foot = bk.sphere("Shoe", 0.1, coll, "M_Shoe", location=(0.16 * sx, 0.05, 0.05), scale=(0.8, 1.3, 0.5))
-        assign_group(foot, bone)
-        parts.append(foot)
-    body = join(parts, "Body")
-    bind(body, rig)
-    return root, rig, body
+    rig = cr.make_rig(coll, root, s, layout=cr.MANAGER_LAYOUT)
+    shape = cm.BeanShape(cm.MANAGER_CTRL, 0.9, s)
+    ctx = cp.Ctx(coll, rig, shape, cm.MGR_FACE)
+    suit = cp.mgr_suit_parts(ctx)
+    body, eyes, mouth = cp.build_base(coll, rig, shape, "manager", "M_BeanBrown", "M_ShoeBlack", cm.MGR_FACE, ATLAS_PATH,
+                                      sleeve_mat="M_SuitDefault", body_extra=suit)
+    acc = {
+        "Acc_MgrTie": cp.acc_mgr_tie(ctx),
+        "Acc_Moustache": cp.acc_moustache(ctx),
+        "Acc_Handlebar": cp.acc_moustache(ctx, "Acc_Handlebar", big=True),
+        "Acc_Watch": cp.acc_watch(ctx, "L"),
+        "Acc_GlassesCatEye": cp.acc_glasses_cateye(ctx),
+        "Acc_TightBun": cp.acc_tight_bun(ctx),
+        "Acc_SunglassesUp": cp.acc_sunglasses_up(ctx),
+        "Acc_SilkScarf": cp.acc_silk_scarf(ctx),
+        "Acc_Earrings": cp.acc_earrings(ctx),
+        "Acc_DarkGlasses": cp.acc_dark_glasses(ctx),
+        "Acc_Trench": cp.acc_trench(ctx),
+    }
+    props = {}
+    cr.apply_pose(rig, ca.pose_clipboard())
+    props["Prop_Clipboard"] = cp.prop_clipboard(ctx, coll, "L")
+    cr.reset_pose(rig)
+    clips = ca.manager_clips(rig)
+    cr.reset_pose(rig)
+    pv.fix_outline_material()
+    ch = pv.Character(root, rig, body, eyes, mouth, acc, props, MANAGER_GROUPS)
+    return ch, clips
 
 
-# ------------------------------------------------------------------------------------------- animation
+# --------------------------------------------------------------------------------------------- previews
 
-REST = {"loc": (0, 0, 0), "rot": (0, 0, 0), "scale": (1, 1, 1)}
+def preview_players(ch):
+    pv.setup((560, 640))
+    items_front, items_game = [], []
+    for look in PLAYER_LOOKS:
+        ch.apply_look(look)
+        ch.rest()
+        pv.camera((0, 0, 0.62), 3.3, 8, 202, 50)
+        items_front.append((pv.render(os.path.join(PREV, "player_%s.png" % look["id"])), look["id"]))
+        pv.camera((0, 0, 0.5), 6.0, 52, 205, 45)
+        items_game.append((pv.render(os.path.join(PREV, "player_%s_game.png" % look["id"])), look["id"] + " (game cam 6m)"))
+    pv.sheet(os.path.join(bk.PREVIEW_DIR, "sheet_players.png"), items_front + items_game, 6)
 
+    # expressions on two looks
+    items = []
+    for look_i in (0, 4):
+        ch.apply_look(PLAYER_LOOKS[look_i])
+        ch.rest()
+        for name in pv.EXPRESSIONS:
+            ch.expression(name)
+            pv.camera((0, 0, 0.8), 1.9, 6, 195, 50)
+            items.append((pv.render(os.path.join(PREV, "expr_%s_%s.png" % (PLAYER_LOOKS[look_i]["id"], name))), name))
+    pv.sheet(os.path.join(bk.PREVIEW_DIR, "sheet_expressions.png"), items, 10)
 
-def make_action(rig, name, keys):
-    """keys: list of (frame, {bone: {"loc":..,"rot":deg..,"scale":..}}). Every bone/channel is keyed at every key frame."""
-    act = bpy.data.actions.new(name)
-    act.use_fake_user = True
-    rig.animation_data.action = act
-    for frame, pose in keys:
-        for bname in BONES:
-            pb = rig.pose.bones[bname]
-            spec = pose.get(bname, {})
-            pb.location = spec.get("loc", REST["loc"])
-            pb.rotation_euler = [math.radians(a) for a in spec.get("rot", REST["rot"])]
-            pb.scale = spec.get("scale", REST["scale"])
-            pb.keyframe_insert("location", frame=frame)
-            pb.keyframe_insert("rotation_euler", frame=frame)
-            pb.keyframe_insert("scale", frame=frame)
-    return act
-
-
-def arms(l, r, lx=8, rx=8):
-    """Forward swing angles (positive = forward for both) and outward raise."""
-    return {"Arm.L": {"rot": (lx, -l, 0)}, "Arm.R": {"rot": (rx, r, 0)}}
-
-
-def merge(*dicts):
-    out = {}
-    for d in dicts:
-        for k, v in d.items():
-            out.setdefault(k, {}).update(v)
-    return out
-
-
-def walk_cycle(frames, stride=0.12, lift=0.06, bob=0.035, arm_swing=25, arm_pose=None, lean=-4, roll=3, extra=None):
-    f0, f1, f2, f3, f4 = frames
-    def pose(fl, fr, lz, rz, y, swing, r):
-        p = {"Foot.L": {"loc": (0, fl, lz)}, "Foot.R": {"loc": (0, fr, rz)},
-             "Body": {"loc": (0, y, 0), "rot": (lean, 0, r)}}
-        p = merge(p, arm_pose if arm_pose is not None else arms(-swing, swing))
-        if extra:
-            p = merge(p, extra)
-        return p
-    return [
-        (f0, pose(stride, -stride, 0, 0, 0, arm_swing, roll)),
-        (f1, pose(0, 0, 0, lift, bob, 0, 0)),
-        (f2, pose(-stride, stride, 0, 0, 0, -arm_swing, -roll)),
-        (f3, pose(0, 0, lift, 0, bob, 0, 0)),
-        (f4, pose(stride, -stride, 0, 0, 0, arm_swing, roll)),
-    ]
+    # key poses (props shown where they belong)
+    poses = [("Idle", 31, "Neutral", ()), ("Idle2", 30, "Happy", ()), ("Walk", 1, "Neutral", ()), ("Run", 1, "Neutral", ()),
+             ("Run", 4, "Neutral", ()), ("CrouchIdle", 1, "Sneaky", ()), ("Sneak", 9, "Sneaky", ()), ("CarryWalk", 1, "Neutral", ()),
+             ("Typing", 1, "Neutral", ()), ("WorkPose", 4, "Shocked", ()), ("PhoneStand", 30, "Talking", ("Prop_Handset",)),
+             ("PhoneArm", 1, "Talking", ("Prop_Mobile",)), ("Cleaning", 7, "Neutral", ()), ("Rummaging", 9, "Sneaky", ()),
+             ("Fiddling", 7, "Sneaky", ()), ("Brewing", 6, "Neutral", ()), ("Delivering", 16, "Happy", ()), ("Placing", 13, "Neutral", ()),
+             ("Spilling", 21, "Sneaky", ()), ("Sit", 1, "Neutral", ()), ("SitTalk", 14, "Talking", ()), ("Talk", 14, "Talking", ()),
+             ("Wave", 12, "Happy", ()), ("Point", 14, "Angry", ()), ("Facepalm", 20, "Sad", ()), ("Shrug", 22, "Smug", ()),
+             ("Laugh", 11, "Laugh", ()), ("Shocked", 8, "Shocked", ()), ("Panic", 5, "Shocked", ()), ("Cheer", 6, "Laugh", ()),
+             ("FiredIdle", 30, "Sad", ("Prop_Box",)), ("FiredWalk", 1, "Sad", ("Prop_Box",))]
+    items = []
+    looks_cycle = [0, 1, 2, 3, 4, 5]
+    for i, (act, fr, face, props) in enumerate(poses):
+        look = PLAYER_LOOKS[looks_cycle[i % 6]]
+        ch.apply_look(look, props)
+        ch.expression(face)
+        ch.pose(act, fr)
+        pv.camera((0, 0, 0.62), 3.6, 14, 215, 50)
+        items.append((pv.render(os.path.join(PREV, "pose_%s_%d.png" % (act, fr))), "%s %d" % (act, fr)))
+    pv.sheet(os.path.join(bk.PREVIEW_DIR, "sheet_poses.png"), items, 8)
+    ch.rest()
 
 
-def employee_actions(rig):
-    rig.animation_data_create()
-    breathe = {"Body": {"scale": (1.015, 1.025, 1.015)}}
-    make_action(rig, "Idle", [
-        (1, arms(0, 0)),
-        (31, merge(arms(0, 0, 12, 12), breathe, {"Head": {"rot": (0, 3, 0)}})),
-        (61, arms(0, 0)),
-    ])
-    make_action(rig, "Walk", walk_cycle((1, 4, 7, 10, 13)))
-    carry = arms(70, 70, -12, -12)
-    make_action(rig, "CarryIdle", [
-        (1, carry), (21, merge(arms(66, 66, -12, -12), breathe)), (41, carry)])
-    make_action(rig, "CarryWalk", walk_cycle((1, 4, 7, 10, 13), arm_pose=carry, lean=-2))
-    make_action(rig, "Work", [
-        (1, merge(arms(50, 58, -6, -6), {"Body": {"rot": (-6, 0, 0)}, "Head": {"rot": (-5, 0, 0)}})),
-        (5, merge(arms(58, 50, -6, -6), {"Body": {"rot": (-6, 0, 0)}, "Head": {"rot": (-7, 0, 0)}})),
-        (9, merge(arms(50, 58, -6, -6), {"Body": {"rot": (-6, 0, 0)}, "Head": {"rot": (-5, 0, 0)}})),
-        (13, merge(arms(58, 50, -6, -6), {"Body": {"rot": (-6, 0, 0)}, "Head": {"rot": (-7, 0, 0)}})),
-        (17, merge(arms(50, 58, -6, -6), {"Body": {"rot": (-6, 0, 0)}, "Head": {"rot": (-5, 0, 0)}})),
-    ])
-    make_action(rig, "WorkPose", [
-        (1, merge(arms(45, 78, -8, -8), {"Body": {"loc": (0, 0, 0), "rot": (-10, 0, 3)}, "Head": {"rot": (-8, 6, 0)}})),
-        (4, merge(arms(78, 45, -8, -8), {"Body": {"loc": (0, 0.03, 0), "rot": (-10, 0, -3)}, "Head": {"rot": (2, -6, 0)}})),
-        (7, merge(arms(45, 78, -8, -8), {"Body": {"loc": (0, 0, 0), "rot": (-10, 0, 3)}, "Head": {"rot": (-8, 6, 0)}})),
-        (10, merge(arms(78, 45, -8, -8), {"Body": {"loc": (0, 0.03, 0), "rot": (-10, 0, -3)}, "Head": {"rot": (2, -6, 0)}})),
-        (13, merge(arms(45, 78, -8, -8), {"Body": {"loc": (0, 0, 0), "rot": (-10, 0, 3)}, "Head": {"rot": (-8, 6, 0)}})),
-    ])
-    make_action(rig, "Interact", [
-        (1, merge(arms(10, 30), {"Body": {"rot": (-3, 0, 0)}})),
-        (11, merge(arms(15, 82, 8, 4), {"Body": {"rot": (-12, 0, 0)}})),
-        (21, merge(arms(10, 40), {"Body": {"rot": (-6, 0, 0)}})),
-        (31, merge(arms(10, 30), {"Body": {"rot": (-3, 0, 0)}})),
-    ])
-    crouch = {"Body": {"scale": (1.05, 0.82, 1.05), "rot": (-14, 0, 0)}}
-    make_action(rig, "Sneak", [
-        (1, merge(crouch, arms(35, 40, -4, -4), {"Head": {"rot": (0, -25, 0)}})),
-        (10, merge(crouch, arms(42, 33, -4, -4), {"Head": {"rot": (0, 0, 0)}})),
-        (19, merge(crouch, arms(35, 40, -4, -4), {"Head": {"rot": (0, 25, 0)}})),
-        (28, merge(crouch, arms(42, 33, -4, -4), {"Head": {"rot": (0, 0, 0)}})),
-        (37, merge(crouch, arms(35, 40, -4, -4), {"Head": {"rot": (0, -25, 0)}})),
-    ])
-    make_action(rig, "Phone", [
-        (1, merge({"Arm.L": {"rot": (8, 0, 0)}, "Arm.R": {"rot": (165, 40, 0)}}, {"Head": {"rot": (0, 0, -15)}, "Body": {"rot": (0, 0, -2)}})),
-        (16, merge({"Arm.L": {"rot": (12, 10, 0)}, "Arm.R": {"rot": (160, 45, 0)}}, {"Head": {"rot": (-4, 4, -17)}, "Body": {"rot": (0, 0, 2)}})),
-        (31, merge({"Arm.L": {"rot": (8, 0, 0)}, "Arm.R": {"rot": (165, 40, 0)}}, {"Head": {"rot": (0, 0, -15)}, "Body": {"rot": (0, 0, -2)}})),
-    ])
-    make_action(rig, "Panic", [
-        (1, merge(arms(0, 0, 118, 118), {"Body": {"loc": (0, 0, 0), "scale": (1.08, 0.9, 1.08)}, "Head": {"rot": (0, -10, 0)}})),
-        (7, merge(arms(-10, -10, 135, 135), {"Body": {"loc": (0, 0.14, 0), "scale": (0.95, 1.08, 0.95)}, "Head": {"rot": (0, 10, 0)}, "Foot.L": {"loc": (0, 0, 0.08)}, "Foot.R": {"loc": (0, 0, 0.08)}})),
-        (13, merge(arms(0, 0, 118, 118), {"Body": {"loc": (0, 0, 0), "scale": (1.08, 0.9, 1.08)}, "Head": {"rot": (0, -10, 0)}})),
-    ])
-    sad = {"Head": {"rot": (-25, 0, 0)}, "Body": {"scale": (1.0, 0.92, 1.0)}}
-    make_action(rig, "Fired", [
-        (1, merge(sad, arms(65, 65, -14, -14), {"Body": {"rot": (-6, 0, 3)}})),
-        (31, merge(sad, arms(62, 62, -14, -14), {"Body": {"rot": (-6, 0, -3)}})),
-        (61, merge(sad, arms(65, 65, -14, -14), {"Body": {"rot": (-6, 0, 3)}})),
-    ])
-    make_action(rig, "Cheer", [
-        (1, merge(arms(0, 0, 115, 140), {"Body": {"loc": (0, 0, 0), "scale": (1.05, 0.95, 1.05)}})),
-        (7, merge(arms(0, 0, 140, 115), {"Body": {"loc": (0, 0.08, 0)}, "Foot.L": {"loc": (0, 0, 0.05)}, "Foot.R": {"loc": (0, 0, 0.05)}})),
-        (13, merge(arms(0, 0, 115, 140), {"Body": {"loc": (0, 0, 0), "scale": (1.05, 0.95, 1.05)}})),
-    ])
-    make_action(rig, "Talk", [
-        (1, merge(arms(5, 40, 8, 20), {"Head": {"rot": (-3, 4, 0)}})),
-        (11, merge(arms(5, 75, 8, 30), {"Head": {"rot": (3, -2, 0)}, "Body": {"rot": (-4, 0, 0)}})),
-        (21, merge(arms(5, 50, 8, 15), {"Head": {"rot": (-3, 6, 0)}})),
-        (31, merge(arms(5, 40, 8, 20), {"Head": {"rot": (-3, 4, 0)}})),
-    ])
-    rig.animation_data.action = None
-
-
-def manager_actions(rig):
-    rig.animation_data_create()
-    behind = {"Arm.L": {"rot": (-8, 40, 0)}, "Arm.R": {"rot": (-8, -40, 0)}}
-    make_action(rig, "Idle", [
-        (1, behind), (31, merge(behind, {"Body": {"scale": (1.015, 1.025, 1.015)}, "Head": {"rot": (0, 4, 0)}})), (61, behind)])
-    make_action(rig, "Walk", walk_cycle((1, 5, 9, 13, 17), stride=0.15, lift=0.05, bob=0.03, arm_pose=behind, lean=-6, roll=4))
-    lean = {"Body": {"rot": (-15, 0, 0), "scale": (1.02, 0.95, 1.02)}}
-    make_action(rig, "Inspect", [
-        (1, merge(behind, lean, {"Head": {"rot": (-10, -30, 0)}})),
-        (21, merge(behind, lean, {"Head": {"rot": (-10, 30, 0)}})),
-        (41, merge(behind, lean, {"Head": {"rot": (-10, -30, 0)}})),
-    ])
-    make_action(rig, "Angry", [
-        (1, merge(arms(100, 100, 20, 20), {"Body": {"loc": (0, 0, 0), "rot": (-5, 0, 5)}, "Head": {"rot": (-5, 0, 0)}})),
-        (5, merge(arms(90, 112, 25, 15), {"Body": {"loc": (0, 0.04, 0), "rot": (-5, 0, -5)}, "Head": {"rot": (2, 0, 0)}})),
-        (9, merge(arms(112, 90, 15, 25), {"Body": {"loc": (0, 0, 0), "rot": (-5, 0, 5)}, "Head": {"rot": (-5, 0, 0)}})),
-        (13, merge(arms(90, 112, 25, 15), {"Body": {"loc": (0, 0.04, 0), "rot": (-5, 0, -5)}, "Head": {"rot": (2, 0, 0)}})),
-        (17, merge(arms(100, 100, 20, 20), {"Body": {"loc": (0, 0, 0), "rot": (-5, 0, 5)}, "Head": {"rot": (-5, 0, 0)}})),
-    ])
-    make_action(rig, "Talk", [
-        (1, merge({"Arm.L": {"rot": (-8, 40, 0)}}, {"Arm.R": {"rot": (10, 60, 0)}}, {"Head": {"rot": (0, 3, 0)}})),
-        (16, merge({"Arm.L": {"rot": (-8, 40, 0)}}, {"Arm.R": {"rot": (20, 85, 0)}}, {"Head": {"rot": (-6, -3, 0)}})),
-        (31, merge({"Arm.L": {"rot": (-8, 40, 0)}}, {"Arm.R": {"rot": (10, 60, 0)}}, {"Head": {"rot": (0, 3, 0)}})),
-    ])
-    make_action(rig, "Point", [
-        (1, merge({"Arm.L": {"rot": (-8, 40, 0)}}, {"Arm.R": {"rot": (5, 90, 0)}}, {"Body": {"rot": (-8, 0, 0)}})),
-        (8, merge({"Arm.L": {"rot": (-8, 40, 0)}}, {"Arm.R": {"rot": (5, 98, 0)}}, {"Body": {"rot": (-11, 0, 0)}})),
-        (16, merge({"Arm.L": {"rot": (-8, 40, 0)}}, {"Arm.R": {"rot": (5, 90, 0)}}, {"Body": {"rot": (-8, 0, 0)}})),
-    ])
-    rig.animation_data.action = None
+def preview_managers(ch):
+    pv.setup((560, 640))
+    front, game, poses = [], [], []
+    for look in MANAGER_LOOKS:
+        ch.apply_look(look)
+        ch.pose(look.get("idle", "Idle"), 1)
+        pv.camera((0, 0, 0.78), 4.0, 8, 202, 50)
+        front.append((pv.render(os.path.join(PREV, "manager_%s.png" % look["id"])), look["id"]))
+        pv.camera((0, 0, 0.6), 6.5, 52, 205, 45)
+        game.append((pv.render(os.path.join(PREV, "manager_%s_game.png" % look["id"])), look["id"] + " (game cam)"))
+    pv.sheet(os.path.join(bk.PREVIEW_DIR, "sheet_managers.png"), front + game, 5)
+    items = []
+    acts = [("Walk", 1, "Stern", 1, ()), ("Inspect", 1, "Sneaky", 2, ("Prop_Clipboard",)), ("Angry", 7, "Angry", 3, ()),
+            ("Pleased", 8, "Happy", 1, ()), ("Talk", 14, "Talking", 4, ()), ("Point", 8, "Angry", 2, ()), ("Sit", 1, "Stern", 3, ()),
+            ("SitTalk", 14, "Talking", 4, ())]
+    for act, fr, face, li, props in acts:
+        ch.apply_look(MANAGER_LOOKS[li], props)
+        ch.expression(face)
+        ch.pose(act, fr)
+        pv.camera((0, 0, 0.75), 4.3, 14, 215, 50)
+        items.append((pv.render(os.path.join(PREV, "manager_pose_%s.png" % act)), "%s (%s)" % (act, MANAGER_LOOKS[li]["id"])))
+    pv.sheet(os.path.join(bk.PREVIEW_DIR, "sheet_manager_poses.png"), items, 4)
+    ch.rest()
 
 
 # ------------------------------------------------------------------------------------------------ main
 
-VARIANTS = [
-    ("Mavi", "M_SkinBlue", ["Acc_Collar", "Acc_Tie", "Acc_HairTuft"], "M_TieRed"),
-    ("Sari", "M_SkinYellow", ["Acc_Collar", "Acc_Tie", "Acc_Glasses"], "M_TieGreen"),
-    ("Pembe", "M_SkinPink", ["Acc_HairBun"], None),
-    ("Yesil", "M_SkinGreen", ["Acc_Collar", "Acc_Headset"], None),
-]
-
-
-def pose_at(rig, action_name, frame):
-    rig.animation_data.action = bpy.data.actions[action_name]
-    bpy.context.scene.frame_set(frame)
-
-
-def preview_employee(emp_rig, emp_body, acc):
-    bk.setup_preview_render((720, 720))
-    out = os.path.join(bk.PREVIEW_DIR, "characters")
-    for name, skin, accs, tie in VARIANTS:
-        emp_body.material_slots[0].material = bk.mat(skin)
-        for k, o in acc.items():
-            o.hide_render = k not in accs
-        if tie:
-            acc["Acc_Tie"].material_slots[0].material = bk.mat(tie)
-        pose_at(emp_rig, "Idle", 1)
-        bk.render_preview(os.path.join(out, "employee_%s.png" % name), target=(0, 0, 0.6), distance=3.2, elevation_deg=12, azimuth_deg=200)
-    emp_body.material_slots[0].material = bk.mat("M_SkinBlue")
-    for k, o in acc.items():
-        o.hide_render = k not in VARIANTS[0][2]
-        o.hide_set(False)
-    acc["Acc_Tie"].material_slots[0].material = bk.mat("M_TieRed")
-    for act, frame in (("Walk", 1), ("CarryIdle", 1), ("Sneak", 1), ("WorkPose", 1), ("Phone", 1), ("Panic", 7), ("Fired", 1), ("Cheer", 7), ("Interact", 11)):
-        pose_at(emp_rig, act, frame)
-        bk.render_preview(os.path.join(out, "pose_%s.png" % act), target=(0, 0, 0.6), distance=3.2, elevation_deg=10, azimuth_deg=(180 if act in ("Cheer", "Panic", "Phone", "WorkPose") else 235))
-    for o in acc.values():
-        o.hide_render = False
-    emp_rig.animation_data.action = None
-
-
-def preview_manager(mgr_rig):
-    bk.setup_preview_render((720, 720))
-    out = os.path.join(bk.PREVIEW_DIR, "characters")
-    for act, frame in (("Idle", 1), ("Walk", 1), ("Inspect", 1), ("Angry", 5), ("Point", 1)):
-        pose_at(mgr_rig, act, frame)
-        bk.render_preview(os.path.join(out, "manager_%s.png" % act), target=(0, 0, 0.75), distance=3.8, elevation_deg=10, azimuth_deg=215)
-    mgr_rig.animation_data.action = None
-
-
-def export_copy(root, name):
-    import shutil
-    out_dir = os.path.join(bk.UNITY_MODELS, "Characters")
-    path = os.path.join(out_dir, name + ".fbx")
-    bk.export_fbx(root, path, animations=True)
-    os.makedirs(bk.EXPORT_DIR, exist_ok=True)
-    shutil.copy2(path, os.path.join(bk.EXPORT_DIR, name + ".fbx"))
+def look_json(look, ch, kind):
+    d = {"id": look["id"], "accessories": look["accessories"], "swaps": look.get("swaps", {}),
+         "scale": list(look.get("scale", (1, 1, 1))), "tilt": look.get("tilt", 0), "face": look.get("face", "Neutral"),
+         "tris": look_tris(ch, look)}
+    if kind == "manager":
+        d["name"] = look["name"]
+        d["idle"] = look.get("idle", "Idle")
+    return d
 
 
 def main():
     want_previews = "--previews" in sys.argv
-    # Employee (own session so action names stay clean)
-    bk.reset_scene()
-    bpy.context.scene.render.fps = FPS
-    emp_root, emp_rig, emp_body, acc = build_employee(bk.collection("Employee"))
-    employee_actions(emp_rig)
-    export_copy(emp_root, "Employee")
-    bk.save_blend("employee.blend")
-    if want_previews:
-        preview_employee(emp_rig, emp_body, acc)
+    load_palettes()
+    build_atlas()
+    report = {}
 
-    # Manager
-    bk.reset_scene()
-    bpy.context.scene.render.fps = FPS
-    mgr_root, mgr_rig, mgr_body = build_manager(bk.collection("Manager"))
-    manager_actions(mgr_rig)
-    export_copy(mgr_root, "Manager")
-    bk.save_blend("manager.blend")
+    emp, emp_clips = build_employee()
+    export(emp.root, "Employee")
+    bk.save_blend("employee.blend")
+    players = [look_json(l, emp, "player") for l in PLAYER_LOOKS]
+    report["players"] = players
+    report["playerAccessories"] = sorted(emp.acc.keys())
+    report["playerProps"] = {k: tri(v) for k, v in emp.props.items()}
+    report["playerGroups"] = PLAYER_GROUPS
+    report["playerClips"] = [{"name": n, "loop": l, "frames": f} for n, l, f in emp_clips]
     if want_previews:
-        preview_manager(mgr_rig)
-    print("CHARACTERS_DONE")
+        preview_players(emp)
+
+    mgr, mgr_clips = build_manager()
+    export(mgr.root, "Manager")
+    bk.save_blend("manager.blend")
+    report["managers"] = [look_json(l, mgr, "manager") for l in MANAGER_LOOKS]
+    report["managerAccessories"] = sorted(mgr.acc.keys())
+    report["managerProps"] = {k: tri(v) for k, v in mgr.props.items()}
+    report["managerGroups"] = MANAGER_GROUPS
+    report["managerClips"] = [{"name": n, "loop": l, "frames": f} for n, l, f in mgr_clips]
+    if want_previews:
+        preview_managers(mgr)
+
+    report["atlas"] = {"file": "FaceAtlas.png", "size": fa.SIZE, "cells": fa.COLS, "eyes": fa.EYES, "mouths": fa.MOUTHS}
+    report["expressions"] = {k: list(v) for k, v in pv.EXPRESSIONS.items()}
+    with open(LOOKS_JSON, "w", encoding="utf-8") as f:
+        json.dump(report, f, indent=1, ensure_ascii=False)
+
+    ok = True
+    for l in report["players"]:
+        flag = "OK" if l["tris"] <= PLAYER_TRI_BUDGET else "OVER"
+        ok &= flag == "OK"
+        print("TRIS player %-8s %5d %s" % (l["id"], l["tris"], flag))
+    for l in report["managers"]:
+        flag = "OK" if l["tris"] <= MANAGER_TRI_BUDGET else "OVER"
+        ok &= flag == "OK"
+        print("TRIS manager %-10s %5d %s" % (l["id"], l["tris"], flag))
+    print("CLIPS player %d manager %d" % (len(emp_clips), len(mgr_clips)))
+    print("CHARACTERS_DONE" if ok else "CHARACTERS_DONE (budget exceeded)")
 
 
 main()
