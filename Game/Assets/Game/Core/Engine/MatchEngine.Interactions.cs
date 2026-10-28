@@ -5,9 +5,11 @@ namespace BirimizKovulacak.Core
     {
         partial void SubmitPhysical(int p, ActionRequest request, ref bool handled, ref FailureCode failure, ref double end)
         {
-            if (!IsPhysical(request.Verb)) return;
+            if (handled || !IsPhysical(request.Verb)) return;
             handled = true;
-            var a = new InteractionState { Request = new ActionRequest(request.MatchId, request.RequestId, request.Verb, request.TargetId, request.IntParam), Start = clock, StartPosition = players[p].Avatar.Position, HeldItem = players[p].Public.CarryingItemId, HeldBefore = Held(p)?.View.Variant ?? "", PhoneCall = phoneCall };
+            // Targetless verbs must not echo unchecked client strings into views/events.
+            string target = request.Verb == ActionVerb.TasteCoffee || request.Verb == ActionVerb.Drop ? "" : request.TargetId;
+            var a = new InteractionState { Request = new ActionRequest(request.MatchId, request.RequestId, request.Verb, target, request.IntParam), Start = clock, StartPosition = players[p].Avatar.Position, HeldItem = players[p].Public.CarryingItemId, HeldBefore = Held(p)?.View.Variant ?? "", PhoneCall = phoneCall };
             double duration; failure = ValidatePhysical(p, a, false, out duration);
             if (failure != FailureCode.None) return;
             a.End = clock + Math.Max(0, duration); players[p].Public.WorkPose = false;
@@ -43,7 +45,8 @@ namespace BirimizKovulacak.Core
                     if (held == null) return FailureCode.HandsEmpty;
                     if (slot == null) return FailureCode.InvalidTarget;
                     if (held.View.Sealed) return FailureCode.Sealed;
-                    if (slot.Kind == SlotKind.PrinterTray) return FailureCode.InvalidTarget;
+                    if (slot.Kind == SlotKind.PrinterTray || slot.Kind == SlotKind.Mailroom) return FailureCode.InvalidTarget;
+                    if (held.View.Kind == ItemKind.Mail && !features.Mail) return FailureCode.FeatureDisabled;
                     if ((slot.Kind == SlotKind.NameplateHolder && held.View.Kind != ItemKind.Nameplate) || (slot.Kind == SlotKind.MugShelf && held.View.Kind != ItemKind.Mug) || (slot.Kind == SlotKind.SprayRack && held.View.Kind != ItemKind.Spray)) return FailureCode.WrongItem;
                     if (slot.Kind == SlotKind.DeliveryTray)
                     {
@@ -70,6 +73,7 @@ namespace BirimizKovulacak.Core
                 case ActionVerb.WriteReport:
                     if (station == null || station.Kind != StationKind.Computer || desk == null) return FailureCode.InvalidTarget;
                     if (desk.View.AssignedOwner != p) return FailureCode.NotOwnDesk;
+                    FailureCode reportPc = ValidatePcV2(desk, a.Request.Verb); if (reportPc != FailureCode.None) return reportPc;
                     if (desk.View.PcLocked) { if (!completion) OwnerBlocked(desk); return FailureCode.StationLocked; }
                     a.Reservation = id; a.DeskIndex = desk.View.Index; a.Activity = PublicActivity.Typing; duration = Config.Tasks.WriteReportSeconds; target = station.Position; break;
                 case ActionVerb.AnswerPhone:
@@ -94,9 +98,11 @@ namespace BirimizKovulacak.Core
                     FailureCode spillLimit = FailureCode.None; CheckSabotage(p, a, ref spillLimit); if (spillLimit != FailureCode.None) return spillLimit; break;
                 case ActionVerb.LockWorkstation: case ActionVerb.UnlockWorkstation:
                     if (station == null || station.Kind != StationKind.Computer || desk == null) return FailureCode.InvalidTarget;
+                    FailureCode lockedPc = ValidatePcV2(desk, a.Request.Verb); if (lockedPc != FailureCode.None) return lockedPc;
                     a.DeskIndex = desk.View.Index; a.Reservation = id; a.Activity = PublicActivity.Typing; target = station.Position;
                     if (a.Request.Verb == ActionVerb.LockWorkstation)
                     {
+                        if (!Present(desk.View.AssignedOwner)) return FailureCode.InvalidTarget;
                         if (desk.View.AssignedOwner == p) return FailureCode.NotAllowed;
                         if (desk.View.PcLocked) return FailureCode.AlreadyLocked;
                         if (desk.ImmuneUntil > clock) return FailureCode.TargetImmune;
@@ -108,7 +114,7 @@ namespace BirimizKovulacak.Core
                 case ActionVerb.SearchContainer:
                     if (slot == null || !slot.Closed) return FailureCode.InvalidTarget;
                     a.Reservation = id + ":search"; a.DeskIndex = slot.DeskIndex; a.Activity = PublicActivity.Rummaging; duration = Config.Interaction.SearchSeconds; target = slot.Position; break;
-                default: return FailureCode.InvalidTarget;
+                default: return ValidatePhysicalV2(p, a, completion, out duration);
             }
             if (a.Reservation.Length != 0 && Reserved(a.Reservation, p)) return FailureCode.TargetBusy;
             return Vec3.FlatDistance(players[p].Avatar.Position, target) <= Config.Interaction.Range + Config.Interaction.RangeSlack ? FailureCode.None : FailureCode.TooFar;
@@ -128,6 +134,7 @@ namespace BirimizKovulacak.Core
         }
         partial void CompleteInteraction(int p, InteractionState a)
         {
+            if (a.Request.Verb == ActionVerb.TipManager) { CompleteTip(p, a); return; }
             double ignored;
             if (!Office || !players[p].Public.Connected || ValidatePhysical(p, a, true, out ignored) != FailureCode.None) { Cancel(p); return; }
             players[p].Interaction = null; ClearActivity(p); ApplyPhysical(p, a);
@@ -135,6 +142,7 @@ namespace BirimizKovulacak.Core
         }
         private void ApplyPhysical(int p, InteractionState a)
         {
+            int firstIncident = incidents.Count;
             ItemState held = Held(p); string id = a.Request.TargetId; DeskState desk = Desk(a.DeskIndex); SlotDef slot = Layout.GetSlot(id);
             switch (a.Request.Verb)
             {
@@ -147,17 +155,19 @@ namespace BirimizKovulacak.Core
                     if (slot.Kind == SlotKind.DeliveryTray)
                     {
                         if (held.View.Kind == ItemKind.Report) { held.View.Location = ItemLocationKind.Archived; quota.ReportOrders--; AwardTask(p, TaskType.Report); }
-                        else { held.View.Fill = MugFill.Used; quota.CoffeeOrders--; AwardTask(p, TaskType.Coffee); }
+                        else { held.View.Fill = MugFill.Used; quota.CoffeeOrders--; if (!SaltedDeliveryV2(p, held)) AwardTask(p, TaskType.Coffee); }
                     }
+                    DeliverMail(p, held, slot);
                     AfterPlacement(p, held, slot, a); break;
                 case ActionVerb.Drop: DropItem(p, true); break;
-                case ActionVerb.BrewCoffee: held.View.Fill = MugFill.Full; break;
-                case ActionVerb.WriteReport: EnqueuePrint(p); break;
+                case ActionVerb.BrewCoffee: ClearSaltV2(held); held.View.Fill = MugFill.Full; break;
+                case ActionVerb.WriteReport: EnqueuePrint(p); OpenScreenV2(p); break;
                 case ActionVerb.AnswerPhone: quota.PhoneRinging = false; quota.PhoneRingEnds = 0; nextPhone = clock + PhoneInterval(); AwardTask(p, TaskType.Phone); break;
                 case ActionVerb.CleanDesk: desk.View.Dirty = false; AwardTask(p, TaskType.CleanDesk); break;
                 case ActionVerb.CleanSpill: desk.View.Spill = false; ReverseEffect(p, desk.SpillIncident); break;
-                case ActionVerb.SpillCoffee: desk.View.Spill = true; held.View.Fill = MugFill.Used; ApplySabotage(p, a, held); break;
+                case ActionVerb.SpillCoffee: desk.View.Spill = true; ClearSaltV2(held); held.View.Fill = MugFill.Used; ApplySabotage(p, a, held); break;
                 case ActionVerb.LockWorkstation:
+                    CloseScreenV2(desk);
                     desk.View.PcLocked = true; desk.View.PcLockedAt = clock; desk.View.PcLockedUntil = clock + Config.GetSabotage(SabotageType.LockWorkstation).EffectSeconds;
                     ApplySabotage(p, a, null); LockEvidence(desk); Emit(EventType.WorkstationLocked, target: id); break;
                 case ActionVerb.UnlockWorkstation: ReverseEffect(p, desk.LockIncident); Unlock(desk); break;
@@ -165,8 +175,11 @@ namespace BirimizKovulacak.Core
                     var note = new PrivateNote { Kind = NoteKind.SearchResult, Time = clock, TargetId = id, DeskIndex = a.DeskIndex };
                     foreach (ItemState i in items) if (i.View.Location == ItemLocationKind.Slot && i.View.SlotId == id) { i.KnownBy[p] = true; note.Contents.Add(i.View.Variant); }
                     AddPrivateNote(p, note); break;
+                default: ApplyPhysicalV2(p, a); break;
             }
-            RefreshDesks(); WitnessCompleted(p, a, Held(p)?.View.Variant ?? ""); Changed();
+            // Preserve the actual interaction start, including incidental tampering during pickup/placement.
+            for (int n = firstIncident; n < incidents.Count; n++) incidents[n].Start = a.Start;
+            RefreshDesks(); WitnessCompleted(p, a, Held(p)?.View.Variant ?? "", firstIncident); Changed();
         }
         private void Take(int p, ItemState item)
         {
@@ -179,7 +192,7 @@ namespace BirimizKovulacak.Core
         {
             item.View.Location = ItemLocationKind.Slot; item.View.SlotId = slot.Id; item.View.SlotIndex = index; item.View.CarrierId = PlayerIds.None;
             Array.Clear(item.KnownBy, 0, item.KnownBy.Length); if (slot.Closed) item.KnownBy[p] = true;
-            item.LastPlacer = p; item.PlacedAt = item.MovedAt = clock; item.PlacementSlot = slot.Id; players[p].Public.CarryingItemId = "";
+            item.LastPlacer = p; item.PlacementIncident = 0; item.PlacedAt = item.MovedAt = clock; item.PlacementSlot = slot.Id; players[p].Public.CarryingItemId = "";
             if (slot.Kind == SlotKind.NameplateHolder) Desk(slot.DeskIndex).NameplateChangedAt = clock;
         }
         partial void DropItem(int p, bool forward)
@@ -187,11 +200,11 @@ namespace BirimizKovulacak.Core
             ItemState item = Held(p); if (item == null) return;
             item.View.Location = ItemLocationKind.Floor; item.View.SlotId = ""; item.View.CarrierId = PlayerIds.None; item.View.SlotIndex = 0;
             item.View.FloorPosition = players[p].Avatar.Position + Vec3.FromYaw(players[p].Avatar.Yaw) * (forward ? Config.Interaction.DropForwardOffset : 0);
-            item.View.FloorYaw = players[p].Avatar.Yaw; item.MovedAt = clock; item.LastPlacer = p; item.PlacedAt = clock; item.PlacementSlot = "";
+            item.View.FloorYaw = players[p].Avatar.Yaw; item.MovedAt = clock; item.LastPlacer = p; item.PlacementIncident = 0; item.PlacedAt = clock; item.PlacementSlot = "";
             Array.Clear(item.KnownBy, 0, item.KnownBy.Length); players[p].Public.CarryingItemId = "";
             if (!forward) Emit(EventType.ItemDropped, p, item: item.View.Id);
         }
-        private bool Reserved(string key, int except) { for (int p = 0; p < 4; p++) if (p != except && players[p].Interaction != null && players[p].Interaction.Reservation == key) return true; return false; }
+        private bool Reserved(string key, int except) { foreach (int p in playerIds) if (p != except && players[p].Interaction != null && players[p].Interaction.Reservation == key) return true; return false; }
         private bool ItemPositionReserved(ItemState item, int except) { return item.View.Location == ItemLocationKind.Slot && Reserved(item.View.SlotId + ":" + item.View.SlotIndex, except); }
         private bool SlotItemsReserved(string slot, int except) { foreach (ItemState item in items) if (item.View.Location == ItemLocationKind.Slot && item.View.SlotId == slot && Reserved(item.View.Id, except)) return true; return false; }
         private bool Occupied(string slot, int index) { return items.Exists(i => i.View.Location == ItemLocationKind.Slot && i.View.SlotId == slot && i.View.SlotIndex == index); }
@@ -199,6 +212,7 @@ namespace BirimizKovulacak.Core
         private void Unlock(DeskState desk)
         {
             desk.View.PcLocked = false; desk.View.PcLockedUntil = 0; desk.ImmuneUntil = clock + Config.AntiGrief.WorkstationImmunitySeconds;
+            desk.View.PcImmuneUntil = desk.ImmuneUntil;
             EndEffect(desk.LockIncident); Emit(EventType.WorkstationUnlocked, target: desk.Def.ComputerId);
         }
         partial void ConfigurePlacement(int p, ItemState item, SlotDef slot, InteractionState a, ref double duration);
@@ -211,6 +225,6 @@ namespace BirimizKovulacak.Core
         partial void OwnerBlocked(DeskState desk);
         partial void AddPrivateNote(int p, PrivateNote note);
         partial void LockEvidence(DeskState desk);
-        partial void WitnessCompleted(int p, InteractionState a, string heldAfter);
+        partial void WitnessCompleted(int p, InteractionState a, string heldAfter, int firstIncident);
     }
 }

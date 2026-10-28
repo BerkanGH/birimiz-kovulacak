@@ -1,0 +1,123 @@
+[
+  {
+    "id": "notes",
+    "path": "Art/UI/icons/notes.png",
+    "w": 256,
+    "h": 256,
+    "category": "icons",
+    "nineSlice": null,
+    "screenRect": null,
+    "hasText": false,
+    "description": "Small manila spiral notebook with three navy binding rings on left, cream blank cover and single green pencil placed diagonally at lower right. Broad simple silhouette, no lines of writing."
+  },
+  {
+    "id": "objective",
+    "path": "Art/UI/icons/objective.png",
+    "w": 256,
+    "h": 256,
+    "category": "icons",
+    "nineSlice": null,
+    "screenRect": null,
+    "hasText": false,
+    "description": "Large cream and green bullseye with one red arrow planted precisely in the center. Arrow points diagonally down-left toward target center. One simple target, not a scene."
+  },
+  {
+    "id": "cards",
+    "path": "Art/UI/icons/cards.png",
+    "w": 256,
+    "h": 256,
+    "category": "icons",
+    "nineSlice": null,
+    "screenRect": null,
+    "hasText": false,
+    "description": "Fan of exactly three rounded manila sabotage cards with thick navy borders, front card has one large red lightning bolt emblem and nothing else."
+  },
+  {
+    "id": "contacts",
+    "path": "Art/UI/icons/contacts.png",
+    "w": 256,
+    "h": 256,
+    "category": "icons",
+    "nineSlice": null,
+    "screenRect": null,
+    "hasText": false,
+    "description": "Small green address book with cream tab at right and simple two bean head-and-shoulder silhouettes embossed in cream on the cover, one small teal bookmark. No faces needed."
+  },
+  {
+    "id": "warning",
+    "path": "Art/UI/icons/warning.png",
+    "w": 256,
+    "h": 256,
+    "category": "icons",
+    "nineSlice": null,
+    "screenRect": null,
+    "hasText": false,
+    "description": "One rounded triangular yellow #FFE066 warning sign with navy border, one large navy exclamation pictogram in its center. Cream narrow highlight upper-left. No extra marks."
+  },
+  {
+    "id": "check",
+    "path": "Art/UI/icons/check.png",
+    "w": 256,
+    "h": 256,
+    "category": "icons",
+    "nineSlice": null,
+    "screenRect": null,
+    "hasText": false,
+    "description": "One thick rounded office green #2F6B4F checkmark with navy outline and slim pale green upper-left highlight. Chunky clear positive-tick silhouette, no circle no badge no surrounding tile."
+  },
+  {
+    "id": "cross",
+    "path": "Art/UI/icons/cross.png",
+    "w": 256,
+    "h": 256,
+    "category": "icons",
+    "nineSlice": null,
+    "screenRect": null,
+    "hasText": false,
+    "description": "One thick rounded stamp red #D2382F diagonal cross cancellation symbol with navy outline and slim coral upper-left highlight. Equal arms, very clear X shape, no circle no badge no tile."
+  },
+  {
+    "id": "info",
+    "path": "Art/UI/icons/info.png",
+    "w": 256,
+    "h": 256,
+    "category": "icons",
+    "nineSlice": null,
+    "screenRect": null,
+    "hasText": false,
+    "description": "One clean teal #3BB9B0 circular information badge with navy outline. Centered cream information pictogram: a small round dot above a short rounded upright stem, visually the familiar lowercase i symbol. No other text or symbols. No elaborate decoration."
+  },
+  {
+    "id": "kick",
+    "path": "Art/UI/icons/kick.png",
+    "w": 256,
+    "h": 256,
+    "category": "icons",
+    "nineSlice": null,
+    "screenRect": null,
+    "hasText": false,
+    "description": "One humorous navy office shoe delivering a kick toward the right, accompanied by a thick red right-pointing arrow just above the toe. A small green trouser cuff on the shoe. Icon for removing a player from lobby, just shoe and arrow, no character body."
+  },
+  {
+    "id": "host",
+    "path": "Art/UI/icons/host.png",
+    "w": 256,
+    "h": 256,
+    "category": "icons",
+    "nineSlice": null,
+    "screenRect": null,
+    "hasText": false,
+    "description": "One compact green desktop computer monitor with cream screen, one large gold crown on top of its frame. Tiny single navy bean-head silhouette centered on screen. Broad simple shapes, icon for lobby host."
+  },
+  {
+    "id": "week_calendar",
+    "path": "Art/UI/icons/week_calendar.png",
+    "w": 256,
+    "h": 256,
+    "category": "icons",
+    "nineSlice": null,
+    "screenRect": null,
+    "hasText": false,
+    "description": "One manila desktop week calendar with green top binding and exactly five cream day squares in one horizontal row, the fifth square contains one red star. No numerals, no date text. Thick clear navy outline, two chunky navy binding rings above, compact square composition."
+  }
+]

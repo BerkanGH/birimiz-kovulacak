@@ -1,0 +1,90 @@
+[
+  {
+    "id": "corkboard_notes",
+    "path": "Art/UI/decals/corkboard_notes.png",
+    "w": 1024,
+    "h": 768,
+    "category": "decals",
+    "nineSlice": null,
+    "screenRect": null,
+    "hasText": false,
+    "description": "Turkish office parody poster / wall decoration."
+  },
+  {
+    "id": "exit_sign",
+    "path": "Art/UI/decals/exit_sign.png",
+    "w": 512,
+    "h": 256,
+    "category": "decals",
+    "nineSlice": null,
+    "screenRect": null,
+    "hasText": true,
+    "description": "Turkish office parody poster / wall decoration."
+  },
+  {
+    "id": "poster_kahve",
+    "path": "Art/UI/decals/poster_kahve.png",
+    "w": 512,
+    "h": 768,
+    "category": "decals",
+    "nineSlice": null,
+    "screenRect": null,
+    "hasText": true,
+    "description": "Turkish office parody poster / wall decoration."
+  },
+  {
+    "id": "poster_sadakat",
+    "path": "Art/UI/decals/poster_sadakat.png",
+    "w": 512,
+    "h": 768,
+    "category": "decals",
+    "nineSlice": null,
+    "screenRect": null,
+    "hasText": true,
+    "description": "Turkish office parody poster / wall decoration."
+  },
+  {
+    "id": "poster_takim_ruhu",
+    "path": "Art/UI/decals/poster_takim_ruhu.png",
+    "w": 512,
+    "h": 768,
+    "category": "decals",
+    "nineSlice": null,
+    "screenRect": null,
+    "hasText": true,
+    "description": "Turkish office parody poster / wall decoration."
+  },
+  {
+    "id": "poster_verimlilik",
+    "path": "Art/UI/decals/poster_verimlilik.png",
+    "w": 512,
+    "h": 768,
+    "category": "decals",
+    "nineSlice": null,
+    "screenRect": null,
+    "hasText": true,
+    "description": "Turkish office parody poster / wall decoration."
+  },
+  {
+    "id": "wet_floor",
+    "path": "Art/UI/decals/wet_floor.png",
+    "w": 512,
+    "h": 768,
+    "category": "decals",
+    "nineSlice": null,
+    "screenRect": null,
+    "hasText": false,
+    "description": "Turkish office parody poster / wall decoration."
+  },
+  {
+    "id": "whiteboard_doodles",
+    "path": "Art/UI/decals/whiteboard_doodles.png",
+    "w": 1024,
+    "h": 512,
+    "category": "decals",
+    "nineSlice": null,
+    "screenRect": null,
+    "hasText": false,
+    "description": "Turkish office parody poster / wall decoration."
+  }
+]

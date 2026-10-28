@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Globalization;
 
 namespace BirimizKovulacak.Game
@@ -32,6 +32,11 @@ namespace BirimizKovulacak.Game
         public bool InputSim;
         public bool DropRejoin = true;
         public float DropDowntime = 5f;
+        // v2
+        public bool WeekMode;
+        public int ExpectPlayers = 4;
+        public string ManagerProfile;
+        public string VoiceTest;
 
         public static LaunchArgs Current { get; private set; } = new LaunchArgs();
 
@@ -66,6 +71,10 @@ namespace BirimizKovulacak.Game
                     case "-simulatedrop": a.SimulateDropAt = float.Parse(next, CultureInfo.InvariantCulture); i++; break;
                     case "-droprejoin": a.DropRejoin = next != "0"; i++; break;
                     case "-dropdowntime": a.DropDowntime = float.Parse(next, CultureInfo.InvariantCulture); i++; break;
+                    case "-week": a.WeekMode = true; break;
+                    case "-expectplayers": a.ExpectPlayers = int.Parse(next, CultureInfo.InvariantCulture); i++; break;
+                    case "-manager": a.ManagerProfile = next; i++; break;
+                    case "-voicetest": a.VoiceTest = next ?? "sine"; i++; break;
                     case "-botaggression": a.BotAggression = float.Parse(next, CultureInfo.InvariantCulture); i++; break;
                 }
             }

@@ -1,0 +1,68 @@
+[
+  {
+    "id": "howto_1_work",
+    "path": "Art/UI/howto/howto_1_work.png",
+    "w": 1280,
+    "h": 720,
+    "category": "howto",
+    "nineSlice": null,
+    "screenRect": null,
+    "hasText": false,
+    "description": "Shared quota across the multi-room office: coffee, report, phone and mail tasks contribute to one pictogram progress board."
+  },
+  {
+    "id": "howto_2_sabotage",
+    "path": "Art/UI/howto/howto_2_sabotage.png",
+    "w": 1280,
+    "h": 720,
+    "category": "howto",
+    "nineSlice": null,
+    "screenRect": null,
+    "hasText": false,
+    "description": "Mor conceals a sabotage card and pulls Mavi's workstation plug while Mavi faces his monitor."
+  },
+  {
+    "id": "howto_3_manager",
+    "path": "Art/UI/howto/howto_3_manager.png",
+    "w": 1280,
+    "h": 720,
+    "category": "howto",
+    "nineSlice": null,
+    "screenRect": null,
+    "hasText": false,
+    "description": "A discreet tip-line caller directs Nermin's attention to a coworker's desk and open drawer."
+  },
+  {
+    "id": "howto_4_calls",
+    "path": "Art/UI/howto/howto_4_calls.png",
+    "w": 1280,
+    "h": 720,
+    "category": "howto",
+    "nineSlice": null,
+    "screenRect": null,
+    "hasText": false,
+    "description": "Pembe and Sari call from separate rooms while Turuncu eavesdrops nearby behind a wall."
+  },
+  {
+    "id": "howto_5_meeting",
+    "path": "Art/UI/howto/howto_5_meeting.png",
+    "w": 1280,
+    "h": 720,
+    "category": "howto",
+    "nineSlice": null,
+    "screenRect": null,
+    "hasText": false,
+    "description": "An accusing finger at the HR table links a nervous colleague to projected text-free CCTV footage."
+  },
+  {
+    "id": "howto_6_week",
+    "path": "Art/UI/howto/howto_6_week.png",
+    "w": 1280,
+    "h": 720,
+    "category": "howto",
+    "nineSlice": null,
+    "screenRect": null,
+    "hasText": false,
+    "description": "Five pictogram day columns progress left-to-right into a Friday star and employee-of-month bean trophy."
+  }
+]

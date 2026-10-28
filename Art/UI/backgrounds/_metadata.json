@@ -1,0 +1,46 @@
+[
+  {
+    "id": "lobby_bg",
+    "path": "Art/UI/backgrounds/lobby_bg.png",
+    "w": 1920,
+    "h": 1080,
+    "category": "backgrounds",
+    "nineSlice": null,
+    "screenRect": null,
+    "hasText": false,
+    "description": "Text-free warm office illustration; interface overlays supplied by the game."
+  },
+  {
+    "id": "menu_bg",
+    "path": "Art/UI/backgrounds/menu_bg.png",
+    "w": 1920,
+    "h": 1080,
+    "category": "backgrounds",
+    "nineSlice": null,
+    "screenRect": null,
+    "hasText": false,
+    "description": "Text-free warm office illustration; interface overlays supplied by the game."
+  },
+  {
+    "id": "paper_tile",
+    "path": "Art/UI/backgrounds/paper_tile.png",
+    "w": 512,
+    "h": 512,
+    "category": "backgrounds",
+    "nineSlice": null,
+    "screenRect": null,
+    "hasText": false,
+    "description": "Text-free warm office illustration; interface overlays supplied by the game."
+  },
+  {
+    "id": "results_bg",
+    "path": "Art/UI/backgrounds/results_bg.png",
+    "w": 1920,
+    "h": 1080,
+    "category": "backgrounds",
+    "nineSlice": null,
+    "screenRect": null,
+    "hasText": false,
+    "description": "Text-free warm office illustration; interface overlays supplied by the game."
+  }
+]

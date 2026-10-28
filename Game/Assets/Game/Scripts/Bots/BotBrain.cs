@@ -75,6 +75,10 @@ namespace BirimizKovulacak.Game
                 _plan = null;
                 _accused = _voted = _presented = _rematched = false;
                 _scenarioStep = 0;
+                _matchStart = 0;
+                _tipDesk = -1;
+                _hangUpAt = 0;
+                _answerAt = -1f;
             }
             if (v.Phase != _phase)
             {
@@ -109,6 +113,7 @@ namespace BirimizKovulacak.Game
             }
 
             InformantTick(v);
+            SocialTick(v);
 
             if (_plan != null && (Time.time > _plan.Expires || (_plan.Sent && Time.time - _plan.SentAt > 1.2f)))
             {
@@ -143,7 +148,10 @@ namespace BirimizKovulacak.Game
                 Vector3 next = _corner < _corners.Length ? _corners[_corner] : _plan.Goal;
                 Vector3 d = next - pos; d.y = 0;
                 if (d.magnitude < 0.35f && _corner < _corners.Length) _corner++;
-                avatar.Drive(Time.time < _unstickUntil ? _unstickDir : d.normalized, raid && Rand() < 0.02f, dt);
+                bool sneak = !string.IsNullOrEmpty(_intent) && Time.time < _intentUntil && flat.magnitude < 6f;
+                OwnerNetworkTransform.SetCrouched(avatar.gameObject, sneak);
+                Vector3 dir = Time.time < _unstickUntil ? _unstickDir : d.normalized;
+                avatar.Drive(sneak ? dir * LocalPlayerController.CrouchSpeedFactor : dir, raid && Rand() < 0.02f, dt);
                 if ((pos - _lastPos).magnitude < 0.01f)
                 {
                     if (Time.time - _stuckSince > 1.2f && Time.time > _unstickUntil)
@@ -160,6 +168,7 @@ namespace BirimizKovulacak.Game
                 return;
             }
             avatar.Drive(Vector3.zero, false, dt);
+            OwnerNetworkTransform.SetCrouched(avatar.gameObject, false);
             Vector3 target;
             if (!string.IsNullOrEmpty(_plan.TargetId) && OfficeWorld.I != null && OfficeWorld.I.TryTargetPosition(_plan.TargetId, out target))
                 avatar.FaceTowards(target, dt);
@@ -318,6 +327,17 @@ namespace BirimizKovulacak.Game
             var locked = v.Desks.FirstOrDefault(d => d.PcLocked && (d.Index == myDesk || v.Me.Objective.Type == ObjectiveType.Fixer || Rand() < 0.2f));
             if (locked != null) return Go("unlock", EntityIds.DeskComputer(locked.Index), ActionVerb.UnlockWorkstation, avatar);
 
+            // v2 repairs: outages hurt everyone, an unplugged pc blocks reports.
+            if (v.Office.InternetDown && Rand() < 0.5f) return Go("restart-router", EntityIds.Router, ActionVerb.RestartRouter, avatar, -1, 20f);
+            if (v.Office.PowerDown && Rand() < 0.5f) return Go("reset-fuse", EntityIds.FuseBox, ActionVerb.ResetFuse, avatar, -1, 20f);
+            var unplugged = v.Desks.FirstOrDefault(d => d.Unplugged && (d.Index == myDesk || Rand() < 0.25f));
+            if (unplugged != null) return Go("plug-in", EntityIds.Desk(unplugged.Index), ActionVerb.PlugIn, avatar);
+            if (myDeskView != null && myDeskView.ScreenOpen && Rand() < 0.35f && (avatar.transform.position - V(GameConfig.Layout.GetDesk(myDesk).SeatPosition)).magnitude < 2.5f)
+                return Go("lock-screen", EntityIds.DeskComputer(myDesk), ActionVerb.LockScreen, avatar);
+
+            var tip = TipPlan(v, avatar);
+            if (tip != null) return tip;
+
             // Sabotage, if this bot is in the mood and its cooldowns allow.
             if (WantsSabotage(v))
             {
@@ -347,6 +367,8 @@ namespace BirimizKovulacak.Game
                 var spray = v.Items.FirstOrDefault(i => i.Kind == ItemKind.Spray && i.Location != ItemLocationKind.Carried);
                 if (spray != null) options.Add((0.9f, () => Go("take-spray", spray.Id, ActionVerb.PickUp, avatar)));
             }
+            var mail = v.Items.FirstOrDefault(i => i.Kind == ItemKind.Mail && i.Location == ItemLocationKind.Slot && i.SlotId == EntityIds.Mailroom);
+            if (mail != null) options.Add((0.8f, () => Go("take-mail", mail.Id, ActionVerb.PickUp, avatar)));
             if (options.Count == 0)
             {
                 if (Rand() < 0.3f) return Go("idle-desk", EntityIds.Desk(myDesk), ActionVerb.None, avatar, -1, 4f);
@@ -366,6 +388,12 @@ namespace BirimizKovulacak.Game
                 case ItemKind.Mug:
                     if (held.Fill == MugFill.Full)
                     {
+                        if (!held.KnownSalted && Has(v, SabotageType.SaltCoffee) && CardReady(v, SabotageType.SaltCoffee) && WantsSabotage(v) && Rand() < 0.6f)
+                            return Go("salt", EntityIds.CoffeeMachine, ActionVerb.SaltCoffee, avatar);
+                        if (held.KnownSalted && v.Quota.CoffeeOrders > 0)
+                            return Go("deliver-salty", EntityIds.DeliveryTray, ActionVerb.Place, avatar);
+                        if (Rand() < 0.12f)
+                            return new Plan { Name = "taste", Verb = ActionVerb.TasteCoffee, Goal = avatar.transform.position, Expires = Time.time + 3f };
                         if (WantsSabotage(v) && Rand() < 0.5f)
                         {
                             int victim = PickVictim(v);
@@ -380,11 +408,14 @@ namespace BirimizKovulacak.Game
                 case ItemKind.Report:
                     if (held.ReportOwner != _ch.Slot && ((intent && _intent == "steal-report") || (WantsSabotage(v) && Rand() < 0.6f)))
                     {
-                        string[] spots = { EntityIds.HideBehindPrinter, EntityIds.HideInPlant, EntityIds.HideInCabinet };
+                        string[] spots = { EntityIds.HideBehindPrinter, EntityIds.HideInPlant, EntityIds.HideInCabinet, EntityIds.HideInToilet };
                         return Go("hide-report", spots[_rng.Next(spots.Length)], ActionVerb.Place, avatar);
                     }
                     if (v.Quota.ReportOrders > 0) return Go("deliver-report", EntityIds.DeliveryTray, ActionVerb.Place, avatar);
                     return Go("park-report", EntityIds.DeskSurface(myDesk), ActionVerb.Place, avatar);
+                case ItemKind.Mail:
+                    if (held.AddressedDesk >= 0) return Go("deliver-mail", EntityIds.DeskSurface(held.AddressedDesk), ActionVerb.Place, avatar);
+                    return new Plan { Name = "drop", Verb = ActionVerb.Drop, Goal = avatar.transform.position, Expires = Time.time + 2f };
                 case ItemKind.Spray:
                 {
                     var spill = v.Desks.FirstOrDefault(d => d.Spill);
@@ -399,7 +430,13 @@ namespace BirimizKovulacak.Game
                     int victim = PickVictim(v);
                     var vd = v.Desks.FirstOrDefault(d => d.AssignedOwner == victim);
                     bool plant = vd != null && ((intent && _intent == "get-suspicious") || (v.Me.Objective.Type != ObjectiveType.CleanHands && v.Me.Role != Role.Informant && Rand() < 0.5f));
-                    if (plant) return Go("plant", Rand() < 0.7f ? EntityIds.DeskDrawer(vd.Index) : EntityIds.DeskSurface(vd.Index), ActionVerb.Place, avatar);
+                    if (plant)
+                    {
+                        bool drawer = Rand() < 0.7f;
+                        // Drawers are only opened at raids when tipped: plant, then call the tip line.
+                        if (drawer && Rand() < 0.6f) _tipDesk = vd.Index;
+                        return Go("plant", drawer ? EntityIds.DeskDrawer(vd.Index) : EntityIds.DeskSurface(vd.Index), ActionVerb.Place, avatar);
+                    }
                     return Go("dispose", EntityIds.LostAndFound, ActionVerb.Place, avatar);
                 }
                 case ItemKind.Clutter:
@@ -442,7 +479,13 @@ namespace BirimizKovulacak.Game
             if (sus.Count > 0 && ready(SabotageType.PlantItem)) choices.Add(() => Go("get-suspicious", sus[_rng.Next(sus.Count)].Id, ActionVerb.PickUp, avatar));
             var clutter = v.Items.Where(i => i.Kind == ItemKind.Clutter && i.Location == ItemLocationKind.Slot && i.SlotId == EntityIds.JunkBin).ToList();
             if (clutter.Count > 0 && ready(SabotageType.MoveClutter)) choices.Add(() => Go("get-clutter", clutter[_rng.Next(clutter.Count)].Id, ActionVerb.PickUp, avatar));
-            if (!vd.PcLocked && ready(SabotageType.LockWorkstation)) choices.Add(() => Go("lock", EntityIds.DeskComputer(vd.Index), ActionVerb.LockWorkstation, avatar));
+            // Card sabotage (only the cards this bot holds).
+            if (!vd.PcLocked && !vd.Unplugged && Has(v, SabotageType.LockWorkstation) && ready(SabotageType.LockWorkstation)) choices.Add(() => Go("lock", EntityIds.DeskComputer(vd.Index), ActionVerb.LockWorkstation, avatar));
+            if (vd.ScreenOpen && !vd.Unplugged && !v.Office.InternetDown && Has(v, SabotageType.FakeEmail) && ready(SabotageType.FakeEmail))
+                choices.Add(() => Go("fake-email", EntityIds.DeskComputer(vd.Index), ActionVerb.SendFakeEmail, avatar, _rng.Next(Mathf.Max(1, _ch.Config.Email.TemplateCount))));
+            if (!vd.Unplugged && Has(v, SabotageType.PullPlug) && ready(SabotageType.PullPlug)) choices.Add(() => Go("pull-plug", EntityIds.Desk(vd.Index), ActionVerb.PullPlug, avatar));
+            if (!v.Office.InternetDown && Has(v, SabotageType.InternetOutage) && ready(SabotageType.InternetOutage) && Rand() < 0.4f) choices.Add(() => Go("cut-internet", EntityIds.Router, ActionVerb.CutInternet, avatar, -1, 20f));
+            if (!v.Office.PowerDown && Has(v, SabotageType.PowerCut) && ready(SabotageType.PowerCut) && Rand() < 0.4f) choices.Add(() => Go("cut-power", EntityIds.FuseBox, ActionVerb.CutPower, avatar, -1, 20f));
             var plate = v.Items.FirstOrDefault(i => i.Kind == ItemKind.Nameplate && i.SlotId == EntityIds.DeskNameplate(vd.Index));
             if (plate != null && ready(SabotageType.NameplateSwap)) choices.Add(() => Go("take-nameplate", plate.Id, ActionVerb.PickUp, avatar));
             var report = v.Items.FirstOrDefault(i => i.Kind == ItemKind.Report && i.ReportOwner != _ch.Slot && i.SlotId == EntityIds.PrinterTray);
@@ -494,6 +537,7 @@ namespace BirimizKovulacak.Game
             if (v.Me.Role != Role.Informant || v.Me.Informant == null || Time.time < _nextInformantAct) return;
             _nextInformantAct = Time.time + 3f;
             var inf = v.Me.Informant;
+            if (inf.CallLogsLeft > 0 && v.Phase == MatchPhase.Work2 && Rand() < 0.3f) { _ch.Send(ActionVerb.PullCallLogs); return; }
             var scannedIds = new HashSet<int>(inf.Scans.Select(s => s.EvidenceId));
             var target = v.Evidence.FirstOrDefault(e => (e.Kind == EvidenceKind.SuspiciousItemFound || e.Kind == EvidenceKind.HiddenReportFound) && !scannedIds.Contains(e.Id));
             if (target != null && inf.ScansLeft > 0) { _ch.Send(ActionVerb.AuditScanEvidence, "", target.Id); return; }
@@ -507,6 +551,76 @@ namespace BirimizKovulacak.Game
             }
         }
 
+        // ---------------------------------------------------------------- v2: cards, calls, tip line, emotes
+
+        static bool Has(PlayerView v, SabotageType t) { return v.Me.Cards != null && v.Me.Cards.Contains(t); }
+
+        bool CardReady(PlayerView v, SabotageType t)
+        {
+            var cds = v.Me.SabotageCooldowns;
+            return cds == null || (int)t >= cds.Count || cds[(int)t] <= _ch.Now;
+        }
+
+        float _nextSocial, _hangUpAt, _answerAt = -1f;
+        double _matchStart;
+
+        /// <summary>Instant phone/emote verbs (no walking): answer or decline, call colleagues, hang up, emote.</summary>
+        void SocialTick(PlayerView v)
+        {
+            if (v.Phase == MatchPhase.Briefing && _matchStart <= 0) _matchStart = v.PhaseStartTime;
+            var call = v.Me.Call;
+            if (call != null && v.Features.Calls)
+            {
+                if (call.State == CallState.RingingIn)
+                {
+                    if (_answerAt < 0) _answerAt = Time.time + 0.8f + Rand() * 2f;
+                    else if (Time.time >= _answerAt)
+                    {
+                        _answerAt = -1f;
+                        bool answer = Rand() < 0.75f;
+                        _ch.Send(answer ? ActionVerb.AnswerCall : ActionVerb.DeclineCall);
+                        if (answer) _hangUpAt = Time.time + 5f + Rand() * 10f;
+                    }
+                    return;
+                }
+                if (call.State == CallState.Active)
+                {
+                    if (_hangUpAt <= 0) _hangUpAt = Time.time + 5f + Rand() * 10f;
+                    if (Time.time >= _hangUpAt) { _hangUpAt = 0; _ch.Send(ActionVerb.HangUp); }
+                    return;
+                }
+            }
+            if (Time.time < _nextSocial) return;
+            _nextSocial = Time.time + 4f + Rand() * 6f;
+            if (v.Features.Calls && call != null && call.State == CallState.None && v.Me.CallCooldownUntil <= _ch.Now && Rand() < 0.3f)
+            {
+                var others = v.Players.Where(p => p.Id != _ch.Slot && p.Connected).ToList();
+                if (others.Count > 0) { _ch.Send(ActionVerb.CallPlayer, "", others[_rng.Next(others.Count)].Id); return; }
+            }
+            if (Rand() < 0.15f) _ch.Send(ActionVerb.Emote, "", _rng.Next(5));
+        }
+
+        /// <summary>After planting in a drawer, call the tip line on that desk (the signature combo).</summary>
+        Plan TipPlan(PlayerView v, PlayerAvatar avatar)
+        {
+            if (_tipDesk < 0 || !v.Features.TipLine || v.Me.TipsLeft <= 0 || (v.Me.Call != null && v.Me.Call.State != CallState.None)) return null;
+            if (v.Phase != MatchPhase.Work1 && v.Phase != MatchPhase.Work2) return null;
+            int desk = _tipDesk;
+            _tipDesk = -1;
+            return new Plan { Name = "tip", Verb = ActionVerb.TipManager, TargetId = EntityIds.Desk(desk), Goal = avatar.transform.position, Expires = Time.time + 6f };
+        }
+
+        int _tipDesk = -1;
+
+        void RequestFootage(PlayerView v)
+        {
+            var cams = GameConfig.Layout.Cameras;
+            if (cams.Count == 0) return;
+            var latest = v.Evidence.Where(e => e.Time > _matchStart && e.Kind != EvidenceKind.CctvFootage).OrderByDescending(e => e.Time).FirstOrDefault();
+            int second = latest != null ? (int)(latest.Time - _matchStart) : 60 + _rng.Next(240);
+            _ch.Send(ActionVerb.RequestFootage, cams[_rng.Next(cams.Count)].Id, Mathf.Max(0, second));
+        }
+
         // ---------------------------------------------------------------- meeting
 
         void MeetingTick(PlayerView v)
@@ -516,10 +630,15 @@ namespace BirimizKovulacak.Game
             var o = v.Me.Objective;
             switch (v.Phase)
             {
+                case MatchPhase.MeetingDefense1:
+                case MatchPhase.MeetingDefense2:
+                    if (v.Features.Footage && v.Me.FootageLeft > 0 && (v.Meeting.Speaker == _ch.Slot || v.Me.Role == Role.Informant) && Rand() < 0.7f)
+                        RequestFootage(v);
+                    break;
                 case MatchPhase.MeetingDiscussion:
-                    if (!_presented && v.Me.Notes.Any(n => !n.Presented && (n.Kind == NoteKind.Witness || n.Kind == NoteKind.ScanResult)))
+                    if (!_presented && v.Me.Notes.Any(n => !n.Presented && (n.Kind == NoteKind.Witness || n.Kind == NoteKind.ScanResult || n.Kind == NoteKind.CallLog || n.Kind == NoteKind.TasteResult)))
                     {
-                        var note = v.Me.Notes.First(n => !n.Presented && (n.Kind == NoteKind.Witness || n.Kind == NoteKind.ScanResult));
+                        var note = v.Me.Notes.First(n => !n.Presented && (n.Kind == NoteKind.Witness || n.Kind == NoteKind.ScanResult || n.Kind == NoteKind.CallLog || n.Kind == NoteKind.TasteResult));
                         _presented = true;
                         _ch.Send(ActionVerb.PresentNote, "", note.Id);
                         return;

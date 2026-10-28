@@ -10,6 +10,8 @@ namespace BirimizKovulacak.Core
     [Serializable]
     public sealed class MatchConfig
     {
+        /// <summary>v2: Protocol.Version the file was written for. 0 (missing) = an older file: loaders fall back to defaults.</summary>
+        public int ConfigVersion;
         public int PlayerCount = 4;
         public float QuotaTarget = 22f;
         /// <summary>When true, desks are shuffled per match; when false player N sits at desk N.</summary>
@@ -42,6 +44,7 @@ namespace BirimizKovulacak.Core
         public static MatchConfig CreateDefault()
         {
             var c = new MatchConfig();
+            c.ConfigVersion = Protocol.Version;
             c.Durations.MeetingDiscussion = 45f;
             // Basic sabotage: everyone can do it.
             c.Sabotage.Add(new SabotageDef { Type = SabotageType.NameplateSwap, DurationSeconds = 2.0f, ActorCooldownSeconds = 20f, SameTargetCooldownSeconds = 60f, BaseMisconduct = 2f, ConsequenceMisconduct = 1f, MaxActivePerDesk = 1 });

@@ -439,6 +439,24 @@ namespace BirimizKovulacak.Core
         /// <summary>Variant of the carried item ("" if empty-handed).</summary>
         public string Carrying = "";
         public bool Crouched;
+        /// <summary>Where the camera saw the player (lets the UI draw the room with dots).</summary>
+        public Vec3 Position;
+        public float Yaw;
+    }
+
+    /// <summary>v2 "Gunun klibi": all players' samples around the decisive moment, replayed in Results (top-down CCTV).</summary>
+    [Serializable]
+    public sealed class HighlightView
+    {
+        /// <summary>Recap key describing the moment (e.g. "recap.planted").</summary>
+        public string Key = "";
+        public int IncidentId = -1;
+        public int Actor = PlayerIds.None;
+        public int DeskIndex = -1;
+        public double Start;
+        public double End;
+        /// <summary>Ascending time, then player id; every present player at every sample in [Start, End].</summary>
+        public List<FootageSighting> Samples = new List<FootageSighting>();
     }
 
     /// <summary>A call record (host-only until revealed via call logs or Results).</summary>

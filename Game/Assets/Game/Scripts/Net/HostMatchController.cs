@@ -56,6 +56,9 @@ namespace BirimizKovulacak.Game
         public int FillBots { get; private set; }
         public string ConfigJson { get; private set; }
         public string DayModifier { get; private set; } = DayModifiers.Normal;
+        public GameMode Mode { get; private set; } = GameMode.QuickPlay;
+        /// <summary>Week mode: the day the next match will be (0 = Pazartesi).</summary>
+        public int NextWeekDay => Mode == GameMode.Week && _history != null ? _history.NextWeekDay : 0;
 
         public HostMatchController()
         {
@@ -70,6 +73,7 @@ namespace BirimizKovulacak.Game
             foreach (var s in _slots)
                 if (s.Occupied && !s.Virtual && s.Connected)
                     _session.SendWelcome(s.ClientId, new WelcomeMessage { Slot = s.Index, ReconnectToken = s.Token, MatchId = _matchId }, ConfigJson);
+            if (LaunchArgs.Current.WeekMode) Mode = GameMode.Week;
             if (LaunchArgs.Current.FillBots > 0) SetFillBots(LaunchArgs.Current.FillBots);
             BroadcastLobby();
         }
@@ -225,6 +229,36 @@ namespace BirimizKovulacak.Game
             BroadcastLobby();
         }
 
+        /// <summary>Lobby (host UI): put a bot in the lowest free seat. Returns the slot or -1.</summary>
+        public int AddBot()
+        {
+            if (MatchRunning) return -1;
+            for (int i = 0; i < SlotCount; i++)
+            {
+                if (_slots[i].Occupied || _pendingApprovals.ContainsValue(i)) continue;
+                AddVirtual(i);
+                BroadcastLobby();
+                return i;
+            }
+            return -1;
+        }
+
+        public void RemoveBot(int slot)
+        {
+            if (MatchRunning || slot < 0 || slot >= SlotCount || !_slots[slot].Virtual) return;
+            RemoveVirtual(slot);
+            BroadcastLobby();
+        }
+
+        /// <summary>Lobby (host UI): switching mode starts a fresh session history (a week starts on Monday).</summary>
+        public void SetMode(GameMode mode)
+        {
+            if (MatchRunning || Mode == mode) return;
+            Mode = mode;
+            _history = null;
+            BroadcastLobby();
+        }
+
         void AddVirtual(int i)
         {
             var s = _slots[i];
@@ -262,8 +296,10 @@ namespace BirimizKovulacak.Game
                 if (s.Ready && s.Connected) ready++;
             }
             if (MatchRunning) { reasonKey = "lobby.running"; return false; }
-            if (occupied < SlotCount) { reasonKey = "lobby.need_four"; return false; }
-            if (ready < SlotCount) { reasonKey = "lobby.need_ready"; return false; }
+            // Automated runs (-autostart) wait for the expected head count instead of starting at the minimum.
+            int need = LaunchArgs.Current.AutoStart ? Mathf.Clamp(LaunchArgs.Current.ExpectPlayers, Protocol.MinPlayers, SlotCount) : Protocol.MinPlayers;
+            if (occupied < need) { reasonKey = "lobby.need_players"; return false; }
+            if (ready < occupied) { reasonKey = "lobby.need_ready"; return false; }
             reasonKey = "lobby.ready_to_start";
             return true;
         }
@@ -272,9 +308,10 @@ namespace BirimizKovulacak.Game
         {
             string reason;
             CanStart(out reason);
-            var lv = new LobbyView { BuildId = GameConfig.BuildId, MatchRunning = MatchRunning, MatchId = _matchId, StatusKey = MatchRunning ? DayModifier : reason };
+            var lv = new LobbyView { BuildId = GameConfig.BuildId, MatchRunning = MatchRunning, MatchId = _matchId, StatusKey = MatchRunning ? DayModifier : reason, Mode = Mode, WeekDay = NextWeekDay };
             foreach (var s in _slots)
-                lv.Slots.Add(new LobbySlot { Slot = s.Index, Occupied = s.Occupied, Connected = s.Connected, Ready = s.Ready, IsHost = s.IsHost, Name = s.Name });
+                lv.Slots.Add(new LobbySlot { Slot = s.Index, Occupied = s.Occupied, Connected = s.Connected, Ready = s.Ready, IsHost = s.IsHost, Name = s.Name, IsBot = s.Virtual });
+            if (Mode == GameMode.Week && _history != null) lv.CareerPoints.AddRange(_history.CareerPoints);
             return lv;
         }
 
@@ -301,19 +338,18 @@ namespace BirimizKovulacak.Game
                 StartTime = Now,
                 History = _history,
                 ForceInformant = args.ForceInformant,
+                Mode = Mode,
+                WeekDay = NextWeekDay,
+                ManagerProfileId = args.ManagerProfile ?? "",
             };
             ScenarioSetup.Apply(args.Scenario, setup);
             for (int i = 0; i < SlotCount; i++)
-                setup.Players.Add(new PlayerSlotInfo { Id = i, Name = _slots[i].Name, ColorIndex = i });
+                if (_slots[i].Occupied) setup.Players.Add(new PlayerSlotInfo { Id = i, Name = _slots[i].Name, ColorIndex = i });
             // Today's conditions: a per-match copy of the config (the first match of a session is a normal day).
             var day = string.IsNullOrEmpty(args.Scenario) ? DayModifiers.Pick(_matchesCompleted, setup.Seed) : DayModifiers.All[0];
             var config = JsonConvert.DeserializeObject<MatchConfig>(GameConfig.ToJson(GameConfig.Match), GameConfig.JsonSettings);
             day.Apply(config);
             DayModifier = day.Id;
-            ConfigJson = GameConfig.ToJson(config);
-            foreach (var s in _slots)
-                if (s.Occupied && !s.Virtual && s.Connected && _session != null)
-                    _session.SendWelcome(s.ClientId, new WelcomeMessage { Slot = s.Index, ReconnectToken = s.Token, MatchId = _matchId }, ConfigJson);
             try
             {
                 _engine = new MatchEngine(config, GameConfig.Layout, setup, new UnityWorldQueries());
@@ -325,12 +361,18 @@ namespace BirimizKovulacak.Game
                 _engine = null;
                 return false;
             }
+            // Clients get the engine's effective config (manager profile + week day applied) for prompts and timers.
+            ConfigJson = GameConfig.ToJson(_engine.Config);
+            foreach (var s in _slots)
+                if (s.Occupied && !s.Virtual && s.Connected && _session != null)
+                    _session.SendWelcome(s.ClientId, new WelcomeMessage { Slot = s.Index, ReconnectToken = s.Token, MatchId = _matchId }, ConfigJson);
             for (int i = 0; i < SlotCount; i++)
                 if (_slots[i].Occupied && !_slots[i].Connected) _engine.SetConnected(i, false, Now);
             _lastSentVersion = -1;
             _abandonedAt = -1;
             _resultLogged = false;
-            MatchLog.Write("host: match " + _matchId + " started seed=" + setup.Seed + " day=" + DayModifier);
+            MatchLog.Write("host: match " + _matchId + " started seed=" + setup.Seed + " day=" + DayModifier + " players=" + setup.Players.Count
+                + " mode=" + Mode + " weekday=" + setup.WeekDay + " manager=" + _engine.BuildHostDebugView().ManagerProfileId);
             BroadcastLobby();
             SendViewsToAll(true);
             return true;
@@ -434,7 +476,8 @@ namespace BirimizKovulacak.Game
                 _speed[slot] = speed;
                 _slots[slot].LastPosition = p;
                 _slots[slot].LastYaw = avatar.transform.eulerAngles.y;
-                _engine.UpdateAvatar(slot, new AvatarSample { Position = new Vec3(p.x, p.y, p.z), Yaw = avatar.transform.eulerAngles.y, Speed = speed });
+                _engine.UpdateAvatar(slot, new AvatarSample { Position = new Vec3(p.x, p.y, p.z), Yaw = avatar.transform.eulerAngles.y, Speed = speed,
+                    Crouched = OwnerNetworkTransform.IsCrouched(avatar.gameObject) });
             }
         }
 

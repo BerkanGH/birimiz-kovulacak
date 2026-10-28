@@ -1,0 +1,90 @@
+[
+  {
+    "id": "bubble_ringing",
+    "path": "Art/UI/bubbles/bubble_ringing.png",
+    "w": 256,
+    "h": 256,
+    "category": "bubbles",
+    "nineSlice": null,
+    "screenRect": null,
+    "hasText": false,
+    "description": "Incoming-call speech bubble: office-green handset and red ringing arcs; text-free. Cream stationery balloon with transparent exterior; fixed aspect, no nine-slice."
+  },
+  {
+    "id": "bubble_on_call",
+    "path": "Art/UI/bubbles/bubble_on_call.png",
+    "w": 256,
+    "h": 256,
+    "category": "bubbles",
+    "nineSlice": null,
+    "screenRect": null,
+    "hasText": false,
+    "description": "Active private call speech bubble: office-green handset and teal conversation balloon; text-free. Cream stationery balloon with transparent exterior; fixed aspect, no nine-slice."
+  },
+  {
+    "id": "bubble_exclaim",
+    "path": "Art/UI/bubbles/bubble_exclaim.png",
+    "w": 256,
+    "h": 256,
+    "category": "bubbles",
+    "nineSlice": null,
+    "screenRect": null,
+    "hasText": true,
+    "description": "Manager alert speech bubble containing one red ! symbol. Cream stationery balloon with transparent exterior; fixed aspect, no nine-slice."
+  },
+  {
+    "id": "bubble_question",
+    "path": "Art/UI/bubbles/bubble_question.png",
+    "w": 256,
+    "h": 256,
+    "category": "bubbles",
+    "nineSlice": null,
+    "screenRect": null,
+    "hasText": true,
+    "description": "Question speech bubble containing one teal ? symbol. Cream stationery balloon with transparent exterior; fixed aspect, no nine-slice."
+  },
+  {
+    "id": "bubble_angry",
+    "path": "Art/UI/bubbles/bubble_angry.png",
+    "w": 256,
+    "h": 256,
+    "category": "bubbles",
+    "nineSlice": null,
+    "screenRect": null,
+    "hasText": false,
+    "description": "Anger speech bubble containing one red four-part cartoon vein symbol; text-free. Cream stationery balloon with transparent exterior; fixed aspect, no nine-slice."
+  },
+  {
+    "id": "bubble_heart",
+    "path": "Art/UI/bubbles/bubble_heart.png",
+    "w": 256,
+    "h": 256,
+    "category": "bubbles",
+    "nineSlice": null,
+    "screenRect": null,
+    "hasText": false,
+    "description": "Manager favour speech bubble containing one red heart; text-free. Cream stationery balloon with transparent exterior; fixed aspect, no nine-slice."
+  },
+  {
+    "id": "bubble_zzz",
+    "path": "Art/UI/bubbles/bubble_zzz.png",
+    "w": 256,
+    "h": 256,
+    "category": "bubbles",
+    "nineSlice": null,
+    "screenRect": null,
+    "hasText": true,
+    "description": "Sleep speech bubble containing three navy uppercase Z glyphs (ZZZ), growing diagonally. Cream stationery balloon with transparent exterior; fixed aspect, no nine-slice."
+  },
+  {
+    "id": "bubble_sweat",
+    "path": "Art/UI/bubbles/bubble_sweat.png",
+    "w": 256,
+    "h": 256,
+    "category": "bubbles",
+    "nineSlice": null,
+    "screenRect": null,
+    "hasText": false,
+    "description": "Nervous sweat speech bubble containing one teal droplet; text-free. Cream stationery balloon with transparent exterior; fixed aspect, no nine-slice."
+  }
+]

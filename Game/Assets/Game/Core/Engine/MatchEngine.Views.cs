@@ -6,11 +6,12 @@ namespace BirimizKovulacak.Core
     {
         public PlayerView BuildView(int recipient, double now)
         {
-            if (!PlayerIds.IsValid(recipient)) throw new ArgumentOutOfRangeException(nameof(recipient));
+            if (!Present(recipient)) throw new ArgumentOutOfRangeException(nameof(recipient));
             var view = new PlayerView { MatchId = MatchId, Recipient = recipient, StateVersion = StateVersion, Phase = Phase, PhaseSerial = PhaseSerial, PhaseStartTime = phaseStart, PhaseEndTime = phaseEnd, ServerTime = now, AbandonReason = abandonReason };
             view.Quota = Snapshot.Copy(quota); view.Quota.DirtyDesks = 0;
+            view.Quota.OpenMail = OpenMail();
             foreach (DeskState d in desks) { view.Desks.Add(Snapshot.Copy(d.View)); if (d.View.Dirty) view.Quota.DirtyDesks++; }
-            for (int p = 0; p < 4; p++)
+            foreach (int p in playerIds)
             {
                 PlayerPublicView pub = Snapshot.Copy(players[p].Public); pub.SuspicionLevel = 0;
                 float risk = RiskFor(p); foreach (float t in Config.Risk.MeterThresholds) if (risk >= t) pub.SuspicionLevel++;
@@ -38,7 +39,7 @@ namespace BirimizKovulacak.Core
             foreach (StationDef s in Layout.Stations)
             {
                 var sv = new StationView { Id = s.Id, Kind = s.Kind };
-                for (int p = 0; p < 4; p++) { InteractionState a = players[p].Interaction; if (a != null && a.Reservation == s.Id) { sv.UsedBy = p; sv.BusyUntil = a.End; } }
+                foreach (int p in playerIds) { InteractionState a = players[p].Interaction; if (a != null && a.Reservation == s.Id) { sv.UsedBy = p; sv.BusyUntil = a.End; } }
                 FillStation(sv); view.Stations.Add(sv);
             }
             foreach (EvidenceState e in evidence) { EvidenceView ev = Snapshot.Copy(e.View); ev.RiskWeight = EvidenceWeight(ev); view.Evidence.Add(ev); }
@@ -46,18 +47,24 @@ namespace BirimizKovulacak.Core
             for (int k = Math.Max(0, log.Count - MaxLogEntriesInView); k < log.Count; k++) view.Log.Add(Snapshot.Copy(log[k]));
             view.Manager = Snapshot.Copy(manager); view.Meeting = Snapshot.Copy(meeting);
             view.Me = Snapshot.Copy(players[recipient].Private);
+            view.Me.FootageLeft = FootageLeft(recipient);
             ObjectiveView objective = view.Me.Objective; RefreshObjective(recipient, ref objective); view.Me.Objective = objective;
             InteractionState active = players[recipient].Interaction;
             view.Me.ActiveInteraction = active == null ? null : new InteractionView { Verb = active.Request.Verb, TargetId = active.Request.TargetId, StartTime = active.Start, EndTime = active.End };
             view.Result = Phase == MatchPhase.Results ? Snapshot.Copy(Result) : null;
+            FillProfileView(view);
+            FillSabotageV2View(view);
             return view;
         }
         public HostDebugView BuildHostDebugView()
         {
             var result = new HostDebugView { MatchId = MatchId, Seed = Seed, Phase = Phase, QuotaPoints = quota.Points, ProcessedRequests = processedRequests, RejectedRequests = rejectedRequests };
-            for (int p = 0; p < 4; p++) { result.Roles.Add(players[p].Private.Role); result.ObjectiveCards.Add(players[p].Objective == null ? "" : players[p].Objective.Id); result.ObjectiveTargets.Add(players[p].ObjectiveTarget); result.TrueMisconduct.Add(Misconduct(p)); result.ObservedRisk.Add(RiskFor(p)); }
+            result.ManagerProfileId = ManagerProfileId;
+            FillCalls(result.Calls);
+            foreach (int p in playerIds) { result.Roles.Add(players[p].Private.Role); result.ObjectiveCards.Add(players[p].Objective == null ? "" : players[p].Objective.Id); result.ObjectiveTargets.Add(players[p].ObjectiveTarget); result.TrueMisconduct.Add(Misconduct(p)); result.ObservedRisk.Add(RiskFor(p)); }
             foreach (IncidentState incident in incidents) result.Incidents.Add(Snapshot.Copy(incident.Reveal));
             foreach (ItemState item in items) result.ItemHandlers.Add(item.View.Id, new List<int>(item.Handlers));
+            FillSabotageV2Debug(result);
             return result;
         }
         private const int MaxLogEntriesInView = 200;
@@ -68,8 +75,9 @@ namespace BirimizKovulacak.Core
             if (e.Kind == EvidenceKind.SuspiciousItemFound) weight = Config.Risk.SuspiciousItem;
             else if (e.Kind == EvidenceKind.HiddenReportFound && e.DeskIndex >= 0 && Layout.GetSlot(e.LocationId)?.Kind == SlotKind.Drawer) weight = Config.Risk.HiddenReportInDrawer;
             else if (e.Kind == EvidenceKind.WitnessStatement) weight = Config.Risk.WitnessStatement;
+            else if (e.Kind == EvidenceKind.EmailLog) weight = Config.Risk.EmailLog;
             if (!e.Sealed) { if (e.Status == EvidenceStatus.Disposed) return 0; if (e.Status == EvidenceStatus.Moved) weight *= Config.Risk.MovedEvidenceFactor; }
-            return weight;
+            return ProfileEvidenceWeight(weight);
         }
         private float RiskFor(int p)
         {
@@ -80,9 +88,9 @@ namespace BirimizKovulacak.Core
         private static SessionHistory CopyHistory(SessionHistory h)
         {
             if (h == null) return new SessionHistory();
-            return new SessionHistory { MatchesPlayed = h.MatchesPlayed, PastInformants = new List<int>(h.PastInformants), PastTargetPairs = new List<string>(h.PastTargetPairs), TimesTargeted = new List<int>(h.TimesTargeted), PastCards = new List<string>(h.PastCards) };
+            return Snapshot.Copy(h);
         }
-        public SessionHistory BuildNextHistory() { SessionHistory next = CopyHistory(history); FillNextHistory(next); return next; }
+        public SessionHistory BuildNextHistory() { SessionHistory next = CopyHistory(history); FillNextHistory(next); FillCareerHistory(next); return next; }
         partial void FillNextHistory(SessionHistory next);
         partial void FillStation(StationView station);
         partial void RefreshObjective(int p, ref ObjectiveView view);

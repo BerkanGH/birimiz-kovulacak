@@ -191,6 +191,16 @@ performance, task count, favour per source) and archives the item; elsewhere it 
   `title.it_hero` (restored internet or power), `title.favourite` (highest favour).
 - `HostDebugView`: `ManagerProfileId`, `Cards`, `Calls`, `SaltedItems`.
 
+## 11b. "Günün klibi" highlight (added after the first package)
+
+- `FootageSighting.Position/Yaw` are filled for footage sightings (positions inside the camera zone only).
+- `MatchResultView.Highlight` (null if no incident happened): pick the incident whose discovered evidence added the
+  most risk to the **fired** player; if none, the incident with the highest misconduct; ties → earliest. Window =
+  [incident start − 6 s, incident completion + 4 s] clamped to the logged range. `Samples` = every logged sample of
+  every present player in the window (positions, yaw, activity, carried variant, crouched), ascending time then
+  player id; dark samples are included (the replay is the truth reveal, not a camera). `Key` = the recap key of that
+  incident, `Actor` = true actor, `DeskIndex` = target desk. Part of the result hash.
+
 ## 12. Privacy checklist (tests must cover)
 
 True email sender, salt state (except salter/taster), call partners, tipster identity and tipped desk (until the

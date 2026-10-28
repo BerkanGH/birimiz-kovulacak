@@ -7,23 +7,24 @@ namespace BirimizKovulacak.Core
     {
         partial void AssignRoles(MatchSetup setup)
         {
-            var eligibleInformants = new List<int> { 0, 1, 2, 3 };
+            var eligibleInformants = new List<int>(playerIds);
             if (Config.Informant.AvoidRepeatInformant && history.PastInformants.Count > 0) eligibleInformants.Remove(history.PastInformants[history.PastInformants.Count - 1]);
-            int informant = PlayerIds.IsValid(setup.ForceInformant) ? setup.ForceInformant : eligibleInformants[random.Index(eligibleInformants.Count)];
+            int informant = Present(setup.ForceInformant) ? setup.ForceInformant : eligibleInformants[random.Index(eligibleInformants.Count)];
             var available = new List<ObjectiveDef>();
             foreach (ObjectiveDef card in Config.Objectives) if (card.Enabled && card.Type != ObjectiveType.InformantGoal) available.Add(card);
             // Reserve forced cards before assigning any random card so later slots keep their requested test card.
-            var forced = new ObjectiveDef[4];
-            for (int p = 0; p < 4; p++)
+            var forced = new ObjectiveDef[Protocol.MaxPlayers];
+            foreach (int p in playerIds)
             {
                 if (p == informant || setup.ForceObjectives == null || setup.ForceObjectives.Count <= p || string.IsNullOrEmpty(setup.ForceObjectives[p])) continue;
                 string cardId = setup.ForceObjectives[p]; forced[p] = Config.Objectives.Find(c => c.Id == cardId);
                 if (forced[p] == null || forced[p].Type == ObjectiveType.InformantGoal) throw new ArgumentException("Unknown employee objective: " + cardId, nameof(setup));
+                foreach (int prior in playerIds) if (prior < p && forced[prior] != null && forced[prior].Id == cardId) throw new ArgumentException("Forced employee objectives must be distinct.", nameof(setup));
                 available.RemoveAll(c => c.Id == cardId);
             }
             var previousCards = new List<string>();
-            for (int i = Math.Max(0, history.PastCards.Count - 3); i < history.PastCards.Count; i++) previousCards.Add(history.PastCards[i]);
-            for (int p = 0; p < 4; p++)
+            for (int i = Math.Max(0, history.PastCards.Count - (playerIds.Count - 1)); i < history.PastCards.Count; i++) previousCards.Add(history.PastCards[i]);
+            foreach (int p in playerIds)
             {
                 PlayerState player = players[p];
                 if (p == informant)
@@ -38,7 +39,7 @@ namespace BirimizKovulacak.Core
                     ObjectiveDef card = forced[p];
                     if (card == null)
                     {
-                        if (available.Count == 0) throw new ArgumentException("At least three distinct employee objectives are required.", nameof(Config));
+                        if (available.Count == 0) throw new ArgumentException("One distinct objective per employee is required.", nameof(Config));
                         List<ObjectiveDef> fresh = available.FindAll(c => !previousCards.Contains(c.Id));
                         List<ObjectiveDef> pool = fresh.Count > 0 ? fresh : available;
                         card = pool[random.Index(pool.Count)]; available.RemoveAll(c => c.Id == card.Id);
@@ -47,7 +48,7 @@ namespace BirimizKovulacak.Core
                     if (card.RequiresTarget)
                     {
                         int forcedTarget = setup.ForceTargets != null && setup.ForceTargets.Count > p ? setup.ForceTargets[p] : PlayerIds.None;
-                        player.ObjectiveTarget = PlayerIds.IsValid(forcedTarget) && forcedTarget != p ? forcedTarget : ChooseObjectiveTarget(p);
+                        player.ObjectiveTarget = Present(forcedTarget) && forcedTarget != p ? forcedTarget : ChooseObjectiveTarget(p);
                     }
                 }
                 player.Private.Objective = new ObjectiveView { CardId = player.Objective.Id, Type = player.Objective.Type, Target = player.ObjectiveTarget, Required = player.Objective.Count, Required2 = player.Objective.Count2 };
@@ -60,9 +61,9 @@ namespace BirimizKovulacak.Core
             var recentPairs = new List<string>();
             // At most three pairs can come from the previous match. Including an older pair when
             // that match had fewer targeted cards further reduces repetition without losing any recent pair.
-            for (int i = Math.Max(0, history.PastTargetPairs.Count - 3); i < history.PastTargetPairs.Count; i++) recentPairs.Add(history.PastTargetPairs[i]);
-            for (int target = 0; target < 4; target++) if (target != holder && !recentPairs.Contains(holder + ">" + target)) candidates.Add(target);
-            if (candidates.Count == 0) for (int target = 0; target < 4; target++) if (target != holder) candidates.Add(target);
+            for (int i = Math.Max(0, history.PastTargetPairs.Count - (playerIds.Count - 1)); i < history.PastTargetPairs.Count; i++) recentPairs.Add(history.PastTargetPairs[i]);
+            foreach (int target in playerIds) if (target != holder && !recentPairs.Contains(holder + ">" + target)) candidates.Add(target);
+            if (candidates.Count == 0) foreach (int target in playerIds) if (target != holder) candidates.Add(target);
             int largest = 0;
             foreach (int target in candidates) if (target < history.TimesTargeted.Count) largest = Math.Max(largest, history.TimesTargeted[target]);
             long sum = 0;
@@ -79,13 +80,13 @@ namespace BirimizKovulacak.Core
         partial void FillNextHistory(SessionHistory next)
         {
             next.MatchesPlayed++;
-            while (next.TimesTargeted.Count < 4) next.TimesTargeted.Add(0);
-            for (int p = 0; p < 4; p++)
+            while (next.TimesTargeted.Count < Protocol.MaxPlayers) next.TimesTargeted.Add(0);
+            foreach (int p in playerIds)
             {
                 PlayerState player = players[p];
                 if (player.Private.Role == Role.Informant) { next.PastInformants.Add(p); continue; }
                 next.PastCards.Add(player.Objective.Id);
-                if (PlayerIds.IsValid(player.ObjectiveTarget)) { next.PastTargetPairs.Add(p + ">" + player.ObjectiveTarget); next.TimesTargeted[player.ObjectiveTarget]++; }
+                if (Present(player.ObjectiveTarget)) { next.PastTargetPairs.Add(p + ">" + player.ObjectiveTarget); next.TimesTargeted[player.ObjectiveTarget]++; }
             }
         }
 
@@ -118,7 +119,7 @@ namespace BirimizKovulacak.Core
 
         private bool GuardianClean(int target, MatchPhase phase)
         {
-            if (!PlayerIds.IsValid(target)) return false;
+            if (!Present(target)) return false;
             int desk = players[target].Public.DeskIndex;
             return !observations.Exists(o => o.Kind == ObservationKind.SuspiciousItemAtDesk && o.DeskIndex == desk && o.Phase == phase);
         }
@@ -135,19 +136,19 @@ namespace BirimizKovulacak.Core
                 case ObjectiveType.Scapegoat: return ScapegoatProgress(p) >= card.Count;
                 case ObjectiveType.QuietStar:
                     if (player.Private.HasAccused) return false;
-                    for (int other = 0; other < 4; other++) if (players[other].Public.Performance > player.Public.Performance) return false;
+                    foreach (int other in playerIds) if (players[other].Public.Performance > player.Public.Performance) return false;
                     return true;
                 case ObjectiveType.ChaosCoordinator: return ChaosProgress(p) >= card.Count;
                 case ObjectiveType.CleanHands: return player.Public.TasksCompleted >= card.Count && TaskTypesCompleted(p) >= card.Count2 && SabotageCount(p) == 0;
-                case ObjectiveType.OfficeAllRounder: return TaskTypesCompleted(p) == 4;
+                case ObjectiveType.OfficeAllRounder: return TaskTypesCompleted(p) >= 4;
                 case ObjectiveType.Fixer: return FixerProgress(p) >= card.Count;
                 case ObjectiveType.DeskGuardian: return GuardianClean(target, MatchPhase.Raid) && GuardianClean(target, MatchPhase.FinalInspection);
                 case ObjectiveType.Unnoticed: return player.Public.AccusationsReceived == 0;
-                case ObjectiveType.PerformanceRival: return PlayerIds.IsValid(target) && player.Public.Performance > players[target].Public.Performance;
+                case ObjectiveType.PerformanceRival: return Present(target) && player.Public.Performance > players[target].Public.Performance;
                 case ObjectiveType.UnderPressure: return player.Work2Tasks >= card.Count && !FinalPenalty(p);
                 default:
                     if (fired == PlayerIds.None || Misconduct(fired) <= 0) return false;
-                    for (int other = 0; other < 4; other++) if (Misconduct(other) > Misconduct(fired)) return false;
+                    foreach (int other in playerIds) if (Misconduct(other) > Misconduct(fired)) return false;
                     return true;
             }
         }
@@ -166,18 +167,18 @@ namespace BirimizKovulacak.Core
                     view.Flags.Add(SabotageCount(p) == 0 ? "clean" : "sabotaged"); break;
                 case ObjectiveType.OfficeAllRounder:
                     view.Progress = TaskTypesCompleted(p);
-                    string[] flags = { "coffee", "report", "phone", "clean_desk" };
-                    for (int type = 0; type < 4; type++) if (player.TaskCounts[type] > 0) view.Flags.Add(flags[type]);
+                    string[] flags = { "coffee", "report", "phone", "clean_desk", "mail" };
+                    for (int type = 0; type < flags.Length; type++) if (player.TaskCounts[type] > 0) view.Flags.Add(flags[type]);
                     break;
                 case ObjectiveType.Fixer: view.Progress = FixerProgress(p); break;
                 case ObjectiveType.QuietStar:
-                    view.Progress = 1; for (int other = 0; other < 4; other++) if (players[other].Public.Performance > player.Public.Performance) view.Progress++;
+                    view.Progress = 1; foreach (int other in playerIds) if (players[other].Public.Performance > player.Public.Performance) view.Progress++;
                     if (player.Private.HasAccused) view.Flags.Add("accused"); break;
                 case ObjectiveType.PerformanceRival:
                     view.Progress = (int)player.Public.Performance;
-                    view.Progress2 = PlayerIds.IsValid(player.ObjectiveTarget) ? (int)players[player.ObjectiveTarget].Public.Performance : 0; break;
+                    view.Progress2 = Present(player.ObjectiveTarget) ? (int)players[player.ObjectiveTarget].Public.Performance : 0; break;
                 case ObjectiveType.DeskGuardian:
-                    int desk = PlayerIds.IsValid(player.ObjectiveTarget) ? players[player.ObjectiveTarget].Public.DeskIndex : -1;
+                    int desk = Present(player.ObjectiveTarget) ? players[player.ObjectiveTarget].Public.DeskIndex : -1;
                     view.Flags.Add("raid:" + (inspectedDesks.Contains(((int)MatchPhase.Raid) + ":" + desk) ? GuardianClean(player.ObjectiveTarget, MatchPhase.Raid) ? "clean" : "found" : "pending"));
                     view.Flags.Add("final:" + (inspectedDesks.Contains(((int)MatchPhase.FinalInspection) + ":" + desk) ? GuardianClean(player.ObjectiveTarget, MatchPhase.FinalInspection) ? "clean" : "found" : "pending")); break;
                 case ObjectiveType.Unnoticed: if (player.Public.AccusationsReceived > 0) view.Flags.Add("accused"); break;
