@@ -412,10 +412,16 @@ namespace BirimizKovulacak.Game
                     Badge(p.Id, "badge-m").AddTo(r);
                     var c = Box("col", "grow").AddTo(r);
                     Bold(p.Name, "contact-name").AddTo(c);
-                    string sub = !p.Connected ? Loc.T("contacts.offline") : p.Ringing ? Loc.T("contacts.ringing") : p.Activity == PublicActivity.OnCall ? Loc.T("contacts.busy") : Loc.T("contacts.available");
+                    // Ringing / on-call is only shown for someone you can actually see (line of sight); the call button
+                    // never reveals it — the engine answers Unavailable for a busy callee.
+                    bool seen = !AvatarVisibility.AppliesIn(v.Phase) || AvatarVisibility.Alpha(p.Id) > 0.5f;
+                    string sub = !p.Connected ? Loc.T("contacts.offline")
+                        : !seen ? Loc.T("contacts.out_of_sight")
+                        : p.Ringing ? Loc.T("contacts.ringing")
+                        : p.Activity == PublicActivity.OnCall ? Loc.T("contacts.busy") : Loc.T("contacts.available");
                     Text(sub, "contact-sub").AddTo(c);
                     var b = IconBtn("call", Loc.T("contacts.call"), () => ClientState.I.Send(ActionVerb.CallPlayer, "", id), "btn-primary", "btn-small").AddTo(r);
-                    b.SetEnabled(phaseOk && call.State == CallState.None && cool <= 0 && p.Connected && !p.Ringing);
+                    b.SetEnabled(phaseOk && call.State == CallState.None && cool <= 0 && p.Connected);
                 }
                 if (!phaseOk) Empty(parent, Loc.T("contacts.wrong_phase"));
             }

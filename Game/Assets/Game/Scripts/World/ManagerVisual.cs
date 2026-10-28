@@ -38,6 +38,7 @@ namespace BirimizKovulacak.Game
         int _shownObservation = -1;
         bool _positiveReaction;
         float _bubbleUntil;
+        bool _surpriseBubble;
         Vector3 _vel;
         bool _placed;
         string _profile;
@@ -171,6 +172,8 @@ namespace BirimizKovulacak.Game
 
             if (v.Phase == MatchPhase.Raid && mv.State == ManagerState.Warning && Time.time > _bubbleUntil)
                 ShowBubble(Loc.T("manager.bubble.coming"), 1.5f);
+            if (mv.Surprise && !_surpriseBubble) { _surpriseBubble = true; ShowBubble(Loc.T("manager.bubble.surprise"), 2f); }
+            else if (!mv.Surprise) _surpriseBubble = false;
             bool show = Time.time < _bubbleUntil;
             if (BubbleRoot != null)
             {
@@ -202,6 +205,12 @@ namespace BirimizKovulacak.Game
                 case ObservationKind.CaughtInAct: return Loc.F("manager.bubble.caught", who);
                 case ObservationKind.BehindOnWork: return Loc.F("manager.bubble.behind", who);
                 case ObservationKind.WorkingHard: return Loc.F("manager.bubble.good", who);
+                // v2 observation kinds (keys in tr.json, see docs/UI.md step 5)
+                case ObservationKind.PersonalCall: return Loc.F("manager.bubble.call", who);
+                case ObservationKind.InappropriateEmail: return Loc.F("manager.bubble.email", who);
+                case ObservationKind.SaltyCoffee: return Loc.F("manager.bubble.salty", who);
+                case ObservationKind.TipClean: return Loc.T("manager.bubble.tip_clean");
+                case ObservationKind.TipFound: return Loc.T("manager.bubble.tip_found");
                 default: return "!";
             }
         }

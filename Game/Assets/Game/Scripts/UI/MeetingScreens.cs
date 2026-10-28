@@ -109,7 +109,16 @@ namespace BirimizKovulacak.Game
             ClientState.I.Send(ActionVerb.RequestFootage, layout.Cameras[_camIndex].Id, _footageSlider.value);
         }
 
-        protected override void OnShow() { _lastVersion = -1; }
+        protected override void OnShow()
+        {
+            _lastVersion = -1;
+            // Evidence ids restart every match (and match ids every session): never reuse an old footage card.
+            _footageCache.Clear();
+            _lastFootageCount = 0;
+            _cacheMatch = -1;
+            _slide = Slide.Evidence;
+            _slides.Select((int)Slide.Evidence, false);
+        }
         protected override void OnHide() { SetCctv(false); }
 
         bool _cctv;

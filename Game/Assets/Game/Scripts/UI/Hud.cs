@@ -58,6 +58,10 @@ namespace BirimizKovulacak.Game
         int _lastVersion = -1, _lastMatch = -1, _lastPhaseSerial = -1, _lastTimerSec = -1, _lastMgrSec = -1, _lastNetSec = -1, _lastPowerSec = -1;
         int _promptSig = int.MinValue, _lastMicQ = -1;
         VoiceUiRoute _lastRoute = (VoiceUiRoute)255;
+        int _lastMicState = -1;
+        // events whose evidence / observation / e-mail is not in the view yet (the snapshot arrives after the event)
+        readonly List<GameEvent> _deferred = new List<GameEvent>();
+        readonly List<float> _deferredUntil = new List<float>();
         string _carryText = "";
         bool _officeVisible = true;
         // change caches for Rebuild (keeps the ~10 Hz view updates nearly allocation-free)
@@ -251,9 +255,12 @@ namespace BirimizKovulacak.Game
         {
             var v = ClientState.I.View;
             if (v == null) return;
-            ToastKind kind;
-            string s = Describe.Event(e, v, out kind);
-            if (s != null) Toast(s, kind, kind == ToastKind.Manager ? 7f : 5f, EventIcon(e));
+            if (!Resolvable(e, v))
+            {
+                _deferred.Add(e);
+                _deferredUntil.Add(Time.unscaledTime + 3f);
+            }
+            else ToastEvent(e, v);
             switch (e.Type)
             {
                 case EventType.TaskCompleted: Sfx.Play("complete", 0.6f); break;
@@ -265,6 +272,45 @@ namespace BirimizKovulacak.Game
                 case EventType.BallotCast: Sfx.Play("vote"); break;
                 case EventType.FavorChanged: FlashFavour(e.Actor); break;
                 // IncomingCall, calls, e-mail, outages, plugs, surprise, mail, tasting: FeelDirector plays those sounds.
+            }
+        }
+
+        void ToastEvent(GameEvent e, PlayerView v)
+        {
+            ToastKind kind;
+            string s = Describe.Event(e, v, out kind);
+            if (s != null) Toast(s, kind, kind == ToastKind.Manager ? 7f : 5f, EventIcon(e));
+        }
+
+        /// <summary>False while the record an event points at is not in the latest view yet.</summary>
+        static bool Resolvable(GameEvent e, PlayerView v)
+        {
+            switch (e.Type)
+            {
+                case EventType.EvidenceCreated:
+                case EventType.FootageShown:
+                    for (int i = 0; i < v.Evidence.Count; i++) if (v.Evidence[i].Id == e.IntArg) return true;
+                    return false;
+                case EventType.ManagerObservation:
+                    for (int i = 0; i < v.Observations.Count; i++) if (v.Observations[i].Id == e.IntArg) return true;
+                    return false;
+                case EventType.EmailSent:
+                    for (int i = 0; i < v.Inbox.Count; i++) if (v.Inbox[i].Id == e.IntArg) return true;
+                    return false;
+                default: return true;
+            }
+        }
+
+        void FlushDeferred(PlayerView v)
+        {
+            for (int i = _deferred.Count - 1; i >= 0; i--)
+            {
+                var e = _deferred[i];
+                bool ok = Resolvable(e, v);
+                if (!ok && Time.unscaledTime < _deferredUntil[i]) continue;
+                _deferred.RemoveAt(i);
+                _deferredUntil.RemoveAt(i);
+                ToastEvent(e, v); // resolved, or the generic line after 3 s
             }
         }
 
@@ -352,6 +398,7 @@ namespace BirimizKovulacak.Game
             {
                 _lastVersion = v.StateVersion;
                 Rebuild(v, now);
+                if (_deferred.Count > 0) FlushDeferred(v);
             }
 
             _wheel.Tick(LocalPlayerController.I);
@@ -413,7 +460,7 @@ namespace BirimizKovulacak.Game
             bool inspectionPhase = v.Phase == MatchPhase.Raid || v.Phase == MatchPhase.FinalInspection || m.Surprise;
             bool angry = m.State == ManagerState.Reacting || m.Surprise;
             int mgrKey = (int)m.State * 4 + (m.Surprise ? 1 : 0) + (angry ? 2 : 0) + (int)v.Phase * 64;
-            if (mgrKey != _mgrKey || !ReferenceEquals(_mgrProfile, v.ManagerProfileId))
+            if (mgrKey != _mgrKey || !string.Equals(_mgrProfile, v.ManagerProfileId, System.StringComparison.Ordinal))
             {
                 _mgrKey = mgrKey;
                 _mgrProfile = v.ManagerProfileId;
@@ -572,10 +619,15 @@ namespace BirimizKovulacak.Game
             {
                 _lastMicQ = q;
                 _micFill.style.height = Length.Percent(q < 0 ? 0 : q * 5f);
+            }
+            int micState = (muted ? 1 : 0) + (voice.PushToTalk ? 2 : 0);
+            if (micState != _lastMicState)
+            {
+                _lastMicState = micState;
                 SetIcon(_micIcon, muted ? "mic_off" : "mic_on");
                 _micKey.Show(voice.PushToTalk && !muted);
-                _micKey.text = voice.PttKeyLabel;
             }
+            _micKey.SetText(voice.PttKeyLabel);
             _mic.EnableInClassList("mic-live", voice.Transmitting);
             var route = voice.Route;
             if (route != _lastRoute) { _lastRoute = route; _micRoute.text = Loc.T("voice.route." + route); }
@@ -710,8 +762,9 @@ namespace BirimizKovulacak.Game
                 Root.EnableInClassList("crew-me", p.Id == my);
                 _perf.SetText(Num(Mathf.RoundToInt(p.Performance)));
                 SetPips(_pips, p.SuspicionLevel);
-                _callFlag.Show(p.Activity == PublicActivity.OnCall);
-                _ringFlag.Show(p.Ringing);
+                _onCall = p.Activity == PublicActivity.OnCall;
+                _ringing = p.Ringing;
+                ApplyFlags();
                 _crown.Show(v.Favourite == p.Id);
                 _favor.Show(favor);
                 if (favor && p.Favor != _favorValue) { _favorValue = p.Favor; _favorText.text = p.Favor.ToString("0.#"); }
@@ -720,15 +773,27 @@ namespace BirimizKovulacak.Game
             public void Hide() { Root.Show(false); Player = -1; _nameKey = int.MinValue; }
 
             int _alphaQ = 10;
+            bool _onCall, _ringing;
+
+            // Hidden avatars: the flags take no space either (a layout shift would leak them).
+            void ApplyFlags()
+            {
+                bool seen = _alphaQ > 0;
+                _callFlag.Show(_onCall && seen);
+                _ringFlag.Show(_ringing && seen);
+            }
+
             public void TickVisibility(bool los)
             {
                 int q = los && Player >= 0 ? Mathf.RoundToInt(AvatarVisibility.Alpha(Player) * 10f) : 10;
                 if (q == _alphaQ) return;
+                bool seenChanged = (q > 0) != (_alphaQ > 0);
                 _alphaQ = q;
                 float a = q / 10f;
                 _callFlag.style.opacity = a;
                 _ringFlag.style.opacity = a;
                 _ring.style.opacity = a;
+                if (seenChanged) ApplyFlags();
             }
 
             public void TickSpeaking(IVoiceUi voice)

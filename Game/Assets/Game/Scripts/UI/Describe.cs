@@ -280,7 +280,7 @@ namespace BirimizKovulacak.Game
                 {
                     kind = Hud.ToastKind.Warning;
                     foreach (var ev in v.Evidence) if (ev.Id == e.IntArg) return Loc.T("feed.evidence") + " " + Evidence(ev, v);
-                    return Loc.T("feed.evidence");
+                    return Loc.T("feed.evidence_generic");
                 }
                 case EventType.EvidenceUpdated:
                 {

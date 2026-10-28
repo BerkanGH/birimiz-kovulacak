@@ -85,7 +85,13 @@ namespace BirimizKovulacak.Game
             if (Visible && e.Type == EventType.RematchVote) _rematchKey = -1;
         }
 
-        protected override void OnShow() { _builtMatch = -1; _builtState = -1; _rematchKey = -1; }
+        protected override void OnShow()
+        {
+            _builtMatch = -1; _builtState = -1; _rematchKey = -1; _autoTabFor = -1; _eotmShownFor = -1;
+            _hasClip = false;
+            _clip.Load(null, null);
+            _eotm.Show(false);
+        }
 
         public override void Tick()
         {
@@ -155,12 +161,15 @@ namespace BirimizKovulacak.Game
             _tabs.Root.Show(true);
             _hasClip = r.Highlight != null && r.Highlight.Samples.Count > 0;
             _tabs.SetTabVisible((int)Tab.Clip, _hasClip);
+            if (!_hasClip && _tab == Tab.Clip) { _tab = Tab.People; _tabs.Select((int)Tab.People, false); }
+            if (r.Mode != GameMode.Week && _tab == Tab.Week) { _tab = Tab.People; _tabs.Select((int)Tab.People, false); }
+            if (r.Calls.Count == 0 && _tab == Tab.Calls) { _tab = Tab.People; _tabs.Select((int)Tab.People, false); }
             _tabs.SetTabVisible((int)Tab.Week, r.Mode == GameMode.Week);
             _tabs.SetTabVisible((int)Tab.Calls, r.Calls.Count > 0);
             if (fresh)
             {
                 BuildLetter(v, r);
-                if (_hasClip) _clip.Load(r.Highlight, v);
+                _clip.Load(_hasClip ? r.Highlight : null, v);
                 if (r.WeekFinished && _eotmShownFor != v.MatchId) ShowEmployeeOfMonth(v, r);
             }
 
@@ -199,10 +208,9 @@ namespace BirimizKovulacak.Game
             MemoBold(Loc.T(fired >= 0 ? "letter.title" : "letter.title_none"), "t-mono", "h3").AddTo(_letterBody);
             if (fired >= 0)
             {
-                var who = Box("row").AddTo(_letterBody);
-                Badge(fired, "badge-l").AddTo(who);
-                var dear = Title(Loc.F("letter.dear", Loc.PlayerName(v, fired)), "letter-name").AddTo(who);
-                dear.style.marginLeft = 12;
+                var who = Box("letter-who").AddTo(_letterBody);
+                Badge(fired, "badge-m").AddTo(who);
+                Title(Loc.F("letter.dear", Loc.PlayerName(v, fired)), "letter-name").AddTo(who);
                 Memo(Loc.T("letter.body.0"), "letter-body").AddTo(_letterBody);
                 string reason = Reason(v, r);
                 if (reason != null) Memo(Loc.F("letter.reason", reason), "letter-body").AddTo(_letterBody);
@@ -250,7 +258,13 @@ namespace BirimizKovulacak.Game
             ScreenFx.SetCctv(on);
         }
 
-        protected override void OnHide() { SetCctv(false); }
+        protected override void OnHide()
+        {
+            SetCctv(false);
+            _eotm.Show(false);
+            _clip.Load(null, null);
+            _hasClip = false;
+        }
 
         static string Reason(PlayerView v, MatchResultView r)
         {

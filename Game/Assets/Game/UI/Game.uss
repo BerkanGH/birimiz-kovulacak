@@ -529,13 +529,16 @@
 /* ---------------------------------------------------------------- results */
 .results-wrap { position: absolute; left: 1.5%; right: 1.5%; top: 3%; bottom: 3%; flex-direction: row; justify-content: space-between; }
 .letter-col { width: 31%; }
-.letter { -unity-background-scale-mode: stretch-to-fill; padding: 12% 8% 10% 8%; align-self: center; }
-.letter-fallback { background-color: rgb(250, 247, 238); border-width: 3px; border-color: rgb(31, 42, 68); border-radius: 10px; border-top-width: 14px; border-top-color: rgb(47, 107, 79); }
-.letter-head { font-size: 22px; color: rgb(47, 107, 79); }
-.letter-ref { font-size: 15px; color: rgb(107, 111, 128); margin-bottom: 14px; }
-.letter-body { font-size: 17px; white-space: normal; margin-top: 6px; }
-.letter-name { font-size: 34px; color: rgb(31, 42, 68); margin: 10px 0; }
-.letter-sign { font-size: 24px; margin-top: 14px; }
+.letter { -unity-background-scale-mode: stretch-to-fill; padding: 23% 8% 14% 8%; align-self: center; }
+.letter > * > * { flex-shrink: 0; }
+.letter-who { flex-direction: row; align-items: center; margin: 6px 0 4px 0; min-height: 56px; }
+.letter-who > .pbadge { margin-right: 12px; }
+.letter-fallback { padding-top: 8%; background-color: rgb(250, 247, 238); border-width: 3px; border-color: rgb(31, 42, 68); border-radius: 10px; border-top-width: 14px; border-top-color: rgb(47, 107, 79); }
+.letter-head { font-size: 18px; color: rgb(47, 107, 79); }
+.letter-ref { font-size: 14px; color: rgb(107, 111, 128); margin-bottom: 4px; }
+.letter-body { font-size: 16px; white-space: normal; margin-top: 5px; }
+.letter-name { font-size: 28px; color: rgb(31, 42, 68); flex-shrink: 1; white-space: normal; }
+.letter-sign { font-size: 22px; margin-top: 8px; }
 .stamp { position: absolute; width: 380px; height: 127px; right: 6%; bottom: 20%; -unity-background-scale-mode: scale-to-fit; rotate: -12deg; scale: 1 1; opacity: 0.95; transition-property: scale, opacity, rotate; transition-duration: 0.22s, 0.22s, 0.22s; transition-timing-function: ease-in, ease-in, ease-in; }
 .stamp-start { scale: 2.6 2.6; opacity: 0; rotate: -30deg; }
 .stamp-fallback { border-width: 6px; border-color: rgb(210, 56, 47); border-radius: 10px; align-items: center; justify-content: center; }
