@@ -1,4 +1,4 @@
-"""Build the 149-asset manifest and audit the PNG kit. Writes only beneath Art/UI.
+"""Build the 184-asset manifest and audit the PNG/ICO kit. Writes only beneath Art/UI.
 
 Run with Python + Pillow, optionally --strict to return a failure exit code when
 the kit is incomplete or a required check fails. Review sheets remain untouched.
@@ -58,8 +58,22 @@ group('decals', 'poster_takim_ruhu poster_verimlilik poster_sadakat poster_kahve
 group('decals', 'whiteboard_doodles', (1024,512))
 group('decals', 'corkboard_notes', (1024,768))
 group('decals', 'exit_sign', (512,256))
-assert len(EXPECTED)==149, len(EXPECTED)
-assert len({name for _,name in EXPECTED})==149, 'Asset ids must be globally unique'
+group('howto', 'howto_1_work howto_2_sabotage howto_3_manager howto_4_calls howto_5_meeting howto_6_week', (1280,720))
+group('week', 'week_pazartesi week_sali week_carsamba week_persembe week_cuma', (960,200))
+group('week', 'week_trophy', (512,512))
+group('titles', '''title_chaos_agent title_cleanest_desk title_coffee_master title_favourite
+    title_informant_of_month title_it_hero title_printer_enemy title_pro_scapegoat title_salt_bae title_scam_artist''', (256,256))
+group('bubbles', '''bubble_ringing bubble_on_call bubble_exclaim bubble_question
+    bubble_angry bubble_heart bubble_zzz bubble_sweat''', (256,256))
+group('app', 'app_icon_1024', (1024,1024))
+group('app', 'app_icon', (256,256))
+group('store', 'capsule_header_920x430', (920,430))
+group('store', 'capsule_main_1232x706', (1232,706))
+group('store', 'key_art_1920x1080', (1920,1080))
+assert len(EXPECTED)==184, len(EXPECTED)
+assert len({name for _,name in EXPECTED})==184, 'Asset ids must be globally unique'
+SECOND_CATEGORIES = ['howto','week','titles','bubbles','app','store']
+ICO_SIZES = {(n,n) for n in [16,24,32,48,64,128,256]}
 
 REQUIRED_TEXT = {
     'logo':'BİRİMİZ KOVULACAK',
@@ -68,6 +82,10 @@ REQUIRED_TEXT = {
     'stamp_gizli':'GİZLİ', 'stamp_ayin_elemani':'AYIN ELEMANI',
     'poster_takim_ruhu':'TAKIM RUHU', 'poster_verimlilik':'VERİMLİLİK',
     'poster_sadakat':'SADAKAT', 'poster_kahve':'KAHVE', 'exit_sign':'ÇIKIŞ',
+    'week_pazartesi':'PAZARTESİ', 'week_sali':'SALI', 'week_carsamba':'ÇARŞAMBA',
+    'week_persembe':'PERŞEMBE', 'week_cuma':'CUMA',
+    'capsule_header_920x430':'BİRİMİZ KOVULACAK', 'capsule_main_1232x706':'BİRİMİZ KOVULACAK',
+    'bubble_exclaim':'!', 'bubble_question':'?', 'bubble_zzz':'ZZZ',
 }
 SLICE_EXPECTED = {
     **{f'{kind}_{state}':[32,32,32,32] for kind in ['primary','secondary','danger','ghost']
@@ -117,9 +135,10 @@ def main(strict=False):
                 metadata[key]=row;metadata_sources[key]=str(p.relative_to(ROOT)).replace('\\','/')
         except Exception as exc: errors.append(f'Metadata {p.relative_to(ROOT)}: {exc}')
 
-    manifest=[]; audits=[]; counts=collections.Counter(); size_total=0
+    manifest=[]; audits=[]; counts=collections.Counter(); size_total=0; png_bytes=0; format_counts=collections.Counter()
     for (cat,name),(w,h) in EXPECTED.items():
-        path=ROOT/cat/(name+'.png');rel=f'Art/UI/{cat}/{name}.png'
+        ext='.ico' if name=='app_icon' else '.png'
+        path=ROOT/cat/(name+ext);rel=f'Art/UI/{cat}/{name}{ext}'
         md=metadata.get((cat,name))
         if md is None:
             fallbacks.append(rel)
@@ -139,16 +158,28 @@ def main(strict=False):
             audits.append(dict(path=rel,exists=False))
             continue
         counts[cat]+=1;size=path.stat().st_size;size_total+=size
+        format_counts[ext[1:]]+=1
+        if ext=='.png':png_bytes+=size
         try:
+            ico_sizes=None;ico_frames=None
             with Image.open(path) as src:
                 fmt=src.format;mode=src.mode;has_alpha='A' in src.getbands() or 'transparency' in src.info
+                if ext=='.ico':
+                    ico_sizes=sorted(src.ico.sizes())
+                    if set(ico_sizes)!=ICO_SIZES:errors.append(f'{rel}: ICO resolutions {ico_sizes}, expected {sorted(ICO_SIZES)}')
+                    ico_frames=[]
+                    for ico_size in ico_sizes:
+                        frame=src.ico.getimage(ico_size).convert('RGBA');fa=frame.getchannel('A')
+                        ico_frames.append(dict(size=list(ico_size),alphaExtrema=list(fa.getextrema())))
+                        if frame.size!=ico_size or fa.getextrema()!=(0,255):errors.append(f'{rel}: invalid ICO frame {ico_size}')
                 im=src.convert('RGBA')
-            if fmt!='PNG': errors.append(f'{rel}: format is {fmt}, must be PNG')
+            expected_format='ICO' if ext=='.ico' else 'PNG'
+            if fmt!=expected_format: errors.append(f'{rel}: format is {fmt}, must be {expected_format}')
             if im.size!=(w,h): errors.append(f'{rel}: dimensions {im.size}, expected {(w,h)}')
             a=im.getchannel('A');aw,ah=im.size
             corners=[a.getpixel(p) for p in [(0,0),(aw-1,0),(0,ah-1),(aw-1,ah-1)]]
             hist=a.histogram(); total=aw*ah; bounds=a.point(lambda v:255 if v>16 else 0).getbbox()
-            opaque_expected=cat in ['backgrounds','style'] or name=='call_screen_bg'
+            opaque_expected=cat in ['backgrounds','style','howto','store'] or name=='call_screen_bg'
             transparent_inside=0;inside_fraction=0.0
             if bounds:
                 inner=a.crop(bounds);ih=inner.histogram();transparent_inside=ih[0]
@@ -161,8 +192,8 @@ def main(strict=False):
                 if a.getextrema()!=(0,255):errors.append(f'{rel}: expected alpha range 0..255, got {a.getextrema()}')
                 if not bounds or not transparent_inside:
                     errors.append(f'{rel}: no clear pixels within silhouette bounds; may be an opaque image with only transparent padding')
-            if cat=='icons' and size>=80000:errors.append(f'{rel}: {size} bytes exceeds strict icon limit <80000')
-            if cat=='backgrounds' and size>=1500000:errors.append(f'{rel}: {size} bytes exceeds strict background limit <1500000')
+            if cat in ['icons','titles','bubbles'] and size>=80000:errors.append(f'{rel}: {size} bytes exceeds strict icon limit <80000')
+            if cat in ['backgrounds','howto','store'] and size>=1500000:errors.append(f'{rel}: {size} bytes exceeds strict scene limit <1500000')
             if name.startswith('ghost_') and a.getpixel((aw//2,ah//2))!=0:
                 errors.append(f'{rel}: ghost center must be fully transparent')
             screen_clear=None
@@ -183,7 +214,7 @@ def main(strict=False):
                 alphaExtrema=list(a.getextrema()),cornerAlpha=corners,transparentFraction=round(hist[0]/total,6),
                 clearFractionInsideSilhouetteBounds=round(inside_fraction,6),screenRectClear=screen_clear,
                 tileEdgesMatch=tile_edges,metadataSource=metadata_sources.get((cat,name)),
-                sha256=hashlib.sha256(path.read_bytes()).hexdigest()))
+                sha256=hashlib.sha256(path.read_bytes()).hexdigest(),format=fmt,icoResolutions=ico_sizes,icoFrames=ico_frames))
         except Exception as exc: errors.append(f'{rel}: {type(exc).__name__}: {exc}')
 
     extra=[f'Art/UI/{cat}/{p.name}' for cat in cats for p in (ROOT/cat).glob('*.png')
@@ -195,20 +226,61 @@ def main(strict=False):
         if not (ROOT/s).exists():errors.append(f'Missing category contact sheet: Art/UI/{s}')
     known_fallbacks=[x for x in fallbacks if not x.endswith('/style_sheet.png')]
     if known_fallbacks:warnings.append('Fallback descriptions used for missing category metadata: '+', '.join(known_fallbacks))
+    baseline_path=ROOT/'_sources/second_run_baseline.json'
+    preserved=[]
+    if baseline_path.exists():
+        prior=json.loads(baseline_path.read_text(encoding='utf-8-sig'))
+        if len(prior['assets'])!=149:errors.append('Original asset baseline must contain exactly 149 entries')
+        baseline_paths={a['path'] for a in prior['assets']}
+        original_paths={f'Art/UI/{cat}/{name}.png' for cat,name in EXPECTED if cat not in SECOND_CATEGORIES}
+        if baseline_paths!=original_paths:errors.append('Original asset baseline path set differs from the original 149 inventory')
+        current={a['path']:a.get('sha256') for a in audits}
+        for asset in prior['assets']:
+            ok=current.get(asset['path'])==asset['sha256']
+            preserved.append(ok)
+            if not ok:errors.append('Original asset changed: '+asset['path'])
+    else:errors.append('Missing original asset preservation baseline')
+    source_audits=[]
+    source_ledgers={
+        'howto_prompts.json':('archivedSource',6),
+        'titles_generation_records.json':('source',10),
+        'bubbles_app_prompts.json':('raw',9),
+        'second_run_root_prompts.json':('raw',2),
+    }
+    for ledger,(field,minimum) in source_ledgers.items():
+        try:
+            rows=json.loads((ROOT/'_sources'/ledger).read_text(encoding='utf-8-sig'))
+            if len(rows)<minimum:errors.append(f'Source ledger {ledger}: expected at least {minimum} raw records')
+            for row in rows:
+                if not row.get('prompt'):errors.append(f'Source ledger {ledger}: missing prompt for {row.get("id")}')
+                rel=row[field]
+                path=(ROOT.parents[1]/rel).resolve()
+                if (ROOT/'_sources') not in path.parents:raise ValueError('Raw archive must be inside Art/UI/_sources: '+rel)
+                with Image.open(path) as raw:raw.verify()
+                source_audits.append(dict(id=row['id'],path=rel,ledger='_sources/'+ledger,
+                    bytes=path.stat().st_size,sha256=hashlib.sha256(path.read_bytes()).hexdigest()))
+        except Exception as exc:errors.append(f'Source archive {ledger}: {exc}')
     report=dict(
         generatedAtUtc=datetime.datetime.now(datetime.timezone.utc).isoformat(),
         passed=not errors, expectedAssetCount=len(EXPECTED), presentAssetCount=sum(counts.values()),
         expectedCountsByCategory=dict(collections.Counter(c for c,_ in EXPECTED)),
-        presentCountsByCategory=dict(counts), totalFinalPngBytes=size_total,
+        presentCountsByCategory=dict(counts), totalFinalPngBytes=png_bytes,totalFinalBytes=size_total,
+        formatCounts=dict(format_counts),
+        secondRun=dict(addedAssetCount=35,addedPngCount=34,addedIcoCount=1,
+            categories=SECOND_CATEGORIES,originalAssetsPreserved=all(preserved) and len(preserved)==149,
+            originalAssetHashCheckCount=len(preserved),archivedGenerationCount=len(source_audits)),
         errorCount=len(errors),errors=errors,warnings=warnings,
-        checks=['Exact requested inventory and PNG dimensions','True alpha including clear pixels within silhouette bounds',
+        checks=['Exact requested inventory and PNG/ICO dimensions','True alpha including clear pixels within silhouette bounds',
                 'Transparent corners for cutouts','Icons below 80000 bytes; backgrounds below 1500000 bytes',
                 'Phone/projector screen rectangles fully transparent','Ghost centers fully transparent',
-                'Paper-tile opposite edges byte-identical','Manifest schema and metadata consistency','Category review sheets present','Smoke folder absent'],
-        textReview=dict(method='Deterministic Unicode font rendering and human/model visual review of text-bearing images; not OCR.',
-                        requiredStrings=REQUIRED_TEXT,reviewSheets=['_sheets/logo.png','_sheets/stamps.png','_sheets/decals.png']),
+                'Paper-tile opposite edges byte-identical','Manifest schema and metadata consistency','Category review sheets present','Smoke folder absent',
+                'ICO contains 16, 24, 32, 48, 64, 128, 256 resolutions with real alpha','Original 149 asset SHA-256 hashes preserved',
+                'Second-run raw generations and prompts retained under Art/UI/_sources'],
+        textReview=dict(method='Deterministic Unicode Turkish font rendering; visual review of final lettering and generated bubble symbols; not OCR.',
+                        requiredStrings=REQUIRED_TEXT,reviewSheets=['_sheets/logo.png','_sheets/stamps.png','_sheets/decals.png',
+                            '_sheets/week.png','_sheets/store.png','_sheets/bubbles.png']),
         unityIntegrationTested=False,requiredContactSheets=required_sheets,
-        assets=audits,
+        assets=audits,sourceArchives=source_audits,
     )
     safe(ROOT/'manifest.json').write_text(json.dumps(manifest,ensure_ascii=False,indent=2)+'\n',encoding='utf-8')
     safe(ROOT/'validation.json').write_text(json.dumps(report,ensure_ascii=False,indent=2)+'\n',encoding='utf-8')

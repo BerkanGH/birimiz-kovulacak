@@ -1,0 +1,112 @@
+[
+  {
+    "id": "title_chaos_agent",
+    "path": "Art/UI/titles/title_chaos_agent.png",
+    "w": 256,
+    "h": 256,
+    "category": "titles",
+    "nineSlice": null,
+    "screenRect": null,
+    "hasText": false,
+    "description": "Red sabotage bolt and fanned cards; chaos agent award. Text-free cream round medallion with navy/gold rim; true transparent exterior; fixed aspect."
+  },
+  {
+    "id": "title_cleanest_desk",
+    "path": "Art/UI/titles/title_cleanest_desk.png",
+    "w": 256,
+    "h": 256,
+    "category": "titles",
+    "nineSlice": null,
+    "screenRect": null,
+    "hasText": false,
+    "description": "Sparkling tidy desk with closed green laptop and aligned reports; cleanest desk award. Text-free cream round medallion with navy/gold rim; true transparent exterior; fixed aspect."
+  },
+  {
+    "id": "title_coffee_master",
+    "path": "Art/UI/titles/title_coffee_master.png",
+    "w": 256,
+    "h": 256,
+    "category": "titles",
+    "nineSlice": null,
+    "screenRect": null,
+    "hasText": false,
+    "description": "Crowned steaming office-green mug; coffee master award. Text-free cream round medallion with navy/gold rim; true transparent exterior; fixed aspect."
+  },
+  {
+    "id": "title_favourite",
+    "path": "Art/UI/titles/title_favourite.png",
+    "w": 256,
+    "h": 256,
+    "category": "titles",
+    "nineSlice": null,
+    "screenRect": null,
+    "hasText": false,
+    "description": "Crowned red heart and green ribbon; manager favourite award. Text-free cream round medallion with navy/gold rim; true transparent exterior; fixed aspect."
+  },
+  {
+    "id": "title_informant_of_month",
+    "path": "Art/UI/titles/title_informant_of_month.png",
+    "w": 256,
+    "h": 256,
+    "category": "titles",
+    "nineSlice": null,
+    "screenRect": null,
+    "hasText": false,
+    "description": "Teal tip-line handset and watchful eye on gold star; informant of the month award. Text-free cream round medallion with navy/gold rim; true transparent exterior; fixed aspect."
+  },
+  {
+    "id": "title_it_hero",
+    "path": "Art/UI/titles/title_it_hero.png",
+    "w": 256,
+    "h": 256,
+    "category": "titles",
+    "nineSlice": null,
+    "screenRect": null,
+    "hasText": false,
+    "description": "Repair wrench and network plug over green shield; IT hero award. Text-free cream round medallion with navy/gold rim; true transparent exterior; fixed aspect."
+  },
+  {
+    "id": "title_printer_enemy",
+    "path": "Art/UI/titles/title_printer_enemy.png",
+    "w": 256,
+    "h": 256,
+    "category": "titles",
+    "nineSlice": null,
+    "screenRect": null,
+    "hasText": false,
+    "description": "Office printer jammed with crumpled paper and red distress bolts; printer enemy award. Text-free cream round medallion with navy/gold rim; true transparent exterior; fixed aspect."
+  },
+  {
+    "id": "title_pro_scapegoat",
+    "path": "Art/UI/titles/title_pro_scapegoat.png",
+    "w": 256,
+    "h": 256,
+    "category": "titles",
+    "nineSlice": null,
+    "screenRect": null,
+    "hasText": false,
+    "description": "Worried Mavi bean in green tie with accusing hands; professional scapegoat award. Text-free cream round medallion with navy/gold rim; true transparent exterior; fixed aspect."
+  },
+  {
+    "id": "title_salt_bae",
+    "path": "Art/UI/titles/title_salt_bae.png",
+    "w": 256,
+    "h": 256,
+    "category": "titles",
+    "nineSlice": null,
+    "screenRect": null,
+    "hasText": false,
+    "description": "Salt shaker dropping salt into office-green coffee mug; salt sabotage award. Text-free cream round medallion with navy/gold rim; true transparent exterior; fixed aspect."
+  },
+  {
+    "id": "title_scam_artist",
+    "path": "Art/UI/titles/title_scam_artist.png",
+    "w": 256,
+    "h": 256,
+    "category": "titles",
+    "nineSlice": null,
+    "screenRect": null,
+    "hasText": false,
+    "description": "Mischievous masked envelope with red wax seal; scam artist award. Text-free cream round medallion with navy/gold rim; true transparent exterior; fixed aspect."
+  }
+]

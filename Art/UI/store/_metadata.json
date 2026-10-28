@@ -1,0 +1,35 @@
+[
+  {
+    "id": "key_art_1920x1080",
+    "path": "Art/UI/store/key_art_1920x1080.png",
+    "w": 1920,
+    "h": 1080,
+    "category": "store",
+    "nineSlice": null,
+    "screenRect": null,
+    "hasText": false,
+    "description": "Text-free HR meeting: the six player beans point accusations while Hasan watches; projector shows sabotage."
+  },
+  {
+    "id": "capsule_header_920x430",
+    "path": "Art/UI/store/capsule_header_920x430.png",
+    "w": 920,
+    "h": 430,
+    "category": "store",
+    "nineSlice": null,
+    "screenRect": null,
+    "hasText": true,
+    "description": "BİRİMİZ KOVULACAK. Verified existing logo over six accusing employee beans and watching manager in the HR meeting."
+  },
+  {
+    "id": "capsule_main_1232x706",
+    "path": "Art/UI/store/capsule_main_1232x706.png",
+    "w": 1232,
+    "h": 706,
+    "category": "store",
+    "nineSlice": null,
+    "screenRect": null,
+    "hasText": true,
+    "description": "BİRİMİZ KOVULACAK. Verified existing logo over six accusing employee beans and watching manager in the HR meeting."
+  }
+]

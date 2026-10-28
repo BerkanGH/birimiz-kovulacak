@@ -23,7 +23,8 @@ if ($Exe) { $runArgs += @("-Exe", (Resolve-Path $Exe).Path) }
 # The v1 runner has no -Players; only pass it when it differs from the v1 default.
 if ($Players -ne 4) { $runArgs += @("-Players", $Players) }
 if ($Extra) { $runArgs += $Extra.Split(" ") }
-$job = Start-Process powershell -ArgumentList $runArgs -PassThru -WindowStyle Hidden
+# Not hidden: Unity players inherit the window state, and hidden windows neither render nor capture screenshots.
+$job = Start-Process powershell -ArgumentList $runArgs -PassThru -NoNewWindow
 $csv = Join-Path $LogDir "memory.csv"
 "time,pid,working_set_mb,private_mb" | Set-Content $csv
 $stats = @{}

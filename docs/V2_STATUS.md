@@ -36,3 +36,13 @@ Codex logs: `Builds/codex/*.log`, last messages `Builds/codex/*_last.txt`. Basel
   4 reflection-completeness tests fail on main only because of the later highlight/position/ConfigVersion contract
   fields → Codex follow-up v2.1 running.
 - 03:10 host sends clients `engine.Config` (profile/day applied). First Unity integration build started.
+- 03:20 Codex 2D kit done (149 PNGs, verified Turkish text) → main `4f03d62`; second art run (how-to, weekdays,
+  title badges, bubbles, app icon, store capsules) started.
+- 03:25 integration build 1 OK (1.5 min). **First 6-player v2 bot match: all 6 processes agree on the result hash,
+  0 errors** (old scene, so quota low — props not yet at v2 positions).
+- 03:35 found 6 PowerShell edits that silently did not apply on LF files (Partitions layer, D3D11/GC settings,
+  config loader version check) — reapplied with an anchor-asserting script (`0a70555`). Lesson: patch via Python
+  with asserts, never PowerShell `.Replace` with `\r\n`.
+- 03:40 feel merged + integrated (crouch → engine samples, partitions in LOS mask, bots sneak) `04bca20`.
+- 03:50 Codex v2.1 (highlight replay, positioned footage) merged: **382 tests green on main**. Codex cross-review of
+  Claude's Unity-side code running (read-only snapshot `.worktrees/review`).

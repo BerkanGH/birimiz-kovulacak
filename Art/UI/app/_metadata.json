@@ -1,0 +1,24 @@
+[
+  {
+    "id": "app_icon_1024",
+    "path": "Art/UI/app/app_icon_1024.png",
+    "w": 1024,
+    "h": 1024,
+    "category": "app",
+    "nineSlice": null,
+    "screenRect": null,
+    "hasText": false,
+    "description": "Application icon: worried blue logo-mark bean carrying a box with mug and plant, on a rounded office-green square. Transparent corners, text-free."
+  },
+  {
+    "id": "app_icon",
+    "path": "Art/UI/app/app_icon.ico",
+    "w": 256,
+    "h": 256,
+    "category": "app",
+    "nineSlice": null,
+    "screenRect": null,
+    "hasText": false,
+    "description": "Multi-resolution Windows application icon containing 16, 24, 32, 48, 64, 128 and 256 pixel RGBA entries. Largest entry recorded in w/h; text-free."
+  }
+]

@@ -1,0 +1,68 @@
+[
+  {
+    "id": "week_pazartesi",
+    "path": "Art/UI/week/week_pazartesi.png",
+    "w": 960,
+    "h": 200,
+    "category": "week",
+    "nineSlice": null,
+    "screenRect": null,
+    "hasText": true,
+    "description": "PAZARTESİ. Work and shared quota; coffee pictogram. Turkish Unicode font lettering."
+  },
+  {
+    "id": "week_sali",
+    "path": "Art/UI/week/week_sali.png",
+    "w": 960,
+    "h": 200,
+    "category": "week",
+    "nineSlice": null,
+    "screenRect": null,
+    "hasText": true,
+    "description": "SALI. Secret sabotage cards; fanned cards pictogram. Turkish Unicode font lettering."
+  },
+  {
+    "id": "week_carsamba",
+    "path": "Art/UI/week/week_carsamba.png",
+    "w": 960,
+    "h": 200,
+    "category": "week",
+    "nineSlice": null,
+    "screenRect": null,
+    "hasText": true,
+    "description": "ÇARŞAMBA. Tip line and evidence; call record pictogram. Turkish Unicode font lettering."
+  },
+  {
+    "id": "week_persembe",
+    "path": "Art/UI/week/week_persembe.png",
+    "w": 960,
+    "h": 200,
+    "category": "week",
+    "nineSlice": null,
+    "screenRect": null,
+    "hasText": true,
+    "description": "PERŞEMBE. Full investigation; magnifier over a fingerprint report. Turkish Unicode font lettering."
+  },
+  {
+    "id": "week_cuma",
+    "path": "Art/UI/week/week_cuma.png",
+    "w": 960,
+    "h": 200,
+    "category": "week",
+    "nineSlice": null,
+    "screenRect": null,
+    "hasText": true,
+    "description": "CUMA. Friday finale; gold trophy and confetti. Turkish Unicode font lettering."
+  },
+  {
+    "id": "week_trophy",
+    "path": "Art/UI/week/week_trophy.png",
+    "w": 512,
+    "h": 512,
+    "category": "week",
+    "nineSlice": null,
+    "screenRect": null,
+    "hasText": false,
+    "description": "Text-free Ayın Elemanı award: golden bean, blank plaque, laurel frame; real alpha."
+  }
+]
