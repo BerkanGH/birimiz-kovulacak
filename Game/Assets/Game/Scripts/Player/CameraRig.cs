@@ -20,10 +20,12 @@ namespace BirimizKovulacak.Game
         public Mode Current = Mode.Menu;
 
         [Header("Follow")]
-        public float Distance = 3.6f;
-        public float MinDistance = 2.2f, MaxDistance = 6.0f;
+        // Tuned in the v2 map: a higher, slightly farther view keeps furniture from hiding the avatar in small rooms
+        // and shows the room you are in; walls still fade via OccluderWall.
+        public float Distance = 5.0f;
+        public float MinDistance = 2.6f, MaxDistance = 8.0f;
         public float ZoomStep = 0.45f;
-        public float Pitch = 24f, MinPitch = 4f, MaxPitch = 62f;
+        public float Pitch = 42f, MinPitch = 15f, MaxPitch = 65f;
         public float Yaw;
         public float Sensitivity = 0.12f;
         /// <summary>Focus height above the avatar's feet (characters are ~1.25 m tall: aim at the face).</summary>
