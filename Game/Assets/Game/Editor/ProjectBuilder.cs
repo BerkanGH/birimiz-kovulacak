@@ -129,7 +129,28 @@ namespace BirimizKovulacak.EditorTools
             SetLayer(layers, Layers.Avatar, Layers.AvatarName);
             SetLayer(layers, Layers.Partitions, Layers.PartitionsName);
             tm.ApplyModifiedProperties();
+            ApplyAppIcon();
             Log("Project settings configured");
+        }
+
+        /// <summary>Executable icon from the 2D kit (Art/UI/app/app_icon_1024.png), copied into the project on build.</summary>
+        static void ApplyAppIcon()
+        {
+            string src = Path.GetFullPath(Path.Combine(Application.dataPath, "../../Art/UI/app/app_icon_1024.png"));
+            if (!File.Exists(src)) { Log("app icon not found: " + src); return; }
+            string dst = GenDir + "/AppIcon.png";
+            Directory.CreateDirectory(GenDir);
+            File.Copy(src, dst, true);
+            AssetDatabase.ImportAsset(dst, ImportAssetOptions.ForceUpdate);
+            var importer = AssetImporter.GetAtPath(dst) as TextureImporter;
+            if (importer != null && (importer.textureType != TextureImporterType.Default || importer.mipmapEnabled))
+            {
+                importer.textureType = TextureImporterType.Default;
+                importer.mipmapEnabled = false;
+                importer.SaveAndReimport();
+            }
+            var tex = AssetDatabase.LoadAssetAtPath<Texture2D>(dst);
+            if (tex != null) PlayerSettings.SetIcons(NamedBuildTarget.Unknown, new[] { tex }, IconKind.Any);
         }
 
         static void SetLayer(SerializedProperty layers, int index, string name)
