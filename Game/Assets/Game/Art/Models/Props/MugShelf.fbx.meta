@@ -12,8 +12,23 @@ ModelImporter:
   - first:
       type: UnityEngine:Material
       assembly: UnityEngine.CoreModule
+      name: M_Manila
+    second: {fileID: 2100000, guid: 03f71aa5a91077d4d9285818f344c343, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
       name: M_Paper
     second: {fileID: 2100000, guid: 337a7861095d32948a6a1e018fb47511, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: M_Rubber
+    second: {fileID: 2100000, guid: ece6b165945c07c4cacfd1b03d8ec961, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: M_Steel
+    second: {fileID: 2100000, guid: fcc4d9ff4e758254f98224433a81fd92, type: 2}
   materials:
     materialImportMode: 2
     materialName: 1

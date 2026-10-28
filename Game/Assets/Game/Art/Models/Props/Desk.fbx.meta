@@ -7,6 +7,16 @@ ModelImporter:
   - first:
       type: UnityEngine:Material
       assembly: UnityEngine.CoreModule
+      name: M_DarkMetal
+    second: {fileID: 2100000, guid: e8a323d6c25d37743a5960a5278cbafc, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: M_DarkWood
+    second: {fileID: 2100000, guid: 62dc3e2c4bec3db40a65030b4b695e41, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
       name: M_DeskFrame
     second: {fileID: 2100000, guid: ce204189bae1e4843b6ae06f67cc59a1, type: 2}
   - first:
@@ -17,8 +27,18 @@ ModelImporter:
   - first:
       type: UnityEngine:Material
       assembly: UnityEngine.CoreModule
+      name: M_Manila
+    second: {fileID: 2100000, guid: 03f71aa5a91077d4d9285818f344c343, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
       name: M_Metal
     second: {fileID: 2100000, guid: c813ab151887fd942b6524ce42cb99b4, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: M_PlasticDark
+    second: {fileID: 2100000, guid: bd65ed0503170624fb27dabdb9693513, type: 2}
   materials:
     materialImportMode: 2
     materialName: 1

@@ -17,13 +17,48 @@ ModelImporter:
   - first:
       type: UnityEngine:Material
       assembly: UnityEngine.CoreModule
+      name: M_DarkWood
+    second: {fileID: 2100000, guid: 62dc3e2c4bec3db40a65030b4b695e41, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
       name: M_DeskFrame
     second: {fileID: 2100000, guid: ce204189bae1e4843b6ae06f67cc59a1, type: 2}
   - first:
       type: UnityEngine:Material
       assembly: UnityEngine.CoreModule
+      name: M_Glass
+    second: {fileID: 2100000, guid: ebf4b87a769853841964837a21363b64, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: M_Leaf
+    second: {fileID: 2100000, guid: a1f61f99f606d3c4e89068381660b2c8, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
       name: M_LeafLight
     second: {fileID: 2100000, guid: 549f83f33e745084c9e3f54bf84d1f93, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: M_PaintGrey
+    second: {fileID: 2100000, guid: 431a6e823ca033948a386afe237d1149, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: M_PaintManila
+    second: {fileID: 2100000, guid: 72195f58050777b47aefca384e33b905, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: M_PaintPeach
+    second: {fileID: 2100000, guid: 3c4d4647981f3474b99eb56c2f486bc0, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: M_PaintSlate
+    second: {fileID: 2100000, guid: 71f74b52c46a29845812ff9cc5d662b9, type: 2}
   - first:
       type: UnityEngine:Material
       assembly: UnityEngine.CoreModule
@@ -37,8 +72,18 @@ ModelImporter:
   - first:
       type: UnityEngine:Material
       assembly: UnityEngine.CoreModule
+      name: M_StoneB
+    second: {fileID: 2100000, guid: 1e9ec823f9e4a2e4b9eb485795311db1, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
       name: M_WallAccent
     second: {fileID: 2100000, guid: 06f483dcf82eddb4a96f27f61b83f3a7, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: M_WallCap
+    second: {fileID: 2100000, guid: f2eeb8a8292d33f41aadaea23b461947, type: 2}
   materials:
     materialImportMode: 2
     materialName: 1

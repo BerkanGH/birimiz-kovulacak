@@ -7,6 +7,21 @@ ModelImporter:
   - first:
       type: UnityEngine:Material
       assembly: UnityEngine.CoreModule
+      name: M_CushionMustard
+    second: {fileID: 2100000, guid: cfde194e2acf089498fd837f5c9abd94, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: M_CushionTeal
+    second: {fileID: 2100000, guid: 32a1887f869e06e4a98dfbacfb9ab681, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: M_DarkWood
+    second: {fileID: 2100000, guid: 62dc3e2c4bec3db40a65030b4b695e41, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
       name: M_Sofa
     second: {fileID: 2100000, guid: ce70f9c91007a1841ab6881d700029dd, type: 2}
   materials:

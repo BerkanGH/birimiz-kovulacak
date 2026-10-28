@@ -12,6 +12,16 @@ ModelImporter:
   - first:
       type: UnityEngine:Material
       assembly: UnityEngine.CoreModule
+      name: M_InkNavy
+    second: {fileID: 2100000, guid: e6af1d8ba5f64b542923193e01f4202c, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: M_LEDGreen
+    second: {fileID: 2100000, guid: 4cc26b7ac9a173341848da20e7b065d1, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
       name: M_PlasticDark
     second: {fileID: 2100000, guid: bd65ed0503170624fb27dabdb9693513, type: 2}
   - first:
@@ -29,6 +39,11 @@ ModelImporter:
       assembly: UnityEngine.CoreModule
       name: M_Screen
     second: {fileID: 2100000, guid: 9cc6ae909d92e154da224db81cd1390f, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: M_ScreenDesktop
+    second: {fileID: 2100000, guid: e6107c9f58b8ef749b18bae371feef74, type: 2}
   materials:
     materialImportMode: 2
     materialName: 1

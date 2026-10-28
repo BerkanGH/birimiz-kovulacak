@@ -17,8 +17,18 @@ ModelImporter:
   - first:
       type: UnityEngine:Material
       assembly: UnityEngine.CoreModule
+      name: M_LEDGreen
+    second: {fileID: 2100000, guid: 4cc26b7ac9a173341848da20e7b065d1, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
       name: M_Metal
     second: {fileID: 2100000, guid: c813ab151887fd942b6524ce42cb99b4, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: M_Paper
+    second: {fileID: 2100000, guid: 337a7861095d32948a6a1e018fb47511, type: 2}
   - first:
       type: UnityEngine:Material
       assembly: UnityEngine.CoreModule
@@ -32,8 +42,28 @@ ModelImporter:
   - first:
       type: UnityEngine:Material
       assembly: UnityEngine.CoreModule
+      name: M_PlasticWhite
+    second: {fileID: 2100000, guid: 72568ee06dd87c9448af6d698cb699de, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
       name: M_Screen
     second: {fileID: 2100000, guid: 9cc6ae909d92e154da224db81cd1390f, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: M_ScreenDesktop
+    second: {fileID: 2100000, guid: e6107c9f58b8ef749b18bae371feef74, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: M_Steel
+    second: {fileID: 2100000, guid: fcc4d9ff4e758254f98224433a81fd92, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: M_Water
+    second: {fileID: 2100000, guid: 91e8057d82db96f4f92e4d97241f8d94, type: 2}
   materials:
     materialImportMode: 2
     materialName: 1

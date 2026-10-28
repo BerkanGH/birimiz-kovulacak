@@ -12,8 +12,18 @@ ModelImporter:
   - first:
       type: UnityEngine:Material
       assembly: UnityEngine.CoreModule
+      name: M_InkNavy
+    second: {fileID: 2100000, guid: e6af1d8ba5f64b542923193e01f4202c, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
       name: M_Metal
     second: {fileID: 2100000, guid: c813ab151887fd942b6524ce42cb99b4, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: M_Paper
+    second: {fileID: 2100000, guid: 337a7861095d32948a6a1e018fb47511, type: 2}
   - first:
       type: UnityEngine:Material
       assembly: UnityEngine.CoreModule
@@ -24,6 +34,16 @@ ModelImporter:
       assembly: UnityEngine.CoreModule
       name: M_PlasticWhite
     second: {fileID: 2100000, guid: 72568ee06dd87c9448af6d698cb699de, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: M_Sticky
+    second: {fileID: 2100000, guid: 062c8316465dce640ae12e9a24db7f02, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: M_WoodMidA
+    second: {fileID: 2100000, guid: 44017c133907cef44bff2da9e0109c47, type: 2}
   materials:
     materialImportMode: 2
     materialName: 1

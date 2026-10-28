@@ -27,8 +27,18 @@ ModelImporter:
   - first:
       type: UnityEngine:Material
       assembly: UnityEngine.CoreModule
+      name: M_PlasticBlue
+    second: {fileID: 2100000, guid: 4291ac3f2930ea445b06a00f328e1e1f, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
       name: M_PlasticOrange
     second: {fileID: 2100000, guid: f2769b256a7b39b41aa0838436328079, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: M_Sticky
+    second: {fileID: 2100000, guid: 062c8316465dce640ae12e9a24db7f02, type: 2}
   materials:
     materialImportMode: 2
     materialName: 1

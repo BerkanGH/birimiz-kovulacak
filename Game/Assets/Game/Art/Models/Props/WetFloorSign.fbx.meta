@@ -9,6 +9,11 @@ ModelImporter:
       assembly: UnityEngine.CoreModule
       name: M_DuckYellow
     second: {fileID: 2100000, guid: 6e895932c6d6a4a4eaeb66d1b35c8e3e, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: M_PlasticDark
+    second: {fileID: 2100000, guid: bd65ed0503170624fb27dabdb9693513, type: 2}
   materials:
     materialImportMode: 2
     materialName: 1
