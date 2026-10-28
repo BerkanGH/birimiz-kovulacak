@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 
 namespace BirimizKovulacak.Core
@@ -15,7 +15,7 @@ namespace BirimizKovulacak.Core
         public int PlayerCount = 4;
         public float QuotaTarget = 22f;
         /// <summary>When true, desks are shuffled per match; when false player N sits at desk N.</summary>
-        public bool ShuffleDesks = false;
+        public bool ShuffleDesks = true; // v2 review: the last desk on the route must not belong to a fixed lobby slot
 
         public PhaseDurations Durations = new PhaseDurations();
         public InteractionConfig Interaction = new InteractionConfig();
@@ -58,12 +58,12 @@ namespace BirimizKovulacak.Core
             c.Sabotage.Add(new SabotageDef { Type = SabotageType.FakeEmail, Basic = false, DurationSeconds = 4.0f, ActorCooldownSeconds = 35f, SameTargetCooldownSeconds = 60f, BaseMisconduct = 2f, ConsequenceMisconduct = 1f, MaxActivePerDesk = 1 });
             c.Sabotage.Add(new SabotageDef { Type = SabotageType.PullPlug, Basic = false, DurationSeconds = 2.0f, ActorCooldownSeconds = 30f, SameTargetCooldownSeconds = 60f, BaseMisconduct = 2f, ConsequenceMisconduct = 1f, MaxActivePerDesk = 1, ReverseSeconds = 2f });
             c.Sabotage.Add(new SabotageDef { Type = SabotageType.SaltCoffee, Basic = false, DurationSeconds = 2.0f, ActorCooldownSeconds = 30f, SameTargetCooldownSeconds = 0f, BaseMisconduct = 2f, ConsequenceMisconduct = 1f, MaxActivePerDesk = 99 });
-            c.Sabotage.Add(new SabotageDef { Type = SabotageType.InternetOutage, Basic = false, DurationSeconds = 4.0f, ActorCooldownSeconds = 60f, SameTargetCooldownSeconds = 0f, BaseMisconduct = 3f, ConsequenceMisconduct = 0f, MaxActivePerDesk = 99, EffectSeconds = 40f, ReverseSeconds = 6f, MaxPerMatch = 2 });
+            c.Sabotage.Add(new SabotageDef { Type = SabotageType.InternetOutage, Basic = false, DurationSeconds = 4.0f, ActorCooldownSeconds = 60f, SameTargetCooldownSeconds = 0f, BaseMisconduct = 3f, ConsequenceMisconduct = 0f, MaxActivePerDesk = 99, EffectSeconds = 20f, ReverseSeconds = 6f, MaxPerMatch = 2 });
             c.Sabotage.Add(new SabotageDef { Type = SabotageType.PowerCut, Basic = false, DurationSeconds = 3.0f, ActorCooldownSeconds = 60f, SameTargetCooldownSeconds = 0f, BaseMisconduct = 2f, ConsequenceMisconduct = 0f, MaxActivePerDesk = 99, EffectSeconds = 25f, ReverseSeconds = 4f, MaxPerMatch = 2 });
 
             c.ManagerProfiles.Add(new ManagerProfileDef
             {
-                Id = ManagerProfileIds.Paragoz, QuotaDelta = 2f, VoteWeight = 0.40f, RiskWeight = 0.20f, PerformanceWeight = 0.40f,
+                Id = ManagerProfileIds.Paragoz, QuotaDelta = 2f, VoteWeight = 0.50f, RiskWeight = 0.20f, PerformanceWeight = 0.30f,
                 FavorSource = FavorSource.ReportsDelivered,
                 ObservationFactors = { new ObservationFactor(ObservationKind.MessyDesk, 0f), new ObservationFactor(ObservationKind.BehindOnWork, 2f), new ObservationFactor(ObservationKind.WorkingHard, 2f) },
             });
@@ -74,7 +74,7 @@ namespace BirimizKovulacak.Core
             });
             c.ManagerProfiles.Add(new ManagerProfileDef
             {
-                Id = ManagerProfileIds.Kayirmaci, HasFavourite = true, FavorSource = FavorSource.CoffeeDelivered, FavorWeight = 0.20f,
+                Id = ManagerProfileIds.Kayirmaci, HasFavourite = true, FavorSource = FavorSource.CoffeeDelivered, FavorWeight = 0.10f,
             });
             c.ManagerProfiles.Add(new ManagerProfileDef
             {
@@ -92,15 +92,32 @@ namespace BirimizKovulacak.Core
             c.Objectives.Add(new ObjectiveDef { Id = "PROTECTION_DEAL", Type = ObjectiveType.ProtectionDeal, RequiresTarget = true });
             c.Objectives.Add(new ObjectiveDef { Id = "SCAPEGOAT", Type = ObjectiveType.Scapegoat, RequiresTarget = true, Count = 2 });
             c.Objectives.Add(new ObjectiveDef { Id = "QUIET_STAR", Type = ObjectiveType.QuietStar });
-            c.Objectives.Add(new ObjectiveDef { Id = "CHAOS_COORDINATOR", Type = ObjectiveType.ChaosCoordinator, Count = 3 });
+            c.Objectives.Add(new ObjectiveDef { Id = "CHAOS_COORDINATOR", Type = ObjectiveType.ChaosCoordinator, Count = 2 });
             c.Objectives.Add(new ObjectiveDef { Id = "CLEAN_HANDS", Type = ObjectiveType.CleanHands, Count = 4, Count2 = 2 });
-            c.Objectives.Add(new ObjectiveDef { Id = "OFFICE_ALL_ROUNDER", Type = ObjectiveType.OfficeAllRounder, Count = 4 });
+            c.Objectives.Add(new ObjectiveDef { Id = "OFFICE_ALL_ROUNDER", Type = ObjectiveType.OfficeAllRounder, Count = 5 });
             c.Objectives.Add(new ObjectiveDef { Id = "FIXER", Type = ObjectiveType.Fixer, Count = 2 });
             c.Objectives.Add(new ObjectiveDef { Id = "DESK_GUARDIAN", Type = ObjectiveType.DeskGuardian, RequiresTarget = true });
             c.Objectives.Add(new ObjectiveDef { Id = "UNNOTICED", Type = ObjectiveType.Unnoticed });
             c.Objectives.Add(new ObjectiveDef { Id = "PERFORMANCE_RIVAL", Type = ObjectiveType.PerformanceRival, RequiresTarget = true });
             c.Objectives.Add(new ObjectiveDef { Id = "UNDER_PRESSURE", Type = ObjectiveType.UnderPressure, Count = 2 });
             return c;
+        }
+
+        /// <summary>
+        /// v2 review: quota and supply scale with the head count (tuned for 4). Quota ×{3: 16/22, 5: 26/22, 6: 30/22};
+        /// 5–6 players also get faster orders, one more open mail and a longer discussion.
+        /// </summary>
+        public void ApplyHeadcount(int players)
+        {
+            float q = players <= 3 ? 16f / 22f : players == 5 ? 26f / 22f : players >= 6 ? 30f / 22f : 1f;
+            QuotaTarget = (float)Math.Round(QuotaTarget * q);
+            if (players >= 5)
+            {
+                Tasks.CoffeeOrderInterval = Math.Min(Tasks.CoffeeOrderInterval, 28f);
+                Tasks.ReportOrderInterval = Math.Min(Tasks.ReportOrderInterval, 32f);
+                Tasks.MaxOpenMail = Math.Max(Tasks.MaxOpenMail, 3);
+                Durations.MeetingDiscussion = Durations.MeetingDiscussion * 60f / 45f;
+            }
         }
 
         public SabotageDef GetSabotage(SabotageType type)
@@ -115,10 +132,10 @@ namespace BirimizKovulacak.Core
     {
         public float Briefing = 30f;
         public float Work1 = 180f;
-        public float Raid = 30f;
+        public float Raid = 40f;
         public float RaidWarning = 8f;          // part of Raid: alarm before the manager leaves the office
         public float Work2 = 90f;
-        public float FinalInspection = 30f;
+        public float FinalInspection = 40f;
         public float FinalWarning = 5f;         // part of FinalInspection
         public float MeetingDiscussion = 30f;
         public float MeetingDefense = 20f;      // each of the two defense windows
@@ -249,15 +266,15 @@ namespace BirimizKovulacak.Core
         public float HalfAngle = 120f;
         public bool RequireLineOfSight = true;
         /// <summary>v2: a crouched (sneaking) actor is only noticed within Range * CrouchRangeFactor.</summary>
-        public float CrouchRangeFactor = 0.6f;
+        public float CrouchRangeFactor = 0.8f;
         /// <summary>v2: witness range while the power is out.</summary>
-        public float DarkRange = 2.5f;
+        public float DarkRange = 4f;
     }
 
     [Serializable]
     public sealed class ManagerConfig
     {
-        public float WalkSpeed = 2.6f;
+        public float WalkSpeed = 3.5f;
         public float VisionRange = 10f;
         public float VisionHalfAngle = 70f;
         public float AtDeskRadius = 2.5f;
@@ -275,7 +292,10 @@ namespace BirimizKovulacak.Core
         public float TipDwellBonus = 2.5f;
         /// <summary>v2: the unannounced inspection (profiles with SurpriseInspection) starts at this fraction of Work2 and lasts this long.</summary>
         public float SurpriseAtFraction = 0.45f;
-        public float SurpriseSeconds = 20f;
+        public float SurpriseSeconds = 30f;
+        /// <summary>v2.2: the surprise start is drawn (seeded) in [SurpriseMinFraction, SurpriseMaxFraction] of Work2; it is no longer predictable.</summary>
+        public float SurpriseMinFraction = 0.2f;
+        public float SurpriseMaxFraction = 0.7f;
     }
 
     [Serializable]
@@ -382,8 +402,10 @@ namespace BirimizKovulacak.Core
         public float MaxCallSeconds = 45f;
         /// <summary>After a call ends (or is declined), the caller cannot call again for this long.</summary>
         public float CooldownSeconds = 8f;
+        /// <summary>v2.2: after a callee declines (or lets it ring out), the same caller cannot ring the same callee again for this long.</summary>
+        public float DeclineBlockSeconds = 30f;
         public bool TipLineEnabled = true;
-        public float TipSeconds = 3f;
+        public float TipSeconds = 0f; // instant: a 3 s OnCall right before the public tip event named the tipster
         public int TipsPerPlayer = 1;
     }
 

@@ -349,6 +349,7 @@ namespace BirimizKovulacak.Game
             var day = string.IsNullOrEmpty(args.Scenario) ? DayModifiers.Pick(_matchesCompleted, setup.Seed) : DayModifiers.All[0];
             var config = JsonConvert.DeserializeObject<MatchConfig>(GameConfig.ToJson(GameConfig.Match), GameConfig.JsonSettings);
             day.Apply(config);
+            config.ApplyHeadcount(setup.Players.Count);
             DayModifier = day.Id;
             try
             {

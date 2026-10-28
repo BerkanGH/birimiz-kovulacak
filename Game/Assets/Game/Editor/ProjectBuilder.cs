@@ -526,7 +526,10 @@ namespace BirimizKovulacak.EditorTools
                 try { var c = Newtonsoft.Json.JsonConvert.DeserializeObject<MatchConfig>(File.ReadAllText(cfgPath), GameConfig.JsonSettings); current = c != null && c.ConfigVersion == Protocol.Version; }
                 catch (Exception) { current = false; }
             }
-            if (!current) { File.WriteAllText(cfgPath, GameConfig.ToJson(MatchConfig.CreateDefault())); Log("match_config.json (re)written for protocol " + Protocol.Version); }
+            // Designers tune MatchConfig.CreateDefault; the JSON next to the player is regenerated on every build
+            // (players/hosts may still edit it in a build folder).
+            File.WriteAllText(cfgPath, GameConfig.ToJson(MatchConfig.CreateDefault()));
+            Log("match_config.json written from MatchConfig.CreateDefault (protocol " + Protocol.Version + (current ? ")" : ", replaced an outdated file)"));
             string id = DateTime.UtcNow.ToString("yyyyMMddHHmm") + "-" + Guid.NewGuid().ToString("N").Substring(0, 6);
             File.WriteAllText(Root + "/Resources/build_id.txt", id);
             if (!File.Exists("Assets/StreamingAssets/Localization/tr.json")) Log("WARNING: tr.json missing");
