@@ -20,6 +20,39 @@ Test machine: i5-12500H (16 threads), 32 GB RAM, RTX 3050 Ti Laptop (4 GB), Wind
 Graphics API Direct3D 12 (split graphics jobs). The private bytes are dominated by driver/graphics allocations, not
 by game data (one small scene, procedural audio).
 
-## v2
+Re-measured with visible windows (hidden windows skip rendering; `Builds/runs/memv_baseline`): peak working set
+713–736 MB, peak private 1260–1275 MB per process — same picture.
 
-(filled in after integration)
+## v2 (integration builds, 4 bot processes, visible windows, `-DurationScale 0.35`)
+
+| Build | What changed | Peak working set | Peak private bytes |
+|---|---|---|---|
+| RC baseline | — | 713–736 MB | 1260–1275 MB |
+| v2 build 2 (`Builds/runs/memv_int2`) | D3D11 first, MSAA 4x→2x, incremental GC, mesh/mip stripping | 420–431 MB | 848–865 MB |
+| v2 build 5 (`Builds/runs/int5_ui`) | + characters (6 looks, 48 clips), voice (libopus), full UI + 2D kit | 438–448 MB | 885–925 MB |
+
+**−39 % working set, −29 % private bytes** versus the RC while the game gained characters, voice and a much richer
+UI. The 6-player run of build 1 (still D3D12) also passed (`Builds/runs/int1_p6`: identical result hash on all six).
+
+Where the savings come from: the D3D12 device + split graphics jobs mapped ~300 MB per process for a scene this
+small; D3D11 is the primary API now (D3D12 kept as fallback). MSAA 2x halves the multisampled colour/depth targets.
+
+### Engine and voice (measured in the .NET harnesses)
+
+| Item | Budget | Measured |
+|---|---|---|
+| Engine `Tick`, 6 players, active inspection | < 0.2 ms | 0.0032 ms, 0 B allocated per tick |
+| 6× `BuildView` batch (populated results) | < 0.3 ms | 0.152 ms |
+| Voice encode / decode per 20 ms frame (libopus) | — | 0.095 ms / 0.013 ms, 0 B per frame |
+| Voice bitrate per talking player (on the wire, incl. NGO header) | ≤ 24 kbps | ~21–22 kbps (Unity run: 16.3–17.3 kbps stream) |
+| Voice memory | bounded | ~1.1 MB total, allocated once (pooled emitters) |
+| Host voice upload, worst case (meeting, 6 talking) | 720 kbps | ~470 kbps |
+
+### Design rules that keep it lean
+
+- Rules engine: preallocated position log, no per-tick allocations, views rebuilt only at ≤10 Hz per client.
+- Audio: all 47 SFX are synthesised at boot (~3.4 MB, no audio assets). Voice uses pooled emitters and buffers.
+- Characters: one shared rig and clip set, one 512² face atlas (BC7) for all looks, flat materials.
+- UI: textures loaded once from Resources; full-screen illustrations are unloaded when their screen hides; HUD
+  updates only on view changes.
+- Visibility: 3 line-of-sight raycasts per frame round-robin, static hit buffers.
