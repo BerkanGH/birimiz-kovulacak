@@ -128,10 +128,40 @@ namespace BirimizKovulacak.VoiceTests
         {
             Backends.Require(VoiceCodecBackend.Native);
             var s = VoiceEncoderSettings.Default;
-            s.Bitrate = 18000;
+            s.Bitrate = 22000;
             using var enc = new NativeOpusEncoder(s);
-            Assert.AreEqual(18000, enc.GetBitrate(), "varargs ctl binding works on this ABI");
+            Assert.AreEqual(22000, enc.GetBitrate(), "varargs ctl binding works on this ABI");
+            using var def = new NativeOpusEncoder(VoiceEncoderSettings.Default);
+            Assert.AreEqual(VoiceFormat.DefaultBitrate, def.GetBitrate());
             TestContext.WriteLine("libopus version: " + NativeOpus.Version);
+        }
+
+        [TestCaseSource(typeof(Backends), nameof(Backends.All))]
+        public void CpuCost_PerFrame_IsSmall(VoiceCodecBackend backend)
+        {
+            using var enc = Backends.Encoder(backend);
+            using var dec = Backends.Decoder(backend, VoiceFormat.PlaybackSampleRate);
+            var input = Signals.Harmonic(VoiceFormat.CodecSampleRate, 4.0);
+            var pcm = new float[Frame];
+            var pkt = new byte[VoiceFormat.MaxPayloadBytes];
+            var outPcm = new float[dec.FrameSamples];
+            int frames = input.Length / Frame;
+            for (int f = 0; f < 50; f++) { Array.Copy(input, f * Frame, pcm, 0, Frame); enc.Encode(pcm, pkt, 0, pkt.Length); }
+            var sw = System.Diagnostics.Stopwatch.StartNew();
+            double encMs = 0, decMs = 0;
+            for (int f = 0; f < frames; f++)
+            {
+                Array.Copy(input, f * Frame, pcm, 0, Frame);
+                sw.Restart();
+                int n = enc.Encode(pcm, pkt, 0, pkt.Length);
+                encMs += sw.Elapsed.TotalMilliseconds;
+                sw.Restart();
+                dec.Decode(pkt, 0, n, outPcm, false);
+                decMs += sw.Elapsed.TotalMilliseconds;
+            }
+            TestContext.WriteLine($"{backend}: encode {encMs / frames:0.000} ms/frame, decode@48k {decMs / frames:0.000} ms/frame " +
+                                  $"(host worst case 1 encode + 5 decodes = {(encMs + 5 * decMs) / frames:0.00} ms per 20 ms)");
+            Assert.Less(encMs / frames, 5.0, "far below real time");
         }
 
         [Test]

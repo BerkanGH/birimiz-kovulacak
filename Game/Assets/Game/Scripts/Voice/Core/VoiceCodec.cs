@@ -33,7 +33,7 @@ namespace BirimizKovulacak.Voice
         public int PacketLossPercent;
         public bool ConstrainedVbr;
 
-        /// <summary>~20 kbps constrained VBR, wideband voice, in-band FEC tuned for 10 % loss.</summary>
+        /// <summary>18 kbps constrained VBR, wideband voice, in-band FEC tuned for 10 % loss.</summary>
         public static VoiceEncoderSettings Default => new VoiceEncoderSettings
         {
             Bitrate = VoiceFormat.DefaultBitrate,

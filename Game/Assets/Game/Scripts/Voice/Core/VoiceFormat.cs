@@ -17,7 +17,8 @@ namespace BirimizKovulacak.Voice
         public const int MaxPlayers = 6;
         /// <summary>Hard cap of one encoded Opus frame (fits the one-byte length field of the wire format).</summary>
         public const int MaxPayloadBytes = 200;
-        public const int DefaultBitrate = 20000;
+        /// <summary>Opus target. 18 kbps keeps payload + 5 B frame header + NGO named-message header (~11 B) under 24 kbps.</summary>
+        public const int DefaultBitrate = 18000;
         public const int NoSlot = -1;
     }
 

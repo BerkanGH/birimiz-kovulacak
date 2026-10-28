@@ -240,12 +240,25 @@ namespace BirimizKovulacak.Game
             if (_capture == null) return;
             _capture.Vad.SetSensitivity(Settings.VadSensitivity);
             _capture.InputGain = Settings.InputGain;
-            if (_mic != null && _mic.IsRunning && _mic.ActiveDevice != Settings.InputDevice && !string.IsNullOrEmpty(Settings.InputDevice))
+            if (_mic != null && _mic.IsRunning && _mic.ActiveDevice != Settings.InputDevice)
             {
+                // Device switched in the settings screen ("" = system default): restart on the next frame.
                 _mic.Stop();
+                _capture.ForceClose();
                 _nextMicAttemptMs = 0;
             }
+            for (int i = 0; i < Slots; i++)
+                if (_channels[i] != null) _channels[i].Jitter.BaseDelayMs = _basePlayoutDelayMs;
             RefreshPlayerVolumes();
+        }
+
+        int _basePlayoutDelayMs = 60;
+
+        /// <summary>Minimum jitter-buffer delay (ms, 20..200). Lower = less latency, more concealment on bad links.</summary>
+        public int BasePlayoutDelayMs
+        {
+            get => _basePlayoutDelayMs;
+            set { _basePlayoutDelayMs = Mathf.Clamp(value, 20, 200); ApplySettings(); }
         }
 
         void OnAudioConfigurationChanged(bool deviceWasChanged)
