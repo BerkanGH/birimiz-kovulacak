@@ -53,6 +53,9 @@ namespace BirimizKovulacak.Core
                     if (scan != null) { record.View.AttributedTo = scan.ApparentOwner; record.View.ScanReliability = scan.Reliability; record.View.ScanSignal = scan.Signal; record.View.ItemVariant = scan.ItemVariant; }
                 }
                 record.View.RiskWeight = EvidenceWeight(record.View); note.Presented = true; meeting.PresentedEvidence.Add(record.View.Id);
+                if (note.Kind == NoteKind.Witness)
+                    foreach (IncidentState incident in incidents)
+                        if (incident.WitnessNoteIds.Contains(note.Id)) incident.EvidenceIds.Add(record.View.Id);
             }
         }
 
@@ -144,6 +147,7 @@ namespace BirimizKovulacak.Core
             FillCareerResult(result);
             foreach (PlayerOutcome outcome in result.Players) AddV2Titles(outcome, result);
             FillCalls(result.Calls);
+            result.Highlight = BuildHighlight(result.FiredPlayer);
             result.ResultHash = WireCodec.HashResult(result); Result = result;
         }
 
@@ -167,9 +171,7 @@ namespace BirimizKovulacak.Core
             {
                 IncidentReveal i = incident.Reveal; ItemState item = Item(i.ItemId);
                 if (i.Type >= SabotageType.FakeEmail) continue;
-                string key;
-                switch (i.Type) { case SabotageType.PlantItem: key = "recap.planted"; break; case SabotageType.NameplateSwap: key = "recap.nameplate_swapped"; break; case SabotageType.LockWorkstation: key = "recap.workstation_locked"; break; case SabotageType.HideReport: key = "recap.report_hidden"; break; case SabotageType.SpillCoffee: key = "recap.coffee_spilled"; break; case SabotageType.MoveClutter: key = "recap.clutter_moved"; break; default: key = "recap.evidence_tampered"; break; }
-                beats.Add(new RecapBeat { Time = i.Time, Key = key, Actor = i.Actor, Other = i.Victim, DeskIndex = i.DeskIndex, ItemVariant = item == null ? "" : item.View.Variant });
+                beats.Add(new RecapBeat { Time = i.Time, Key = IncidentRecapKey(i.Type), Actor = i.Actor, Other = i.Victim, DeskIndex = i.DeskIndex, ItemVariant = item == null ? "" : item.View.Variant });
             }
             foreach (EvidenceState e in evidence) if (e.View.Source == DiscoverySource.Manager) beats.Add(new RecapBeat { Time = e.View.Time, Key = "recap.manager_found", Other = e.View.AttributedTo, DeskIndex = e.View.DeskIndex, ItemVariant = e.View.ItemVariant });
             foreach (AccusationView a in meeting.Accusations) beats.Add(new RecapBeat { Time = a.Time, Key = "recap.accused", Actor = a.Accuser, Other = a.Accused });

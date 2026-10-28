@@ -20,6 +20,7 @@ namespace BirimizKovulacak.Core
         internal readonly bool[] KnownBy = new bool[Protocol.MaxPlayers];
         internal readonly List<int> Handlers = new List<int>();
         internal int LastPlacer = PlayerIds.None;
+        internal int PlacementIncident;
         internal double PlacedAt = double.NegativeInfinity, MovedAt = double.NegativeInfinity;
         internal string PlacementSlot = "";
         internal bool TamperedThisCarry;
@@ -45,9 +46,12 @@ namespace BirimizKovulacak.Core
     internal sealed class IncidentState
     {
         internal IncidentReveal Reveal = new IncidentReveal();
+        internal double Start;
         internal bool Active = true, ConsequenceApplied;
         internal string LocationId = "";
         internal readonly List<int> BlamedPlayers = new List<int>();
+        internal readonly List<int> EvidenceIds = new List<int>();
+        internal readonly List<int> WitnessNoteIds = new List<int>();
     }
     internal sealed class EvidenceState
     {

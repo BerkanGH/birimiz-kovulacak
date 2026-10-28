@@ -197,7 +197,7 @@ namespace BirimizKovulacak.Core
                 if (!covered)
                 {
                     EvidenceState moved = evidence.Find(e => e.View.ItemId == item.View.Id && e.View.DeskIndex == index && e.View.Status == EvidenceStatus.Moved && !e.View.Sealed && e.View.LocationId == item.View.SlotId);
-                    if (moved != null) { moved.View.Status = EvidenceStatus.Active; moved.View.RiskWeight = EvidenceWeight(moved.View); Emit(EventType.EvidenceUpdated, arg: moved.View.Id); }
+                    if (moved != null) { moved.View.Status = EvidenceStatus.Active; moved.View.RiskWeight = EvidenceWeight(moved.View); LinkPhysicalEvidence(moved, item); Emit(EventType.EvidenceUpdated, arg: moved.View.Id); }
                     else AddEvidence(suspicious ? EvidenceKind.SuspiciousItemFound : EvidenceKind.HiddenReportFound, item, item.View.SlotId, index, DiscoverySource.Manager);
                 }
                 if (suspicious) AddObservation(ObservationKind.SuspiciousItemAtDesk, owner, index, 0, item.View.Variant);
@@ -237,6 +237,7 @@ namespace BirimizKovulacak.Core
         {
             var record = new EvidenceState { View = new EvidenceView { Id = ++evidenceSerial, Kind = kind, Time = clock, PhaseFound = Phase, ItemId = item == null ? "" : item.View.Id, ItemVariant = item == null ? "" : item.View.Variant, LocationId = location ?? "", DeskIndex = desk, Source = source, SourcePlayer = sourcePlayer, AttributedTo = attribution == -2 ? ApparentOwner(desk) : attribution, Status = EvidenceStatus.Active }, Placer = item == null ? PlayerIds.None : item.LastPlacer, PlacedAt = item == null ? double.NegativeInfinity : item.PlacedAt };
             evidence.Add(record); record.View.RiskWeight = EvidenceWeight(record.View);
+            LinkPhysicalEvidence(record, item);
             Emit(EventType.EvidenceCreated, target: location, arg: record.View.Id);
             return record;
         }
@@ -270,7 +271,7 @@ namespace BirimizKovulacak.Core
             Emit(EventType.EvidenceUpdated, arg: recovered.View.Id);
         }
 
-        partial void WitnessCompleted(int p, InteractionState action, string heldAfter)
+        partial void WitnessCompleted(int p, InteractionState action, string heldAfter, int firstIncident)
         {
             SlotDef slot = Layout.GetSlot(action.Request.TargetId);
             if (action.Request.Verb == ActionVerb.PickUp)
@@ -286,7 +287,9 @@ namespace BirimizKovulacak.Core
             {
                 PlayerState observer = players[witness];
                 if (witness == p || !observer.Public.Connected || !InVision(observer.Avatar.Position, observer.Avatar.Yaw, players[p].Avatar.Position, WitnessRangeV2(p), Config.Witness.HalfAngle, Config.Witness.RequireLineOfSight)) continue;
-                AddNote(witness, new PrivateNote { Kind = NoteKind.Witness, Subject = p, Activity = action.Activity, TargetId = action.Request.TargetId, DeskIndex = desk, HeldBefore = action.HeldBefore, HeldAfter = heldAfter ?? "" });
+                var note = new PrivateNote { Kind = NoteKind.Witness, Subject = p, Activity = action.Activity, TargetId = action.Request.TargetId, DeskIndex = desk, HeldBefore = action.HeldBefore, HeldAfter = heldAfter ?? "" };
+                AddNote(witness, note);
+                for (int n = firstIncident; n < incidents.Count; n++) incidents[n].WitnessNoteIds.Add(note.Id);
             }
         }
     }
