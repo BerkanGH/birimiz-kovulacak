@@ -257,6 +257,20 @@ namespace BirimizKovulacak.Game
             return h;
         }
 
+        /// <summary>Keeps <paramref name="target"/> at aspect w/h, as large as fits inside <paramref name="container"/> (fixed-aspect art: letter, projector).</summary>
+        public static void KeepAspect(VisualElement container, VisualElement target, float aspect, float reserveHeight = 0f)
+        {
+            container.RegisterCallback<GeometryChangedEvent>(_ =>
+            {
+                float w = container.resolvedStyle.width, h = container.resolvedStyle.height - reserveHeight;
+                if (w <= 1f || h <= 1f) return;
+                float tw = w, th = w / aspect;
+                if (th > h) { th = h; tw = h * aspect; }
+                target.style.width = tw;
+                target.style.height = th;
+            });
+        }
+
         public static Label Empty(VisualElement parent, string text) { return Text(text, "empty").AddTo(parent); }
 
         public static void Show(this VisualElement e, bool visible)

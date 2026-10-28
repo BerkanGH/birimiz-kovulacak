@@ -48,6 +48,7 @@ namespace BirimizKovulacak.Game
             var frame = Box("projector-frame").AddTo(proj);
             if (!UiArt.Apply(frame, "meeting/projector_frame")) frame.AddToClassList("projector-fallback");
             var screen = Box("projector-screen").AddTo(frame);
+            KeepAspect(proj, frame, 1600f / 900f);
             var head = Box("slide-head").AddTo(screen);
             var folder = Box("icon", "icon-m", "gap-m").AddTo(head);
             if (!UiArt.Apply(folder, "meeting/evidence_folder")) SetIcon(folder, "notes");

@@ -28,7 +28,7 @@ namespace BirimizKovulacak.Game
         int _builtMatch = -1, _builtState = -1, _lastSec = -1, _eotmShownFor = -1, _rematchKey = -1;
         bool _hasClip, _saving, _cctv;
 
-        public ResultsScreen(VisualElement parent) : base(parent, "dim-soft")
+        public ResultsScreen(VisualElement parent) : base(parent)
         {
             var wrap = Box("results-wrap").AddTo(Root);
 
@@ -39,6 +39,7 @@ namespace BirimizKovulacak.Game
             _letterBody = Box("col", "grow").AddTo(_letter);
             _stamp = Box("stamp").NoPick().AddTo(_letter);
             _letterActions = Box("letter-actions").AddTo(letterCol);
+            KeepAspect(letterCol, _letter, 1200f / 1600f, 64f);
             _save = IconBtn("star", Loc.T("results.save_letter"), SaveLetter, "btn-small").AddTo(_letterActions);
 
             // ---- reveal column
@@ -57,7 +58,7 @@ namespace BirimizKovulacak.Game
             _scroll = new ScrollView().Cls("reveal-body").AddTo(reveal);
             _content = _scroll.contentContainer;
             _clipHost = Box("col");
-            _clip = new HighlightPlayer(_clipHost, 920, 575);
+            _clip = new HighlightPlayer(_clipHost, 860, 538);
 
             _rematchBar = Box("rematch-bar").AddTo(reveal);
             _rematch = Btn("", () => ClientState.I.Send(ActionVerb.RematchVote), "btn-primary", "btn-big").AddTo(_rematchBar);
