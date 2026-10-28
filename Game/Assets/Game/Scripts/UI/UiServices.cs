@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using UnityEngine;
+using BirimizKovulacak.Core;
 using UnityEngine.InputSystem;
 
 namespace BirimizKovulacak.Game
@@ -17,12 +18,16 @@ namespace BirimizKovulacak.Game
         /// <summary>The local player's voice is being transmitted right now (PTT held or VAD open, not muted).</summary>
         bool Transmitting { get; }
         /// <summary>Who hears the local player right now.</summary>
-        VoiceRoute Route { get; }
+        VoiceUiRoute Route { get; }
         /// <summary>Display label of the push-to-talk key (e.g. "V").</summary>
         string PttKeyLabel { get; }
+        /// <summary>Microphone muted by the player.</summary>
+        bool Muted { get; }
+        /// <summary>Push-to-talk mode (false = open mic).</summary>
+        bool PushToTalk { get; }
     }
 
-    public enum VoiceRoute : byte { None = 0, Proximity = 1, Call = 2, Everyone = 3 }
+    public enum VoiceUiRoute : byte { None = 0, Proximity = 1, Call = 2, Everyone = 3 }
 
     /// <summary>Default until the voice system registers itself: nothing is speaking.</summary>
     public sealed class NullVoiceUi : IVoiceUi
@@ -31,14 +36,62 @@ namespace BirimizKovulacak.Game
         public bool IsSpeaking(int playerId) { return false; }
         public float MicLevel => 0f;
         public bool Transmitting => false;
-        public VoiceRoute Route => VoiceRoute.None;
-        public string PttKeyLabel => "V";
+        public VoiceUiRoute Route => VoiceUiRoute.None;
+        public string PttKeyLabel => GameInput.KeyLabel(GameInput.PushToTalk);
+        public bool Muted => false;
+        public bool PushToTalk => true;
     }
 
-    /// <summary>Service registry the adapter / voice code fills in (see docs/UI.md "Integration steps").</summary>
+    /// <summary>Adapter over the voice module (VoiceSystem.Instance; null with -novoice). Allocation-free.</summary>
+    public sealed class VoiceSystemUi : IVoiceUi
+    {
+        string _pttLabel;
+        float _pttLabelAt = -10f;
+
+        public bool Available => VoiceSystem.Instance != null;
+        public bool IsSpeaking(int playerId) { var vs = VoiceSystem.Instance; return vs != null && vs.IsSpeaking(playerId); }
+        public float MicLevel { get { var vs = VoiceSystem.Instance; return vs != null ? vs.LocalMicLevel : 0f; } }
+        public bool Transmitting { get { var vs = VoiceSystem.Instance; return vs != null && vs.IsTransmitting; } }
+        public bool Muted { get { var vs = VoiceSystem.Instance; return vs != null && vs.Settings != null && vs.Settings.SelfMute; } }
+        public bool PushToTalk { get { var vs = VoiceSystem.Instance; return vs == null || vs.Settings == null || vs.Settings.InputMode == VoiceInputMode.PushToTalk; } }
+
+        public string PttKeyLabel
+        {
+            get
+            {
+                // The binding display string allocates: refresh at most once per second.
+                if (_pttLabel == null || Time.unscaledTime - _pttLabelAt > 1f)
+                {
+                    _pttLabelAt = Time.unscaledTime;
+                    var vs = VoiceSystem.Instance;
+                    string l = vs != null ? vs.PushToTalkKey : GameInput.KeyLabel(GameInput.PushToTalk);
+                    if (_pttLabel != l) _pttLabel = l;
+                }
+                return _pttLabel;
+            }
+        }
+
+        /// <summary>Who hears the local player: call partner, everyone (meeting / results / lobby) or people nearby.</summary>
+        public VoiceUiRoute Route
+        {
+            get
+            {
+                var cs = ClientState.I;
+                var v = cs != null ? cs.View : null;
+                if (v == null) return VoiceUiRoute.Everyone;
+                if (v.Me != null && v.Me.Call != null && v.Me.Call.State == CallState.Active) return VoiceUiRoute.Call;
+                if (v.Phase >= MatchPhase.MeetingDiscussion) return VoiceUiRoute.Everyone;
+                return VoiceUiRoute.Proximity;
+            }
+        }
+    }
+
+    /// <summary>Service registry. <see cref="Voice"/> wraps the voice module unless another implementation is set.</summary>
     public static class UiServices
     {
-        public static IVoiceUi Voice = new NullVoiceUi();
+        static readonly IVoiceUi _bridge = new VoiceSystemUi();
+        public static IVoiceUi Override;
+        public static IVoiceUi Voice => Override ?? _bridge;
     }
 
     /// <summary>
@@ -51,12 +104,6 @@ namespace BirimizKovulacak.Game
         public const string AmbienceVolumeKey = "settings.ambience_volume"; // Sfx.AmbienceVolume
         public const string CameraShakeKey = "settings.camera_shake"; // CameraRig.JuiceScale
         public const string SfxVolumeKey = "settings.sfx_volume";     // 0..1 (Sfx.EffectsVolume)
-        public const string VoiceVolumeKey = "voice.volume";          // 0..1 incoming voice
-        public const string VoiceModeKey = "voice.mode";              // 0 = push-to-talk, 1 = open mic (VAD)
-        public const string VadThresholdKey = "voice.vad_threshold";  // 0..1 of MicLevel
-        public const string MicDeviceKey = "voice.mic_device";        // "" = system default
-        public const string MicMutedKey = "voice.mic_muted";          // 0/1
-        public const string PlayerVolumePrefix = "voice.player.";     // + player name, 0..2 (1 = normal)
         public const string LanguageKey = "settings.language";        // "tr"
 
         /// <summary>Raised with the key that changed.</summary>
@@ -69,10 +116,6 @@ namespace BirimizKovulacak.Game
         public static string GetString(string key, string def) { return PlayerPrefs.GetString(key, def); }
         public static void SetString(string key, string v) { PlayerPrefs.SetString(key, v); Changed?.Invoke(key); }
 
-        public static bool PushToTalk { get { return GetInt(VoiceModeKey, 0) == 0; } set { SetInt(VoiceModeKey, value ? 0 : 1); } }
-        public static bool MicMuted { get { return GetInt(MicMutedKey, 0) != 0; } set { SetInt(MicMutedKey, value ? 1 : 0); } }
-        public static float PlayerVolume(string playerName) { return GetFloat(PlayerVolumePrefix + playerName, 1f); }
-        public static void SetPlayerVolume(string playerName, float v) { SetFloat(PlayerVolumePrefix + playerName, v); }
 
         public static void Save() { PlayerPrefs.Save(); }
     }

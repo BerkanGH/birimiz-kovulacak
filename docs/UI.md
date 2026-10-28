@@ -126,23 +126,12 @@ how-to, modals, meeting, results and the undismissed briefing — **not** for th
 2. **Art updates:** `Resources/ui` is a copy of `Art/UI/{backgrounds,bubbles,buttons,cards,howto,icons,logo,meeting,
    phone,portraits,stamps,titles,week}`; after a new art run use *Birimiz Kovulacak/UI/Sync UI art from Art/UI* (or
    `ProjectBuilder.SyncUiArt()` in batch mode) and commit the copied PNGs.
-3. **Voice → UI** (voice module), register once the voice system runs:
-   ```csharp
-   public sealed class VoiceUiBridge : IVoiceUi   // e.g. inside the voice manager
-   {
-       public bool Available => true;
-       public bool IsSpeaking(int playerId) { return /* playback level of that slot > gate, or local Transmitting */; }
-       public float MicLevel => /* 0..1 RMS of the last capture frame */;
-       public bool Transmitting => /* PTT held or VAD open, and not muted */;
-       public VoiceRoute Route => /* Call when Me.Call.State == Active, Everyone in meeting/results/lobby, else Proximity */;
-       public string PttKeyLabel => GameInput.KeyLabel(GameInput.PushToTalk);
-   }
-   // VoiceManager.Awake: UiServices.Voice = new VoiceUiBridge(this);
-   ```
-   Read the player settings from PlayerPrefs (and `UiSettings.Changed += key => ...` to apply live):
-   `voice.volume` (0..1 incoming), `voice.mode` (0 PTT, 1 open mic), `voice.vad_threshold` (0..1 of MicLevel),
-   `voice.mic_device` ("" = default), `voice.mic_muted` (0/1), `voice.player.<player name>` (0..2, 1 = normal).
-   Until then the HUD hides the mic indicator and the settings show "Sesli sohbet henüz bağlı değil".
+3. **Voice** — already wired to `VoiceSystem.Instance` (docs/VOICE_NOTES.md "API for the UI agent"): `VoiceSystemUi`
+   (in `UiServices.cs`) feeds speaking rings (`IsSpeaking`), the mic meter (`LocalMicLevel`), transmit state, mute and
+   PTT label; Settings edits `VoiceSystem.Settings` (device, PTT / open mic, sensitivity, input gain, volume 0..2,
+   self-mute, deafen, loopback test, `MicTest` while the mic tab is open, `Save()` on close) and per-player volume via
+   `Get/SetPlayerVolume(slot)`. With `-novoice` the HUD hides the mic and Settings edits `VoiceSettings.Load()`.
+   `UiServices.Override` can replace the bridge (tests).
 4. **Feel** — already wired: `UIRoot` implements `IFeelUi` (`FeelHooks.Ui = this` in `Awake`, `DrawsEmoteWheel`,
    `PickEmailTemplate`, `TextInputFocused`), sets `FeelHooks.UiDrivesResultsStamp = true` and calls
    `FeelHooks.ResultsStamp`; footage viewers hold `ScreenFx.SetCctv`. The UI no longer reads T/Y/N/G/1–5 itself and plays
@@ -157,7 +146,7 @@ how-to, modals, meeting, results and the undismissed briefing — **not** for th
 
 ## Still placeholder / known gaps
 
-- Voice indicators wait for `IVoiceUi` (step 3). Per-player volume is keyed by player name.
+- Per-player hearing state (`GetHearing`: muffled / call) is not shown yet; only speaking rings.
 - Language selector is a disabled placeholder (only `tr.json` exists).
 - No gamepad navigation (keyboard + mouse only); phone tabs have no number-key shortcuts (1–5 are emotes).
 - Card illustrations exist only for the six card sabotages; basic sabotage uses icons.

@@ -109,11 +109,11 @@
   "settings.ptt": "Bas-konuş ({0})",
   "settings.open_mic": "Açık mikrofon",
   "settings.mic_muted": "Mikrofonu kapat",
-  "settings.vad": "Ses eşiği",
-  "settings.vad_help": "Açık mikrofonda sesin bu eşiği geçince iletilir. Konuşurken çubuğu izle; kırmızı çizgi eşik.",
-  "settings.vad_help_ptt": "Bas-konuş modunda eşik kullanılmaz, ama mikrofonunu buradan test edebilirsin.",
+  "settings.vad": "Açık mikrofon hassasiyeti",
+  "settings.vad_help": "Açık mikrofonda konuşunca çubuk yeşile dönmeli; susunca dönmemeli. Olmuyorsa hassasiyeti ayarla.",
+  "settings.vad_help_ptt": "Bas-konuş modunda hassasiyet kullanılmaz; konuşurken çubuğun hareket ettiğini kontrol et.",
   "settings.mic_level": "Seviye",
-  "settings.vad_threshold": "Eşik",
+  "settings.vad_threshold": "Hassasiyet",
   "settings.mouse": "Fare",
   "settings.sensitivity": "Fare hassasiyeti",
   "settings.bindings": "Tuş atamaları",
@@ -1023,5 +1023,10 @@
   "howto.5.line.1": "Pazartesi temeller · Salı gizli kartlar · Çarşamba ihbar hattı ve kamera · Perşembe her şey · Cuma finali: puanlar ×2.",
   "howto.5.line.2": "Kariyer puanı: kota tuttu +1, kovulmadın +1, gizli hedef +3, muhbir kazandı +3, gözde +1, kovuldun –2.",
   "howto.5.line.3": "Cuma akşamı en çok puanı toplayan Ayın Elemanı seçilir.",
-  "howto.5.line.4": "Kovulan, ertesi gün yeni işe girmiş gibi devam eder — kimse dışarıda beklemez."
+  "howto.5.line.4": "Kovulan, ertesi gün yeni işe girmiş gibi devam eder — kimse dışarıda beklemez.",
+  "settings.deafen": "Kimseyi duyma (sağırlaştır)",
+  "settings.input_gain": "Mikrofon kazancı",
+  "settings.loopback": "Kendi sesimi duy (test)",
+  "voice.error.generic": "Mikrofon açılamadı. Windows gizlilik ayarlarında mikrofon iznini kontrol et.",
+  "voice.error.no_device": "Mikrofon bulunamadı."
 }

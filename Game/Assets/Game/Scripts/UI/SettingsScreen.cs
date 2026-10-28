@@ -49,6 +49,10 @@ namespace BirimizKovulacak.Game
         public void Hide()
         {
             UiSettings.Save();
+            VoiceSettingsNow().Save();
+            SetMicTest(false);
+            var vs = VoiceSystem.Instance;
+            if (vs != null && vs.LoopbackTest) vs.LoopbackTest = false;
             SetVisible(false);
             Hud.RefreshKeys();
         }
@@ -61,6 +65,7 @@ namespace BirimizKovulacak.Game
             _levelFill = null;
             _vadMark = null;
             _voiceState = null;
+            SetMicTest(false);
             switch (_tab)
             {
                 case Tab.Audio: BuildAudio(); break;
@@ -89,7 +94,8 @@ namespace BirimizKovulacak.Game
             SliderRow(_body, "settings.volume", 0f, 1f, Sfx.Volume, v => Sfx.Volume = v);
             SliderRow(_body, "settings.sfx_volume", 0f, 1f, Sfx.EffectsVolume, v => Sfx.EffectsVolume = v);
             SliderRow(_body, "settings.ambience_volume", 0f, 1f, Sfx.AmbienceVolume, v => Sfx.AmbienceVolume = v);
-            SliderRow(_body, "settings.voice_volume", 0f, 1f, UiSettings.GetFloat(UiSettings.VoiceVolumeKey, 1f), v => UiSettings.SetFloat(UiSettings.VoiceVolumeKey, v));
+            var vset = VoiceSettingsNow();
+            SliderRow(_body, "settings.voice_volume", 0f, 2f, vset.MasterVolume, v => vset.MasterVolume = v);
 
             Section(_body, Loc.T("settings.player_volumes"), "contacts");
             var names = new List<(int id, string name)>();
@@ -101,48 +107,74 @@ namespace BirimizKovulacak.Game
             {
                 var row = Box("setting-row").AddTo(_body);
                 Badge(id, "badge-s").AddTo(row);
+                int slot = id;
                 string n = name;
-                var s = new Slider(n, 0f, 2f) { value = UiSettings.PlayerVolume(n) }.Cls("slider", "grow").AddTo(row);
-                var val = Text(Mathf.RoundToInt(s.value * 100f) + "%", "setting-value").AddTo(row);
-                s.RegisterValueChangedCallback(e => { UiSettings.SetPlayerVolume(n, e.newValue); val.text = Mathf.RoundToInt(e.newValue * 100f) + "%"; });
+                var vs = VoiceSystem.Instance;
+                float cur = vs != null ? vs.GetPlayerVolume(slot) : vset.GetPlayerVolume(n);
+                var s = new Slider(n, 0f, 2f) { value = cur }.Cls("slider", "grow").AddTo(row);
+                var val = Text(Mathf.RoundToInt(cur * 100f) + "%", "setting-value").AddTo(row);
+                s.RegisterValueChangedCallback(e =>
+                {
+                    var sys = VoiceSystem.Instance;
+                    if (sys != null) sys.SetPlayerVolume(slot, e.newValue); else vset.SetPlayerVolume(n, e.newValue);
+                    val.text = Mathf.RoundToInt(e.newValue * 100f) + "%";
+                });
             }
+        }
+
+        /// <summary>The live voice settings (VoiceSystem) or a copy loaded from PlayerPrefs (no voice / -novoice).</summary>
+        VoiceSettings _offlineVoice;
+        VoiceSettings VoiceSettingsNow()
+        {
+            var vs = VoiceSystem.Instance;
+            if (vs != null && vs.Settings != null) return vs.Settings;
+            return _offlineVoice ?? (_offlineVoice = VoiceSettings.Load());
+        }
+
+        void SetMicTest(bool on)
+        {
+            var vs = VoiceSystem.Instance;
+            if (vs != null && vs.MicTest != on) vs.MicTest = on;
         }
 
         void BuildMic()
         {
-            var voice = UiServices.Voice;
-            _voiceState = Bold(voice.Available ? Loc.T("settings.voice_ready") : Loc.T("settings.voice_missing"), voice.Available ? "t-good" : "t-accent").AddTo(_body);
+            var vs = VoiceSystem.Instance;
+            var set = VoiceSettingsNow();
+            _voiceState = Bold(vs != null ? Loc.T("settings.voice_ready") : Loc.T("settings.voice_missing"), vs != null ? "t-good" : "t-accent").AddTo(_body);
+            if (vs != null && !string.IsNullOrEmpty(vs.MicrophoneError)) Text(Loc.TOr("voice.error." + vs.MicrophoneError, "voice.error.generic"), "t-small", "t-bad").AddTo(_body);
 
             Section(_body, Loc.T("settings.mic_device"), "mic_on");
             var devices = new List<string> { Loc.T("settings.mic_default") };
-            try { foreach (var d in Microphone.devices) devices.Add(d); }
+            try { foreach (var d in VoiceSystem.InputDevices) devices.Add(d); }
             catch (System.Exception) { }
-            string current = UiSettings.GetString(UiSettings.MicDeviceKey, "");
-            int idx = Mathf.Max(0, devices.IndexOf(current));
+            int idx = Mathf.Max(0, devices.IndexOf(set.InputDevice));
             var dd = new DropdownField(Loc.T("settings.mic_device"), devices, idx).Cls("dropdown").AddTo(_body);
-            dd.RegisterValueChangedCallback(e => UiSettings.SetString(UiSettings.MicDeviceKey, dd.index <= 0 ? "" : e.newValue));
+            dd.RegisterValueChangedCallback(e => set.InputDevice = dd.index <= 0 ? "" : e.newValue);
 
             Section(_body, Loc.T("settings.mic_mode"), "speaker");
             var modeRow = Box("row").AddTo(_body);
-            bool ptt = UiSettings.PushToTalk;
-            Btn(Loc.F("settings.ptt", voice.PttKeyLabel), () => { UiSettings.PushToTalk = true; Build(); }, "btn-small", ptt ? "btn-selected" : "btn-secondary").AddTo(modeRow);
-            Btn(Loc.T("settings.open_mic"), () => { UiSettings.PushToTalk = false; Build(); }, "btn-small", !ptt ? "btn-selected" : "btn-secondary").AddTo(modeRow);
-            var mute = new Toggle(Loc.T("settings.mic_muted")) { value = UiSettings.MicMuted }.Cls("toggle").AddTo(_body);
-            mute.RegisterValueChangedCallback(e => UiSettings.MicMuted = e.newValue);
+            bool ptt = set.InputMode == VoiceInputMode.PushToTalk;
+            Btn(Loc.F("settings.ptt", UiServices.Voice.PttKeyLabel), () => { set.InputMode = VoiceInputMode.PushToTalk; Build(); }, "btn-small", ptt ? "btn-selected" : "btn-secondary").AddTo(modeRow);
+            Btn(Loc.T("settings.open_mic"), () => { set.InputMode = VoiceInputMode.OpenMic; Build(); }, "btn-small", !ptt ? "btn-selected" : "btn-secondary").AddTo(modeRow);
+            var mute = new Toggle(Loc.T("settings.mic_muted")) { value = set.SelfMute }.Cls("toggle").AddTo(_body);
+            mute.RegisterValueChangedCallback(e => set.SelfMute = e.newValue);
+            var deafen = new Toggle(Loc.T("settings.deafen")) { value = set.Deafen }.Cls("toggle").AddTo(_body);
+            deafen.RegisterValueChangedCallback(e => set.Deafen = e.newValue);
 
             Section(_body, Loc.T("settings.vad"), "mic_on");
             Text(Loc.T(ptt ? "settings.vad_help_ptt" : "settings.vad_help"), "t-small", "t-muted").AddTo(_body);
             var meter = Box("mic-test").AddTo(_body);
             Text(Loc.T("settings.mic_level"), "setting-label").AddTo(meter);
-            var bar = Bar(0, out _levelFill, "bar-teal").AddTo(meter);
-            _vadMark = Box("vad-mark").AddTo(bar);
-            float thr = UiSettings.GetFloat(UiSettings.VadThresholdKey, 0.15f);
-            _vadMark.style.left = Length.Percent(thr * 100f);
-            SliderRow(_body, "settings.vad_threshold", 0f, 1f, thr, v =>
+            Bar(0, out _levelFill, "bar-teal").AddTo(meter);
+            SliderRow(_body, "settings.vad_threshold", 0f, 1f, set.VadSensitivity, v => set.VadSensitivity = v);
+            SliderRow(_body, "settings.input_gain", 0f, 4f, set.InputGain, v => set.InputGain = v);
+            if (vs != null)
             {
-                UiSettings.SetFloat(UiSettings.VadThresholdKey, v);
-                if (_vadMark != null) _vadMark.style.left = Length.Percent(v * 100f);
-            });
+                var loop = new Toggle(Loc.T("settings.loopback")) { value = vs.LoopbackTest }.Cls("toggle").AddTo(_body);
+                loop.RegisterValueChangedCallback(e => { var sys = VoiceSystem.Instance; if (sys != null) sys.LoopbackTest = e.newValue; });
+            }
+            SetMicTest(true);
         }
 
         void BuildControls()
@@ -197,7 +229,7 @@ namespace BirimizKovulacak.Game
             var voice = UiServices.Voice;
             float lvl = voice.Available ? Mathf.Clamp01(voice.MicLevel) : 0f;
             _levelFill.style.width = Length.Percent(lvl * 100f);
-            _levelFill.EnableInClassList("good", lvl >= UiSettings.GetFloat(UiSettings.VadThresholdKey, 0.15f));
+            _levelFill.EnableInClassList("good", voice.Transmitting);
         }
     }
 

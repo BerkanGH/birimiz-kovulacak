@@ -57,7 +57,7 @@ namespace BirimizKovulacak.Game
 
         int _lastVersion = -1, _lastMatch = -1, _lastPhaseSerial = -1, _lastTimerSec = -1, _lastMgrSec = -1, _lastNetSec = -1, _lastPowerSec = -1;
         int _promptSig = int.MinValue, _lastMicQ = -1;
-        VoiceRoute _lastRoute = (VoiceRoute)255;
+        VoiceUiRoute _lastRoute = (VoiceUiRoute)255;
         string _carryText = "";
         bool _officeVisible = true;
         // change caches for Rebuild (keeps the ~10 Hz view updates nearly allocation-free)
@@ -566,14 +566,14 @@ namespace BirimizKovulacak.Game
             _mic.Show(avail);
             for (int i = 0; i < _rows.Count; i++) _rows[i].TickSpeaking(avail ? voice : null);
             if (!avail) return;
-            bool muted = UiSettings.MicMuted;
+            bool muted = voice.Muted;
             int q = muted ? -2 : Mathf.RoundToInt(Mathf.Clamp01(voice.MicLevel) * 20f);
             if (q != _lastMicQ)
             {
                 _lastMicQ = q;
                 _micFill.style.height = Length.Percent(q < 0 ? 0 : q * 5f);
                 SetIcon(_micIcon, muted ? "mic_off" : "mic_on");
-                _micKey.Show(UiSettings.PushToTalk && !muted);
+                _micKey.Show(voice.PushToTalk && !muted);
                 _micKey.text = voice.PttKeyLabel;
             }
             _mic.EnableInClassList("mic-live", voice.Transmitting);
