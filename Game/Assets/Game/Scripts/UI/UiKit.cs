@@ -95,8 +95,8 @@ namespace BirimizKovulacak.Game
         public static Label Bold(string text, params string[] classes) { var l = Text(text, classes); UseFont(l, BoldFont); return l; }
         public static Label Title(string text, params string[] classes) { var l = Text(text, classes); UseFont(l, TitleFont); return l; }
         public static Label Hand(string text, params string[] classes) { var l = Text(text, classes).Cls("t-hand"); UseFont(l, HandFont); return l; }
-        public static Label Mono(string text, params string[] classes) { var l = Text(text, classes).Cls("t-mono"); UseFont(l, MonoFont); return l; }
-        public static Label MonoBold(string text, params string[] classes) { var l = Text(text, classes).Cls("t-mono"); UseFont(l, MonoBoldFont); return l; }
+        public static Label Memo(string text, params string[] classes) { var l = Text(text, classes).Cls("t-mono"); UseFont(l, MonoFont); return l; }
+        public static Label MemoBold(string text, params string[] classes) { var l = Text(text, classes).Cls("t-mono"); UseFont(l, MonoBoldFont); return l; }
         public static Label StampText(string text, params string[] classes) { var l = Text(text, classes).Cls("t-stamp"); UseFont(l, StampFont); return l; }
 
         static bool HasVariant(string[] classes)

@@ -362,12 +362,12 @@
 .flag-line { font-size: 16px; color: rgb(107, 111, 128); white-space: normal; }
 
 .sab-card { flex-direction: row; margin: 6px 0; padding: 10px; border-radius: 12px; border-width: 3px; border-color: rgb(31, 42, 68); background-color: rgb(255, 250, 235); }
-.sab-card-art { width: 84px; height: 84px; margin-right: 12px; -unity-background-scale-mode: scale-to-fit; border-radius: 8px; background-color: rgb(232, 201, 138); flex-shrink: 0; }
+.sab-card-art { width: 96px; height: 134px; margin-right: 12px; -unity-background-scale-mode: scale-to-fit; border-radius: 8px; flex-shrink: 0; }
 .sab-card-name { font-size: 21px; color: rgb(31, 42, 68); }
 .sab-card-desc { font-size: 16px; white-space: normal; }
 .sab-card-cooldown { opacity: 0.7; }
 .sab-card-big { flex-direction: column; width: 230px; align-items: center; margin: 6px; }
-.sab-card-big .sab-card-art { width: 180px; height: 150px; margin: 0 0 8px 0; }
+.sab-card-big .sab-card-art { width: 180px; height: 252px; margin: 0 0 8px 0; }
 .sab-card-big .sab-card-name { -unity-text-align: middle-center; }
 .sab-card-big .sab-card-desc { -unity-text-align: middle-center; }
 .basic-row { flex-direction: row; align-items: center; margin: 2px 0; }
@@ -637,3 +637,4 @@
 .status-box { flex-direction: row; align-items: center; background-color: rgba(31, 42, 68, 0.94); border-radius: 16px; padding: 14px 26px; border-width: 3px; border-color: rgb(255, 224, 102); }
 .status-text { font-size: 26px; color: rgb(244, 239, 227); }
 .pause { width: 640px; }
+.feed-meeting { top: auto; bottom: 16px; left: 16px; right: auto; align-items: flex-start; }
