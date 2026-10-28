@@ -260,7 +260,8 @@ namespace BirimizKovulacak.Game
             }
             if (!string.Equals(carried, e.CarriedId, System.StringComparison.Ordinal))
             {
-                SetHidden(e.CarriedRenderers, ref e.CarriedHidden, false);
+                EnsureHidden(e.CarriedRenderers, false);
+                e.CarriedHidden = false;
                 e.CarriedRenderers = null;
                 e.CarriedId = carried;
                 e.NextCarriedLookup = 0f;
@@ -271,7 +272,17 @@ namespace BirimizKovulacak.Game
                 var visual = FindItemVisual(carried);
                 if (visual != null) { e.CarriedRenderers = visual.GetComponentsInChildren<Renderer>(true); e.CarriedHidden = false; }
             }
-            SetHidden(e.CarriedRenderers, ref e.CarriedHidden, e.Alpha < 0.5f);
+            // The same item visual can move between carriers between snapshots; apply the state every frame
+            // (a handful of renderers) instead of trusting a per-entry cache another entry may have undone.
+            e.CarriedHidden = e.Alpha < 0.5f;
+            EnsureHidden(e.CarriedRenderers, e.CarriedHidden);
+        }
+
+        static void EnsureHidden(Renderer[] renderers, bool hidden)
+        {
+            if (renderers == null) return;
+            for (int i = 0; i < renderers.Length; i++)
+                if (renderers[i] != null && renderers[i].forceRenderingOff != hidden) renderers[i].forceRenderingOff = hidden;
         }
 
         /// <summary>
@@ -292,7 +303,8 @@ namespace BirimizKovulacak.Game
                 if (e.Feel != null) e.Feel.SetVisibility(1f);
                 if (e.Avatar.NameTag != null) e.Avatar.NameTag.alpha = 1f;
             }
-            SetHidden(e.CarriedRenderers, ref e.CarriedHidden, false);
+            EnsureHidden(e.CarriedRenderers, false);
+            e.CarriedHidden = false;
         }
     }
 }

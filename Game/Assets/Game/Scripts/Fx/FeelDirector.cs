@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using BirimizKovulacak.Core;
 using UnityEngine;
 using EventType = BirimizKovulacak.Core.EventType;
@@ -221,11 +222,39 @@ namespace BirimizKovulacak.Game
             }
         }
 
+        // Observation events can arrive before the snapshot that contains the observation: keep the id for a few seconds.
+        readonly List<int> _pendingObs = new List<int>(8);
+        readonly List<float> _pendingObsUntil = new List<float>(8);
+
+        void FlushPendingObservations(PlayerView view, int me)
+        {
+            for (int i = _pendingObs.Count - 1; i >= 0; i--)
+            {
+                int id = _pendingObs[i];
+                if (Time.time > _pendingObsUntil[i] || HasObservation(view, id))
+                {
+                    _pendingObs.RemoveAt(i);
+                    _pendingObsUntil.RemoveAt(i);
+                    if (HasObservation(view, id)) OnObservation(view, id, me);
+                }
+            }
+        }
+
+        static bool HasObservation(PlayerView view, int id)
+        {
+            for (int i = 0; i < view.Observations.Count; i++) if (view.Observations[i].Id == id) return true;
+            return false;
+        }
+
         void OnObservation(PlayerView view, int observationId, int me)
         {
             ObservationView obs = null;
             for (int i = 0; i < view.Observations.Count; i++) if (view.Observations[i].Id == observationId) { obs = view.Observations[i]; break; }
-            if (obs == null) return;
+            if (obs == null)
+            {
+                if (_pendingObs.Count < 16 && !_pendingObs.Contains(observationId)) { _pendingObs.Add(observationId); _pendingObsUntil.Add(Time.time + 3f); }
+                return;
+            }
             if (obs.Severity > 0f) Shock(obs.Subject, 2.2f);
             else if (obs.Severity < 0f) Cheer(obs.Subject, 2f);
             if (obs.Subject != me || obs.Severity <= 0f) return;
@@ -264,7 +293,8 @@ namespace BirimizKovulacak.Game
                 FxPool.SetSaltSparkle(false, Vector3.zero);
                 return;
             }
-            if (view.MatchId != _lastMatch) { _lastMatch = view.MatchId; ResetMatchState(); }
+            if (view.MatchId != _lastMatch) { _lastMatch = view.MatchId; ResetMatchState(); _pendingObs.Clear(); _pendingObsUntil.Clear(); }
+            if (_pendingObs.Count > 0) FlushPendingObservations(view, cs.MySlot);
 
             bool office = AvatarVisibility.AppliesIn(view.Phase);
             ScreenFx.SetBlackout(office && view.Office != null && view.Office.PowerDown);

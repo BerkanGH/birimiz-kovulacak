@@ -87,6 +87,7 @@ namespace BirimizKovulacak.Game
                 _plan = null;
                 _meetingActAt = Time.time + 1f + Rand() * 3f;
                 if (v.Phase == MatchPhase.Results) _matchesFinished++;
+                if (v.Phase == MatchPhase.Briefing) _matchStart = v.PhaseStartTime;
             }
 
             if (v.Phase >= MatchPhase.MeetingDiscussion)
@@ -567,8 +568,9 @@ namespace BirimizKovulacak.Game
         /// <summary>Instant phone/emote verbs (no walking): answer or decline, call colleagues, hang up, emote.</summary>
         void SocialTick(PlayerView v)
         {
-            if (v.Phase == MatchPhase.Briefing && _matchStart <= 0) _matchStart = v.PhaseStartTime;
             var call = v.Me.Call;
+            // Review #5: a hang-up deadline belongs to one call; start it when a call becomes active.
+            if (call == null || call.State != CallState.Active) _hangUpAt = 0;
             if (call != null && v.Features.Calls)
             {
                 if (call.State == CallState.RingingIn)
@@ -579,7 +581,6 @@ namespace BirimizKovulacak.Game
                         _answerAt = -1f;
                         bool answer = Rand() < 0.75f;
                         _ch.Send(answer ? ActionVerb.AnswerCall : ActionVerb.DeclineCall);
-                        if (answer) _hangUpAt = Time.time + 5f + Rand() * 10f;
                     }
                     return;
                 }
@@ -616,9 +617,14 @@ namespace BirimizKovulacak.Game
         {
             var cams = GameConfig.Layout.Cameras;
             if (cams.Count == 0) return;
-            var latest = v.Evidence.Where(e => e.Time > _matchStart && e.Kind != EvidenceKind.CctvFootage).OrderByDescending(e => e.Time).FirstOrDefault();
-            int second = latest != null ? (int)(latest.Time - _matchStart) : 60 + _rng.Next(240);
-            _ch.Send(ActionVerb.RequestFootage, cams[_rng.Next(cams.Count)].Id, Mathf.Max(0, second));
+            // Footage IntParam = seconds since match start, within the office phases (before the dossier freeze).
+            var d = _ch.Config.Durations;
+            int officeSeconds = (int)(d.Briefing + d.Work1 + d.Raid + d.Work2 + d.FinalInspection);
+            int second;
+            var latest = _matchStart > 0 ? v.Evidence.Where(e => e.Time > _matchStart && e.Kind != EvidenceKind.CctvFootage).OrderByDescending(e => e.Time).FirstOrDefault() : null;
+            if (latest != null) second = (int)(latest.Time - _matchStart);
+            else second = 5 + _rng.Next(Mathf.Max(1, officeSeconds - 10));
+            _ch.Send(ActionVerb.RequestFootage, cams[_rng.Next(cams.Count)].Id, Mathf.Clamp(second, 0, Mathf.Max(0, officeSeconds - 1)));
         }
 
         // ---------------------------------------------------------------- meeting
