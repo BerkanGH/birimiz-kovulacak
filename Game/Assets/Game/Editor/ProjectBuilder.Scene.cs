@@ -271,6 +271,12 @@ namespace BirimizKovulacak.EditorTools
             ghost.SetShaderPassEnabled("ShadowCaster", true);   // faded walls keep their shadows
             EditorUtility.SetDirty(ghost);
             ApplyScreenTextures();
+            // Repeated non-static props (chairs, items, mugs) can instance where the SRP Batcher does not apply.
+            foreach (var guid in AssetDatabase.FindAssets("t:Material", new[] { MatDir }))
+            {
+                var m = AssetDatabase.LoadAssetAtPath<Material>(AssetDatabase.GUIDToAssetPath(guid));
+                if (m != null && !m.enableInstancing) { m.enableInstancing = true; EditorUtility.SetDirty(m); }
+            }
             AssetDatabase.SaveAssets();
         }
 
@@ -317,8 +323,10 @@ namespace BirimizKovulacak.EditorTools
             mod.area = NavMesh.GetAreaFromName("Not Walkable");
             mod.applyToChildren = true;
             int walls = 0, glass = 0, low = 0;
-            foreach (Transform c in shell.transform)
+            // Walk every mesh node (works whether or not the importer collapsed the FBX's single root node).
+            foreach (var mf in shell.GetComponentsInChildren<MeshFilter>(true))
             {
+                var c = mf.transform;
                 string prefix = c.name.Split('_')[0];
                 switch (prefix)
                 {
@@ -1034,7 +1042,7 @@ namespace BirimizKovulacak.EditorTools
         {
             int renderers = 0, tris = 0, lights = 0;
             var mats = new HashSet<Material>();
-            foreach (var r in Object.FindObjectsByType<Renderer>(FindObjectsInactive.Include, FindObjectsSortMode.None))
+            foreach (var r in Object.FindObjectsByType<Renderer>(FindObjectsInactive.Include))
             {
                 renderers++;
                 foreach (var m in r.sharedMaterials) if (m != null) mats.Add(m);
@@ -1042,7 +1050,7 @@ namespace BirimizKovulacak.EditorTools
                 if (mf != null && mf.sharedMesh != null && r.gameObject.activeInHierarchy)
                     for (int i = 0; i < mf.sharedMesh.subMeshCount; i++) tris += (int)mf.sharedMesh.GetIndexCount(i) / 3;
             }
-            foreach (var l in Object.FindObjectsByType<Light>(FindObjectsInactive.Include, FindObjectsSortMode.None)) lights++;
+            foreach (var l in Object.FindObjectsByType<Light>(FindObjectsInactive.Include)) lights++;
             Log("MAP STATS renderers=" + renderers + " activeTris=" + tris + " materials=" + mats.Count + " lights=" + lights);
         }
     }
