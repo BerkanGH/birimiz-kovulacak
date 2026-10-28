@@ -51,6 +51,10 @@ namespace BirimizKovulacak.Game
         {
             _body.Clear();
             _title.text = v.Mode == GameMode.Week ? Loc.F("briefing.title_day", Loc.DayName(v.WeekDay)) : Loc.T("briefing.title");
+            if (v.Mode == GameMode.Week) WeekBoard.DayBanner(_body, v.WeekDay, "h2").AddToClassList("brief-banner");
+            var lobby = ClientState.I.Lobby;
+            if (lobby != null && lobby.MatchRunning && lobby.StatusKey != null && lobby.StatusKey.StartsWith("day.") && lobby.StatusKey != DayModifiers.Normal)
+                Bold(Loc.F("briefing.day", Loc.T(lobby.StatusKey)) + " — " + Loc.T(lobby.StatusKey + ".desc"), "t-accent").AddTo(_body);
             var cols = Box("brief-cols").AddTo(_body);
 
             var c1 = Box("brief-col").AddTo(cols);

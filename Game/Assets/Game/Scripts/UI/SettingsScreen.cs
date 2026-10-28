@@ -206,23 +206,25 @@ namespace BirimizKovulacak.Game
     {
         static HowToPlayScreen _i;
         const int Pages = 6;
+        /// <summary>Page illustration (Art/UI/howto, 1280x720) and the fallback icons used when it is missing.</summary>
+        static readonly string[] PageArt = { "howto/howto_1_work", "howto/howto_2_sabotage", "howto/howto_3_manager", "howto/howto_4_calls", "howto/howto_5_meeting", "howto/howto_6_week" };
         static readonly string[][] Art =
         {
             new[] { "logo/logo_mark", "icons/quota", "icons/objective", "icons/hr_seal" },
-            new[] { "icons/task_coffee", "icons/task_report", "icons/task_phone", "icons/task_clean", "icons/task_mail" },
             new[] { "cards/card_fake_email", "cards/card_salt", "icons/sab_nameplate", "icons/sab_plant" },
             new[] { "portraits/mgr_paragoz", "portraits/mgr_disiplinci", "portraits/mgr_kayirmaci", "portraits/mgr_paranoyak" },
             new[] { "phone/app_contacts", "icons/ringing", "icons/email", "icons/mic_on" },
-            new[] { "icons/accuse", "icons/ballot", "icons/footage", "icons/week_calendar" },
+            new[] { "icons/accuse", "icons/ballot", "icons/footage", "icons/notes" },
+            new[] { "icons/week_calendar", "week/week_trophy", "icons/star", "icons/crown" },
         };
         static readonly string[][] LineIcons =
         {
-            new[] { "contacts", "quota", "objective", "hr_seal" },
-            new[] { "task_coffee", "task_report", "task_phone", "task_mail", "task_clean" },
+            new[] { "contacts", "quota", "objective", "hr_seal", "info" },
             new[] { "sab_plant", "cards", "lock_screen", "warning" },
-            new[] { "manager", "warning", "suspicion_2", "favor_heart" },
-            new[] { "call", "ringing", "email", "mic_on" },
-            new[] { "accuse", "footage", "ballot", "week_calendar" },
+            new[] { "manager", "warning", "suspicion_2", "ringing", "favor_heart" },
+            new[] { "call", "mic_on", "email", "emote_wave" },
+            new[] { "accuse", "notes", "footage", "ballot" },
+            new[] { "week_calendar", "cards", "star", "crown", "check" },
         };
 
         readonly VisualElement _art, _lines, _dots;
@@ -269,8 +271,11 @@ namespace BirimizKovulacak.Game
             _title.text = Loc.T("howto." + _page + ".title");
             _pageLabel.text = (_page + 1) + " / " + Pages;
             _art.Clear();
-            foreach (var path in Art[_page])
+            var pic = Box("howto-pic").AddTo(_art);
+            if (UiArt.Apply(pic, PageArt[_page])) { }
+            else foreach (var path in Art[_page])
             {
+                pic.RemoveFromHierarchy();
                 var e = Box("icon", path.StartsWith("cards/") ? "icon-xxl" : path.StartsWith("logo/") ? "icon-xxl" : "icon-xl").AddTo(_art);
                 if (path.StartsWith("cards/")) e.style.height = 224;
                 if (!UiArt.Apply(e, path)) SetIcon(e, path.Substring(path.IndexOf('/') + 1));

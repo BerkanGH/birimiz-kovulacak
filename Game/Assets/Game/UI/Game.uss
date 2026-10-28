@@ -611,7 +611,8 @@
 
 .howto { width: 1300px; max-width: 94%; height: 820px; max-height: 92%; }
 .howto-page { flex-direction: row; flex-grow: 1; align-items: center; }
-.howto-art { width: 420px; align-items: center; justify-content: center; flex-wrap: wrap; flex-direction: row; }
+.howto-art { width: 640px; align-items: center; justify-content: center; flex-wrap: wrap; flex-direction: row; flex-shrink: 0; }
+.howto-pic { width: 640px; height: 360px; -unity-background-scale-mode: scale-to-fit; border-radius: 12px; }
 .howto-art .icon { margin: 8px; }
 .howto-text { flex-grow: 1; flex-shrink: 1; margin-left: 24px; }
 .howto-line { flex-direction: row; align-items: flex-start; margin: 6px 0; }
@@ -639,3 +640,8 @@
 .pause { width: 640px; }
 .feed-meeting { top: auto; bottom: 16px; left: 16px; right: auto; align-items: flex-start; }
 .emote-cursor { position: absolute; width: 18px; height: 18px; margin-left: -9px; margin-top: -9px; border-radius: 9px; background-color: rgb(255, 224, 102); border-width: 3px; border-color: rgb(31, 42, 68); }
+.week-banner { height: 38px; align-self: stretch; -unity-background-scale-mode: scale-to-fit; margin-bottom: 4px; }
+.brief-banner { height: 56px; width: 280px; align-self: flex-start; margin-bottom: 6px; }
+.eotm-trophy { width: 180px; height: 180px; -unity-background-scale-mode: scale-to-fit; }
+.title-badge { width: 34px; height: 34px; -unity-background-scale-mode: scale-to-fit; margin: 2px 2px 2px 6px; }
+.crew-flag { width: 24px; height: 24px; margin-left: 4px; -unity-background-scale-mode: scale-to-fit; }

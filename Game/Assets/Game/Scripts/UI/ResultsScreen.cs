@@ -293,7 +293,13 @@ namespace BirimizKovulacak.Game
                 if (p.Titles.Count > 0)
                 {
                     var titles = Box("outcome-cards").AddTo(col);
-                    foreach (var t in p.Titles) Tag(Describe.Title(t), "tag-sticky").AddTo(titles);
+                    foreach (var t in p.Titles)
+                    {
+                        string key = t.StartsWith("title.") ? t.Substring(6) : t;
+                        var badge = Box("title-badge").AddTo(titles);
+                        if (!UiArt.Apply(badge, "titles/title_" + key)) badge.RemoveFromHierarchy();
+                        Tag(Describe.Title(t), "tag-sticky").AddTo(titles);
+                    }
                 }
                 var right = Box("col", "center").AddTo(row);
                 if (p.Fired)
@@ -345,6 +351,8 @@ namespace BirimizKovulacak.Game
         {
             _eotmShownFor = v.MatchId;
             _eotmBody.Clear();
+            var trophy = Box("eotm-trophy").AddTo(_eotmBody);
+            if (!UiArt.Apply(trophy, "week/week_trophy")) trophy.RemoveFromHierarchy();
             Title(Loc.T("results.eotm_title"), "h1").AddTo(_eotmBody);
             var names = Box("eotm-names").AddTo(_eotmBody);
             foreach (int id in r.EmployeeOfTheMonth)
@@ -470,6 +478,18 @@ namespace BirimizKovulacak.Game
     {
         public struct Standing { public int Player; public string Name; public int Points; public int Delta; }
 
+        static readonly string[] DayBanners = { "week/week_pazartesi", "week/week_sali", "week/week_carsamba", "week/week_persembe", "week/week_cuma" };
+
+        /// <summary>Weekday banner (Art/UI/week, Turkish lettering baked in) or the day name as text.</summary>
+        public static VisualElement DayBanner(VisualElement parent, int day, string textClass)
+        {
+            var b = Box("week-banner").AddTo(parent);
+            if (day >= 0 && day < DayBanners.Length && UiArt.Apply(b, DayBanners[day])) return b;
+            b.RemoveFromClassList("week-banner");
+            Title(Loc.DayShort(day), textClass).AddTo(b);
+            return b;
+        }
+
         public static void Build(VisualElement parent, int day, bool finished, List<Standing> standings, bool showDelta)
         {
             var board = Box("week-board").AddTo(parent);
@@ -482,7 +502,7 @@ namespace BirimizKovulacak.Game
                 var c = Box("week-col").AddTo(cols);
                 if (i == day && !finished) c.AddToClassList("week-col-today");
                 if (i < day || finished) c.AddToClassList("week-col-done");
-                Title(Loc.DayShort(i), "week-day").AddTo(c);
+                DayBanner(c, i, "week-day");
                 string profile = cfg != null && i < cfg.WeekDays.Count ? cfg.WeekDays[i].ProfileId : "";
                 if (!string.IsNullOrEmpty(profile)) ManagerPortrait(profile, false, "badge-s").AddTo(c);
                 Text(string.IsNullOrEmpty(profile) ? Loc.T("week.random_manager") : Loc.ManagerName(profile), "week-mgr").AddTo(c);
@@ -491,7 +511,9 @@ namespace BirimizKovulacak.Game
             }
             if (standings == null || standings.Count == 0) return;
             standings.Sort((a, b) => b.Points.CompareTo(a.Points));
-            Section(board, Loc.T("week.standings"), "crown");
+            var sh = Section(board, Loc.T("week.standings"), "crown");
+            var trophy = Box("icon", "icon-m").AddTo(sh);
+            if (!UiArt.Apply(trophy, "week/week_trophy")) trophy.RemoveFromHierarchy();
             int top = standings[0].Points;
             foreach (var s in standings)
             {

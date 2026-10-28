@@ -646,7 +646,9 @@ namespace BirimizKovulacak.Game
                 _name = Text("", "crew-name").NoPick().AddTo(Root);
                 _crown = Icon("crown", "crew-flag").AddTo(Root);
                 _callFlag = Icon("call", "crew-flag").AddTo(Root);
+                if (UiArt.Apply(_callFlag, "bubbles/bubble_on_call")) _callFlag.RemoveFromClassList("icon-fallback");
                 _ringFlag = Icon("ringing", "crew-flag").AddTo(Root);
+                if (UiArt.Apply(_ringFlag, "bubbles/bubble_ringing")) _ringFlag.RemoveFromClassList("icon-fallback");
                 _favor = Box("crew-favor").NoPick().AddTo(Root);
                 Icon("favor_heart").AddTo(_favor);
                 _favorText = Bold("", "crew-favor-text").NoPick().AddTo(_favor);
