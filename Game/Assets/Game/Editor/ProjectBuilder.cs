@@ -203,6 +203,11 @@ namespace BirimizKovulacak.EditorTools
                 }
                 EditorUtility.SetDirty(rd);
             }
+            // v2 map: ~20 room lights + emergency lights overlap; Forward+ has no per-object light limit.
+            var rdo = new SerializedObject(rd);
+            SetProp(rdo, "m_RenderingMode", 2); // 0 Forward, 1 Deferred, 2 Forward+
+            rdo.ApplyModifiedPropertiesWithoutUndo();
+            EditorUtility.SetDirty(rd);
             var asset = AssetDatabase.LoadAssetAtPath<UniversalRenderPipelineAsset>(assetPath);
             if (asset == null)
             {
@@ -212,7 +217,9 @@ namespace BirimizKovulacak.EditorTools
             var so = new SerializedObject(asset);
             SetProp(so, "m_SupportsHDR", true);
             SetProp(so, "m_MSAA", 2);
-            SetProp(so, "m_ShadowDistance", 32f);
+            SetProp(so, "m_ShadowDistance", 28f);
+            SetProp(so, "m_AdditionalLightShadowsSupported", false); // only the sun casts shadows (docs/MAP.md)
+            SetProp(so, "m_AdditionalLightsPerObjectLimit", 8);
             SetProp(so, "m_ShadowCascadeCount", 2);
             SetProp(so, "m_SoftShadowsSupported", true);
             SetProp(so, "m_MainLightShadowmapResolution", 2048);
