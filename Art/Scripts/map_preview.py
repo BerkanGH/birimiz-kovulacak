@@ -402,9 +402,11 @@ FOOTPRINT = {"BigPlant": 0.45, "FloorLamp": 0.5, "CoatRack": 0.45, "StandingTabl
              "UmbrellaStand": 0.9, "Planter": 0.9, "Ladder": 0.8}
 
 
-def nav_check(data, lib, agent=0.35, cell=0.05):
+def nav_check(data, lib, agent=0.5, cell=0.05):
     """Approximate the Unity NavMesh: rasterise colliders (props: local bounds box like AddBoundsCollider, walls: mesh
-    bounds) inflated by the agent radius, flood-fill from the open office and test every gameplay point. Also checks
+    bounds) inflated by the agent radius + 0.15 m margin (Unity voxelises at 0.1 m, so passages that are only a few cm
+    wide in this exact test are closed in the real bake), flood-fill from the open office and test every gameplay point
+    with the same search radii as ProjectBuilder.CheckReachability (stations 1.2 m, slots 1.6 m). Also checks
     that the manager's straight-line route legs do not cross furniture or walls."""
     import collections
     x0, z0, x1, z1 = -16.6, -10.6, 16.6, 10.6
@@ -439,11 +441,18 @@ def nav_check(data, lib, agent=0.35, cell=0.05):
             ob = ob.parent
         return m
 
+    def under_door(ob):
+        while ob is not None:
+            if ob.name.split(".")[0] == "Door":
+                return True
+            ob = ob.parent
+        return False
+
     def local_box(coll):
         lo = [1e9] * 3
         hi = [-1e9] * 3
         for ob in coll.all_objects:
-            if ob.type != "MESH":
+            if ob.type != "MESH" or under_door(ob):
                 continue
             for c in ob.bound_box:
                 w = world_matrix(ob) @ Vector(c)

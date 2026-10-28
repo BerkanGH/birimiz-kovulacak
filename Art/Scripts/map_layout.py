@@ -320,13 +320,12 @@ def office_room(L):
     for dx, dz, yaw in ((-0.75, 0, 90), (0.75, 0, 270), (0, -0.75, 0)):
         L.prop("MeetingChair", (3.6 + dx, 0, -2.4 + dz), yaw, c=False, room="room.office")
     L.prop("MobileWhiteboard", (4.9, 0, 1.0), 300, room="room.office")
-    L.prop("BigPlant", (1.9, 0, -4.45), 200, room="room.office")
+    L.prop("BigPlant", (-1.85, 0, -4.45), 200, room="room.office")
     L.prop("Sofa", (-0.4, 0, -4.48), FACE["N"], room="room.office", tint={"M_Sofa": "M_RailGreen"})
     L.prop("StandingTable", (3.4, 0, 0.4), 0, room="room.office")
     L.prop("SmallPlant", (3.4, 1.08, 0.4), 0, c=False, room="room.office")
     L.prop("Bookshelf", (-10.0, 0, -4.8), FACE["N"], room="room.office")
     L.prop("PrinterSmall", (-4.5, 0, -4.7), FACE["N"], room="room.office")
-    L.prop("Shredder", (3.9, 0, 3.7), FACE["S"], room="room.office")
     # Ceiling-free light sources: floor lamps in the aisles + room lights
     for x in (-12.0, -7.0, -2.0):
         L.light((x, 2.5, -0.4), "#FFE9C8", 1.6, 8.5, "room.office")
@@ -432,7 +431,6 @@ def copy_room(L):
     L.prop("RecycleBin", (15.6, 0, 4.5), FACE["W"], room="room.copy")
     L.prop("Shredder", (14.5, 0, 4.45), FACE["N"], room="room.copy")
     L.prop("SupplyCabinet", (15.72, 0, 5.6), FACE["W"], room="room.copy")
-    L.prop("PaperBoxStack", (12.0, 0, 5.1), 30, room="room.copy")
     L.prop("FileCabinet", (10.4, 0, 8.6), FACE["E"], room="room.copy")
     L.prop("FileCabinet", (10.4, 0, 9.15), FACE["E"], room="room.copy")
     L.light((13.0, 2.45, 7.2), "#F4F7FF", 1.6, 7.0, "room.copy")
@@ -468,7 +466,7 @@ def reception_room(L):
 
 
 def storage_room(L):
-    cl = L.st("st.cleaning")
+    cl = L.sl("slot.sprayrack")
     fb = L.st("st.fusebox")
     lf = L.sl("slot.lostfound")
     # Cleaning closet in the SW corner, diagonal (front faces the user, yaw from the contract).

@@ -423,6 +423,8 @@ namespace BirimizKovulacak.EditorTools
             bool first = true;
             foreach (var r in rs)
             {
+                // Swung-open doors (cleaning closet, meeting sideboard) must not block the space in front of the prop.
+                if (UnderDoor(r.transform, go.transform)) continue;
                 var wb = r.bounds;
                 foreach (var c in Corners(wb))
                 {
@@ -431,11 +433,18 @@ namespace BirimizKovulacak.EditorTools
                     else b.Encapsulate(lc);
                 }
             }
+            if (first) return;
             var bc = go.AddComponent<BoxCollider>();
             var center = b.center;
             if (shrink < 0.9f) { center.x = 0; center.z = 0; }   // tall plants / lamps: collide with the pot or pole only
             bc.center = center;
             bc.size = Vector3.Scale(b.size, new Vector3(shrink, 1, shrink));
+        }
+
+        static bool UnderDoor(Transform t, Transform root)
+        {
+            for (; t != null && t != root; t = t.parent) if (t.name == "Door") return true;
+            return false;
         }
 
         static IEnumerable<Vector3> Corners(Bounds b)

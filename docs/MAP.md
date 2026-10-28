@@ -87,6 +87,7 @@ added/removed, nothing else touched):
 | `st.delivery` position / yaw | (−11, 0, 6.4) / 0 | (−9.2, 0, 6.8) / 90 | The manager walks in a straight line home (−13, 8) → (−10, 5); the inbox cabinet stood on that line (he walked through it every raid). It now stands against the manager office's east glass wall, reachable through the door. |
 | `slot.delivery` position / yaw | (−11, 0.95, 6.45) / 0 | (−8.32, 0.95, 6.8) / 90 | top of that cabinet (reports left, coffee right as before) |
 | `NameplateOffset` | (−0.6, 0.76, 0.35) | (−0.55, 1.16, 0.5) | The nameplate now sits on a rail on top of the cubicle back panel: readable from the aisle where the manager inspects (and by passers-by) and from the seat; on the desk top it would be hidden behind the panel. Bots' nameplate stand point (desk + (−0.6, 0, 0.95)) is 0.45 m away; from the seat it is 1.46 m (< 1.8). |
+| `st.cleaning` position | (−15.2, 0, −9.2) | (−14.9, 0, −8.9) | The stand-point was the closet's own corner spot (= the spray rack slot), 0.15 m inside the closet: no NavMesh within 1.2 m in the first Unity bake. It now sits 0.42 m out in front of the closet; `slot.sprayrack` stays on the shelf (the closet is placed from the slot). |
 
 Slot pose tweaks in `OfficeWorld.SlotPose` (mine): hiding spots spread their 2 items sideways (x ±0.13) so both lie
 in the cistern / planter / box top / cabinet; mail room items lie in a row on the mail counter.
@@ -162,8 +163,14 @@ MODEM) are TMP labels from `labels` in the JSON and in the builder.
   that `SamplePosition` could snap to.
 - After baking the builder logs `NAV reachability: N ok, M problems` for every desk seat, station, slot, meeting seat,
   manager stop and the manager's home (path from the office centre).
-- Unity-free check (`--navcheck`): colliders rasterised + inflated by 0.35 m, flood fill: **36/36 gameplay points
-  reachable, 0 problems; the manager's straight route legs (home → stops → home) cross no prop or wall.**
+- Unity-free check (`--navcheck`): colliders rasterised, inflated by 0.5 m (agent 0.35 + 0.15 voxel margin), door
+  leaves excluded like in Unity, flood fill: **36/36 gameplay points reachable, 0 problems; the manager's straight route
+  legs (home → stops → home) cross no prop or wall.** (The first version inflated by 0.35 m only and missed three
+  props standing in doorways; the 0.5 m version reproduces exactly the six failures of that bake.)
+- Unity bake (main, 2026-10-29): `Nav agent radius=0.35 height=1.3 climb=0.3`, **`NAV reachability: 69 ok, 0 problems`**.
+  Fixes after the first bake (8 problems): shredder removed from the kitchen doorway, paper-box stack removed from
+  inside the copy-room door, plant moved away from the server-room door, prop colliders ignore swung-open `Door`
+  leaves (cleaning closet, meeting sideboard), `st.cleaning` moved out of the corner (§4).
 
 ## 9. Requests for the lead
 

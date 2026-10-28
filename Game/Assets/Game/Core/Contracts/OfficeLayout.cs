@@ -206,7 +206,7 @@ namespace BirimizKovulacak.Core
             l.Stations.Add(new StationDef { Id = EntityIds.Printer, Kind = StationKind.Printer, Position = new Vec3(13.0f, 0f, 9.2f), Yaw = 0f });
             l.Stations.Add(new StationDef { Id = EntityIds.Phone, Kind = StationKind.Phone, Position = new Vec3(10.5f, 0f, -0.5f), Yaw = 90f });
             l.Stations.Add(new StationDef { Id = EntityIds.DeliveryPoint, Kind = StationKind.DeliveryPoint, Position = new Vec3(-9.2f, 0f, 6.8f), Yaw = 90f });
-            l.Stations.Add(new StationDef { Id = EntityIds.CleaningCloset, Kind = StationKind.CleaningCloset, Position = new Vec3(-15.2f, 0f, -9.2f), Yaw = 225f });
+            l.Stations.Add(new StationDef { Id = EntityIds.CleaningCloset, Kind = StationKind.CleaningCloset, Position = new Vec3(-14.9f, 0f, -8.9f), Yaw = 225f });
             l.Stations.Add(new StationDef { Id = EntityIds.Router, Kind = StationKind.Router, Position = new Vec3(-1.0f, 0f, -9.3f), Yaw = 180f });
             l.Stations.Add(new StationDef { Id = EntityIds.FuseBox, Kind = StationKind.FuseBox, Position = new Vec3(-12.8f, 0f, -9.5f), Yaw = 180f });
 
