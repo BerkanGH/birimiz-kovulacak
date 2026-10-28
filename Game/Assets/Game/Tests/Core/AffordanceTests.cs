@@ -22,7 +22,7 @@ namespace BirimizKovulacak.Core.Tests
                 view.Players.Add(new PlayerPublicView { Id = i, DeskIndex = i, Connected = true });
                 view.Desks.Add(new DeskView { Index = i, Id = EntityIds.Desk(i), AssignedOwner = i, DisplayedNameplateOf = i });
             }
-            for (int i = 0; i < 7; i++) view.Me.SabotageCooldowns.Add(0);
+            for (int i = 0; i < 12; i++) view.Me.SabotageCooldowns.Add(0);
         }
 
         [Test]

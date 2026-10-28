@@ -181,6 +181,13 @@ namespace BirimizKovulacak.Core
             WriteMeetingView(w, value.Meeting);
             WritePrivateView(w, value.Me);
             WriteMatchResultView(w, value.Result);
+            w.Write((byte)value.Mode);
+            w.Write(value.WeekDay);
+            WriteString(w, value.ManagerProfileId);
+            w.Write(value.Favourite);
+            WriteFeaturesView(w, value.Features);
+            WriteOfficeStatusView(w, value.Office);
+            WriteList(w, value.Inbox, (writer, item) => WriteEmailView(writer, item));
         }
 
         private static PlayerView ReadPlayerView(BinaryReader r)
@@ -209,6 +216,13 @@ namespace BirimizKovulacak.Core
                 Meeting = ReadMeetingView(r),
                 Me = ReadPrivateView(r),
                 Result = ReadMatchResultView(r),
+                Mode = (GameMode)r.ReadByte(),
+                WeekDay = r.ReadInt32(),
+                ManagerProfileId = ReadString(r),
+                Favourite = r.ReadInt32(),
+                Features = ReadFeaturesView(r),
+                Office = ReadOfficeStatusView(r),
+                Inbox = ReadList(r, reader => ReadEmailView(reader)),
             };
         }
 
@@ -224,6 +238,7 @@ namespace BirimizKovulacak.Core
             w.Write(value.PhoneRingEnds);
             w.Write(value.DirtyDesks);
             w.Write(value.Frozen);
+            w.Write(value.OpenMail);
         }
 
         private static QuotaView ReadQuotaView(BinaryReader r)
@@ -239,6 +254,7 @@ namespace BirimizKovulacak.Core
                 PhoneRingEnds = r.ReadDouble(),
                 DirtyDesks = r.ReadInt32(),
                 Frozen = ReadBoolean(r),
+                OpenMail = r.ReadInt32(),
             };
         }
 
@@ -262,6 +278,12 @@ namespace BirimizKovulacak.Core
             w.Write(value.ActivityEnd);
             w.Write(value.WorkPose);
             w.Write(value.AccusationsReceived);
+            w.Write(value.Crouched);
+            w.Write(value.Ringing);
+            w.Write(value.Favor);
+            w.Write(value.Emote);
+            w.Write(value.EmoteUntil);
+            w.Write(value.CareerPoints);
         }
 
         private static PlayerPublicView ReadPlayerPublicView(BinaryReader r)
@@ -285,6 +307,12 @@ namespace BirimizKovulacak.Core
                 ActivityEnd = r.ReadDouble(),
                 WorkPose = ReadBoolean(r),
                 AccusationsReceived = r.ReadInt32(),
+                Crouched = ReadBoolean(r),
+                Ringing = ReadBoolean(r),
+                Favor = r.ReadSingle(),
+                Emote = r.ReadInt32(),
+                EmoteUntil = r.ReadDouble(),
+                CareerPoints = r.ReadInt32(),
             };
         }
 
@@ -306,6 +334,8 @@ namespace BirimizKovulacak.Core
             w.Write(value.NameplateOf);
             w.Write(value.Sealed);
             w.Write(value.IsEvidence);
+            w.Write(value.AddressedDesk);
+            w.Write(value.KnownSalted);
         }
 
         private static ItemView ReadItemView(BinaryReader r)
@@ -327,6 +357,8 @@ namespace BirimizKovulacak.Core
                 NameplateOf = r.ReadInt32(),
                 Sealed = ReadBoolean(r),
                 IsEvidence = ReadBoolean(r),
+                AddressedDesk = r.ReadInt32(),
+                KnownSalted = ReadBoolean(r),
             };
         }
 
@@ -344,6 +376,10 @@ namespace BirimizKovulacak.Core
             w.Write(value.PcLockedAt);
             w.Write(value.PcLockedUntil);
             w.Write(value.ClutterCount);
+            w.Write(value.ScreenOpen);
+            w.Write(value.ScreenOpenUntil);
+            w.Write(value.Unplugged);
+            w.Write(value.PcImmuneUntil);
         }
 
         private static DeskView ReadDeskView(BinaryReader r)
@@ -361,6 +397,10 @@ namespace BirimizKovulacak.Core
                 PcLockedAt = r.ReadDouble(),
                 PcLockedUntil = r.ReadDouble(),
                 ClutterCount = r.ReadInt32(),
+                ScreenOpen = ReadBoolean(r),
+                ScreenOpenUntil = r.ReadDouble(),
+                Unplugged = ReadBoolean(r),
+                PcImmuneUntil = r.ReadDouble(),
             };
         }
 
@@ -414,6 +454,15 @@ namespace BirimizKovulacak.Core
             w.Write((byte)value.ScanReliability);
             w.Write((byte)value.ScanSignal);
             w.Write(value.RiskWeight);
+            WriteList(w, value.Contents, (writer, item) => WriteString(writer, item));
+            w.Write(value.EmailTemplate);
+            WriteString(w, value.CameraId);
+            w.Write(value.WindowStart);
+            w.Write(value.WindowEnd);
+            w.Write(value.NoRecording);
+            WriteList(w, value.Sightings, (writer, item) => WriteFootageSighting(writer, item));
+            WriteList(w, value.Calls, (writer, item) => WriteCallRecordView(writer, item));
+            w.Write(value.Salted);
         }
 
         private static EvidenceView ReadEvidenceView(BinaryReader r)
@@ -441,6 +490,15 @@ namespace BirimizKovulacak.Core
                 ScanReliability = (Reliability)r.ReadByte(),
                 ScanSignal = (ScanSignal)r.ReadByte(),
                 RiskWeight = r.ReadSingle(),
+                Contents = ReadList(r, reader => ReadString(reader)),
+                EmailTemplate = r.ReadInt32(),
+                CameraId = ReadString(r),
+                WindowStart = r.ReadDouble(),
+                WindowEnd = r.ReadDouble(),
+                NoRecording = ReadBoolean(r),
+                Sightings = ReadList(r, reader => ReadFootageSighting(reader)),
+                Calls = ReadList(r, reader => ReadCallRecordView(reader)),
+                Salted = ReadBoolean(r),
             };
         }
 
@@ -511,6 +569,7 @@ namespace BirimizKovulacak.Core
             w.Write(value.ReactionObservation);
             w.Write(value.ReactionUntil);
             w.Write(value.ArrivesAt);
+            w.Write(value.Surprise);
         }
 
         private static ManagerView ReadManagerView(BinaryReader r)
@@ -525,6 +584,7 @@ namespace BirimizKovulacak.Core
                 ReactionObservation = r.ReadInt32(),
                 ReactionUntil = r.ReadDouble(),
                 ArrivesAt = r.ReadDouble(),
+                Surprise = ReadBoolean(r),
             };
         }
 
@@ -620,6 +680,8 @@ namespace BirimizKovulacak.Core
             w.Write(value.RiskNormalized);
             w.Write(value.Performance);
             w.Write(value.PerformanceDeficit);
+            w.Write(value.Favor);
+            w.Write(value.FavorDiscount);
             w.Write(value.Score);
         }
 
@@ -636,6 +698,8 @@ namespace BirimizKovulacak.Core
                 RiskNormalized = r.ReadSingle(),
                 Performance = r.ReadSingle(),
                 PerformanceDeficit = r.ReadSingle(),
+                Favor = r.ReadSingle(),
+                FavorDiscount = r.ReadSingle(),
                 Score = r.ReadSingle(),
             };
         }
@@ -656,6 +720,11 @@ namespace BirimizKovulacak.Core
             w.Write(value.RematchVoted);
             WriteList(w, value.SabotageCooldowns, (writer, item) => writer.Write(item));
             WriteString(w, value.ReconnectToken);
+            WriteList(w, value.Cards, (writer, item) => writer.Write((byte)item));
+            WriteCallView(w, value.Call);
+            w.Write(value.CallCooldownUntil);
+            w.Write(value.TipsLeft);
+            w.Write(value.FootageLeft);
         }
 
         private static PrivateView ReadPrivateView(BinaryReader r)
@@ -675,6 +744,11 @@ namespace BirimizKovulacak.Core
                 RematchVoted = ReadBoolean(r),
                 SabotageCooldowns = ReadList(r, reader => reader.ReadDouble()),
                 ReconnectToken = ReadString(r),
+                Cards = ReadList(r, reader => (SabotageType)reader.ReadByte()),
+                Call = ReadCallView(r),
+                CallCooldownUntil = r.ReadDouble(),
+                TipsLeft = r.ReadInt32(),
+                FootageLeft = r.ReadInt32(),
             };
         }
 
@@ -718,6 +792,7 @@ namespace BirimizKovulacak.Core
             w.Write(value.SealsLeft);
             w.Write(value.SealedEvidenceId);
             WriteList(w, value.Scans, (writer, item) => WriteScanResultView(writer, item));
+            w.Write(value.CallLogsLeft);
         }
 
         private static InformantView ReadInformantView(BinaryReader r)
@@ -729,6 +804,7 @@ namespace BirimizKovulacak.Core
                 SealsLeft = r.ReadInt32(),
                 SealedEvidenceId = r.ReadInt32(),
                 Scans = ReadList(r, reader => ReadScanResultView(reader)),
+                CallLogsLeft = r.ReadInt32(),
             };
         }
 
@@ -782,6 +858,9 @@ namespace BirimizKovulacak.Core
             WriteList(w, value.Contents, (writer, item) => WriteString(writer, item));
             w.Write(value.ScanId);
             w.Write(value.Presented);
+            WriteList(w, value.Calls, (writer, item) => WriteCallRecordView(writer, item));
+            WriteString(w, value.ItemId);
+            w.Write(value.Salted);
         }
 
         private static PrivateNote ReadPrivateNote(BinaryReader r)
@@ -801,6 +880,9 @@ namespace BirimizKovulacak.Core
                 Contents = ReadList(r, reader => ReadString(reader)),
                 ScanId = r.ReadInt32(),
                 Presented = ReadBoolean(r),
+                Calls = ReadList(r, reader => ReadCallRecordView(reader)),
+                ItemId = ReadString(r),
+                Salted = ReadBoolean(r),
             };
         }
 
@@ -843,6 +925,14 @@ namespace BirimizKovulacak.Core
             WriteList(w, value.Recap, (writer, item) => WriteRecapBeat(writer, item));
             w.Write(value.MatchSeed);
             WriteString(w, blankHash ? "" : value.ResultHash);
+            w.Write((byte)value.Mode);
+            w.Write(value.WeekDay);
+            WriteString(w, value.ManagerProfileId);
+            WriteList(w, value.Calls, (writer, item) => WriteCallRecordView(writer, item));
+            w.Write(value.WeekFinished);
+            WriteList(w, value.EmployeeOfTheMonth, (writer, item) => writer.Write(item));
+            WriteList(w, value.Favourites, (writer, item) => writer.Write(item));
+            WriteHighlightView(w, value.Highlight);
         }
 
         private static MatchResultView ReadMatchResultView(BinaryReader r)
@@ -863,6 +953,14 @@ namespace BirimizKovulacak.Core
                 Recap = ReadList(r, reader => ReadRecapBeat(reader)),
                 MatchSeed = r.ReadInt32(),
                 ResultHash = ReadString(r),
+                Mode = (GameMode)r.ReadByte(),
+                WeekDay = r.ReadInt32(),
+                ManagerProfileId = ReadString(r),
+                Calls = ReadList(r, reader => ReadCallRecordView(reader)),
+                WeekFinished = ReadBoolean(r),
+                EmployeeOfTheMonth = ReadList(r, reader => reader.ReadInt32()),
+                Favourites = ReadList(r, reader => reader.ReadInt32()),
+                Highlight = ReadHighlightView(r),
             };
         }
 
@@ -887,6 +985,10 @@ namespace BirimizKovulacak.Core
             w.Write(value.TasksCompleted);
             w.Write(value.SabotageCount);
             WriteList(w, value.Titles, (writer, item) => WriteString(writer, item));
+            WriteList(w, value.Cards, (writer, item) => writer.Write((byte)item));
+            w.Write(value.Favor);
+            w.Write(value.CareerDelta);
+            w.Write(value.CareerTotal);
         }
 
         private static PlayerOutcome ReadPlayerOutcome(BinaryReader r)
@@ -911,6 +1013,10 @@ namespace BirimizKovulacak.Core
                 TasksCompleted = r.ReadInt32(),
                 SabotageCount = r.ReadInt32(),
                 Titles = ReadList(r, reader => ReadString(reader)),
+                Cards = ReadList(r, reader => (SabotageType)reader.ReadByte()),
+                Favor = r.ReadSingle(),
+                CareerDelta = r.ReadInt32(),
+                CareerTotal = r.ReadInt32(),
             };
         }
 
@@ -1066,6 +1172,9 @@ namespace BirimizKovulacak.Core
             w.Write(value.MatchRunning);
             w.Write(value.MatchId);
             WriteString(w, value.StatusKey);
+            w.Write((byte)value.Mode);
+            w.Write(value.WeekDay);
+            WriteList(w, value.CareerPoints, (writer, item) => writer.Write(item));
         }
 
         private static LobbyView ReadLobbyView(BinaryReader r)
@@ -1079,6 +1188,9 @@ namespace BirimizKovulacak.Core
                 MatchRunning = ReadBoolean(r),
                 MatchId = r.ReadInt32(),
                 StatusKey = ReadString(r),
+                Mode = (GameMode)r.ReadByte(),
+                WeekDay = r.ReadInt32(),
+                CareerPoints = ReadList(r, reader => reader.ReadInt32()),
             };
         }
 
@@ -1092,6 +1204,7 @@ namespace BirimizKovulacak.Core
             w.Write(value.Ready);
             w.Write(value.IsHost);
             WriteString(w, value.Name);
+            w.Write(value.IsBot);
         }
 
         private static LobbySlot ReadLobbySlot(BinaryReader r)
@@ -1105,6 +1218,7 @@ namespace BirimizKovulacak.Core
                 Ready = ReadBoolean(r),
                 IsHost = ReadBoolean(r),
                 Name = ReadString(r),
+                IsBot = ReadBoolean(r),
             };
         }
 
@@ -1149,6 +1263,184 @@ namespace BirimizKovulacak.Core
                 ReconnectToken = ReadString(r),
                 Reconnected = ReadBoolean(r),
                 MatchId = r.ReadInt32(),
+            };
+        }
+
+        private static void WriteFeaturesView(BinaryWriter w, FeaturesView value)
+        {
+            w.Write(value != null);
+            if (value == null) return;
+            w.Write(value.Cards);
+            w.Write(value.Calls);
+            w.Write(value.TipLine);
+            w.Write(value.Footage);
+            w.Write(value.Mail);
+            w.Write(value.CareerMultiplier);
+        }
+
+        private static FeaturesView ReadFeaturesView(BinaryReader r)
+        {
+            if (!ReadBoolean(r)) return null;
+            return new FeaturesView
+            {
+                Cards = ReadBoolean(r),
+                Calls = ReadBoolean(r),
+                TipLine = ReadBoolean(r),
+                Footage = ReadBoolean(r),
+                Mail = ReadBoolean(r),
+                CareerMultiplier = r.ReadSingle(),
+            };
+        }
+
+        private static void WriteOfficeStatusView(BinaryWriter w, OfficeStatusView value)
+        {
+            w.Write(value != null);
+            if (value == null) return;
+            w.Write(value.InternetDown);
+            w.Write(value.InternetBackAt);
+            w.Write(value.PowerDown);
+            w.Write(value.PowerBackAt);
+        }
+
+        private static OfficeStatusView ReadOfficeStatusView(BinaryReader r)
+        {
+            if (!ReadBoolean(r)) return null;
+            return new OfficeStatusView
+            {
+                InternetDown = ReadBoolean(r),
+                InternetBackAt = r.ReadDouble(),
+                PowerDown = ReadBoolean(r),
+                PowerBackAt = r.ReadDouble(),
+            };
+        }
+
+        private static void WriteEmailView(BinaryWriter w, EmailView value)
+        {
+            w.Write(value != null);
+            if (value == null) return;
+            w.Write(value.Id);
+            w.Write(value.Time);
+            w.Write(value.FromPlayer);
+            w.Write(value.DeskIndex);
+            w.Write(value.TemplateId);
+        }
+
+        private static EmailView ReadEmailView(BinaryReader r)
+        {
+            if (!ReadBoolean(r)) return null;
+            return new EmailView
+            {
+                Id = r.ReadInt32(),
+                Time = r.ReadDouble(),
+                FromPlayer = r.ReadInt32(),
+                DeskIndex = r.ReadInt32(),
+                TemplateId = r.ReadInt32(),
+            };
+        }
+
+        private static void WriteCallView(BinaryWriter w, CallView value)
+        {
+            w.Write(value != null);
+            if (value == null) return;
+            w.Write((byte)value.State);
+            w.Write(value.Other);
+            w.Write(value.Since);
+            w.Write(value.Until);
+        }
+
+        private static CallView ReadCallView(BinaryReader r)
+        {
+            if (!ReadBoolean(r)) return null;
+            return new CallView
+            {
+                State = (CallState)r.ReadByte(),
+                Other = r.ReadInt32(),
+                Since = r.ReadDouble(),
+                Until = r.ReadDouble(),
+            };
+        }
+
+        private static void WriteFootageSighting(BinaryWriter w, FootageSighting value)
+        {
+            w.Write(value != null);
+            if (value == null) return;
+            w.Write(value.Player);
+            w.Write(value.Time);
+            w.Write((byte)value.Activity);
+            WriteString(w, value.Carrying);
+            w.Write(value.Crouched);
+            WriteVec3(w, value.Position);
+            w.Write(value.Yaw);
+        }
+
+        private static FootageSighting ReadFootageSighting(BinaryReader r)
+        {
+            if (!ReadBoolean(r)) return null;
+            return new FootageSighting
+            {
+                Player = r.ReadInt32(),
+                Time = r.ReadDouble(),
+                Activity = (PublicActivity)r.ReadByte(),
+                Carrying = ReadString(r),
+                Crouched = ReadBoolean(r),
+                Position = ReadVec3(r),
+                Yaw = r.ReadSingle(),
+            };
+        }
+
+        private static void WriteHighlightView(BinaryWriter w, HighlightView value)
+        {
+            w.Write(value != null);
+            if (value == null) return;
+            WriteString(w, value.Key);
+            w.Write(value.IncidentId);
+            w.Write(value.Actor);
+            w.Write(value.DeskIndex);
+            w.Write(value.Start);
+            w.Write(value.End);
+            WriteList(w, value.Samples, (writer, item) => WriteFootageSighting(writer, item));
+        }
+
+        private static HighlightView ReadHighlightView(BinaryReader r)
+        {
+            if (!ReadBoolean(r)) return null;
+            return new HighlightView
+            {
+                Key = ReadString(r),
+                IncidentId = r.ReadInt32(),
+                Actor = r.ReadInt32(),
+                DeskIndex = r.ReadInt32(),
+                Start = r.ReadDouble(),
+                End = r.ReadDouble(),
+                Samples = ReadList(r, reader => ReadFootageSighting(reader)),
+            };
+        }
+
+        private static void WriteCallRecordView(BinaryWriter w, CallRecordView value)
+        {
+            w.Write(value != null);
+            if (value == null) return;
+            w.Write(value.Caller);
+            w.Write(value.Callee);
+            w.Write(value.Start);
+            w.Write(value.End);
+            w.Write(value.Answered);
+            w.Write(value.Tip);
+            w.Write(value.TipDesk);
+        }
+
+        private static CallRecordView ReadCallRecordView(BinaryReader r)
+        {
+            if (!ReadBoolean(r)) return null;
+            return new CallRecordView
+            {
+                Caller = r.ReadInt32(),
+                Callee = r.ReadInt32(),
+                Start = r.ReadDouble(),
+                End = r.ReadDouble(),
+                Answered = ReadBoolean(r),
+                Tip = ReadBoolean(r),
+                TipDesk = r.ReadInt32(),
             };
         }
 

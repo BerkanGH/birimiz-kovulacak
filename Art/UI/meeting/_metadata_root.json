@@ -1,0 +1,35 @@
+[
+  {
+    "id": "evidence_folder",
+    "path": "Art/UI/meeting/evidence_folder.png",
+    "w": 800,
+    "h": 600,
+    "category": "meeting",
+    "nineSlice": null,
+    "screenRect": null,
+    "hasText": false,
+    "description": "Manila evidence dossier with camera photo, red elastic and eye seal."
+  },
+  {
+    "id": "week_board",
+    "path": "Art/UI/meeting/week_board.png",
+    "w": 1600,
+    "h": 900,
+    "category": "meeting",
+    "nineSlice": null,
+    "screenRect": null,
+    "hasText": false,
+    "description": "Exactly five day columns; blank headers and two blank notes per day; Friday gold star."
+  },
+  {
+    "id": "termination_letter",
+    "path": "Art/UI/meeting/termination_letter.png",
+    "w": 1200,
+    "h": 1600,
+    "category": "meeting",
+    "nineSlice": null,
+    "screenRect": null,
+    "hasText": false,
+    "description": "Blank company letterhead with generated emblem; ample space for game text and verdict stamp."
+  }
+]

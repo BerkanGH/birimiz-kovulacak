@@ -5,7 +5,7 @@ namespace BirimizKovulacak.Core
         partial void CheckReconnectExpiry()
         {
             if (IsFinished) return;
-            for (int p = 0; p < 4; p++)
+            foreach (int p in playerIds)
                 if (!players[p].Public.Connected && clock >= players[p].Public.DisconnectDeadline)
                 { Abandon(AbandonReason.PlayerTimedOut, clock); return; }
         }

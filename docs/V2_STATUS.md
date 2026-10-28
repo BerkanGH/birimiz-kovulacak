@@ -29,3 +29,10 @@ Codex logs: `Builds/codex/*.log`, last messages `Builds/codex/*_last.txt`. Basel
 - 02:35 surprise feature contract: "Günün Klibi" results replay + positioned footage sightings (main `bc308cf`);
   UI agent asked for the replay, a minimap for footage and a "Mektubu kaydet" PNG share button.
 - Codex art: style locked; portraits (4 managers × normal/angry, 6 players) and procedural 9-slice buttons reviewed — good.
+- 02:45 baseline RC memory: ~700 MB working set / ~1.25 GB private per process (D3D12) → `docs/PERFORMANCE.md`.
+  Memory settings on main: D3D11 first, incremental GC, MSAA 2x, mesh/mip stripping (`db4c343`).
+- 03:05 **Codex engine v2 done**: 8 stages, 347 tests, Tick 0.003 ms, 6× BuildView 0.15 ms, 0 B/tick. Codex could
+  not commit (Windows denied `index.lock` even with `--add-dir .git`); lead committed `04bd6e9` and merged to main.
+  4 reflection-completeness tests fail on main only because of the later highlight/position/ConfigVersion contract
+  fields → Codex follow-up v2.1 running.
+- 03:10 host sends clients `engine.Config` (profile/day applied). First Unity integration build started.

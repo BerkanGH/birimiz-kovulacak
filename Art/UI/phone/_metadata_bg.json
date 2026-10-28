@@ -1,0 +1,13 @@
+[
+  {
+    "id": "call_screen_bg",
+    "path": "Art/UI/phone/call_screen_bg.png",
+    "w": 504,
+    "h": 984,
+    "category": "phone",
+    "nineSlice": null,
+    "screenRect": null,
+    "hasText": false,
+    "description": "Opaque 504x984 incoming-call wallpaper, fits phone screenRect exactly."
+  }
+]

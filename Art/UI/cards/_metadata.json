@@ -1,0 +1,90 @@
+[
+  {
+    "id": "card_password",
+    "path": "Art/UI/cards/card_password.png",
+    "w": 512,
+    "h": 716,
+    "category": "cards",
+    "nineSlice": null,
+    "screenRect": null,
+    "hasText": false,
+    "description": "Pembe changing a workstation password: red padlock and key. Text-free card; title/body safe area [52,552,408,104], illustration area [40,44,428,474]."
+  },
+  {
+    "id": "card_fake_email",
+    "path": "Art/UI/cards/card_fake_email.png",
+    "w": 512,
+    "h": 716,
+    "category": "cards",
+    "nineSlice": null,
+    "screenRect": null,
+    "hasText": false,
+    "description": "Turuncu sending an impersonated email: sealed envelope and disguise mask. Text-free card; title/body safe area [52,552,408,104], illustration area [40,44,428,474]."
+  },
+  {
+    "id": "card_pull_plug",
+    "path": "Art/UI/cards/card_pull_plug.png",
+    "w": 512,
+    "h": 716,
+    "category": "cards",
+    "nineSlice": null,
+    "screenRect": null,
+    "hasText": false,
+    "description": "Mor unplugging a coworker computer; clear unplugged cable gap. Text-free card; title/body safe area [52,552,408,104], illustration area [40,44,428,474]."
+  },
+  {
+    "id": "card_salt",
+    "path": "Art/UI/cards/card_salt.png",
+    "w": 512,
+    "h": 716,
+    "category": "cards",
+    "nineSlice": null,
+    "screenRect": null,
+    "hasText": false,
+    "description": "Yeşil secretly salting a green coffee mug. Text-free card; title/body safe area [52,552,408,104], illustration area [40,44,428,474]."
+  },
+  {
+    "id": "card_internet",
+    "path": "Art/UI/cards/card_internet.png",
+    "w": 512,
+    "h": 716,
+    "category": "cards",
+    "nineSlice": null,
+    "screenRect": null,
+    "hasText": false,
+    "description": "Sarı disabling the office router; crossed wireless pictogram. Text-free card; title/body safe area [52,552,408,104], illustration area [40,44,428,474]."
+  },
+  {
+    "id": "card_power",
+    "path": "Art/UI/cards/card_power.png",
+    "w": 512,
+    "h": 716,
+    "category": "cards",
+    "nineSlice": null,
+    "screenRect": null,
+    "hasText": false,
+    "description": "Mavi flipping the fuse breaker; extinguished bulb. Text-free card; title/body safe area [52,552,408,104], illustration area [40,44,428,474]."
+  },
+  {
+    "id": "card_frame_empty",
+    "path": "Art/UI/cards/card_frame_empty.png",
+    "w": 512,
+    "h": 716,
+    "category": "cards",
+    "nineSlice": null,
+    "screenRect": null,
+    "hasText": false,
+    "description": "Empty manila card frame with transparent illustration window [40,44,428,474] and blank title/body safe area [52,552,408,104]."
+  },
+  {
+    "id": "card_back",
+    "path": "Art/UI/cards/card_back.png",
+    "w": 512,
+    "h": 716,
+    "category": "cards",
+    "nineSlice": null,
+    "screenRect": null,
+    "hasText": false,
+    "description": "Office-green card back with repeating company bean-in-box emblem pattern and centered emblem."
+  }
+]
