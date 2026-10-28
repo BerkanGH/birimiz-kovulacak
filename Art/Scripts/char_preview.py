@@ -19,7 +19,7 @@ def setup(res=(640, 640)):
     sc = bpy.context.scene
     sc.render.engine = "BLENDER_EEVEE"
     try:
-        sc.eevee.taa_render_samples = 24
+        sc.eevee.taa_render_samples = 48
     except AttributeError:
         pass
     sc.render.resolution_x, sc.render.resolution_y = res
@@ -147,7 +147,7 @@ class Character:
         bpy.context.view_layer.update()
 
 
-def sheet(out_path, items, cols, scale=0.6):
+def sheet(out_path, items, cols, scale=0.5):
     img = png.contact_sheet(items, cols)
     if scale != 1.0:
         img = png.resize(img, scale)
