@@ -33,7 +33,14 @@ def generate(main_game, out_dir, name, src_dir, player):
     text = re.sub(r"\s*<Compile Include=\"[^\"]*\"\s*/>", "", text)
     text = re.sub(r"\s*<None Include=\"[^\"]*\"\s*/>", "", text)
     glob = os.path.join(ROOT, "Game", src_dir, "**", "*.cs")
-    text = text.replace("<ItemGroup>", "<ItemGroup>\n    <Compile Include=\"%s\" />" % glob, 1)
+    extra = "<ItemGroup>\n    <Compile Include=\"%s\" />" % glob
+    # Managed plugins added in this checkout (e.g. Assets/Plugins/Concentus) are not in Unity's csproj yet.
+    if name != "Core":
+        for dirpath, _, files in os.walk(os.path.join(ROOT, "Game", "Assets", "Plugins")):
+            for f in files:
+                if f.lower().endswith(".dll") and ("<Reference Include=\"%s\"" % f[:-4]) not in text:
+                    extra += "\n    <Reference Include=\"%s\"><HintPath>%s</HintPath><Private>False</Private></Reference>" % (f[:-4], os.path.join(dirpath, f))
+    text = text.replace("<ItemGroup>", extra, 1)
     text = re.sub(r"<HintPath>(?![A-Za-z]:\\)", "<HintPath>" + main_game.replace("\\", "\\\\") + r"\\", text)
     text = re.sub(r"<ProjectReference Include=\"BirimizKovulacak\.(\w+)\.csproj\"",
                   lambda m: "<ProjectReference Include=\"..\\%s\\BirimizKovulacak.%s.csproj\"" % (m.group(1), m.group(1)), text)
