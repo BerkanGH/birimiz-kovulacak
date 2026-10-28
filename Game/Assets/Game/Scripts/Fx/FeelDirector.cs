@@ -175,13 +175,11 @@ namespace BirimizKovulacak.Game
                     Sfx.Play("router_restore", 0.8f);
                     break;
                 case EventType.PowerDown:
-                    Sfx.Play("power_down");
-                    ScreenFx.SetBlackout(true);
+                    Sfx.Play("power_down"); // blackout itself is state-driven (Update), so a late view cannot restart it
                     if (cam != null) { cam.Shake(0.3f); cam.Punch(Vector3.down, 0.5f); }
                     break;
                 case EventType.PowerRestored:
                     Sfx.Play("power_up", 0.9f);
-                    ScreenFx.SetBlackout(false);
                     break;
                 case EventType.PlugPulled:
                     if (DeskPoint(e.TargetId, 0.3f, out p))
