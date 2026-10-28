@@ -7,9 +7,10 @@ namespace BirimizKovulacak.Game
     /// One pooled audio output per remote speaker slot (6 total, created by <see cref="VoiceSystem"/>).
     /// The AudioSource loops a shared constant-1 "flatline" clip; OnAudioFilterRead multiplies the decoded voice
     /// into it. That way Unity applies its 3D panning to the voice whether spatialisation happens before or after
-    /// the filter. Distance attenuation and the wall muffle are applied by <see cref="VoicePlaybackChannel"/>
-    /// (computed from avatar positions, not from the camera-mounted AudioListener), so the AudioSource uses a flat
-    /// custom rolloff and only pans. Office voice: spatialBlend 1 at the speaker's head; call / all-hear: 2D.
+    /// the filter. Distance attenuation and the wall muffle are applied by <see cref="VoicePlaybackChannel"/> from
+    /// the local avatar → speaker avatar distance (the same metric the host router uses), so the AudioSource uses a
+    /// flat custom rolloff and only pans (relative to the AudioListener, which feel puts on the local avatar's
+    /// head). Office voice: spatialBlend 1 at the speaker's head; call / all-hear / loopback: 2D.
     /// </summary>
     [RequireComponent(typeof(AudioSource))]
     public sealed class VoiceEmitter : MonoBehaviour
@@ -27,6 +28,8 @@ namespace BirimizKovulacak.Game
         long _lastCallbacks;
         double _lastCallbackMs;
         double _lastActiveMs;
+        double _nextPlayRetryMs;
+        bool _wasActive;
         float _currentBlend = -1f;
 
         public int Slot { get; private set; } = -1;
@@ -94,10 +97,17 @@ namespace BirimizKovulacak.Game
             float blend = twoD ? 0f : 1f;
             if (blend != _currentBlend) { _source.spatialBlend = blend; _currentBlend = blend; }
 
-            if (active && !_source.isPlaying)
+            if (active && !_wasActive) _lastCallbackMs = nowMs; // grace period for the source to start
+            _wasActive = active;
+
+            long cb = _reader.Callbacks;
+            if (cb != _lastCallbacks) { _lastCallbacks = cb; _lastCallbackMs = nowMs; }
+            bool audioDead = active && nowMs - _lastCallbackMs > DeadAudioMs;
+
+            if (active && !_source.isPlaying && (!audioDead || nowMs >= _nextPlayRetryMs))
             {
                 _source.Play();
-                _lastCallbackMs = nowMs;
+                _nextPlayRetryMs = nowMs + 1000; // with audio disabled Play() is a no-op: retry only once a second
             }
             else if (!active && _source.isPlaying && nowMs - _lastActiveMs > IdleStopMs)
             {
@@ -106,10 +116,7 @@ namespace BirimizKovulacak.Game
 
             // No audio device / audio disabled: nobody consumes the ring, so drain it in real time to keep the
             // jitter buffer and statistics honest (headless automated runs).
-            long cb = _reader.Callbacks;
-            if (cb != _lastCallbacks) { _lastCallbacks = cb; _lastCallbackMs = nowMs; }
-            else if (_source.isPlaying && nowMs - _lastCallbackMs > DeadAudioMs)
-                ring.Discard((int)(dt * _channel.SampleRate));
+            if (audioDead) ring.Discard((int)(dt * _channel.SampleRate));
         }
 
         public void StopNow()

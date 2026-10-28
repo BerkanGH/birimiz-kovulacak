@@ -1,63 +1,29 @@
 using System;
-using UnityEngine;
-using UnityEngine.InputSystem;
 
 namespace BirimizKovulacak.Game
 {
     /// <summary>
-    /// Push-to-talk key (default V), built in code like <see cref="GameInput"/> but in its own action map so the
-    /// voice module does not edit GameInput. Rebinding is persisted in PlayerPrefs ("voice.input.overrides").
-    /// The settings screen can rebind with <see cref="StartRebind"/> and show <see cref="KeyLabel"/>.
+    /// Push-to-talk = <see cref="GameInput.PushToTalk"/> (V by default, remappable and persisted by GameInput,
+    /// listed in the settings screen as "input.push_to_talk"). Ignored while a UI text field has focus so typing a
+    /// "v" in a name field does not open the mic.
     /// </summary>
     public static class VoiceInput
     {
-        const string PrefsKey = "voice.input.overrides";
-        static InputActionMap _map;
-
-        public static InputAction PushToTalk { get; private set; }
-
-        public static void Initialize()
+        public static bool PushToTalkHeld
         {
-            if (_map != null) return;
-            _map = new InputActionMap("Voice");
-            PushToTalk = _map.AddAction("PushToTalk", InputActionType.Button, "<Keyboard>/v");
-            string json = PlayerPrefs.GetString(PrefsKey, "");
-            if (!string.IsNullOrEmpty(json))
+            get
             {
-                try { _map.LoadBindingOverridesFromJson(json); }
-                catch (Exception e) { Debug.LogWarning("[Voice] Could not load PTT binding: " + e.Message); }
+                var a = GameInput.PushToTalk;
+                return a != null && a.IsPressed() && !FeelHooks.TextInputFocused;
             }
-            _map.Enable();
         }
 
-        public static bool PushToTalkHeld => PushToTalk != null && PushToTalk.IsPressed();
+        public static string KeyLabel => GameInput.PushToTalk != null ? GameInput.KeyLabel(GameInput.PushToTalk) : "V";
 
-        public static string KeyLabel => PushToTalk == null ? "V" : PushToTalk.GetBindingDisplayString(0).ToUpperInvariant();
-
+        /// <summary>Interactive rebind of the push-to-talk key (saved with the other GameInput overrides).</summary>
         public static void StartRebind(Action onDone)
         {
-            if (PushToTalk == null) return;
-            PushToTalk.Disable();
-            PushToTalk.PerformInteractiveRebinding(0)
-                .WithControlsExcluding("<Mouse>/position")
-                .WithControlsExcluding("<Mouse>/delta")
-                .WithCancelingThrough("<Keyboard>/escape")
-                .OnComplete(op => { op.Dispose(); PushToTalk.Enable(); Save(); onDone?.Invoke(); })
-                .OnCancel(op => { op.Dispose(); PushToTalk.Enable(); onDone?.Invoke(); })
-                .Start();
-        }
-
-        public static void ResetBinding()
-        {
-            if (_map == null) return;
-            _map.RemoveAllBindingOverrides();
-            PlayerPrefs.DeleteKey(PrefsKey);
-        }
-
-        static void Save()
-        {
-            PlayerPrefs.SetString(PrefsKey, _map.SaveBindingOverridesAsJson());
-            PlayerPrefs.Save();
+            if (GameInput.PushToTalk != null) GameInput.StartRebind(GameInput.PushToTalk, 0, onDone);
         }
     }
 }

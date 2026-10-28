@@ -23,12 +23,15 @@ namespace BirimizKovulacak.Game
         public bool IsRunning => _clip != null;
         public int SampleRate => _rate;
         public string ActiveDevice => _device ?? "";
+        /// <summary>The device name asked for in <see cref="Start"/> ("" = default), even if it fell back to the default.</summary>
+        public string RequestedDevice { get; private set; } = "";
         public string LastError { get; private set; } = "";
 
         /// <summary>Starts recording. <paramref name="device"/> "" or unknown = system default.</summary>
         public bool Start(string device)
         {
             Stop();
+            RequestedDevice = device ?? "";
             string[] devices = Microphone.devices; // allocates; only on (re)start
             if (devices.Length == 0) { LastError = "no_device"; return false; }
             _device = !string.IsNullOrEmpty(device) && Array.IndexOf(devices, device) >= 0 ? device : null;

@@ -16,8 +16,10 @@ namespace BirimizKovulacak.Game
     /// The host's own mic and speakers use the same router without the network.</para>
     /// <para>Everything is created automatically: on the host the providers come from
     /// <see cref="HostMatchVoiceBridge"/> (ConnectionManager.I.HostController); emitters follow
-    /// <see cref="PlayerAvatar.BySlot"/>. Integration hooks: <see cref="CallPartnerResolver"/>,
-    /// <see cref="SpeakerFilter"/>, <see cref="AttachEmitter"/>, <see cref="SetHostProviders"/>.</para>
+    /// <see cref="PlayerAvatar.BySlot"/>; calls come from MatchEngine.CallPartnerOf; push-to-talk is
+    /// GameInput.PushToTalk; speaking changes drive FeelHooks.SetTalking (lip-flap). Optional hooks:
+    /// <see cref="CallPartnerResolver"/>, <see cref="SpeakerFilter"/>, <see cref="AttachEmitter"/>,
+    /// <see cref="SetHostProviders"/>.</para>
     /// </summary>
     [DefaultExecutionOrder(-50)]
     public sealed class VoiceSystem : MonoBehaviour, IVoiceFrameSink
@@ -40,7 +42,7 @@ namespace BirimizKovulacak.Game
         /// <summary>(slot, speaking). Fires on change only, on the main thread. Includes the local player.</summary>
         public event Action<int, bool> OnSpeakingChanged;
 
-        /// <summary>Host: slot → connected call partner (or -1). Wire to the engine's call state.</summary>
+        /// <summary>Host, optional: slot → connected call partner (or -1). Default: MatchEngine.CallPartnerOf.</summary>
         public Func<int, int> CallPartnerResolver;
         /// <summary>Host: optional per-speaker permission (e.g. meeting defense).</summary>
         public Func<int, bool> SpeakerFilter;
@@ -137,6 +139,7 @@ namespace BirimizKovulacak.Game
         readonly bool[] _speaking = new bool[Slots];
         readonly float[] _playerVolume = { 1f, 1f, 1f, 1f, 1f, 1f };
         float _nextTargetRefresh;
+        Transform _audioListener;
 
         readonly VoiceBundleWriter _up = new VoiceBundleWriter();
         readonly VoiceBundleWriter[] _down = new VoiceBundleWriter[Slots];
@@ -182,7 +185,6 @@ namespace BirimizKovulacak.Game
                 return;
             }
             Settings.Changed += OnSettingsChanged;
-            VoiceInput.Initialize();
 
             Backend = VoiceCodec.Resolve(Options.Codec);
             var encoder = VoiceCodec.CreateEncoder(VoiceEncoderSettings.Default, Backend);
@@ -240,7 +242,7 @@ namespace BirimizKovulacak.Game
             if (_capture == null) return;
             _capture.Vad.SetSensitivity(Settings.VadSensitivity);
             _capture.InputGain = Settings.InputGain;
-            if (_mic != null && _mic.IsRunning && _mic.ActiveDevice != Settings.InputDevice)
+            if (_mic != null && _mic.IsRunning && _mic.RequestedDevice != Settings.InputDevice)
             {
                 // Device switched in the settings screen ("" = system default): restart on the next frame.
                 _mic.Stop();
@@ -572,10 +574,16 @@ namespace BirimizKovulacak.Game
                     }
                     _emitters[i].Target = t;
                 }
+                if (PlayerAvatar.Local == null && ListenerOverride == null && _audioListener == null)
+                {
+                    var al = FindAnyObjectByType<AudioListener>();
+                    _audioListener = al != null ? al.transform : null;
+                }
             }
 
             Transform listener = ListenerOverride;
             if (listener == null && PlayerAvatar.Local != null) listener = PlayerAvatar.Local.transform;
+            if (listener == null) listener = _audioListener; // spectating: feel keeps the AudioListener at the camera
 
             // Ring low-water mark: one audio DSP buffer + ~1.5 frames of main-thread jitter + 10 ms safety.
             int dspLength, dspCount;
@@ -611,6 +619,7 @@ namespace BirimizKovulacak.Game
                 bool s = i == _localSlot ? IsTransmitting : _channels[i].IsSpeaking(_nowMs);
                 if (s == _speaking[i]) continue;
                 _speaking[i] = s;
+                FeelHooks.SetTalking(i, s);   // lip-flap on the avatar (change-only, allocation-free)
                 OnSpeakingChanged?.Invoke(i, s);
             }
         }

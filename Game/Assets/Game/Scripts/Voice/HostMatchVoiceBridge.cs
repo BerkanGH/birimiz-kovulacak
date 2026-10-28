@@ -13,8 +13,8 @@ namespace BirimizKovulacak.Game
     /// <item>mode = from the match phase (<see cref="ModeForPhase"/>), lobby (no engine) = AllHear;</item>
     /// <item>walls = Physics.Linecast at mouth height against the Walls and Glass layers (glass muffles voice even
     /// though it does not block sight);</item>
-    /// <item>calls = <see cref="CallPartnerResolver"/> (the lead wires it to the engine's call state; until then
-    /// nobody is in a call).</item>
+    /// <item>calls = <see cref="MatchEngine.CallPartnerOf"/> (Active calls only), overridable with
+    /// <see cref="CallPartnerResolver"/>.</item>
     /// </list>
     /// </summary>
     public sealed class HostMatchVoiceBridge : IVoicePositions, IVoiceCallState, IVoiceModeProvider, IVoiceOcclusion, IVoiceClientMap
@@ -22,7 +22,8 @@ namespace BirimizKovulacak.Game
         readonly HostMatchController _host;
         readonly int _occluderMask;
 
-        /// <summary>slot → connected call partner slot, or -1. Must return -1 while ringing.</summary>
+        /// <summary>Optional override: slot → connected call partner slot, or -1 (must be -1 while ringing).
+        /// Default: <see cref="MatchEngine.CallPartnerOf"/> (partner only while the call is Active).</summary>
         public Func<int, int> CallPartnerResolver;
         /// <summary>Optional: false silences a speaker (e.g. only the defending player talks during a defense).</summary>
         public Func<int, bool> SpeakerFilter;
@@ -77,7 +78,9 @@ namespace BirimizKovulacak.Game
 
         public int GetCallPartner(int slot)
         {
-            return CallPartnerResolver != null ? CallPartnerResolver(slot) : -1;
+            if (CallPartnerResolver != null) return CallPartnerResolver(slot);
+            var engine = _host.Engine;
+            return engine != null ? engine.CallPartnerOf(slot) : -1;
         }
 
         public VoiceMode CurrentMode
