@@ -149,9 +149,16 @@ namespace BirimizKovulacak.Game
 
         void ApplyJuice(float dt, ref Vector3 pos, ref Quaternion rot)
         {
-            // Spring for punches (critically-ish damped).
-            _punchVel += (-_punch * 140f - _punchVel * 15f) * dt;
-            _punch += _punchVel * dt;
+            // Spring for punches (critically-ish damped), integrated in <= 1/120 s substeps: a single large step at
+            // low frame rates is unstable (stiffness 140, damping 15).
+            float remaining = Mathf.Min(dt, 0.25f);
+            while (remaining > 0f)
+            {
+                float h = Mathf.Min(remaining, 1f / 120f);
+                _punchVel += (-_punch * 140f - _punchVel * 15f) * h;
+                _punch += _punchVel * h;
+                remaining -= h;
+            }
             pos += rot * _punch;
 
             if (_trauma > 0.0001f)

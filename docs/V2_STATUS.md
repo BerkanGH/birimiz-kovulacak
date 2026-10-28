@@ -36,3 +36,23 @@ Codex logs: `Builds/codex/*.log`, last messages `Builds/codex/*_last.txt`. Basel
   4 reflection-completeness tests fail on main only because of the later highlight/position/ConfigVersion contract
   fields → Codex follow-up v2.1 running.
 - 03:10 host sends clients `engine.Config` (profile/day applied). First Unity integration build started.
+- 03:20 Codex 2D kit done (149 PNGs, verified Turkish text) → main `4f03d62`; second art run (how-to, weekdays,
+  title badges, bubbles, app icon, store capsules) started.
+- 03:25 integration build 1 OK (1.5 min). **First 6-player v2 bot match: all 6 processes agree on the result hash,
+  0 errors** (old scene, so quota low — props not yet at v2 positions).
+- 03:35 found 6 PowerShell edits that silently did not apply on LF files (Partitions layer, D3D11/GC settings,
+  config loader version check) — reapplied with an anchor-asserting script (`0a70555`). Lesson: patch via Python
+  with asserts, never PowerShell `.Replace` with `\r\n`.
+- 03:40 feel merged + integrated (crouch → engine samples, partitions in LOS mask, bots sneak) `04bca20`.
+- 03:50 Codex v2.1 (highlight replay, positioned footage) merged: **382 tests green on main**. Codex cross-review of
+  Claude's Unity-side code running (read-only snapshot `.worktrees/review`).
+- 04:05 **memory, visible windows, 4 bots:** RC 720 MB working set / 1.27 GB private → v2 build 427 MB / 855 MB per
+  process (−41 % / −33 %; D3D11 + MSAA 2x + stripping). Hidden windows had silently disabled screenshots → script fixed.
+- 04:10 Codex art run 2 (how-to ×6, weekday banners, title badges, bubbles, app icon, store capsules) → main; exe icon
+  wired in the builder.
+- 04:15 Codex cross-review: 5 verified findings (camera spring blow-up at low FPS, carried-item visibility leak, bot
+  footage time origin, observation feedback lost, bot hang-up timer) — all fixed (`6e2add8`).
+- 04:25 voice merged (native libopus 1.5.2 primary, Concentus fallback; 0 B/frame; 70 tests; ~21 kbps on the wire;
+  call privacy tested) `3387b80`.
+- 04:35 characters merged: 6 player looks + 4 profile managers matching the portraits, face atlas, 48 clips; builder
+  log "Characters: avatar (6 looks), manager (5 looks)". Unity build 4 OK (0.9 min).

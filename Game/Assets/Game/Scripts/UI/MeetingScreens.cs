@@ -1,33 +1,123 @@
-using System.Linq;
+using System.Collections.Generic;
 using BirimizKovulacak.Core;
 using UnityEngine;
-using EventType = BirimizKovulacak.Core.EventType;
 using UnityEngine.UIElements;
+using EventType = BirimizKovulacak.Core.EventType;
 using static BirimizKovulacak.Game.UiKit;
 
 namespace BirimizKovulacak.Game
 {
-    /// <summary>HR meeting: dossier, accusations, note presentation, defenses, ballot and the verdict explanation.</summary>
+    /// <summary>
+    /// HR meeting: projector slides of the dossier (evidence cards incl. e-mail logs, CCTV footage with a floor plan,
+    /// call logs), people with accuse / vote actions, defense spotlight, footage request, note presentation and the
+    /// verdict breakdown (vote / risk / performance / favour discount).
+    /// </summary>
     public sealed class MeetingScreen : UiKit.Screen
     {
-        readonly Label _phase, _timer, _instruction;
-        readonly VisualElement _dossier, _side;
-        int _lastVersion = -1;
+        enum Slide { Evidence = 0, Footage = 1, Observations = 2, Log = 3 }
+
+        readonly Label _phase, _timer, _instruction, _slideTitle;
+        readonly VisualElement _slideBody, _side, _footagePanel;
+        readonly UiKit.TabBar _slides;
+        readonly ScrollView _slideScroll;
+        // footage request (persistent so dragging the slider survives view updates)
+        readonly VisualElement _camList;
+        readonly SliderInt _footageSlider;
+        readonly Label _footageTime, _footageLeft;
+        readonly Button _footageSend;
+        readonly List<Button> _camButtons = new List<Button>();
+        readonly Dictionary<int, VisualElement> _footageCache = new Dictionary<int, VisualElement>();
+        int _camIndex;
+        Slide _slide = Slide.Evidence;
+        int _lastVersion = -1, _lastSec = -1, _cacheMatch = -1, _lastFootageCount;
         MatchPhase _lastPhase;
+        bool _dirty;
 
         public MeetingScreen(VisualElement parent) : base(parent)
         {
             var top = Box("meeting-top").AddTo(Root);
-            var pb = Box("phase-box").AddTo(top);
-            _phase = Bold("", "phase-name").AddTo(pb);
-            _timer = Title("", "timer").AddTo(pb);
-            _instruction = Bold("", "light").AddTo(pb);
+            var pill = Box("phase-pill").AddTo(top);
+            Icon("ballot", "icon-m").AddTo(pill);
+            var pc = Box("phase-col").AddTo(pill);
+            _phase = Bold("", "phase-name").AddTo(pc);
+            _timer = Title("", "timer").AddTo(pc);
+            _instruction = Bold("", "meeting-instr").AddTo(top);
+
             var body = Box("meeting-body").AddTo(Root);
-            var d = Box("card", "dossier").AddTo(body);
-            Title(Loc.T("meeting.dossier"), "h2").AddTo(d);
-            _dossier = new ScrollView().Cls("grow").AddTo(d).contentContainer;
-            var s = Box("card", "side").AddTo(body);
-            _side = new ScrollView().Cls("grow").AddTo(s).contentContainer;
+            var proj = Box("projector").AddTo(body);
+            var frame = Box("projector-frame").AddTo(proj);
+            if (!UiArt.Apply(frame, "meeting/projector_frame")) frame.AddToClassList("projector-fallback");
+            var screen = Box("projector-screen").AddTo(frame);
+            KeepAspect(proj, frame, 1600f / 900f);
+            var head = Box("slide-head").AddTo(screen);
+            var folder = Box("icon", "icon-m", "gap-m").AddTo(head);
+            if (!UiArt.Apply(folder, "meeting/evidence_folder")) SetIcon(folder, "notes");
+            _slideTitle = Title("", "slide-title").AddTo(head);
+            _slides = new UiKit.TabBar(head, id => { _slide = (Slide)id; _dirty = true; _slideScroll.scrollOffset = Vector2.zero; }, "slide-nav");
+            _slides.Add((int)Slide.Evidence, Loc.T("meeting.slide.Evidence"));
+            _slides.Add((int)Slide.Footage, Loc.T("meeting.slide.Footage"));
+            _slides.Add((int)Slide.Observations, Loc.T("meeting.slide.Observations"));
+            _slides.Add((int)Slide.Log, Loc.T("meeting.slide.Log"));
+            _slideScroll = new ScrollView().Cls("slide-body").AddTo(screen);
+            _slideBody = _slideScroll.contentContainer;
+
+            var sidePanel = Panel("panel", "side").AddTo(body);
+            var sideScroll = new ScrollView().Cls("grow").AddTo(sidePanel);
+            _side = Box("col").AddTo(sideScroll.contentContainer);
+
+            // footage request panel
+            _footagePanel = Box("footage-panel").AddTo(sideScroll.contentContainer);
+            Section(_footagePanel, Loc.T("footage.request_title"), "hr_footage");
+            _footageLeft = Text("", "t-small", "t-light").AddTo(_footagePanel);
+            _camList = Box("cam-list").AddTo(_footagePanel);
+            var layout = GameConfig.Layout;
+            for (int i = 0; i < layout.Cameras.Count; i++)
+            {
+                int idx = i;
+                var b = Btn(Loc.Camera(layout.Cameras[i].Id), () => { _camIndex = idx; RefreshCamButtons(); }, "cam-btn", "btn-small").AddTo(_camList);
+                _camButtons.Add(b);
+            }
+            _footageTime = Title("00:00", "footage-time").AddTo(_footagePanel);
+            _footageSlider = new SliderInt(Loc.T("footage.time"), 0, 300) { value = 60 }.Cls("slider").AddTo(_footagePanel);
+            _footageSlider.RegisterValueChangedCallback(e => _footageTime.text = Loc.MatchSeconds(e.newValue));
+            _footageSend = IconBtn("footage", Loc.T("footage.request"), SendFootage, "btn-primary").AddTo(_footagePanel);
+            _footagePanel.Show(false);
+            RefreshCamButtons();
+
+            if (ClientState.I != null) ClientState.I.EventReceived += OnEvent;
+        }
+
+        void OnEvent(GameEvent e)
+        {
+            if (!Visible) return;
+            if (e.Type == EventType.FootageShown) { _slides.Select((int)Slide.Footage, false); _slide = Slide.Footage; _dirty = true; }
+        }
+
+        void RefreshCamButtons()
+        {
+            for (int i = 0; i < _camButtons.Count; i++)
+            {
+                _camButtons[i].EnableInClassList("btn-selected", i == _camIndex);
+                _camButtons[i].EnableInClassList("btn-secondary", i != _camIndex);
+            }
+        }
+
+        void SendFootage()
+        {
+            var layout = GameConfig.Layout;
+            if (_camIndex < 0 || _camIndex >= layout.Cameras.Count) return;
+            ClientState.I.Send(ActionVerb.RequestFootage, layout.Cameras[_camIndex].Id, _footageSlider.value);
+        }
+
+        protected override void OnShow() { _lastVersion = -1; }
+        protected override void OnHide() { SetCctv(false); }
+
+        bool _cctv;
+        void SetCctv(bool on)
+        {
+            if (on == _cctv) return;
+            _cctv = on;
+            ScreenFx.SetCctv(on);
         }
 
         public override void Tick()
@@ -36,15 +126,31 @@ namespace BirimizKovulacak.Game
             var cs = ClientState.I;
             var v = cs.View;
             if (v == null) return;
-            double rem = v.PhaseEndTime - cs.Now;
-            _timer.text = Clock(rem);
-            _phase.text = Loc.Phase(v.Phase);
-            if (v.StateVersion == _lastVersion && v.Phase == _lastPhase) return;
+            if (v.Phase == MatchPhase.MeetingDiscussion && MatchClock.MeetingMatchId != v.MatchId)
+            {
+                MatchClock.MeetingMatchId = v.MatchId;
+                MatchClock.MeetingStart = v.PhaseStartTime;
+            }
+            if (_cacheMatch != v.MatchId) { _cacheMatch = v.MatchId; _footageCache.Clear(); _lastFootageCount = 0; }
+            int sec = (int)System.Math.Ceiling(System.Math.Max(0, v.PhaseEndTime - cs.Now));
+            if (sec != _lastSec) { _lastSec = sec; _timer.text = ClockInt(sec); _timer.EnableInClassList("timer-urgent", sec <= 5); }
+            SetCctv(_slide == Slide.Footage && _lastFootageCount > 0);
+            if (v.StateVersion == _lastVersion && v.Phase == _lastPhase && !_dirty) return;
+            bool phaseChanged = v.Phase != _lastPhase;
             _lastVersion = v.StateVersion;
             _lastPhase = v.Phase;
+            _dirty = false;
+            _phase.text = Loc.Phase(v.Phase);
             _instruction.text = Instruction(v);
-            BuildDossier(v);
+            int footageCount = 0;
+            foreach (var e in v.Evidence) if (e.Kind == EvidenceKind.CctvFootage) footageCount++;
+            _slides.SetTabVisible((int)Slide.Footage, footageCount > 0);
+            if (footageCount > _lastFootageCount) { _slide = Slide.Footage; _slides.Select((int)Slide.Footage, false); }
+            _lastFootageCount = footageCount;
+            if (phaseChanged && v.Phase == MatchPhase.MeetingVerdict) { _slide = Slide.Evidence; _slides.Select((int)Slide.Evidence, false); }
+            BuildSlide(v);
             BuildSide(v);
+            UpdateFootagePanel(v);
         }
 
         static string Instruction(PlayerView v)
@@ -53,226 +159,302 @@ namespace BirimizKovulacak.Game
             {
                 case MatchPhase.MeetingDiscussion: return Loc.T("meeting.instr.discussion");
                 case MatchPhase.MeetingDefense1:
-                case MatchPhase.MeetingDefense2: return Loc.F("meeting.instr.defense", Loc.PlayerName(v, v.Meeting.Speaker));
+                case MatchPhase.MeetingDefense2:
+                    return v.Meeting.Speaker == ClientState.I.MySlot ? Loc.T("meeting.instr.defense_you") : Loc.F("meeting.instr.defense", Loc.PlayerName(v, v.Meeting.Speaker));
                 case MatchPhase.MeetingVote: return Loc.T("meeting.instr.vote");
                 case MatchPhase.MeetingVerdict: return Loc.T("meeting.instr.verdict");
                 default: return "";
             }
         }
 
-        void BuildDossier(PlayerView v)
+        // ------------------------------------------------------------------ slides
+
+        void BuildSlide(PlayerView v)
         {
-            _dossier.Clear();
+            _slideBody.Clear();
+            _slideTitle.text = Loc.T("meeting.slide_title." + _slide);
             bool informantScan = v.Me.Role == Role.Informant && v.Phase == MatchPhase.MeetingDiscussion;
-            if (v.Evidence.Count == 0) Text(Loc.T("phone.no_evidence"), "muted").AddTo(_dossier);
-            for (int i = v.Evidence.Count - 1; i >= 0; i--) PhonePanel.EvidenceRow(_dossier, v.Evidence[i], v, informantScan);
-            Bold(Loc.T("phone.observations"), "h3").AddTo(_dossier);
-            foreach (var o in v.Observations.Where(o => o.Kind != ObservationKind.SuspiciousItemAtDesk).Reverse())
+            switch (_slide)
             {
-                var r = Box("list-row").AddTo(_dossier);
-                Chip(o.Subject).AddTo(r);
-                Text(Describe.Observation(o, v), "list-row-text").AddTo(r);
-            }
-            Bold(Loc.T("meeting.log"), "h3").AddTo(_dossier);
-            foreach (var l in v.Log.Where(l => l.Kind == EventType.WorkstationLocked || l.Kind == EventType.PhoneMissed || l.Kind == EventType.TaskCompleted).Reverse().Take(14))
-            {
-                ToastKindIgnored(l, v, out string s);
-                if (s != null) Text(Loc.Time(l.Time, v) + " — " + s, "list-row").AddTo(_dossier);
+                case Slide.Evidence:
+                {
+                    var grid = Box("ev-grid").AddTo(_slideBody);
+                    int n = 0;
+                    for (int i = v.Evidence.Count - 1; i >= 0; i--)
+                    {
+                        if (v.Evidence[i].Kind == EvidenceKind.CctvFootage) continue;
+                        PhonePanel.EvidenceCard(grid, v.Evidence[i], v, informantScan);
+                        n++;
+                    }
+                    if (n == 0) Empty(_slideBody, Loc.T("phone.no_evidence"));
+                    break;
+                }
+                case Slide.Footage:
+                {
+                    int n = 0;
+                    for (int i = v.Evidence.Count - 1; i >= 0; i--)
+                    {
+                        var e = v.Evidence[i];
+                        if (e.Kind != EvidenceKind.CctvFootage) continue;
+                        n++;
+                        VisualElement block;
+                        if (!_footageCache.TryGetValue(e.Id, out block))
+                        {
+                            block = Box("ev-card", "ev-system");
+                            var head = Box("ev-head").AddTo(block);
+                            Icon("footage").AddTo(head);
+                            Bold(Describe.Evidence(e, v), "ev-title").AddTo(head);
+                            var row = Box("row-top").AddTo(block);
+                            FootageView.Build(row, e, v, 560, 350);
+                            var list = Box("col", "grow").AddTo(row);
+                            list.style.marginLeft = 12;
+                            if (e.Sightings.Count == 0 && !e.NoRecording) Empty(list, Loc.T("footage.nobody"));
+                            foreach (var s in e.Sightings) Text(Describe.Sighting(s, v), "t-small").AddTo(list);
+                            _footageCache[e.Id] = block;
+                        }
+                        block.AddTo(_slideBody);
+                    }
+                    if (n == 0) Empty(_slideBody, Loc.T("footage.none_yet"));
+                    break;
+                }
+                case Slide.Observations:
+                {
+                    int n = 0;
+                    for (int i = v.Observations.Count - 1; i >= 0; i--)
+                    {
+                        var o = v.Observations[i];
+                        if (o.Kind == ObservationKind.SuspiciousItemAtDesk || o.Kind == ObservationKind.TipFound) continue;
+                        PhonePanel.ObservationRow(_slideBody, o, v);
+                        n++;
+                    }
+                    if (n == 0) Empty(_slideBody, Loc.T("phone.no_observations"));
+                    break;
+                }
+                case Slide.Log:
+                {
+                    int shown = 0;
+                    for (int i = v.Log.Count - 1; i >= 0 && shown < 40; i--)
+                    {
+                        var l = v.Log[i];
+                        if (!LogWorthy(l.Kind)) continue;
+                        var ge = new GameEvent { Type = l.Kind, Time = l.Time, Actor = l.Actor, TargetId = l.TargetId, IntArg = l.IntArg, StrArg = l.StrArg };
+                        Hud.ToastKind k;
+                        string s = Describe.Event(ge, v, out k);
+                        if (s == null) continue;
+                        Text(Loc.Time(l.Time, v) + "  " + s, "list-row", "list-row-text").AddTo(_slideBody);
+                        shown++;
+                    }
+                    if (shown == 0) Empty(_slideBody, Loc.T("meeting.log_empty"));
+                    break;
+                }
             }
         }
 
-        static void ToastKindIgnored(LogEntry l, PlayerView v, out string s)
+        static bool LogWorthy(EventType k)
         {
-            var e = new GameEvent { Type = l.Kind, Time = l.Time, Actor = l.Actor, TargetId = l.TargetId, IntArg = l.IntArg, StrArg = l.StrArg };
-            Hud.ToastKind k;
-            s = Describe.Event(e, v, out k);
+            switch (k)
+            {
+                case EventType.WorkstationLocked: case EventType.PhoneMissed: case EventType.TaskCompleted: case EventType.EmailSent:
+                case EventType.InternetDown: case EventType.InternetRestored: case EventType.PowerDown: case EventType.PowerRestored:
+                case EventType.PlugPulled: case EventType.PlugRestored: case EventType.ManagerTipReceived: case EventType.SurpriseInspection:
+                    return true;
+                default: return false;
+            }
         }
+
+        // ------------------------------------------------------------------ side
 
         void BuildSide(PlayerView v)
         {
             _side.Clear();
             var me = v.Me;
-            int mySlot = ClientState.I.MySlot;
+            int my = ClientState.I.MySlot;
             var m = v.Meeting;
 
             if (v.Phase == MatchPhase.MeetingVerdict && m.Verdict != null)
             {
-                BuildVerdict(v, m.Verdict);
+                BuildVerdict(_side, v, m.Verdict);
                 return;
             }
 
-            Title(Loc.T("meeting.people"), "h2").AddTo(_side);
+            bool defense = v.Phase == MatchPhase.MeetingDefense1 || v.Phase == MatchPhase.MeetingDefense2;
+            if (defense && m.Speaker >= 0)
+            {
+                var sp = Box("spotlight").AddTo(_side);
+                Badge(m.Speaker, "badge-l").AddTo(sp);
+                var c = Box("col", "grow").AddTo(sp);
+                Bold(Loc.T("meeting.spotlight"), "spotlight-sub").AddTo(c);
+                Title(Loc.PlayerName(v, m.Speaker), "spotlight-name").AddTo(c);
+                Text(m.Speaker == my ? Loc.T("meeting.spotlight_you") : Loc.T("meeting.spotlight_listen"), "spotlight-sub").AddTo(c);
+            }
+
+            Section(_side, Loc.T("meeting.people"), "contacts");
+            bool favor = GameInfo.FavorMatters(v);
             foreach (var p in v.Players)
             {
-                var c = Box("cand").AddTo(_side);
-                if (m.Speaker == p.Id) c.AddToClassList("cand-speaking");
-                var row = Box("row").AddTo(c);
-                Chip(p.Id, true).AddTo(row);
-                Bold(p.Name + (p.Id == mySlot ? " " + Loc.T("hud.you") : ""), "h3", "grow").AddTo(row);
-                Pips(p.SuspicionLevel).AddTo(row);
-                Text(Loc.F("meeting.stats", p.Performance.ToString("0"), p.AccusationsReceived) + (m.Shortlist.Contains(p.Id) ? " · " + Loc.T("meeting.shortlisted") : ""), "muted").AddTo(c);
-                var acc = m.Accusations.Where(a => a.Accused == p.Id).Select(a => Loc.PlayerName(v, a.Accuser)).ToList();
-                if (acc.Count > 0) Text(Loc.F("meeting.accused_by", string.Join(", ", acc)), "warn", "small").AddTo(c);
+                int pid = p.Id;
+                var row = Box("person").AddTo(_side);
+                if (m.Speaker == p.Id) row.AddToClassList("person-speaking");
+                if (m.Shortlist.Contains(p.Id)) row.AddToClassList("person-shortlisted");
+                if (me.Ballot == p.Id && me.HasVoted) row.AddToClassList("person-voted");
+                Badge(p.Id, "badge-m").AddTo(row);
+                var col = Box("col", "grow").AddTo(row);
+                var nameRow = Box("row").AddTo(col);
+                Bold(p.Name + (p.Id == my ? " " + Loc.T("hud.you") : ""), "person-name").AddTo(nameRow);
+                if (m.Shortlist.Contains(p.Id)) Tag(Loc.T("meeting.shortlisted"), "tag-red").AddTo(nameRow);
+                if (v.Favourite == p.Id) Tag(Loc.T("meeting.favourite"), "tag-sticky").AddTo(nameRow);
+                if (!p.Connected) Tag(Loc.T("meeting.offline"), "tag-grey").AddTo(nameRow);
+                string stats = Loc.F("meeting.stats", p.Performance.ToString("0"), p.AccusationsReceived) + (favor ? " · " + Loc.F("meeting.favor", p.Favor.ToString("0.#")) : "");
+                Text(stats, "person-sub").AddTo(col);
+                string accusers = Accusers(v, p.Id);
+                if (accusers != null) Text(Loc.F("meeting.accused_by", accusers), "person-sub", "t-bad").AddTo(col);
+                var pips = Pips(p.SuspicionLevel).Cls("on-paper").AddTo(row);
 
-                if (v.Phase == MatchPhase.MeetingDiscussion && p.Id != mySlot && !me.HasAccused)
-                    Btn(Loc.T("meeting.accuse"), () => ClientState.I.Send(ActionVerb.Accuse, "", p.Id), "btn-small", "btn-danger").AddTo(c);
-                if (v.Phase == MatchPhase.MeetingVote && m.Shortlist.Contains(p.Id) && p.Id != mySlot)
+                if (v.Phase == MatchPhase.MeetingDiscussion && p.Id != my && !me.HasAccused)
+                    IconBtn("accuse", Loc.T("meeting.accuse"), () => ConfirmAccuse(pid), "btn-danger", "btn-small").AddTo(row);
+                if (v.Phase == MatchPhase.MeetingVote && m.Shortlist.Contains(p.Id) && p.Id != my)
                 {
-                    var b = Btn(me.Ballot == p.Id ? Loc.T("meeting.voted_for") : Loc.T("meeting.vote_fire"), () => ClientState.I.Send(ActionVerb.CastBallot, "", p.Id), "btn-small", me.Ballot == p.Id ? "btn-selected" : "btn-primary").AddTo(c);
+                    bool mine = me.HasVoted && me.Ballot == p.Id;
+                    var b = IconBtn("ballot", mine ? Loc.T("meeting.voted_for") : Loc.T("meeting.vote_fire"), () => ClientState.I.Send(ActionVerb.CastBallot, "", pid), "btn-small", mine ? "btn-selected" : "btn-danger").AddTo(row);
                     b.SetEnabled(!me.HasVoted);
                 }
             }
-            if (me.HasAccused) Text(Loc.F("meeting.you_accused", Loc.PlayerName(v, me.AccusedPlayer)), "accent").AddTo(_side);
+
+            if (me.HasAccused) Bold(Loc.F("meeting.you_accused", Loc.PlayerName(v, me.AccusedPlayer)), "t-accent", "mt-s").AddTo(_side);
+            else if (v.Phase == MatchPhase.MeetingDiscussion) Text(Loc.T("meeting.accuse_help"), "t-small", "t-muted", "mt-s").AddTo(_side);
+
             if (v.Phase == MatchPhase.MeetingVote)
             {
-                var b = Btn(Loc.T("meeting.abstain"), () => ClientState.I.Send(ActionVerb.CastBallot, "", PlayerIds.None), "btn-small").AddTo(_side);
+                var row = Box("row", "mt-s").AddTo(_side);
+                var b = Btn(Loc.T("meeting.abstain"), () => ClientState.I.Send(ActionVerb.CastBallot, "", PlayerIds.None), "btn-small", "btn-ghost").AddTo(row);
                 b.SetEnabled(!me.HasVoted);
-                Text(Loc.F("meeting.ballots", m.BallotsCast, v.Players.Count(p => p.Connected)), "muted").AddTo(_side);
+                int connected = 0;
+                foreach (var p in v.Players) if (p.Connected) connected++;
+                Text(Loc.F("meeting.ballots", m.BallotsCast, connected), "t-muted", "grow", "t-right").AddTo(row);
+                if (me.HasVoted) Bold(me.Ballot >= 0 ? Loc.F("meeting.ballot_done", Loc.PlayerName(v, me.Ballot)) : Loc.T("meeting.ballot_abstained"), "t-good").AddTo(_side);
+                if (m.Shortlist.Contains(my)) Text(Loc.T("meeting.you_on_shortlist"), "t-small", "t-bad").AddTo(_side);
             }
 
-            bool canPresent = v.Phase == MatchPhase.MeetingDiscussion || v.Phase == MatchPhase.MeetingDefense1 || v.Phase == MatchPhase.MeetingDefense2;
-            if (canPresent)
+            if (GameInfo.PresentPhase(v.Phase))
             {
-                Title(Loc.T("meeting.my_notes"), "h3").AddTo(_side);
-                Text(Loc.T("meeting.present_help"), "muted", "small", "label-wrap").AddTo(_side);
-                int presented = me.Notes.Count(n => n.Presented);
-                foreach (var n in me.Notes.Where(n => !n.Presented))
+                Section(_side, Loc.T("meeting.my_notes"), "notes");
+                Text(Loc.T("meeting.present_help"), "t-small", "t-muted").AddTo(_side);
+                int presented = 0;
+                foreach (var n in me.Notes) if (n.Presented) presented++;
+                int unpresented = 0;
+                for (int i = me.Notes.Count - 1; i >= 0; i--)
                 {
-                    var r = Box("list-row").AddTo(_side);
-                    Text(Describe.Note(n, v), "list-row-text").AddTo(r);
-                    var b = Btn(Loc.T("meeting.present"), () => ClientState.I.Send(ActionVerb.PresentNote, "", n.Id), "btn-small").AddTo(r);
-                    b.SetEnabled(presented < 2);
+                    var n = me.Notes[i];
+                    if (n.Presented) continue;
+                    unpresented++;
+                    var card = PhonePanel.NoteCard(_side, n, v, presented < 2 ? (System.Action<int>)(id => ClientState.I.Send(ActionVerb.PresentNote, "", id)) : null);
                 }
-                if (me.Notes.Count == 0) Text(Loc.T("phone.no_notes"), "muted").AddTo(_side);
+                if (unpresented == 0) Empty(_side, Loc.T("phone.no_notes"));
+                if (presented >= 2) Text(Loc.T("meeting.present_limit"), "t-small", "t-muted").AddTo(_side);
             }
-            Text(Loc.T("meeting.discord_hint"), "muted", "small", "label-wrap").AddTo(_side);
+            Text(Loc.T(UiServices.Voice.Available ? "meeting.voice_hint" : "meeting.discord_hint"), "t-small", "t-muted", "mt-m").AddTo(_side);
         }
 
-        void BuildVerdict(PlayerView v, VerdictView vd)
+        static string Accusers(PlayerView v, int accused)
         {
-            Title(Loc.T("meeting.verdict_title"), "h2").AddTo(_side);
-            var c = Box("player-row").AddTo(_side);
-            Chip(vd.FiredPlayer, true).AddTo(c);
-            Title(Loc.PlayerName(v, vd.FiredPlayer).ToUpperInvariant(), "verdict-name").AddTo(_side);
-            Text(Loc.F("meeting.formula", (vd.VoteWeight * 100).ToString("0"), (vd.RiskWeight * 100).ToString("0"), (vd.PerformanceWeight * 100).ToString("0")), "muted", "small", "label-wrap").AddTo(_side);
-            var table = Box("score-table").AddTo(_side);
-            var head = Box("row").AddTo(table);
-            foreach (var h in new[] { "meeting.col_player", "meeting.col_votes", "meeting.col_risk", "meeting.col_perf", "meeting.col_score" })
-                Bold(Loc.T(h), "score-cell").AddTo(head);
-            foreach (var cand in vd.Candidates)
+            System.Text.StringBuilder sb = null;
+            foreach (var a in v.Meeting.Accusations)
             {
-                var r = Box("row").AddTo(table);
-                Bold(Loc.PlayerName(v, cand.Player), "score-cell").AddTo(r);
-                Text(cand.Votes + " (" + (cand.VoteShare * 100).ToString("0") + "%)", "score-cell").AddTo(r);
-                Text(cand.ObservedRisk.ToString("0.#") + " → " + cand.RiskNormalized.ToString("0.00"), "score-cell").AddTo(r);
-                Text(cand.Performance.ToString("0") + " → " + cand.PerformanceDeficit.ToString("0.00"), "score-cell").AddTo(r);
-                Bold(cand.Score.ToString("0.000"), "score-cell").AddTo(r);
+                if (a.Accused != accused) continue;
+                if (sb == null) sb = new System.Text.StringBuilder();
+                else sb.Append(", ");
+                sb.Append(Loc.PlayerName(v, a.Accuser));
             }
-            if (vd.TieBreakUsed != TieBreak.None) Text(Loc.T("meeting.tiebreak." + vd.TieBreakUsed), "accent").AddTo(_side);
+            return sb != null ? sb.ToString() : null;
+        }
+
+        static void ConfirmAccuse(int player)
+        {
+            var v = ClientState.I.View;
+            ConfirmDialog.Show(Loc.T("meeting.accuse_title"), Loc.F("meeting.accuse_confirm", Loc.PlayerName(v, player)), Loc.T("meeting.accuse_ok"),
+                () => ClientState.I.Send(ActionVerb.Accuse, "", player), true);
+        }
+
+        void UpdateFootagePanel(PlayerView v)
+        {
+            int my = ClientState.I.MySlot;
+            bool defenseMine = (v.Phase == MatchPhase.MeetingDefense1 || v.Phase == MatchPhase.MeetingDefense2) && v.Meeting.Speaker == my;
+            bool informant = v.Me.Role == Role.Informant && GameInfo.PresentPhase(v.Phase);
+            bool allowed = v.Features.Footage && v.Me.FootageLeft > 0 && (defenseMine || informant);
+            _footagePanel.Show(allowed);
+            if (!allowed) return;
+            _footagePanel.SendToBack();
+            _footageLeft.text = Loc.F("footage.left", v.Me.FootageLeft);
+            int max = GameInfo.FootageMaxSecond(v);
+            if (_footageSlider.highValue != max)
+            {
+                _footageSlider.highValue = max;
+                if (_footageSlider.value > max) _footageSlider.value = max;
+            }
+            _footageTime.text = Loc.MatchSeconds(_footageSlider.value);
+        }
+
+        // ------------------------------------------------------------------ verdict
+
+        static void BuildVerdict(VisualElement parent, PlayerView v, VerdictView vd)
+        {
+            Title(Loc.T("meeting.verdict_title"), "h2").AddTo(parent);
+            var who = Box("row").AddTo(parent);
+            Badge(vd.FiredPlayer, "badge-xl").AddTo(who);
+            var wc = Box("col", "grow").AddTo(who);
+            wc.style.marginLeft = 14;
+            Bold(Loc.T("meeting.fired_is"), "t-muted").AddTo(wc);
+            Title(Loc.Upper(Loc.PlayerName(v, vd.FiredPlayer)), "verdict-name").AddTo(wc);
+            Text(Loc.F("meeting.formula", (vd.VoteWeight * 100).ToString("0"), (vd.RiskWeight * 100).ToString("0"), (vd.PerformanceWeight * 100).ToString("0")), "t-small", "t-muted").AddTo(parent);
+
+            float max = 0.01f;
+            foreach (var c in vd.Candidates)
+            {
+                float total = vd.VoteWeight * c.VoteShare + vd.RiskWeight * c.RiskNormalized + vd.PerformanceWeight * c.PerformanceDeficit;
+                if (total > max) max = total;
+            }
+            foreach (var c in vd.Candidates)
+            {
+                var row = Box("score-row").AddTo(parent);
+                if (c.Player == vd.FiredPlayer) row.AddToClassList("score-fired");
+                var head = Box("score-head").AddTo(row);
+                Badge(c.Player, "badge-s").AddTo(head);
+                Bold(Loc.PlayerName(v, c.Player), "score-name").AddTo(head);
+                Title(c.Score.ToString("0.00"), "score-total").AddTo(head);
+                var bar = Box("score-bar").AddTo(row);
+                Seg(bar, "seg-vote", vd.VoteWeight * c.VoteShare / max);
+                Seg(bar, "seg-risk", vd.RiskWeight * c.RiskNormalized / max);
+                Seg(bar, "seg-perf", vd.PerformanceWeight * c.PerformanceDeficit / max);
+                string detail = Loc.F("meeting.score_detail", c.Votes, (c.VoteShare * 100).ToString("0"), c.ObservedRisk.ToString("0.#"), c.Performance.ToString("0"));
+                if (c.FavorDiscount > 0.001f) detail += " · " + Loc.F("meeting.favor_discount", c.FavorDiscount.ToString("0.00"));
+                Text(detail, "score-detail").AddTo(row);
+            }
+            var legend = Box("legend").AddTo(parent);
+            Legend(legend, "seg-vote", Loc.T("meeting.col_votes"));
+            Legend(legend, "seg-risk", Loc.T("meeting.col_risk"));
+            Legend(legend, "seg-perf", Loc.T("meeting.col_perf"));
+            if (vd.TieBreakUsed != TieBreak.None) Bold(Loc.T("meeting.tiebreak." + vd.TieBreakUsed), "t-accent", "mt-s").AddTo(parent);
             if (vd.KeyEvidence.Count > 0 || vd.KeyObservations.Count > 0)
             {
-                Bold(Loc.T("meeting.key_reasons"), "h3").AddTo(_side);
+                Section(parent, Loc.T("meeting.key_reasons"), "warning");
                 foreach (int id in vd.KeyEvidence)
-                {
-                    var e = v.Evidence.FirstOrDefault(x => x.Id == id);
-                    if (e != null) Text("• " + Describe.Evidence(e, v), "small", "label-wrap").AddTo(_side);
-                }
+                    foreach (var e in v.Evidence) if (e.Id == id) Text("• " + Describe.Evidence(e, v), "t-small").AddTo(parent);
                 foreach (int id in vd.KeyObservations)
-                {
-                    var o = v.Observations.FirstOrDefault(x => x.Id == id);
-                    if (o != null) Text("• " + Describe.Observation(o, v), "small", "label-wrap").AddTo(_side);
-                }
+                    foreach (var o in v.Observations) if (o.Id == id) Text("• " + Describe.Observation(o, v), "t-small").AddTo(parent);
             }
         }
-    }
 
-    /// <summary>Firing, full reveal (roles, objectives, true misconduct, who really did what), recap and rematch.</summary>
-    public sealed class ResultsScreen : UiKit.Screen
-    {
-        readonly VisualElement _content;
-        readonly Label _timer;
-        int _builtFor = -1;
-        MatchPhase _builtPhase;
-        bool _played;
-
-        public ResultsScreen(VisualElement parent) : base(parent)
+        static void Seg(VisualElement bar, string cls, float fraction)
         {
-            var card = Box("card", "results-modal").AddTo(Root);
-            var head = Box("row").AddTo(card);
-            Title(Loc.T("results.title"), "h1", "grow").AddTo(head);
-            _timer = Bold("", "muted").AddTo(head);
-            _content = new ScrollView().Cls("grow").AddTo(card).contentContainer;
+            var s = Box("seg", cls).AddTo(bar);
+            s.style.width = Length.Percent(Mathf.Clamp01(fraction) * 100f);
         }
 
-        protected override void OnShow() { _builtFor = -1; _played = false; }
-
-        public override void Tick()
+        static void Legend(VisualElement parent, string cls, string text)
         {
-            if (!Visible) return;
-            var cs = ClientState.I;
-            var v = cs.View;
-            if (v == null) return;
-            int key = v.MatchId * 1000 + (v.Me.RematchVoted ? 1 : 0) + (v.Result != null ? 2 : 0) + v.Log.Count(l => l.Kind == EventType.RematchVote) * 10;
-            _timer.text = v.Phase == MatchPhase.Results ? Loc.F("results.rematch_hint", Clock(v.PhaseEndTime - cs.Now)) : "";
-            if (key == _builtFor && v.Phase == _builtPhase) return;
-            _builtFor = key;
-            _builtPhase = v.Phase;
-            _content.Clear();
-            if (v.Phase == MatchPhase.Abandoned)
-            {
-                Title(Loc.T("results.abandoned"), "big-result", "warn").AddTo(_content);
-                Text(Loc.T("abandon." + v.AbandonReason), "h3").AddTo(_content);
-                Text(Loc.T("results.abandoned_note"), "muted").AddTo(_content);
-                Btn(Loc.T("pause.leave"), () => ConnectionManager.I.Leave(), "btn-danger").AddTo(_content);
-                return;
-            }
-            var r = v.Result;
-            if (r == null) { Text(Loc.T("results.waiting"), "muted").AddTo(_content); return; }
-            if (!_played)
-            {
-                _played = true;
-                Sfx.Play("fired");
-            }
-
-            Title(Loc.F("results.fired", Loc.PlayerName(v, r.FiredPlayer).ToUpperInvariant()), "big-result", "warn").AddTo(_content);
-            Bold(r.CompanySucceeded ? Loc.F("results.company_ok", r.QuotaPoints.ToString("0"), r.QuotaTarget.ToString("0")) : Loc.F("results.company_fail", r.QuotaPoints.ToString("0"), r.QuotaTarget.ToString("0")), "h2", r.CompanySucceeded ? "good" : "warn").AddTo(_content);
-            Bold(Loc.F("results.informant_was", Loc.PlayerName(v, r.InformantPlayer)) + " " + Loc.T(r.InformantWon ? "results.informant_won" : "results.informant_lost"), "h3").AddTo(_content);
-
-            Title(Loc.T("results.players"), "h2").AddTo(_content);
-            float maxMis = Mathf.Max(1f, r.Players.Count == 0 ? 1f : r.Players.Max(p => p.TrueMisconduct));
-            foreach (var p in r.Players.OrderBy(p => p.MisconductRank))
-            {
-                var row = Box("outcome-row", p.Won ? "outcome-win" : "outcome-lose").AddTo(_content);
-                Chip(p.Player, true).AddTo(row);
-                var col = Box("col", "grow").AddTo(row);
-                Bold(p.Name + " — " + Loc.T(p.Role == Role.Informant ? "role.informant" : "role.employee") + (p.Fired ? " · " + Loc.T("results.fired_tag") : ""), "h3").AddTo(col);
-                string obj = p.Role == Role.Informant ? Loc.ObjectiveName(ObjectiveType.InformantGoal) : Loc.ObjectiveName(p.ObjectiveType) + (p.ObjectiveTarget >= 0 ? " (" + Loc.PlayerName(v, p.ObjectiveTarget) + ")" : "");
-                Text(obj + " — " + Loc.T(p.ObjectiveCompleted ? "results.obj_done" : "results.obj_not_done") + " · " + Loc.T(p.ExplanationKey), "small", "label-wrap").AddTo(col);
-                Text(Loc.F("results.stats", p.FinalPerformance.ToString("0.#"), p.TasksCompleted, p.SabotageCount, p.TrueMisconduct.ToString("0.#")) + (p.FalseAccusationPenalty > 0 ? " · " + Loc.F("results.false_accusation", p.FalseAccusationPenalty.ToString("0.#")) : ""), "small").AddTo(col);
-                var bar = Box("mis-bar").AddTo(col);
-                bar.style.width = Length.Percent(Mathf.Clamp01(p.TrueMisconduct / maxMis) * 60f + 1f);
-                if (p.Titles.Count > 0) Text(string.Join(" · ", p.Titles.Select(Loc.T)), "accent").AddTo(col);
-                Bold(Loc.T(p.Won ? "results.win" : "results.lose"), p.Won ? "good" : "warn").AddTo(row);
-            }
-
-            Title(Loc.T("results.truth"), "h2").AddTo(_content);
-            if (r.Incidents.Count == 0) Text(Loc.T("results.no_incidents"), "muted").AddTo(_content);
-            foreach (var i in r.Incidents) Text("• " + Loc.Time(i.Time, v) + " " + Describe.Incident(i, v), "small", "label-wrap").AddTo(_content);
-
-            Title(Loc.T("results.recap"), "h2").AddTo(_content);
-            foreach (var b in r.Recap) Text("• " + Describe.Recap(b, v), "small", "label-wrap").AddTo(_content);
-
-            var row2 = Box("row").AddTo(_content);
-            var rem = Btn(v.Me.RematchVoted ? Loc.T("results.rematch_voted") : Loc.T("results.rematch"), () => ClientState.I.Send(ActionVerb.RematchVote), "btn-primary").AddTo(row2);
-            rem.SetEnabled(!v.Me.RematchVoted && v.Phase == MatchPhase.Results);
-            int votes = v.Log.Count(l => l.Kind == EventType.RematchVote);
-            Text(Loc.F("results.rematch_votes", votes, v.Players.Count(p => p.Connected)), "muted").AddTo(row2);
-            if (ConnectionManager.I.HostController != null)
-            {
-                Btn(Loc.T("results.force_rematch"), () => ConnectionManager.I.HostController.StartRematch(), "btn-small").AddTo(row2);
-                Btn(Loc.T("pause.return_lobby"), () => ConnectionManager.I.HostController.ReturnToLobby(), "btn-small").AddTo(row2);
-            }
-            Text(Loc.F("results.hash", r.ResultHash), "muted", "small").AddTo(_content);
+            var i = Box("legend-item").AddTo(parent);
+            Box("legend-swatch", cls).AddTo(i);
+            Text(text, "t-tiny").AddTo(i);
         }
     }
 }

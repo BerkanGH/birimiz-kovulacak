@@ -1,0 +1,46 @@
+{
+  "_comment": "Character materials (owned by the characters pipeline; Art/palette.json stays the shared world palette). Same format as palette.json: sRGB hex, smooth = URP smoothness, metal, emit, alpha; unlit = URP Unlit (outline hulls). Colours follow the 2D portraits in Art/UI/portraits. Material swaps per look use name prefixes: M_Bean*, M_Shoe*, M_Tie*, M_Suit*.",
+  "materials": {
+    "M_BeanBlue":       { "color": "#2F8FDE", "smooth": 0.55 },
+    "M_BeanYellow":     { "color": "#F6CF55", "smooth": 0.55 },
+    "M_BeanPink":       { "color": "#F06B88", "smooth": 0.55 },
+    "M_BeanGreen":      { "color": "#3C9A6C", "smooth": 0.55 },
+    "M_BeanOrange":     { "color": "#F4853C", "smooth": 0.55 },
+    "M_BeanPurple":     { "color": "#A872D0", "smooth": 0.55 },
+    "M_BeanSlate":      { "color": "#6F86A6", "smooth": 0.5 },
+
+    "M_BeanTeal":       { "color": "#33BEC4", "smooth": 0.55 },
+    "M_BeanCoral":      { "color": "#F56B6E", "smooth": 0.55 },
+    "M_BeanGold":       { "color": "#F2C463", "smooth": 0.55 },
+    "M_BeanViolet":     { "color": "#A45DD6", "smooth": 0.55 },
+    "M_BeanBrown":      { "color": "#B07444", "smooth": 0.5 },
+
+    "M_Outline":        { "color": "#16203D", "smooth": 0.0, "unlit": true },
+    "M_ShoeNavy":       { "color": "#1E2846", "smooth": 0.45 },
+    "M_ShoeBlack":      { "color": "#1A1B22", "smooth": 0.6 },
+    "M_CollarCream":    { "color": "#F7EEDF", "smooth": 0.2 },
+
+    "M_TieGreenDark":   { "color": "#2C715A", "smooth": 0.4 },
+    "M_TieForest":      { "color": "#1F5546", "smooth": 0.4 },
+    "M_TieOrange":      { "color": "#E2582A", "smooth": 0.4 },
+    "M_TieGold":        { "color": "#E8B12E", "smooth": 0.65, "metal": 0.4 },
+
+    "M_GlassesNavy":    { "color": "#18223F", "smooth": 0.7 },
+    "M_LensDark":       { "color": "#0E1220", "smooth": 0.95 },
+    "M_HairNavy":       { "color": "#1D2B50", "smooth": 0.45 },
+    "M_HeadsetNavy":    { "color": "#24304F", "smooth": 0.5 },
+    "M_Beanie":         { "color": "#1E2D55", "smooth": 0.15 },
+    "M_BeanieCuff":     { "color": "#182447", "smooth": 0.15 },
+    "M_ScarfTeal":      { "color": "#3DB6B1", "smooth": 0.2 },
+    "M_ScarfTealDark":  { "color": "#1E7F7D", "smooth": 0.2 },
+    "M_ScarfYellow":    { "color": "#F0B634", "smooth": 0.35 },
+    "M_MoustacheNavy":  { "color": "#1E2235", "smooth": 0.3 },
+    "M_TrenchBelt":     { "color": "#8A6A3E", "smooth": 0.35 },
+    "M_Clipboard":      { "color": "#C9935A", "smooth": 0.3 },
+
+    "M_SuitDefault":    { "color": "#2D3142", "smooth": 0.3 },
+    "M_SuitNavy":       { "color": "#1E2B52", "smooth": 0.3 },
+    "M_SuitGreen":      { "color": "#2F6A55", "smooth": 0.3 },
+    "M_SuitTrench":     { "color": "#E2BC79", "smooth": 0.25 }
+  }
+}
