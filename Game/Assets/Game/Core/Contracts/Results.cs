@@ -67,6 +67,8 @@ namespace BirimizKovulacak.Core
         public List<int> EmployeeOfTheMonth = new List<int>();
         /// <summary>Player(s) with the highest positive favour at the verdict.</summary>
         public List<int> Favourites = new List<int>();
+        /// <summary>"Gunun klibi": replay of the decisive incident (null if there was none).</summary>
+        public HighlightView Highlight;
     }
 
     [Serializable]
