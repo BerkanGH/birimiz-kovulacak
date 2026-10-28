@@ -99,7 +99,7 @@ namespace BirimizKovulacak.Game
     public static class FeelLayers
     {
         /// <summary>~1.3 m cubicle partitions (map v2). Blocks avatar line of sight, not glass.</summary>
-        public const int Partitions = 12;
+        public const int Partitions = Layers.Partitions;
         public static int SightBlockers => (1 << Layers.Walls) | (1 << Partitions);
         public static int CameraOccluders => (1 << Layers.Walls) | (1 << Partitions);
         public static int SoundBlockers => 1 << Layers.Walls;

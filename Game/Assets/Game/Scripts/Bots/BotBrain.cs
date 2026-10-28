@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using BirimizKovulacak.Core;
@@ -148,7 +148,10 @@ namespace BirimizKovulacak.Game
                 Vector3 next = _corner < _corners.Length ? _corners[_corner] : _plan.Goal;
                 Vector3 d = next - pos; d.y = 0;
                 if (d.magnitude < 0.35f && _corner < _corners.Length) _corner++;
-                avatar.Drive(Time.time < _unstickUntil ? _unstickDir : d.normalized, raid && Rand() < 0.02f, dt);
+                bool sneak = !string.IsNullOrEmpty(_intent) && Time.time < _intentUntil && flat.magnitude < 6f;
+                OwnerNetworkTransform.SetCrouched(avatar.gameObject, sneak);
+                Vector3 dir = Time.time < _unstickUntil ? _unstickDir : d.normalized;
+                avatar.Drive(sneak ? dir * LocalPlayerController.CrouchSpeedFactor : dir, raid && Rand() < 0.02f, dt);
                 if ((pos - _lastPos).magnitude < 0.01f)
                 {
                     if (Time.time - _stuckSince > 1.2f && Time.time > _unstickUntil)
@@ -165,6 +168,7 @@ namespace BirimizKovulacak.Game
                 return;
             }
             avatar.Drive(Vector3.zero, false, dt);
+            OwnerNetworkTransform.SetCrouched(avatar.gameObject, false);
             Vector3 target;
             if (!string.IsNullOrEmpty(_plan.TargetId) && OfficeWorld.I != null && OfficeWorld.I.TryTargetPosition(_plan.TargetId, out target))
                 avatar.FaceTowards(target, dt);

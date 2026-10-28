@@ -6,7 +6,8 @@ namespace BirimizKovulacak.Game
     /// <summary>Line of sight for the manager and witnesses: only opaque walls block (glass and desks do not).</summary>
     public sealed class UnityWorldQueries : IWorldQueries
     {
-        public static int OccluderMask => LayerMask.GetMask(Layers.WallsName);
+        // Partitions are ~1.3 m: eye-height rays pass over them, but they keep the rules consistent with what players see.
+        public static int OccluderMask => (1 << Layers.Walls) | (1 << Layers.Partitions);
 
         public bool HasLineOfSight(Vec3 from, Vec3 to)
         {

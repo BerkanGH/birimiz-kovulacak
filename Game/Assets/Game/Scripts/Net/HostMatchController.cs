@@ -476,7 +476,8 @@ namespace BirimizKovulacak.Game
                 _speed[slot] = speed;
                 _slots[slot].LastPosition = p;
                 _slots[slot].LastYaw = avatar.transform.eulerAngles.y;
-                _engine.UpdateAvatar(slot, new AvatarSample { Position = new Vec3(p.x, p.y, p.z), Yaw = avatar.transform.eulerAngles.y, Speed = speed });
+                _engine.UpdateAvatar(slot, new AvatarSample { Position = new Vec3(p.x, p.y, p.z), Yaw = avatar.transform.eulerAngles.y, Speed = speed,
+                    Crouched = OwnerNetworkTransform.IsCrouched(avatar.gameObject) });
             }
         }
 
