@@ -1,0 +1,68 @@
+[
+  {
+    "id": "app_tasks",
+    "path": "Art/UI/phone/app_tasks.png",
+    "w": 192,
+    "h": 192,
+    "category": "phone",
+    "nineSlice": null,
+    "screenRect": null,
+    "hasText": false,
+    "description": "A cream clipboard with two chunky green check marks, on a rounded-square office-green app tile with navy border. Centered symbol occupies 70% tile. No writing, no letters."
+  },
+  {
+    "id": "app_cards",
+    "path": "Art/UI/phone/app_cards.png",
+    "w": 192,
+    "h": 192,
+    "category": "phone",
+    "nineSlice": null,
+    "screenRect": null,
+    "hasText": false,
+    "description": "Two fanned manila sabotage cards, front one with bold stamp-red lightning bolt, on a cream rounded-square app tile with navy border. Centered symbol occupies70% tile. No writing, no letters."
+  },
+  {
+    "id": "app_contacts",
+    "path": "Art/UI/phone/app_contacts.png",
+    "w": 192,
+    "h": 192,
+    "category": "phone",
+    "nineSlice": null,
+    "screenRect": null,
+    "hasText": false,
+    "description": "A manila address book with three teal tabs and simple navy capsule-person silhouette on cover, on a teal rounded-square app tile with navy border. Centered symbol occupies70% tile. No writing, no letters."
+  },
+  {
+    "id": "app_inbox",
+    "path": "Art/UI/phone/app_inbox.png",
+    "w": 192,
+    "h": 192,
+    "category": "phone",
+    "nineSlice": null,
+    "screenRect": null,
+    "hasText": false,
+    "description": "A cream envelope with red circular seal in a small green inbox tray, on a manila rounded-square app tile with navy border. Centered symbol occupies70% tile. No writing, no letters."
+  },
+  {
+    "id": "app_notes",
+    "path": "Art/UI/phone/app_notes.png",
+    "w": 192,
+    "h": 192,
+    "category": "phone",
+    "nineSlice": null,
+    "screenRect": null,
+    "hasText": false,
+    "description": "A large sticky-yellow note with a curled corner and red paperclip, three abstract navy rules, on a cream rounded-square app tile with navy border. Centered symbol occupies70% tile. No writing, no letters."
+  },
+  {
+    "id": "app_hr",
+    "path": "Art/UI/phone/app_hr.png",
+    "w": 192,
+    "h": 192,
+    "category": "phone",
+    "nineSlice": null,
+    "screenRect": null,
+    "hasText": false,
+    "description": "A cream shield containing a bold navy magnifying-glass eye symbol, on a teal rounded-square app tile with navy border. Centered symbol occupies70% tile. No writing, no letters."
+  }
+]

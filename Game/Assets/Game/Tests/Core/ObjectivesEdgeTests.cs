@@ -10,7 +10,7 @@ namespace BirimizKovulacak.Core.Tests
         private static MatchSetup Objective(string card, int target = 1)
         {
             MatchSetup setup = TestMatch.Setup();
-            setup.ForceObjectives = new List<string> { card, "FIXER", "SCAPEGOAT", "" };
+            setup.ForceObjectives = new List<string> { card, card == "FIXER" ? "UNNOTICED" : "FIXER", card == "SCAPEGOAT" ? "QUIET_STAR" : "SCAPEGOAT", "" };
             setup.ForceTargets = new List<int> { target, -1, 0, -1 };
             return setup;
         }

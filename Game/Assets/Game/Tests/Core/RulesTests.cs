@@ -1054,7 +1054,7 @@ namespace BirimizKovulacak.Core.Tests
         public void ManagerHonorsConeLineOfSightAndInspectionPhase()
         {
             var world = new ToggleWorld();
-            Vec3 stop = DefaultOffice.DeskPositions[0] + new Vec3(0, 0, -2);
+            Vec3 stop = DefaultOffice.Create().GetDesk(0).Position + new Vec3(0, 0, -2);
             var m = new TestMatch(world: world, arrange: l =>
             {
                 l.ManagerHome = stop + new Vec3(0, 0, -1);
@@ -1135,13 +1135,14 @@ namespace BirimizKovulacak.Core.Tests
         }
 
         [Test]
-        public void FullFourPlayerMatchCompletesEveryTaskAndSabotageType()
+        public void FullFourPlayerMatchCompletesEveryV1TaskAndSabotageType()
         {
             var m = ScriptedMatch();
             Assert.AreEqual(MatchPhase.Results, m.Engine.Phase);
-            foreach (TaskType type in Enum.GetValues(typeof(TaskType)))
+            foreach (TaskType type in new[] { TaskType.Coffee, TaskType.Report, TaskType.Phone, TaskType.CleanDesk })
                 Assert.IsTrue(m.Events.Any(e => e.Type == EventType.TaskCompleted && e.IntArg == (int)type), type.ToString());
-            foreach (SabotageType type in Enum.GetValues(typeof(SabotageType)))
+            foreach (SabotageType type in new[] { SabotageType.NameplateSwap, SabotageType.PlantItem, SabotageType.LockWorkstation,
+                SabotageType.HideReport, SabotageType.SpillCoffee, SabotageType.MoveClutter, SabotageType.EvidenceTampering })
                 Assert.IsTrue(m.View().Result.Incidents.Any(i => i.Type == type), type.ToString());
             Assert.IsTrue(m.View().Result.CompanySucceeded);
             Assert.AreEqual(1, m.View().Result.Players.Count(p => p.Fired));

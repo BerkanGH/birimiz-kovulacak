@@ -1,0 +1,167 @@
+[
+  {
+    "id": "mgr_paragoz",
+    "path": "Art/UI/portraits/mgr_paragoz.png",
+    "w": 512,
+    "h": 512,
+    "category": "portraits",
+    "nineSlice": null,
+    "screenRect": null,
+    "hasText": false,
+    "description": "Hasan Bey: golden bean, moustache, navy suit, gold tie and watch; money-hungry grin."
+  },
+  {
+    "id": "mgr_paragoz_angry",
+    "path": "Art/UI/portraits/mgr_paragoz_angry.png",
+    "w": 512,
+    "h": 512,
+    "category": "portraits",
+    "nineSlice": null,
+    "screenRect": null,
+    "hasText": false,
+    "description": "Hasan Bey: golden bean, moustache, navy suit, gold tie and watch Angry expression variant, identity and pose preserved."
+  },
+  {
+    "id": "mgr_disiplinci",
+    "path": "Art/UI/portraits/mgr_disiplinci.png",
+    "w": 512,
+    "h": 512,
+    "category": "portraits",
+    "nineSlice": null,
+    "screenRect": null,
+    "hasText": false,
+    "description": "Nermin Hanım: teal bean, sharp glasses, tight bun, green suit and clipboard; stern."
+  },
+  {
+    "id": "mgr_disiplinci_angry",
+    "path": "Art/UI/portraits/mgr_disiplinci_angry.png",
+    "w": 512,
+    "h": 512,
+    "category": "portraits",
+    "nineSlice": null,
+    "screenRect": null,
+    "hasText": false,
+    "description": "Nermin Hanım: teal bean, sharp glasses, tight bun, green suit and clipboard Angry expression variant, identity and pose preserved."
+  },
+  {
+    "id": "mgr_kayirmaci",
+    "path": "Art/UI/portraits/mgr_kayirmaci.png",
+    "w": 512,
+    "h": 512,
+    "category": "portraits",
+    "nineSlice": null,
+    "screenRect": null,
+    "hasText": false,
+    "description": "Selin Hanım: coral bean, flashy scarf, sunglasses on head and big smile."
+  },
+  {
+    "id": "mgr_kayirmaci_angry",
+    "path": "Art/UI/portraits/mgr_kayirmaci_angry.png",
+    "w": 512,
+    "h": 512,
+    "category": "portraits",
+    "nineSlice": null,
+    "screenRect": null,
+    "hasText": false,
+    "description": "Selin Hanım: coral bean, flashy scarf, sunglasses on head and big smile. Angry expression variant, identity and pose preserved."
+  },
+  {
+    "id": "mgr_paranoyak",
+    "path": "Art/UI/portraits/mgr_paranoyak.png",
+    "w": 512,
+    "h": 512,
+    "category": "portraits",
+    "nineSlice": null,
+    "screenRect": null,
+    "hasText": false,
+    "description": "Kemal Bey: purple bean, dark glasses, raised trench-coat collar and suspicious squint."
+  },
+  {
+    "id": "mgr_paranoyak_angry",
+    "path": "Art/UI/portraits/mgr_paranoyak_angry.png",
+    "w": 512,
+    "h": 512,
+    "category": "portraits",
+    "nineSlice": null,
+    "screenRect": null,
+    "hasText": false,
+    "description": "Kemal Bey: purple bean, dark glasses, raised trench-coat collar and suspicious squint. Angry expression variant, identity and pose preserved."
+  },
+  {
+    "id": "player_0",
+    "path": "Art/UI/portraits/player_0.png",
+    "w": 512,
+    "h": 512,
+    "category": "portraits",
+    "nineSlice": null,
+    "screenRect": null,
+    "hasText": false,
+    "description": "Mavi, player slot 0: tall blue bean with green tie."
+  },
+  {
+    "id": "player_1",
+    "path": "Art/UI/portraits/player_1.png",
+    "w": 512,
+    "h": 512,
+    "category": "portraits",
+    "nineSlice": null,
+    "screenRect": null,
+    "hasText": false,
+    "description": "Sarı, player slot 1: round yellow bean with glasses."
+  },
+  {
+    "id": "player_2",
+    "path": "Art/UI/portraits/player_2.png",
+    "w": 512,
+    "h": 512,
+    "category": "portraits",
+    "nineSlice": null,
+    "screenRect": null,
+    "hasText": false,
+    "description": "Pembe, player slot 2: pink bean with hair bun."
+  },
+  {
+    "id": "player_3",
+    "path": "Art/UI/portraits/player_3.png",
+    "w": 512,
+    "h": 512,
+    "category": "portraits",
+    "nineSlice": null,
+    "screenRect": null,
+    "hasText": false,
+    "description": "Yeşil, player slot 3: short green bean with headset."
+  },
+  {
+    "id": "player_4",
+    "path": "Art/UI/portraits/player_4.png",
+    "w": 512,
+    "h": 512,
+    "category": "portraits",
+    "nineSlice": null,
+    "screenRect": null,
+    "hasText": false,
+    "description": "Turuncu, player slot 4: orange bean with navy beanie."
+  },
+  {
+    "id": "player_5",
+    "path": "Art/UI/portraits/player_5.png",
+    "w": 512,
+    "h": 512,
+    "category": "portraits",
+    "nineSlice": null,
+    "screenRect": null,
+    "hasText": false,
+    "description": "Mor, player slot 5: purple bean with curly hair and teal scarf."
+  },
+  {
+    "id": "player_unknown",
+    "path": "Art/UI/portraits/player_unknown.png",
+    "w": 512,
+    "h": 512,
+    "category": "portraits",
+    "nineSlice": null,
+    "screenRect": null,
+    "hasText": false,
+    "description": "Neutral anonymous slate bean placeholder for an unoccupied player slot."
+  }
+]

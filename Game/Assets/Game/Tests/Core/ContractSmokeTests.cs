@@ -5,19 +5,19 @@ namespace BirimizKovulacak.Core.Tests
     public class ContractSmokeTests
     {
         [Test]
-        public void DefaultConfigTimelineIsEightMinutes()
+        public void DefaultConfigTimelineIncludesV2Discussion()
         {
             var config = MatchConfig.CreateDefault();
-            Assert.AreEqual(480f, config.Durations.Total(), 0.001f);
+            Assert.AreEqual(495f, config.Durations.Total(), 0.001f);
             Assert.AreEqual(12, config.Objectives.Count);
-            Assert.AreEqual(7, config.Sabotage.Count);
+            Assert.AreEqual(12, config.Sabotage.Count);
         }
 
         [Test]
-        public void DefaultOfficeHasFourDesksAndUniqueIds()
+        public void DefaultOfficeHasSixDesksAndUniqueIds()
         {
             var layout = DefaultOffice.Create();
-            Assert.AreEqual(4, layout.Desks.Count);
+            Assert.AreEqual(Protocol.MaxPlayers, layout.Desks.Count);
             var ids = new System.Collections.Generic.HashSet<string>();
             foreach (var s in layout.Slots) Assert.IsTrue(ids.Add(s.Id), "duplicate " + s.Id);
             foreach (var s in layout.Stations) Assert.IsTrue(ids.Add(s.Id), "duplicate " + s.Id);

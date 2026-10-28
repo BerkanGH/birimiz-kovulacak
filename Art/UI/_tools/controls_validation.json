@@ -1,0 +1,354 @@
+[
+  {
+    "id": "primary_normal",
+    "bytes": 2611,
+    "cornerAlpha": [
+      0,
+      0,
+      0,
+      0
+    ],
+    "screenRectClear": false
+  },
+  {
+    "id": "primary_hover",
+    "bytes": 2786,
+    "cornerAlpha": [
+      0,
+      0,
+      0,
+      0
+    ],
+    "screenRectClear": false
+  },
+  {
+    "id": "primary_pressed",
+    "bytes": 2382,
+    "cornerAlpha": [
+      0,
+      0,
+      0,
+      0
+    ],
+    "screenRectClear": false
+  },
+  {
+    "id": "primary_disabled",
+    "bytes": 2597,
+    "cornerAlpha": [
+      0,
+      0,
+      0,
+      0
+    ],
+    "screenRectClear": false
+  },
+  {
+    "id": "secondary_normal",
+    "bytes": 3095,
+    "cornerAlpha": [
+      0,
+      0,
+      0,
+      0
+    ],
+    "screenRectClear": false
+  },
+  {
+    "id": "secondary_hover",
+    "bytes": 3134,
+    "cornerAlpha": [
+      0,
+      0,
+      0,
+      0
+    ],
+    "screenRectClear": false
+  },
+  {
+    "id": "secondary_pressed",
+    "bytes": 2970,
+    "cornerAlpha": [
+      0,
+      0,
+      0,
+      0
+    ],
+    "screenRectClear": false
+  },
+  {
+    "id": "secondary_disabled",
+    "bytes": 2597,
+    "cornerAlpha": [
+      0,
+      0,
+      0,
+      0
+    ],
+    "screenRectClear": false
+  },
+  {
+    "id": "danger_normal",
+    "bytes": 2861,
+    "cornerAlpha": [
+      0,
+      0,
+      0,
+      0
+    ],
+    "screenRectClear": false
+  },
+  {
+    "id": "danger_hover",
+    "bytes": 2878,
+    "cornerAlpha": [
+      0,
+      0,
+      0,
+      0
+    ],
+    "screenRectClear": false
+  },
+  {
+    "id": "danger_pressed",
+    "bytes": 2736,
+    "cornerAlpha": [
+      0,
+      0,
+      0,
+      0
+    ],
+    "screenRectClear": false
+  },
+  {
+    "id": "danger_disabled",
+    "bytes": 2597,
+    "cornerAlpha": [
+      0,
+      0,
+      0,
+      0
+    ],
+    "screenRectClear": false
+  },
+  {
+    "id": "ghost_normal",
+    "bytes": 2295,
+    "cornerAlpha": [
+      0,
+      0,
+      0,
+      0
+    ],
+    "screenRectClear": false
+  },
+  {
+    "id": "ghost_hover",
+    "bytes": 3487,
+    "cornerAlpha": [
+      0,
+      0,
+      0,
+      0
+    ],
+    "screenRectClear": false
+  },
+  {
+    "id": "ghost_pressed",
+    "bytes": 2415,
+    "cornerAlpha": [
+      0,
+      0,
+      0,
+      0
+    ],
+    "screenRectClear": false
+  },
+  {
+    "id": "ghost_disabled",
+    "bytes": 2467,
+    "cornerAlpha": [
+      0,
+      0,
+      0,
+      0
+    ],
+    "screenRectClear": false
+  },
+  {
+    "id": "panel_paper",
+    "bytes": 16254,
+    "cornerAlpha": [
+      0,
+      0,
+      0,
+      0
+    ],
+    "screenRectClear": false
+  },
+  {
+    "id": "panel_folder",
+    "bytes": 16153,
+    "cornerAlpha": [
+      0,
+      0,
+      0,
+      0
+    ],
+    "screenRectClear": false
+  },
+  {
+    "id": "panel_sticky",
+    "bytes": 8435,
+    "cornerAlpha": [
+      0,
+      0,
+      0,
+      0
+    ],
+    "screenRectClear": false
+  },
+  {
+    "id": "tooltip",
+    "bytes": 3778,
+    "cornerAlpha": [
+      0,
+      0,
+      0,
+      0
+    ],
+    "screenRectClear": false
+  },
+  {
+    "id": "progress_bar_bg",
+    "bytes": 1884,
+    "cornerAlpha": [
+      0,
+      0,
+      0,
+      0
+    ],
+    "screenRectClear": false
+  },
+  {
+    "id": "progress_bar_fill_green",
+    "bytes": 1498,
+    "cornerAlpha": [
+      0,
+      0,
+      0,
+      0
+    ],
+    "screenRectClear": false
+  },
+  {
+    "id": "progress_bar_fill_red",
+    "bytes": 1627,
+    "cornerAlpha": [
+      0,
+      0,
+      0,
+      0
+    ],
+    "screenRectClear": false
+  },
+  {
+    "id": "toggle_on",
+    "bytes": 5025,
+    "cornerAlpha": [
+      0,
+      0,
+      0,
+      0
+    ],
+    "screenRectClear": false
+  },
+  {
+    "id": "toggle_off",
+    "bytes": 5127,
+    "cornerAlpha": [
+      0,
+      0,
+      0,
+      0
+    ],
+    "screenRectClear": false
+  },
+  {
+    "id": "slider_track",
+    "bytes": 1085,
+    "cornerAlpha": [
+      0,
+      0,
+      0,
+      0
+    ],
+    "screenRectClear": false
+  },
+  {
+    "id": "slider_knob",
+    "bytes": 3159,
+    "cornerAlpha": [
+      0,
+      0,
+      0,
+      0
+    ],
+    "screenRectClear": false
+  },
+  {
+    "id": "tab_active",
+    "bytes": 2337,
+    "cornerAlpha": [
+      0,
+      0,
+      0,
+      0
+    ],
+    "screenRectClear": false
+  },
+  {
+    "id": "tab_inactive",
+    "bytes": 2196,
+    "cornerAlpha": [
+      0,
+      0,
+      0,
+      0
+    ],
+    "screenRectClear": false
+  },
+  {
+    "id": "phone_frame",
+    "bytes": 31498,
+    "cornerAlpha": [
+      0,
+      0,
+      0,
+      0
+    ],
+    "screenRectClear": true
+  },
+  {
+    "id": "projector_frame",
+    "bytes": 19809,
+    "cornerAlpha": [
+      0,
+      0,
+      0,
+      0
+    ],
+    "screenRectClear": true
+  },
+  {
+    "id": "cctv_overlay",
+    "bytes": 10430,
+    "cornerAlpha": [
+      0,
+      0,
+      0,
+      0
+    ],
+    "screenRectClear": false
+  }
+]

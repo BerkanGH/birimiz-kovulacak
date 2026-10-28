@@ -35,3 +35,8 @@ Tools/CoreTests/TestResults/
 .worktrees/
 *.log
 Art/Previews/tmp/
+
+# 2D art run: raw generations and contact sheets stay local (regenerate with Art/UI/_tools)
+Art/UI/_sources/
+Art/UI/_sheets/
+

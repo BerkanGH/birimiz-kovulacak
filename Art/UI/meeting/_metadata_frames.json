@@ -1,0 +1,29 @@
+[
+  {
+    "id": "projector_frame",
+    "path": "Art/UI/meeting/projector_frame.png",
+    "w": 1600,
+    "h": 900,
+    "category": "meeting",
+    "nineSlice": null,
+    "screenRect": [
+      86,
+      100,
+      1428,
+      690
+    ],
+    "hasText": false,
+    "description": "Roll-down projector casing with transparent slide aperture [86,100,1428,690], top-left coordinates. Fixed aspect; do not nine-slice."
+  },
+  {
+    "id": "cctv_overlay",
+    "path": "Art/UI/meeting/cctv_overlay.png",
+    "w": 1280,
+    "h": 720,
+    "category": "meeting",
+    "nineSlice": null,
+    "screenRect": null,
+    "hasText": false,
+    "description": "Transparent CCTV overlay: soft navy scanlines, four paper corner brackets and red recording dot. No baked-in text or timecode."
+  }
+]
