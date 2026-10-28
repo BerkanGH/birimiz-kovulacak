@@ -98,6 +98,7 @@ Categories: `Sfx.Volume` (master), `Sfx.EffectsVolume` (`settings.sfx_volume`), 
 | `vhs` + CCTV screen look (3 s) | `FootageShown` — FeelDirector |
 | `gavel` | phase → MeetingDiscussion, MeetingVerdict — FeelDirector |
 | `stamp` + ink burst, `confetti` | Results +1.2 s (or the UI's stamp moment, see ui) — FeelDirector / `FeelHooks.ResultsStamp` |
+| `splash` / `dust` (3D) + coffee splash / dust puff VFX | a desk's `Spill` turns on / `ClutterCount` rises (view diff) — FeelDirector |
 | `emote_pop` (3D, only if visible) / `wheel_tick` / `crouch` | emote start / wheel selection / crouch toggle |
 | `ambience_hum`, `ambience_keys` (2D loops) | always; ×0.3 in the meeting, ×0.2 in results, hum off in a power cut — Ambience |
 
@@ -109,7 +110,9 @@ not add sounds for the events in the table.
 
 `FxPool.Play(FxKind.CoffeeSplash | Sparks | DustPuff | Confetti | StampBurst, pos[, rot])`,
 `FxPool.StampBurstAtScreen(px)`, `FxPool.ConfettiAtScreenEdges()`, `FxPool.Exclaim(pos)` ("!" pop),
-`FxPool.SetSweat(on, headPos)` (local only: manager patrolling within 6 m while I carry a suspicious item / someone
+Triggers: a desk's `Spill` false→true → coffee splash + `splash`; its `ClutterCount` rises → dust puff + `dust`
+(both from view diffs, never on the first view of a match); `PlugPulled` → sparks + flash light; Results → stamp burst +
+confetti (not when you are the one fired). `FxPool.SetSweat(on, headPos)` (local only: manager patrolling within 6 m while I carry a suspicious item / someone
 else's nameplate / a mug I know is salted), `FxPool.SetSaltSparkle(on, pos)` (only the salter/taster ever has a
 `KnownSalted` mug; never shown on a carrier you cannot see). `ScreenFx.SetBlackout(on)` (state-driven from
 `view.Office.PowerDown`, flickers on), `ScreenFx.Cctv(seconds)`, `ScreenFx.SetCctv(hold)`.
@@ -235,8 +238,10 @@ public sealed class UIRoot : MonoBehaviour, IFeelUi
   allocations** in these paths after warm-up (renderer/occluder caches fill the first time an avatar or wall is seen;
   emote / email callbacks allocate only on key press). LocalPlayerController's focus scoring reuses its collections; the
   engine's `Affordances.For` still allocates its lists every 80 ms (engine code).
-- Audio memory: ≈ 46 s of mono 22.05 kHz ≈ 1.0 M samples ≈ 4 MB as float PCM (v1 clips halved by the rate change);
-  2 ambience sources + 12 pooled 3D voices + ≤ 8 loops. Synthesis once at startup (logged `[Sfx] N clips synthesised in X ms`).
+- Audio memory (measured by running `SfxSynth` outside Unity): 47 clips, 39.8 s of mono 22.05 kHz = 0.88 M samples
+  ≈ 3.4 MB as float PCM (v1 clips halved by the 44.1 → 22.05 kHz change); no NaN/clipping, loop seams continuous.
+  Synthesis 114 ms in .NET 8 Release — expect 0.1–0.3 s under Mono, once at boot behind the menu (logged as
+  `[Sfx] N clips synthesised in X ms`). Sources: 1 2D + 12 pooled 3D voices + 2 ambience + ≤ 8 keyed loops.
 - FX: 11 ParticleSystems, 2 materials, one 32×32 texture (no CPU copy), 3 TMP objects, 1 point light (enabled only during
   a spark flash), 2 runtime volume profiles (disabled at weight 0).
 - Bots / batch mode: no clips, no FX, no visibility pass.

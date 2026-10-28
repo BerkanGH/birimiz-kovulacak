@@ -34,6 +34,9 @@ namespace BirimizKovulacak.Game
         readonly float[] _happyUntil = new float[Max];
         readonly bool[] _ringing = new bool[Max];
         readonly bool[] _ringSeen = new bool[Max];
+        const int MaxDesks = 16;
+        readonly sbyte[] _deskSpill = new sbyte[MaxDesks];   // -1 unknown (first view of a match never fires)
+        readonly short[] _deskClutter = new short[MaxDesks];
 
         int _lastMatch = int.MinValue;
         int _lastReaction = -1;
@@ -85,6 +88,7 @@ namespace BirimizKovulacak.Game
                 _shockUntil[i] = 0f;
                 _happyUntil[i] = 0f;
             }
+            for (int i = 0; i < MaxDesks; i++) { _deskSpill[i] = -1; _deskClutter[i] = -1; }
             _lastReaction = -1;
             _myVerb = ActionVerb.None;
             _callState = CallState.None;
@@ -266,6 +270,7 @@ namespace BirimizKovulacak.Game
             ScreenFx.SetBlackout(office && view.Office != null && view.Office.PowerDown);
             UpdateRinging(cs, view, office);
             UpdatePlayers(cs, view);
+            UpdateDesks(view, office);
             UpdateManagerReaction(cs, view);
             UpdateLocalCues(cs, view, office);
             if (Time.time >= _nextExpr)
@@ -358,6 +363,38 @@ namespace BirimizKovulacak.Game
                 {
                     sbyte c = OwnerNetworkTransform.IsCrouched(a.gameObject) ? (sbyte)1 : (sbyte)0;
                     if (c != _crouch[id]) { _crouch[id] = c; feel.SetCrouched(c == 1); }
+                }
+            }
+        }
+
+        /// <summary>Coffee splash when a desk gets a spill, dust puff when clutter lands on it (seen → VFX, heard → sound).</summary>
+        void UpdateDesks(PlayerView view, bool office)
+        {
+            for (int i = 0; i < view.Desks.Count; i++)
+            {
+                var d = view.Desks[i];
+                int k = d.Index;
+                if (k < 0 || k >= MaxDesks) continue;
+                sbyte spill = d.Spill ? (sbyte)1 : (sbyte)0;
+                short clutter = (short)d.ClutterCount;
+                bool known = _deskSpill[k] >= 0;
+                bool newSpill = known && spill == 1 && _deskSpill[k] == 0;
+                bool newClutter = known && clutter > _deskClutter[k];
+                _deskSpill[k] = spill;
+                _deskClutter[k] = clutter;
+                if (!office || (!newSpill && !newClutter)) continue;
+                Vector3 p;
+                if (!DeskPoint(d.Id, 0.8f, out p)) continue;
+                bool seen = AvatarVisibility.CanSee(p);
+                if (newSpill)
+                {
+                    Sfx.PlayAt("splash", p, 0.9f);
+                    if (seen) FxPool.Play(FxKind.CoffeeSplash, p);
+                }
+                if (newClutter)
+                {
+                    Sfx.PlayAt("dust", p, 0.7f);
+                    if (seen) FxPool.Play(FxKind.DustPuff, p);
                 }
             }
         }
