@@ -46,3 +46,13 @@ Codex logs: `Builds/codex/*.log`, last messages `Builds/codex/*_last.txt`. Basel
 - 03:40 feel merged + integrated (crouch → engine samples, partitions in LOS mask, bots sneak) `04bca20`.
 - 03:50 Codex v2.1 (highlight replay, positioned footage) merged: **382 tests green on main**. Codex cross-review of
   Claude's Unity-side code running (read-only snapshot `.worktrees/review`).
+- 04:05 **memory, visible windows, 4 bots:** RC 720 MB working set / 1.27 GB private → v2 build 427 MB / 855 MB per
+  process (−41 % / −33 %; D3D11 + MSAA 2x + stripping). Hidden windows had silently disabled screenshots → script fixed.
+- 04:10 Codex art run 2 (how-to ×6, weekday banners, title badges, bubbles, app icon, store capsules) → main; exe icon
+  wired in the builder.
+- 04:15 Codex cross-review: 5 verified findings (camera spring blow-up at low FPS, carried-item visibility leak, bot
+  footage time origin, observation feedback lost, bot hang-up timer) — all fixed (`6e2add8`).
+- 04:25 voice merged (native libopus 1.5.2 primary, Concentus fallback; 0 B/frame; 70 tests; ~21 kbps on the wire;
+  call privacy tested) `3387b80`.
+- 04:35 characters merged: 6 player looks + 4 profile managers matching the portraits, face atlas, 48 clips; builder
+  log "Characters: avatar (6 looks), manager (5 looks)". Unity build 4 OK (0.9 min).
