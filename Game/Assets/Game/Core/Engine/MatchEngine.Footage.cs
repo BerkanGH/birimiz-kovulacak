@@ -4,11 +4,12 @@ namespace BirimizKovulacak.Core
 {
     public sealed partial class MatchEngine
     {
-        // Private, compact host samples. Only requested sightings ever become contract DTOs.
+        // Private, compact host samples. Only camera sightings and the Results highlight become DTOs.
         private struct PositionSample
         {
             internal double Time;
             internal Vec3 Position;
+            internal float Yaw;
             internal string Carrying;
             internal int Player;
             internal PublicActivity Activity;
@@ -47,7 +48,8 @@ namespace BirimizKovulacak.Core
 
         private void AdvanceFootage()
         {
-            if (Phase < MatchPhase.Briefing || Phase > MatchPhase.FinalInspection || clock < nextPositionSample) return;
+            // Drain zero-length phases before sampling: they may lead straight into the meeting freeze.
+            if (Phase < MatchPhase.Briefing || Phase > MatchPhase.FinalInspection || clock >= phaseEnd || clock < nextPositionSample) return;
             RecordPositions();
             positionSampleOrdinal++;
             nextPositionSample = footageMatchStart + positionSampleOrdinal * positionSampleInterval;
@@ -74,7 +76,7 @@ namespace BirimizKovulacak.Core
                 else positionLogCount++;
                 positionLog[index] = new PositionSample
                 {
-                    Time = clock, Position = player.Avatar.Position, Player = p, Activity = player.Public.Activity,
+                    Time = clock, Position = player.Avatar.Position, Yaw = player.Avatar.Yaw, Player = p, Activity = player.Public.Activity,
                     Carrying = carrying, Crouched = player.Avatar.Crouched, Dark = officeStatus.PowerDown
                 };
             }
@@ -129,7 +131,7 @@ namespace BirimizKovulacak.Core
                 footage.Sightings.Add(new FootageSighting
                 {
                     Player = sample.Player, Time = sample.Time, Activity = sample.Activity,
-                    Carrying = sample.Carrying, Crouched = sample.Crouched
+                    Carrying = sample.Carrying, Crouched = sample.Crouched, Position = sample.Position, Yaw = sample.Yaw
                 });
             }
             footage.NoRecording = anySample && !anyLight;

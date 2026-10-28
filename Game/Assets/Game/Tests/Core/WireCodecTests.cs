@@ -156,6 +156,7 @@ namespace BirimizKovulacak.Core.Tests
         [TestCase(typeof(SessionHistory))]
         [TestCase(typeof(PlayerView))]
         [TestCase(typeof(HostDebugView))]
+        [TestCase(typeof(HighlightView))]
         public void SnapshotsCopyEveryContractFieldWithoutSharingMutableObjects(Type type)
         {
             int serial = 1;
@@ -190,6 +191,25 @@ namespace BirimizKovulacak.Core.Tests
                     Players = new List<PlayerOutcome> { new PlayerOutcome { Cards = null } } }
             };
             AssertFields(view, WireCodec.DecodeView(WireCodec.EncodeView(view)), "view");
+        }
+
+        [Test]
+        public void HighlightPresenceAndNullOrEmptySamplesRoundTripAndHaveDistinctHashes()
+        {
+            var highlights = new[]
+            {
+                null,
+                new HighlightView { Samples = null },
+                new HighlightView { Samples = new List<FootageSighting>() },
+                new HighlightView { Samples = new List<FootageSighting> { null } }
+            };
+            var hashes = new HashSet<string>();
+            foreach (HighlightView highlight in highlights)
+            {
+                var view = new PlayerView { Result = new MatchResultView { Highlight = highlight } };
+                AssertFields(view, WireCodec.DecodeView(WireCodec.EncodeView(view)), "view");
+                Assert.IsTrue(hashes.Add(WireCodec.HashResult(view.Result)), "Highlight presence and sample-list shape affect the hash.");
+            }
         }
 
         private static Type MessageType(string message)
@@ -328,7 +348,8 @@ namespace BirimizKovulacak.Core.Tests
             return Convert.ChangeType(Convert.ToInt64(value) + 1, type);
         }
 
-        private static void VisitLeaves(object value, string path, Action<Type, object, Action<object>, string> visit)
+        private static void VisitLeaves(object value, string path, Action<Type, object, Action<object>, string> visit,
+            Action<object> assignParent = null)
         {
             if (value is IList list)
             {
@@ -338,7 +359,7 @@ namespace BirimizKovulacak.Core.Tests
                     Type type = list[i].GetType();
                     if (type.IsPrimitive || type.IsEnum || type == typeof(string))
                         visit(type, list[i], changed => list[index] = changed, path + "[" + i + "]");
-                    else VisitLeaves(list[i], path + "[" + i + "]", visit);
+                    else VisitLeaves(list[i], path + "[" + i + "]", visit, changed => list[index] = changed);
                 }
                 return;
             }
@@ -346,8 +367,17 @@ namespace BirimizKovulacak.Core.Tests
             {
                 Type type = field.FieldType;
                 if (type.IsPrimitive || type.IsEnum || type == typeof(string))
-                    visit(type, field.GetValue(value), changed => field.SetValue(value, changed), path + "." + field.Name);
-                else VisitLeaves(field.GetValue(value), path + "." + field.Name, visit);
+                    visit(type, field.GetValue(value), changed =>
+                    {
+                        field.SetValue(value, changed);
+                        assignParent?.Invoke(value);
+                    }, path + "." + field.Name);
+                // Reflection boxes structs such as Vec3; write the mutated box back through its parents.
+                else VisitLeaves(field.GetValue(value), path + "." + field.Name, visit, changed =>
+                {
+                    field.SetValue(value, changed);
+                    assignParent?.Invoke(value);
+                });
             }
         }
     }
