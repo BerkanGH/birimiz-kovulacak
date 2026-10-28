@@ -265,6 +265,12 @@ namespace BirimizKovulacak.Game
 
         public void Hide() { SetVisible(false); }
 
+        protected override void OnHide()
+        {
+            _art.Clear(); // drop references, then unload the 1280x720 pictures
+            for (int i = 0; i < PageArt.Length; i++) UiArt.Release(PageArt[i]);
+        }
+
         void Show(int page)
         {
             _page = Mathf.Clamp(page, 0, Pages - 1);

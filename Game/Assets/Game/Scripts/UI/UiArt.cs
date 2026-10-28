@@ -29,6 +29,18 @@ namespace BirimizKovulacak.Game
 
         public static bool Has(string path) { return Tex(path) != null; }
 
+        /// <summary>
+        /// Unloads a big texture that is only used on one screen (menu backgrounds, how-to pictures). Callers must clear
+        /// every style that references it first; the next Tex() reloads it.
+        /// </summary>
+        public static void Release(string path)
+        {
+            Texture2D t;
+            if (!_cache.TryGetValue(path, out t)) return;
+            _cache.Remove(path);
+            if (t != null) Resources.UnloadAsset(t);
+        }
+
         /// <summary>Sets the element's background image if the texture exists.</summary>
         public static bool Apply(VisualElement e, string path)
         {

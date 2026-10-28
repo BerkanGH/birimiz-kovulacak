@@ -24,7 +24,6 @@ namespace BirimizKovulacak.Game
 
         public MainMenuScreen(VisualElement parent) : base(parent, "menu-bg")
         {
-            UiArt.Apply(Root, "backgrounds/menu_bg");
             var layout = Box("menu-layout").AddTo(Root);
             var col = Box("col", "center").AddTo(layout);
 
@@ -151,7 +150,15 @@ namespace BirimizKovulacak.Game
                 ConnectionManager.I.StartClient(PlayerName(), address, port, token);
         }
 
-        protected override void OnShow() { ShowJoin(false); }
+        protected override void OnShow() { ShowJoin(false); UiArt.Apply(Root, "backgrounds/menu_bg"); }
+
+        // A hidden field must not keep keyboard focus (feel suppresses Y/N/T while a text field is focused).
+        protected override void OnHide()
+        {
+            _name.Blur(); _address.Blur(); _port.Blur();
+            Root.style.backgroundImage = StyleKeyword.Null; // 1920x1080 background is not needed during a match
+            UiArt.Release("backgrounds/menu_bg");
+        }
 
         float _nextCheck;
         public override void Tick()
@@ -179,7 +186,6 @@ namespace BirimizKovulacak.Game
 
         public LobbyScreen(VisualElement parent) : base(parent, "menu-bg", "center")
         {
-            UiArt.Apply(Root, "backgrounds/lobby_bg");
             var card = Panel("panel-folder", "lobby").AddTo(Root);
             var head = Box("lobby-head").AddTo(card);
             Title(Loc.T("lobby.title"), "h1").AddTo(head);
@@ -220,7 +226,13 @@ namespace BirimizKovulacak.Game
             NetSession.Instance.SetReady(mine == null || !mine.Ready);
         }
 
-        protected override void OnShow() { _lastHash = int.MinValue; }
+        protected override void OnShow() { _lastHash = int.MinValue; UiArt.Apply(Root, "backgrounds/lobby_bg"); }
+
+        protected override void OnHide()
+        {
+            Root.style.backgroundImage = StyleKeyword.Null;
+            UiArt.Release("backgrounds/lobby_bg");
+        }
 
         public override void Tick()
         {
