@@ -1,83 +1,95 @@
 """Builds every office prop and interactive item as a separate FBX.
 
-Run:  blender -b --factory-startup -P Art/Scripts/build_props.py [-- --previews]
+Run:  blender -b --factory-startup -P Art/Scripts/build_props.py [-- --previews] [--each]
 Outputs: Art/Blender/props.blend, Game/Assets/Game/Art/Models/Props/<Name>.fbx, Art/Previews/props_*.png
 
+Props live in three modules that share one registry (map_kit.PROPS): this file (desk kit, v1 furniture, items),
+map_props_office.py (cubicles, manager office, meeting room, reception, safety) and map_props_rooms.py (kitchen,
+copy room, storage, restroom, server room, lounge).
+
 Pivot: bottom centre (wall-mounted props: back centre). Front/usable side faces Blender -Y (Unity -Z).
-Named sub-objects that the Unity side drives: Drawer (desk), Screen (computer), Coffee (mug fill),
-Stripe (nameplate colour), Handset + RingLight (phone), StatusLight (printer), Door (cleaning closet).
+Before export every prop is merged to one body mesh (one submesh per material) plus the named sub-objects that the
+Unity side drives (map_kit.DRIVEN: Drawer, Screen, Coffee, Stripe, Handset, RingLight, StatusLight, Leds, ...).
 """
-import bpy
 import math
 import os
 import random
 import sys
 
+sys.dont_write_bytecode = True
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+import bpy  # noqa: E402
 import bk_common as bk  # noqa: E402
+import map_kit  # noqa: E402
+from map_kit import prop, root, uv_plane, cable  # noqa: E402
 
 R = math.radians
-PROPS = []
+PROPS = map_kit.PROPS
 
 
-def prop(fn):
-    PROPS.append(fn)
-    return fn
-
-
-def root(name, c):
-    return bk.empty(name, c)
-
-
-# --------------------------------------------------------------------------------------------- furniture
+# --------------------------------------------------------------------------------------------- desk kit
 
 @prop
 def desk(c):
     r = root("Desk", c)
     bk.box("Top", (1.8, 0.9, 0.04), c, "M_DeskWood", r, (0, 0, 0.74), bevel=0.012)
+    bk.box("Edge", (1.8, 0.02, 0.03), c, "M_DarkWood", r, (0, -0.45, 0.735))
     bk.box("LegPanel", (0.05, 0.84, 0.72), c, "M_DeskFrame", r, (-0.86, 0, 0.36), bevel=0.01)
     bk.box("Pedestal", (0.44, 0.8, 0.70), c, "M_DeskFrame", r, (0.6, 0, 0.37), bevel=0.01)
     bk.box("Modesty", (1.2, 0.02, 0.36), c, "M_DeskFrame", r, (-0.22, 0.42, 0.5))
+    bk.box("CableTray", (0.9, 0.12, 0.05), c, "M_DarkMetal", r, (-0.3, 0.33, 0.66))
+    bk.cylinder("Grommet", 0.03, 0.005, c, "M_PlasticDark", r, (-0.25, 0.36, 0.761), segments=12)
     bk.box("LowerDrawer", (0.40, 0.03, 0.30), c, "M_DeskWood", r, (0.6, -0.405, 0.22), bevel=0.006)
     bk.box("LowerHandle", (0.14, 0.025, 0.02), c, "M_Metal", r, (0.6, -0.43, 0.3))
     drawer = bk.empty("Drawer", c, (0.6, 0, 0.55), r)
     bk.box("DrawerFront", (0.40, 0.03, 0.22), c, "M_DeskWood", drawer, (0, -0.415, 0), bevel=0.006)
     bk.box("DrawerBody", (0.36, 0.6, 0.16), c, "M_DeskFrame", drawer, (0, -0.11, -0.01))
     bk.box("DrawerHandle", (0.14, 0.025, 0.02), c, "M_Metal", drawer, (0, -0.44, 0.02))
-    return r
-
-
-@prop
-def office_chair(c):
-    r = root("OfficeChair", c)
-    bk.box("Seat", (0.5, 0.48, 0.09), c, "M_ChairFabric", r, (0, 0, 0.48), bevel=0.03)
-    back = bk.box("Back", (0.46, 0.07, 0.52), c, "M_ChairFabric", r, (0, -0.25, 0.82), bevel=0.03)
-    back.rotation_euler = (R(-8), 0, 0)
-    bk.box("BackBar", (0.05, 0.05, 0.3), c, "M_PlasticDark", r, (0, -0.25, 0.5))
-    for sx in (-1, 1):
-        bk.box("ArmRest", (0.05, 0.3, 0.04), c, "M_PlasticDark", r, (0.27 * sx, 0.0, 0.66), bevel=0.01)
-        bk.box("ArmPost", (0.04, 0.04, 0.16), c, "M_PlasticDark", r, (0.27 * sx, -0.06, 0.58))
-    bk.cylinder("Gas", 0.03, 0.34, c, "M_Metal", r, (0, 0, 0.27), segments=12)
-    for i in range(5):
-        a = 2 * math.pi * i / 5
-        leg = bk.box("Leg", (0.3, 0.05, 0.04), c, "M_PlasticDark", r, (math.cos(a) * 0.15, math.sin(a) * 0.15, 0.08))
-        leg.rotation_euler = (0, 0, a)
-        bk.sphere("Wheel", 0.03, c, "M_PlasticDark", r, (math.cos(a) * 0.29, math.sin(a) * 0.29, 0.03), segments=10, rings=6)
+    bk.box("DrawerPapers", (0.26, 0.34, 0.03), c, "M_Manila", drawer, (0, -0.1, 0.06))
     return r
 
 
 @prop
 def computer(c):
+    """Desk PC. Screen (UV plane) swaps material: desktop / lock screen / password-locked / off / no signal."""
     r = root("Computer", c)
-    bk.box("Monitor", (0.56, 0.035, 0.34), c, "M_PlasticDark", r, (0, 0.03, 0.33), bevel=0.01)
-    bk.box("Screen", (0.51, 0.006, 0.29), c, "M_Screen", r, (0, 0.0105, 0.335))
-    bk.box("Neck", (0.05, 0.03, 0.17), c, "M_PlasticDark", r, (0, 0.06, 0.1))
-    bk.box("Foot", (0.22, 0.16, 0.015), c, "M_PlasticDark", r, (0, 0.05, 0.0075), bevel=0.005)
-    bk.box("Keyboard", (0.42, 0.14, 0.022), c, "M_PlasticDark", r, (0, -0.28, 0.011), bevel=0.006)
-    bk.box("Keys", (0.39, 0.11, 0.006), c, "M_PlasticWhite", r, (0, -0.28, 0.024))
-    bk.sphere("Mouse", 0.035, c, "M_PlasticDark", r, (0.3, -0.28, 0.012), scale=(0.75, 1.15, 0.45))
+    bk.box("Monitor", (0.6, 0.04, 0.37), c, "M_PlasticDark", r, (0, 0.035, 0.345), bevel=0.012)
+    bk.box("MonitorBack", (0.36, 0.06, 0.22), c, "M_PlasticDark", r, (0, 0.075, 0.34), bevel=0.02)
+    uv_plane("Screen", 0.55, 0.31, c, "M_ScreenDesktop", r, (0, 0.013, 0.35))
+    bk.box("Chin", (0.12, 0.004, 0.012), c, "M_Metal", r, (0, 0.013, 0.177))
+    bk.sphere("PcLed", 0.006, c, "M_LEDBlue", r, (0.27, 0.012, 0.172), segments=6, rings=4)
+    bk.box("Neck", (0.06, 0.035, 0.2), c, "M_DarkMetal", r, (0, 0.09, 0.11), bevel=0.008)
+    bk.box("Foot", (0.24, 0.17, 0.016), c, "M_DarkMetal", r, (0, 0.07, 0.008), bevel=0.006)
+    bk.box("Keyboard", (0.44, 0.15, 0.022), c, "M_PlasticDark", r, (0, -0.28, 0.011), bevel=0.006)
+    bk.box("Keys", (0.41, 0.12, 0.006), c, "M_PlasticWhite", r, (0, -0.28, 0.024))
+    bk.box("Pad", (0.24, 0.2, 0.003), c, "M_InkNavy", r, (0.34, -0.27, 0.0015))
+    bk.sphere("Mouse", 0.035, c, "M_PlasticDark", r, (0.34, -0.27, 0.012), scale=(0.75, 1.15, 0.45), segments=10, rings=6)
+    cable("Cord", [(0, 0.1, 0.05), (0.05, 0.25, 0.0), (0.2, 0.3, -0.0)], 0.006, c, "M_Cable", r)
     return r
 
+
+@prop
+def office_chair(c):
+    """Task chair; the M_ChairFabric parts are recoloured with the desk owner's colour in Unity."""
+    r = root("OfficeChair", c)
+    bk.box("Seat", (0.5, 0.48, 0.09), c, "M_ChairFabric", r, (0, 0.02, 0.48), bevel=0.035)
+    back = bk.box("Back", (0.46, 0.07, 0.56), c, "M_ChairFabric", r, (0, -0.26, 0.84), bevel=0.035)
+    back.rotation_euler = (R(-8), 0, 0)
+    bk.box("BackShell", (0.42, 0.03, 0.5), c, "M_PlasticDark", r, (0, -0.3, 0.84), bevel=0.012).rotation_euler = (R(-8), 0, 0)
+    bk.box("BackBar", (0.05, 0.05, 0.3), c, "M_PlasticDark", r, (0, -0.27, 0.52))
+    for sx in (-1, 1):
+        bk.box("ArmRest", (0.06, 0.3, 0.04), c, "M_PlasticDark", r, (0.28 * sx, 0.0, 0.67), bevel=0.012)
+        bk.box("ArmPost", (0.04, 0.04, 0.17), c, "M_PlasticDark", r, (0.28 * sx, -0.06, 0.58))
+    bk.cylinder("Gas", 0.03, 0.34, c, "M_Metal", r, (0, 0, 0.27), segments=12)
+    for i in range(5):
+        a = 2 * math.pi * i / 5
+        leg = bk.box("Leg", (0.3, 0.05, 0.04), c, "M_PlasticDark", r, (math.cos(a) * 0.15, math.sin(a) * 0.15, 0.08))
+        leg.rotation_euler = (0, 0, a)
+        bk.sphere("Wheel", 0.03, c, "M_PlasticDark", r, (math.cos(a) * 0.29, math.sin(a) * 0.29, 0.03), segments=8, rings=5)
+    return r
+
+
+# --------------------------------------------------------------------------------------------- furniture & items (v1, kept)
 
 @prop
 def padlock(c):
@@ -160,13 +172,18 @@ def bookshelf(c):
 @prop
 def meeting_table(c):
     r = root("MeetingTable", c)
-    bk.box("Top", (3.0, 1.4, 0.05), c, "M_PlasticWhite", r, (0, 0, 0.745), bevel=0.02)
+    bk.box("Top", (4.2, 1.5, 0.05), c, "M_WoodMidA", r, (0, 0, 0.745), bevel=0.02)
+    bk.box("Inlay", (3.6, 0.7, 0.004), c, "M_InkNavy", r, (0, 0, 0.772))
     for sx in (-1, 1):
-        bk.box("Leg", (0.1, 1.0, 0.7), c, "M_DarkMetal", r, (1.1 * sx, 0, 0.36), bevel=0.01)
-        bk.box("Foot", (0.14, 1.2, 0.03), c, "M_DarkMetal", r, (1.1 * sx, 0, 0.015))
-    bk.cylinder("Speaker", 0.12, 0.03, c, "M_PlasticDark", r, (0, 0, 0.785), segments=3)
-    bk.box("Laptop", (0.34, 0.24, 0.015), c, "M_Metal", r, (-0.8, -0.3, 0.78), bevel=0.004)
-    lid = bk.box("LaptopLid", (0.34, 0.01, 0.23), c, "M_Metal", r, (-0.8, -0.18, 0.885))
+        bk.box("Leg", (0.12, 1.0, 0.7), c, "M_DarkMetal", r, (1.5 * sx, 0, 0.36), bevel=0.01)
+        bk.box("Foot", (0.16, 1.2, 0.03), c, "M_DarkMetal", r, (1.5 * sx, 0, 0.015))
+    bk.box("Beam", (3.0, 0.1, 0.08), c, "M_DarkMetal", r, (0, 0, 0.6))
+    bk.cylinder("Speaker", 0.12, 0.03, c, "M_PlasticDark", r, (0.3, 0, 0.785), segments=3)
+    for i, x in enumerate((-1.4, 0.0, 1.4)):
+        bk.box("Notepad", (0.18, 0.24, 0.01), c, "M_Sticky" if i % 2 else "M_Paper", r, (x + 0.1, -0.5, 0.775)).rotation_euler = (0, 0, R(8 - i * 6))
+        bk.box("NotepadB", (0.18, 0.24, 0.01), c, "M_Paper", r, (x - 0.1, 0.5, 0.775)).rotation_euler = (0, 0, R(-6 + i * 5))
+    bk.box("Laptop", (0.34, 0.24, 0.015), c, "M_Metal", r, (-1.6, -0.3, 0.78), bevel=0.004)
+    lid = bk.box("LaptopLid", (0.34, 0.01, 0.23), c, "M_Metal", r, (-1.6, -0.18, 0.885))
     lid.rotation_euler = (R(-15), 0, 0)
     return r
 
@@ -212,17 +229,6 @@ def corkboard(c):
         note.rotation_euler = (0, R(rnd.uniform(-10, 10)), 0)
     return r
 
-
-@prop
-def sofa(c):
-    r = root("Sofa", c)
-    bk.box("Base", (2.0, 0.85, 0.4), c, "M_Sofa", r, (0, 0, 0.22), bevel=0.05)
-    bk.box("Back", (2.0, 0.22, 0.5), c, "M_Sofa", r, (0, 0.32, 0.62), bevel=0.06)
-    for sx in (-1, 1):
-        bk.box("Arm", (0.22, 0.85, 0.32), c, "M_Sofa", r, (0.95 * sx, 0, 0.52), bevel=0.06)
-    for sx in (-1, 1):
-        bk.box("Cushion", (0.78, 0.6, 0.14), c, "M_Sofa", r, (0.41 * sx, -0.05, 0.48), bevel=0.05)
-    return r
 
 
 @prop
@@ -333,127 +339,26 @@ def alarm_light(c):
 
 # ------------------------------------------------------------------------------------------- stations
 
-@prop
-def counter(c):
-    r = root("Counter", c)
-    bk.box("Cabinet", (2.0, 0.6, 0.88), c, "M_PlasticWhite", r, (0, 0, 0.44), bevel=0.01)
-    bk.box("Top", (2.04, 0.64, 0.04), c, "M_DarkWood", r, (0, -0.01, 0.9), bevel=0.008)
-    for i in range(4):
-        x = -0.75 + i * 0.5
-        bk.box("Door", (0.46, 0.015, 0.74), c, "M_PlasticWhite", r, (x, -0.305, 0.44), bevel=0.004)
-        bk.box("Handle", (0.02, 0.02, 0.14), c, "M_Metal", r, (x + 0.18 * (1 if i % 2 else -1), -0.32, 0.62))
-    bk.cylinder("SugarJar", 0.05, 0.12, c, "M_Water", r, (0.75, 0.1, 0.98), segments=14)
-    for i in range(3):
-        bk.cylinder("Cup", 0.035, 0.08, c, "M_PlasticWhite", r, (0.5, 0.15, 0.96 + i * 0.03), radius_top=0.04, segments=12)
-    return r
 
 
-@prop
-def coffee_machine(c):
-    r = root("CoffeeMachine", c)
-    bk.box("Body", (0.34, 0.36, 0.44), c, "M_PlasticDark", r, (0, 0.02, 0.22), bevel=0.02)
-    bk.box("Hopper", (0.22, 0.2, 0.12), c, "M_Metal", r, (0, 0.06, 0.5), bevel=0.01)
-    bk.box("Beans", (0.18, 0.16, 0.02), c, "M_Coffee", r, (0, 0.06, 0.56))
-    bk.box("Panel", (0.3, 0.02, 0.1), c, "M_DarkMetal", r, (0, -0.165, 0.37))
-    bk.box("Display", (0.1, 0.006, 0.05), c, "M_Screen", r, (-0.06, -0.177, 0.37))
-    bk.cylinder("Button", 0.022, 0.02, c, "M_PlasticRed", r, (0.08, -0.18, 0.37), rotation=(R(90), 0, 0), segments=12)
-    bk.box("Spout", (0.07, 0.07, 0.05), c, "M_Metal", r, (0, -0.19, 0.27), bevel=0.01)
-    bk.box("DripTray", (0.26, 0.14, 0.025), c, "M_Metal", r, (0, -0.2, 0.0125), bevel=0.005)
-    return r
 
-
-@prop
-def mug_shelf(c):
-    r = root("MugShelf", c)
-    bk.box("Base", (0.56, 0.22, 0.02), c, "M_DeskWood", r, (0, 0, 0.01), bevel=0.004)
-    for sx in (-1, 1):
-        bk.box("Post", (0.02, 0.2, 0.26), c, "M_DeskWood", r, (0.27 * sx, 0.0, 0.13))
-    bk.box("TopShelf", (0.56, 0.22, 0.02), c, "M_DeskWood", r, (0, 0, 0.26), bevel=0.004)
-    bk.box("Sign", (0.2, 0.005, 0.05), c, "M_Paper", r, (0, -0.112, 0.235))
-    return r
-
-
-@prop
-def printer(c):
-    r = root("Printer", c)
-    bk.box("Body", (0.7, 0.6, 0.86), c, "M_PlasticWhite", r, (0, 0.0, 0.43), bevel=0.02)
-    bk.box("Scanner", (0.66, 0.42, 0.1), c, "M_PlasticDark", r, (0, 0.08, 0.91), bevel=0.012)
-    bk.box("OutputTray", (0.42, 0.26, 0.02), c, "M_PlasticDark", r, (-0.05, -0.2, 0.87))
-    bk.box("TrayLip", (0.42, 0.02, 0.05), c, "M_PlasticDark", r, (-0.05, -0.33, 0.885))
-    panel = bk.box("Panel", (0.2, 0.12, 0.05), c, "M_DarkMetal", r, (0.24, -0.22, 0.92), bevel=0.008)
-    panel.rotation_euler = (R(25), 0, 0)
-    disp = bk.box("Display", (0.14, 0.008, 0.06), c, "M_Screen", r, (0.24, -0.255, 0.935))
-    disp.rotation_euler = (R(-65), 0, 0)
-    bk.sphere("StatusLight", 0.014, c, "M_PlasticGreen", r, (0.31, -0.29, 0.9), segments=10, rings=6)
-    for i, z in enumerate((0.18, 0.45)):
-        bk.box("PaperDrawer", (0.64, 0.02, 0.22), c, "M_PlasticWhite", r, (0, -0.305, z), bevel=0.005)
-        bk.box("DrawerHandle", (0.2, 0.025, 0.03), c, "M_PlasticDark", r, (0, -0.32, z + 0.06))
-    bk.box("Plinth", (0.66, 0.56, 0.04), c, "M_PlasticDark", r, (0, 0, 0.02))
-    return r
-
-
-@prop
-def phone_table(c):
-    r = root("PhoneTable", c)
-    bk.cylinder("Top", 0.36, 0.04, c, "M_DeskWood", r, (0, 0, 1.0), segments=24, cap_bevel=0.008)
-    bk.cylinder("Pole", 0.035, 0.98, c, "M_DarkMetal", r, (0, 0, 0.5), segments=12)
-    bk.cylinder("Base", 0.25, 0.03, c, "M_DarkMetal", r, (0, 0, 0.015), segments=24)
-    phone = bk.empty("Phone", c, (0, 0, 1.02), r)
-    bk.box("PhoneBase", (0.22, 0.2, 0.06), c, "M_PlasticDark", phone, (0, 0, 0.03), bevel=0.012)
-    pad = bk.box("Keypad", (0.09, 0.09, 0.006), c, "M_PlasticWhite", phone, (0.04, -0.03, 0.063))
-    bk.sphere("RingLight", 0.014, c, "M_PlasticRed", phone, (-0.07, -0.08, 0.065), segments=8, rings=6)
-    hs = bk.empty("Handset", c, (-0.05, 0.02, 0.085), phone)
-    bk.box("HandsetGrip", (0.05, 0.2, 0.03), c, "M_PlasticDark", hs, (0, 0, 0), bevel=0.01)
-    bk.box("Ear", (0.06, 0.06, 0.04), c, "M_PlasticDark", hs, (0, 0.08, -0.008), bevel=0.012)
-    bk.box("Mouth", (0.06, 0.06, 0.04), c, "M_PlasticDark", hs, (0, -0.08, -0.008), bevel=0.012)
-    return r
 
 
 @prop
 def delivery_cabinet(c):
+    """Manager's inbox (reports, left) + coffee tray (right); slot.delivery anchor sits on the top centre (0.95 m)."""
     r = root("DeliveryCabinet", c)
-    bk.box("Cabinet", (1.0, 0.5, 0.9), c, "M_DarkWood", r, (0, 0, 0.45), bevel=0.012)
+    bk.box("Cabinet", (1.0, 0.5, 0.94), c, "M_DarkWood", r, (0, 0, 0.47), bevel=0.012)
     for sx in (-1, 1):
-        bk.box("Door", (0.47, 0.015, 0.78), c, "M_DeskWood", r, (0.245 * sx, -0.255, 0.45), bevel=0.004)
-        bk.box("Knob", (0.02, 0.02, 0.1), c, "M_Gold", r, (0.04 * sx, -0.27, 0.55))
-    # Report inbox (left) and coffee tray (right)
-    bk.box("InboxBase", (0.36, 0.42, 0.015), c, "M_DarkMetal", r, (-0.24, 0, 0.91))
+        bk.box("Door", (0.47, 0.015, 0.8), c, "M_DeskWood", r, (0.245 * sx, -0.255, 0.47), bevel=0.004)
+        bk.box("Knob", (0.02, 0.02, 0.1), c, "M_Gold", r, (0.04 * sx, -0.27, 0.6))
+    bk.box("InboxBase", (0.36, 0.42, 0.015), c, "M_DarkMetal", r, (-0.24, 0, 0.9475))
     for sx in (-1, 1):
-        bk.box("InboxSide", (0.015, 0.42, 0.07), c, "M_DarkMetal", r, (-0.24 + 0.175 * sx, 0, 0.94))
-    bk.box("InboxBack", (0.36, 0.015, 0.07), c, "M_DarkMetal", r, (-0.24, 0.205, 0.94))
-    bk.cylinder("CoffeeTray", 0.2, 0.02, c, "M_Metal", r, (0.25, 0, 0.91), segments=24, cap_bevel=0.005)
-    bk.box("SignPost", (0.03, 0.03, 0.4), c, "M_DarkMetal", r, (0, 0.2, 1.1))
-    bk.box("SignBoard", (0.56, 0.03, 0.18), c, "M_PlasticBlue", r, (0, 0.19, 1.36), bevel=0.01)
-    return r
-
-
-@prop
-def cleaning_closet(c):
-    r = root("CleaningCloset", c)
-    w, d, h = 0.8, 0.5, 1.9
-    bk.box("Back", (w, 0.03, h), c, "M_Cabinet", r, (0, d / 2 - 0.015, h / 2))
-    for sx in (-1, 1):
-        bk.box("Side", (0.03, d, h), c, "M_Cabinet", r, (sx * (w / 2 - 0.015), 0, h / 2))
-    bk.box("Roof", (w, d, 0.03), c, "M_Cabinet", r, (0, 0, h - 0.015))
-    bk.box("Floor", (w, d, 0.04), c, "M_Cabinet", r, (0, 0, 0.02))
-    bk.box("Shelf", (w - 0.06, d - 0.06, 0.025), c, "M_Cabinet", r, (0, 0, 0.88))
-    door = bk.empty("Door", c, (-w / 2, -d / 2, 0), r)
-    bk.box("DoorPanel", (w - 0.02, 0.025, h - 0.02), c, "M_Cabinet", door, ((w - 0.02) / 2, 0, h / 2), bevel=0.006)
-    bk.box("Vent", (0.4, 0.03, 0.12), c, "M_DarkMetal", door, (w / 2, -0.005, h - 0.3))
-    door.rotation_euler = (0, 0, R(-110))
-    bk.cylinder("Bucket", 0.14, 0.26, c, "M_PlasticOrange", r, (0.15, 0.02, 0.17), radius_top=0.16, segments=16)
-    bk.cylinder("MopStick", 0.015, 1.4, c, "M_DeskWood", r, (-0.2, 0.08, 0.75), rotation=(R(-6), R(5), 0), segments=8)
-    bk.ico("MopHead", 0.11, c, "M_Paper", r, (-0.21, 0.05, 0.08), scale=(1, 1, 0.6), subdiv=2, jitter=0.12, seed=5)
-    bk.box("Label", (0.3, 0.01, 0.08), c, "M_Paper", r, (0, -d / 2 + 0.03, h - 0.12))
-    return r
-
-
-@prop
-def wet_floor_sign(c):
-    r = root("WetFloorSign", c)
-    for sy in (-1, 1):
-        p = bk.box("Panel", (0.3, 0.015, 0.6), c, "M_DuckYellow", r, (0, 0.09 * sy, 0.3))
-        p.rotation_euler = (R(-12 * sy), 0, 0)
+        bk.box("InboxSide", (0.015, 0.42, 0.07), c, "M_DarkMetal", r, (-0.24 + 0.175 * sx, 0, 0.975))
+    bk.box("InboxBack", (0.36, 0.015, 0.07), c, "M_DarkMetal", r, (-0.24, 0.205, 0.975))
+    bk.cylinder("CoffeeTray", 0.2, 0.02, c, "M_Metal", r, (0.25, 0, 0.95), segments=24, cap_bevel=0.005)
+    bk.box("SignPost", (0.03, 0.03, 0.4), c, "M_DarkMetal", r, (0, 0.2, 1.14))
+    bk.box("SignBoard", (0.56, 0.03, 0.18), c, "M_PlasticBlue", r, (0, 0.19, 1.4), bevel=0.01)
     return r
 
 
@@ -653,30 +558,87 @@ def coffee_spill(c):
 
 # ------------------------------------------------------------------------------------------ main
 
-def main():
-    bk.reset_scene()
+def build_all():
+    """Build every registered prop into its own collection; returns the list of root empties."""
+    import map_props_office  # noqa: F401  (registers props)
+    import map_props_rooms  # noqa: F401
     coll = bk.collection("Props")
     roots = []
+    seen = set()
     for fn in PROPS:
         sub = bk.collection(fn.__name__, coll)
-        roots.append(fn(sub))
+        r = fn(sub)
+        if "." in r.name:
+            # a sub-object of an earlier prop took this name: rename that one, keep the prop root exact
+            want = r.name.split(".")[0]
+            other = bpy.data.objects.get(want)
+            if other is not None and other not in roots:
+                other.name = want + "Part"
+            r.name = want
+        if r.name in seen or "." in r.name:
+            raise RuntimeError("Duplicate prop name " + r.name)
+        seen.add(r.name)
+        roots.append(r)
+    return roots
+
+
+def check_driven(roots):
+    """Driven sub-object names must be exact in the prop that uses them (Blender suffixes duplicates)."""
+    need = {"Desk": ["Drawer"], "Computer": ["Screen", "PcLed"], "Mug": ["Coffee"], "Nameplate": ["Stripe"],
+            "MailEnvelope": ["Stripe"], "DeskPhone": ["Handset", "RingLight"], "Printer": ["StatusLight"],
+            "NetworkRack": ["RouterLight", "RouterLight2"], "FuseBox": ["FuseLever", "FuseLight"],
+            "SecurityCamera": ["RecLight"], "EmergencyLight": ["EmLamp"], "ServerRack": ["Leds", "LedsB"],
+            "PcTower": ["PcLed"], "WallTv": ["TvScreen"]}
+    by_name = {r.name: r for r in roots}
+    bad = []
+    for prop_name, names in need.items():
+        r = by_name.get(prop_name)
+        if r is None:
+            bad.append(prop_name + " missing")
+            continue
+        found = set()
+        stack = [r]
+        while stack:
+            o = stack.pop()
+            stack.extend(o.children)
+            found.add(map_kit.base_name(o))
+        for n in names:
+            if n not in found:
+                bad.append(prop_name + "/" + n)
+    if bad:
+        print("DRIVEN NAME PROBLEMS:", bad)
+    return bad
+
+
+def main():
+    bk.reset_scene()
+    roots = build_all()
+    check_driven(roots)
     out_dir = os.path.join(bk.UNITY_MODELS, "Props")
     import shutil
     os.makedirs(os.path.join(bk.EXPORT_DIR, "Props"), exist_ok=True)
+    os.makedirs(out_dir, exist_ok=True)
+    stats = []
+    for r in roots:
+        map_kit.merge_prop(r)
+        stats.append((r.name, map_kit.tri_count(r)))
     for r in roots:
         path = os.path.join(out_dir, r.name + ".fbx")
-        bk.export_fbx(r, path, animations=False)
+        map_kit.export_prop(r, path)
         shutil.copy2(path, os.path.join(bk.EXPORT_DIR, "Props", r.name + ".fbx"))
+    with open(os.path.join(bk.PREVIEW_DIR, "props_tris.txt"), "w", encoding="utf-8") as f:
+        for n, t in sorted(stats, key=lambda x: -x[1]):
+            f.write("%-22s %6d\n" % (n, t))
     # Lay out a browsing grid in the saved .blend (and for the preview render).
-    cols = 8
+    cols = 12
     for i, r in enumerate(roots):
         r.location = ((i % cols) * 2.6, -(i // cols) * 2.6, 0)
     bk.save_blend("props.blend")
     if "--previews" in sys.argv:
-        bk.setup_preview_render((1800, 1300))
+        bk.setup_preview_render((2200, 1700))
         rows = (len(roots) + cols - 1) // cols
         cx, cy = (cols - 1) * 2.6 / 2, -(rows - 1) * 2.6 / 2
-        bk.render_preview(os.path.join(bk.PREVIEW_DIR, "props_overview.png"), target=(cx, cy, 0.3), distance=40, elevation_deg=55, azimuth_deg=0, lens=50, ortho_scale=24)
+        bk.render_preview(os.path.join(bk.PREVIEW_DIR, "props_overview.png"), target=(cx, cy, 0.3), distance=60, elevation_deg=50, azimuth_deg=-20, lens=50, ortho_scale=33)
     if "--each" in sys.argv:
         from mathutils import Vector
         bk.setup_preview_render((420, 420))
@@ -695,7 +657,9 @@ def main():
             hi = Vector((max(p.x for p in pts), max(p.y for p in pts), max(p.z for p in pts)))
             size = max((hi - lo).length, 0.1)
             bk.render_preview(os.path.join(bk.PREVIEW_DIR, "props", r.name + ".png"), target=tuple((lo + hi) / 2), distance=size * 1.6, elevation_deg=28, azimuth_deg=-30, lens=50)
-    print("PROPS_DONE", len(roots))
+    total = sum(t for _, t in stats)
+    print("PROPS_DONE", len(roots), "tris", total)
 
 
-main()
+if __name__ == "__main__":
+    main()
