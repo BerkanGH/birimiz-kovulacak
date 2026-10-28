@@ -56,3 +56,13 @@ Codex logs: `Builds/codex/*.log`, last messages `Builds/codex/*_last.txt`. Basel
   call privacy tested) `3387b80`.
 - 04:35 characters merged: 6 player looks + 4 profile managers matching the portraits, face atlas, 48 clips; builder
   log "Characters: avatar (6 looks), manager (5 looks)". Unity build 4 OK (0.9 min).
+- 04:40 voice verified in Unity bot run (`-VoiceTest speech`): native libopus loaded, ~16–17 kbps per talker, call
+  routing (call=234/320 frames per 10 s window), wall muffling, out-of-range filtering.
+- 04:50 UI merged (≈1030 Turkish keys, 10 fake emails, all screens). Bot screenshots: briefing, HUD, meeting
+  projector, verdict bars, termination letter + Günün Klibi replay all render.
+- 05:10 map merged (10 rooms, 131 props, layout JSON, OccluderWall, power-cut lighting); URP Forward+, sun-only
+  shadows. Full `-Art` build 3.6 min. NavMesh islands (props in doorways) fixed by the map agent:
+  **NAV reachability 69 ok, 0 problems**. 4-bot run on the map: ~440 MB working set, hashes agree.
+- 05:20 Codex UI review: 8 findings (P1: contacts revealed ringing/busy of players behind walls) → fixed by the UI
+  agent; letter layout + delayed evidence toasts fixed; manager bubbles for v2 observations.
+- 05:25 camera default 42°/5 m (furniture occluded the avatar in small rooms at 24°/3.6 m).
