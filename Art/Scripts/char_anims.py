@@ -224,6 +224,18 @@ def player_clips(rig):
                        hands=hands(L=(-0.38, -0.12, 0.38), R=(0.12, 0.38, 0.68), poleL=(-1, 0.4, -0.6), poleR=(1, -0.4, -0.7), twistR=(-20, -75, -60)[t]))
     add("Spilling", [(1, pour(0)), (11, pour(2)), (21, pour(1)), (31, pour(0))])
 
+    # v2 activities: tasting coffee, cable plugs (floor level), fuse box (reach up)
+    sip = lambda t: P(body=dict(lean=(0, -4, -4)[t]), head=dict(lean=(0, -14, -12)[t]),
+                      hands=hands(R=((0.13, 0.34, 0.6), (0.07, 0.34, 0.77), (0.07, 0.35, 0.76))[t], poleR=(1, -0.4, -0.9)))
+    add("Drinking", [(1, sip(0)), (12, sip(1)), (28, sip(2)), (41, sip(0))])
+    plug = lambda t: P(body=dict(lean=34, sq=0.84), head=dict(lean=-10, turn=(22, -22, 22)[t]),
+                       hands=hands(L=(-0.22, 0.3, 0.36), R=((0.12, 0.42, 0.18), (0.16, 0.44, 0.22), (0.12, 0.42, 0.18))[t], poleL=(-1, -0.3, -0.4), poleR=(1, -0.2, -0.2)))
+    add("Plugging", [(1, plug(0)), (16, plug(1)), (31, plug(2))])
+    reach_up = lambda t: P(body=dict(sq=1.08, lean=-4), head=dict(lean=-18),
+                           hands=hands(L=(-0.14, 0.3, 0.92 + 0.03 * t), R=(0.14, 0.3, 0.95 - 0.03 * t), poleL=(-1, -0.3, -0.5), poleR=(1, -0.3, -0.5)),
+                           feet={"L": (0, 0, 0.03, -28), "R": (0, 0, 0.03, -28)}, top=dict(lean=(3, -3)[t]))
+    add("ReachUp", [(1, reach_up(0)), (11, reach_up(1)), (21, reach_up(0))])
+
     # ---------------------------------------------------------------- meeting
     sit_feet = {"L": (0, 0.2, SIT_UP - 0.14, 25), "R": (0, 0.2, SIT_UP - 0.14, 25)}
     lap = hands(L=(-0.2, 0.26, 0.42), R=(0.2, 0.26, 0.42), poleL=(-1, -0.6, -0.3), poleR=(1, -0.6, -0.3))

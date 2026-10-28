@@ -11,7 +11,7 @@ import char_png as png
 
 EXPRESSIONS = {  # name -> (eye cell 0..7, mouth cell 0..7); mirrored in PlayerAvatar.cs (FaceRig.Cells)
     "Neutral": (0, 0), "Happy": (1, 1), "Sneaky": (2, 2), "Shocked": (3, 3), "Angry": (4, 4), "Sad": (5, 5),
-    "Talking": (0, 6), "Laugh": (7, 1), "Smug": (2, 1), "Stern": (4, 5), "Cheerful": (0, 1),
+    "Talking": (0, 6), "Laugh": (7, 1), "Smug": (2, 1), "Stern": (4, 5), "Cheerful": (0, 1), "Nervous": (5, 4),
 }
 
 

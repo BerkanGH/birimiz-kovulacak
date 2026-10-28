@@ -253,6 +253,21 @@
    "frames": 30
   },
   {
+   "name": "Drinking",
+   "loop": true,
+   "frames": 40
+  },
+  {
+   "name": "Plugging",
+   "loop": true,
+   "frames": 30
+  },
+  {
+   "name": "ReachUp",
+   "loop": true,
+   "frames": 20
+  },
+  {
    "name": "Sit",
    "loop": true,
    "frames": 60
@@ -594,6 +609,10 @@
   "Cheerful": [
    0,
    1
+  ],
+  "Nervous": [
+   5,
+   4
   ]
  }
 }

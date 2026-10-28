@@ -210,7 +210,8 @@ def preview_players(ch):
              ("Spilling", 21, "Sneaky", ()), ("Sit", 1, "Neutral", ()), ("SitTalk", 14, "Talking", ()), ("Talk", 14, "Talking", ()),
              ("Wave", 12, "Happy", ()), ("Point", 14, "Angry", ()), ("Facepalm", 20, "Sad", ()), ("Shrug", 22, "Smug", ()),
              ("Laugh", 11, "Laugh", ()), ("Shocked", 8, "Shocked", ()), ("Panic", 5, "Shocked", ()), ("Cheer", 6, "Laugh", ()),
-             ("FiredIdle", 30, "Sad", ("Prop_Box",)), ("FiredWalk", 1, "Sad", ("Prop_Box",))]
+             ("FiredIdle", 30, "Sad", ("Prop_Box",)), ("FiredWalk", 1, "Sad", ("Prop_Box",)),
+             ("Drinking", 12, "Neutral", ()), ("Plugging", 16, "Sneaky", ()), ("ReachUp", 11, "Neutral", ()), ("Idle", 1, "Nervous", ())]
     items = []
     looks_cycle = [0, 1, 2, 3, 4, 5]
     for i, (act, fr, face, props) in enumerate(poses):
@@ -220,7 +221,7 @@ def preview_players(ch):
         ch.pose(act, fr)
         pv.camera((0, 0, 0.62), 3.6, 14, 215, 50)
         items.append((pv.render(os.path.join(PREV, "pose_%s_%d.png" % (act, fr))), "%s %d" % (act, fr)))
-    pv.sheet(os.path.join(bk.PREVIEW_DIR, "sheet_poses.png"), items, 8)
+    pv.sheet(os.path.join(bk.PREVIEW_DIR, "sheet_poses.png"), items, 9)
     ch.rest()
 
 
