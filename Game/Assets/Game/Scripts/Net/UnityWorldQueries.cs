@@ -1,4 +1,4 @@
-﻿using BirimizKovulacak.Core;
+using BirimizKovulacak.Core;
 using UnityEngine;
 
 namespace BirimizKovulacak.Game
@@ -22,6 +22,8 @@ namespace BirimizKovulacak.Game
         public const string GlassName = "Glass";
         public const string FurnitureName = "Furniture";
         public const string AvatarName = "Avatar";
-        public const int Walls = 8, Glass = 9, Furniture = 10, Avatar = 11;
+        /// <summary>v2: ~1.3 m cubicle partitions; hide crouched players from other players (not the manager/witness rules).</summary>
+        public const string PartitionsName = "Partitions";
+        public const int Walls = 8, Glass = 9, Furniture = 10, Avatar = 11, Partitions = 12;
     }
 }

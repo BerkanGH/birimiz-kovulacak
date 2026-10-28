@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.IO;
 using BirimizKovulacak.Core;
 using Newtonsoft.Json;
@@ -64,8 +64,9 @@ namespace BirimizKovulacak.Game
             {
                 if (File.Exists(path))
                 {
-                    cfg = JsonConvert.DeserializeObject<MatchConfig>(File.ReadAllText(path), JsonSettings) ?? cfg;
-                    Debug.Log("[Config] Loaded " + path);
+                    var loaded = JsonConvert.DeserializeObject<MatchConfig>(File.ReadAllText(path), JsonSettings);
+                    if (loaded != null && loaded.ConfigVersion == Protocol.Version) { cfg = loaded; Debug.Log("[Config] Loaded " + path); }
+                    else Debug.LogWarning("[Config] " + path + " is for an older version (" + (loaded != null ? loaded.ConfigVersion : -1) + ") - using built-in defaults.");
                 }
                 else Debug.Log("[Config] Using built-in defaults (no " + path + ")");
             }
