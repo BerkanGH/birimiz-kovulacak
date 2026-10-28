@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using BirimizKovulacak.Core;
 using Newtonsoft.Json;
@@ -350,10 +350,6 @@ namespace BirimizKovulacak.Game
             var config = JsonConvert.DeserializeObject<MatchConfig>(GameConfig.ToJson(GameConfig.Match), GameConfig.JsonSettings);
             day.Apply(config);
             DayModifier = day.Id;
-            ConfigJson = GameConfig.ToJson(config);
-            foreach (var s in _slots)
-                if (s.Occupied && !s.Virtual && s.Connected && _session != null)
-                    _session.SendWelcome(s.ClientId, new WelcomeMessage { Slot = s.Index, ReconnectToken = s.Token, MatchId = _matchId }, ConfigJson);
             try
             {
                 _engine = new MatchEngine(config, GameConfig.Layout, setup, new UnityWorldQueries());
@@ -365,6 +361,11 @@ namespace BirimizKovulacak.Game
                 _engine = null;
                 return false;
             }
+            // Clients get the engine's effective config (manager profile + week day applied) for prompts and timers.
+            ConfigJson = GameConfig.ToJson(_engine.Config);
+            foreach (var s in _slots)
+                if (s.Occupied && !s.Virtual && s.Connected && _session != null)
+                    _session.SendWelcome(s.ClientId, new WelcomeMessage { Slot = s.Index, ReconnectToken = s.Token, MatchId = _matchId }, ConfigJson);
             for (int i = 0; i < SlotCount; i++)
                 if (_slots[i].Occupied && !_slots[i].Connected) _engine.SetConnected(i, false, Now);
             _lastSentVersion = -1;
