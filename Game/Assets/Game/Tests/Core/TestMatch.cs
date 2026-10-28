@@ -13,12 +13,15 @@ namespace BirimizKovulacak.Core.Tests
         public readonly MatchEngine Engine;
         public readonly List<GameEvent> Events = new List<GameEvent>();
         public double Now { get; private set; }
-        private readonly uint[] requests = new uint[4];
+        private readonly uint[] requests = new uint[Protocol.MaxPlayers];
 
         public TestMatch(int seed = 1977, Action<MatchConfig> configure = null,
             Action<OfficeLayout> arrange = null, IWorldQueries world = null, MatchSetup setup = null)
         {
             Config = MatchConfig.CreateDefault();
+            // Legacy rules fixtures explicitly opt into drawer searches and neutral profile weights.
+            Config.ManagerProfiles.Clear();
+            Config.ManagerProfiles.Add(new ManagerProfileDef { Id = "legacy_test", SearchAllDrawers = true });
             Config.Durations.Briefing = 1;
             Config.Durations.Work1 = 180;
             Config.Durations.Raid = 20;
@@ -42,7 +45,7 @@ namespace BirimizKovulacak.Core.Tests
             if (configure != null) configure(Config);
             Layout = DefaultOffice.Create();
             Layout.ManagerRoute.Clear();
-            for (int d = 0; d < 4; d++)
+            for (int d = 0; d < Layout.Desks.Count; d++)
                 Layout.ManagerRoute.Add(new ManagerStop
                 {
                     Position = Layout.GetDesk(d).Position + new Vec3(0, 0, 1.6f),
@@ -50,9 +53,14 @@ namespace BirimizKovulacak.Core.Tests
                 });
             if (arrange != null) arrange(Layout);
             if (setup == null) setup = Setup(seed);
+            if (setup.ForceCards == null)
+            {
+                setup.ForceCards = new List<List<SabotageType>>();
+                for (int p = 0; p < Protocol.MaxPlayers; p++) setup.ForceCards.Add(new List<SabotageType> { SabotageType.LockWorkstation });
+            }
             Now = setup.StartTime;
             Engine = new MatchEngine(Config, Layout, setup, world ?? OpenWorld.Instance);
-            for (int p = 0; p < 4; p++) Move(p, new Vec3(50 + p * 10, 0, 50));
+            foreach (int p in Engine.Players) Move(p, Layout.BoundsMax + new Vec3(20 + p * 10, 0, 20));
             Capture();
         }
 
@@ -126,7 +134,7 @@ namespace BirimizKovulacak.Core.Tests
             while (Engine.Phase != target && limit-- > 0)
             {
                 Assert.IsFalse(Engine.IsFinished, "Cannot advance from " + Engine.Phase + " to " + target);
-                AdvanceTo(View().PhaseEndTime + 0.0001);
+                AdvanceTo(View(Engine.Players[0]).PhaseEndTime + 0.0001);
             }
             Assert.AreEqual(target, Engine.Phase);
         }
@@ -141,7 +149,7 @@ namespace BirimizKovulacak.Core.Tests
         public string Print(int player)
         {
             int before = Events.Count(e => e.Type == EventType.ReportPrinted);
-            Do(player, ActionVerb.WriteReport, EntityIds.DeskComputer(player));
+            Do(player, ActionVerb.WriteReport, EntityIds.DeskComputer(Player(player).DeskIndex));
             for (int i = 0; i < 100 && Events.Count(e => e.Type == EventType.ReportPrinted) == before; i++) Advance(0.2);
             var reports = View(player).Items.Where(i => i.Kind == ItemKind.Report && i.ReportOwner == player && i.SlotId == EntityIds.PrinterTray).ToList();
             Assert.IsNotEmpty(reports, "A completed print job should create a physical report");

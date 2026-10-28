@@ -1,0 +1,451 @@
+[
+    {
+        "id":  "primary_normal",
+        "path":  "Art/UI/buttons/primary_normal.png",
+        "w":  192,
+        "h":  96,
+        "category":  "buttons",
+        "nineSlice":  [
+                          32,
+                          32,
+                          32,
+                          32
+                      ],
+        "screenRect":  null,
+        "hasText":  false,
+        "description":  "primary normal button skin; 2x; overlay localized label at runtime."
+    },
+    {
+        "id":  "primary_hover",
+        "path":  "Art/UI/buttons/primary_hover.png",
+        "w":  192,
+        "h":  96,
+        "category":  "buttons",
+        "nineSlice":  [
+                          32,
+                          32,
+                          32,
+                          32
+                      ],
+        "screenRect":  null,
+        "hasText":  false,
+        "description":  "primary hover button skin; 2x; overlay localized label at runtime."
+    },
+    {
+        "id":  "primary_pressed",
+        "path":  "Art/UI/buttons/primary_pressed.png",
+        "w":  192,
+        "h":  96,
+        "category":  "buttons",
+        "nineSlice":  [
+                          32,
+                          32,
+                          32,
+                          32
+                      ],
+        "screenRect":  null,
+        "hasText":  false,
+        "description":  "primary pressed button skin; 2x; overlay localized label at runtime."
+    },
+    {
+        "id":  "primary_disabled",
+        "path":  "Art/UI/buttons/primary_disabled.png",
+        "w":  192,
+        "h":  96,
+        "category":  "buttons",
+        "nineSlice":  [
+                          32,
+                          32,
+                          32,
+                          32
+                      ],
+        "screenRect":  null,
+        "hasText":  false,
+        "description":  "primary disabled button skin; 2x; overlay localized label at runtime."
+    },
+    {
+        "id":  "secondary_normal",
+        "path":  "Art/UI/buttons/secondary_normal.png",
+        "w":  192,
+        "h":  96,
+        "category":  "buttons",
+        "nineSlice":  [
+                          32,
+                          32,
+                          32,
+                          32
+                      ],
+        "screenRect":  null,
+        "hasText":  false,
+        "description":  "secondary normal button skin; 2x; overlay localized label at runtime."
+    },
+    {
+        "id":  "secondary_hover",
+        "path":  "Art/UI/buttons/secondary_hover.png",
+        "w":  192,
+        "h":  96,
+        "category":  "buttons",
+        "nineSlice":  [
+                          32,
+                          32,
+                          32,
+                          32
+                      ],
+        "screenRect":  null,
+        "hasText":  false,
+        "description":  "secondary hover button skin; 2x; overlay localized label at runtime."
+    },
+    {
+        "id":  "secondary_pressed",
+        "path":  "Art/UI/buttons/secondary_pressed.png",
+        "w":  192,
+        "h":  96,
+        "category":  "buttons",
+        "nineSlice":  [
+                          32,
+                          32,
+                          32,
+                          32
+                      ],
+        "screenRect":  null,
+        "hasText":  false,
+        "description":  "secondary pressed button skin; 2x; overlay localized label at runtime."
+    },
+    {
+        "id":  "secondary_disabled",
+        "path":  "Art/UI/buttons/secondary_disabled.png",
+        "w":  192,
+        "h":  96,
+        "category":  "buttons",
+        "nineSlice":  [
+                          32,
+                          32,
+                          32,
+                          32
+                      ],
+        "screenRect":  null,
+        "hasText":  false,
+        "description":  "secondary disabled button skin; 2x; overlay localized label at runtime."
+    },
+    {
+        "id":  "danger_normal",
+        "path":  "Art/UI/buttons/danger_normal.png",
+        "w":  192,
+        "h":  96,
+        "category":  "buttons",
+        "nineSlice":  [
+                          32,
+                          32,
+                          32,
+                          32
+                      ],
+        "screenRect":  null,
+        "hasText":  false,
+        "description":  "danger normal button skin; 2x; overlay localized label at runtime."
+    },
+    {
+        "id":  "danger_hover",
+        "path":  "Art/UI/buttons/danger_hover.png",
+        "w":  192,
+        "h":  96,
+        "category":  "buttons",
+        "nineSlice":  [
+                          32,
+                          32,
+                          32,
+                          32
+                      ],
+        "screenRect":  null,
+        "hasText":  false,
+        "description":  "danger hover button skin; 2x; overlay localized label at runtime."
+    },
+    {
+        "id":  "danger_pressed",
+        "path":  "Art/UI/buttons/danger_pressed.png",
+        "w":  192,
+        "h":  96,
+        "category":  "buttons",
+        "nineSlice":  [
+                          32,
+                          32,
+                          32,
+                          32
+                      ],
+        "screenRect":  null,
+        "hasText":  false,
+        "description":  "danger pressed button skin; 2x; overlay localized label at runtime."
+    },
+    {
+        "id":  "danger_disabled",
+        "path":  "Art/UI/buttons/danger_disabled.png",
+        "w":  192,
+        "h":  96,
+        "category":  "buttons",
+        "nineSlice":  [
+                          32,
+                          32,
+                          32,
+                          32
+                      ],
+        "screenRect":  null,
+        "hasText":  false,
+        "description":  "danger disabled button skin; 2x; overlay localized label at runtime."
+    },
+    {
+        "id":  "ghost_normal",
+        "path":  "Art/UI/buttons/ghost_normal.png",
+        "w":  192,
+        "h":  96,
+        "category":  "buttons",
+        "nineSlice":  [
+                          32,
+                          32,
+                          32,
+                          32
+                      ],
+        "screenRect":  null,
+        "hasText":  false,
+        "description":  "ghost normal button skin; 2x; overlay localized label at runtime."
+    },
+    {
+        "id":  "ghost_hover",
+        "path":  "Art/UI/buttons/ghost_hover.png",
+        "w":  192,
+        "h":  96,
+        "category":  "buttons",
+        "nineSlice":  [
+                          32,
+                          32,
+                          32,
+                          32
+                      ],
+        "screenRect":  null,
+        "hasText":  false,
+        "description":  "ghost hover button skin; 2x; overlay localized label at runtime."
+    },
+    {
+        "id":  "ghost_pressed",
+        "path":  "Art/UI/buttons/ghost_pressed.png",
+        "w":  192,
+        "h":  96,
+        "category":  "buttons",
+        "nineSlice":  [
+                          32,
+                          32,
+                          32,
+                          32
+                      ],
+        "screenRect":  null,
+        "hasText":  false,
+        "description":  "ghost pressed button skin; 2x; overlay localized label at runtime."
+    },
+    {
+        "id":  "ghost_disabled",
+        "path":  "Art/UI/buttons/ghost_disabled.png",
+        "w":  192,
+        "h":  96,
+        "category":  "buttons",
+        "nineSlice":  [
+                          32,
+                          32,
+                          32,
+                          32
+                      ],
+        "screenRect":  null,
+        "hasText":  false,
+        "description":  "ghost disabled button skin; 2x; overlay localized label at runtime."
+    },
+    {
+        "id":  "panel_paper",
+        "path":  "Art/UI/buttons/panel_paper.png",
+        "w":  512,
+        "h":  512,
+        "category":  "buttons",
+        "nineSlice":  [
+                          32,
+                          32,
+                          32,
+                          32
+                      ],
+        "screenRect":  null,
+        "hasText":  false,
+        "description":  "Warm stationery paper panel; quiet center for UI content."
+    },
+    {
+        "id":  "panel_folder",
+        "path":  "Art/UI/buttons/panel_folder.png",
+        "w":  640,
+        "h":  480,
+        "category":  "buttons",
+        "nineSlice":  [
+                          256,
+                          112,
+                          32,
+                          32
+                      ],
+        "screenRect":  null,
+        "hasText":  false,
+        "description":  "Manila folder panel with preserved left tab; minimum sliced width 288 px, height 144 px."
+    },
+    {
+        "id":  "panel_sticky",
+        "path":  "Art/UI/buttons/panel_sticky.png",
+        "w":  384,
+        "h":  384,
+        "category":  "buttons",
+        "nineSlice":  [
+                          32,
+                          64,
+                          80,
+                          88
+                      ],
+        "screenRect":  null,
+        "hasText":  false,
+        "description":  "Yellow sticky note with adhesive band and folded bottom-right corner."
+    },
+    {
+        "id":  "tooltip",
+        "path":  "Art/UI/buttons/tooltip.png",
+        "w":  320,
+        "h":  160,
+        "category":  "buttons",
+        "nineSlice":  [
+                          24,
+                          24,
+                          24,
+                          36
+                      ],
+        "screenRect":  null,
+        "hasText":  false,
+        "description":  "Compact paper tooltip; inset content by at least 24 px."
+    },
+    {
+        "id":  "progress_bar_bg",
+        "path":  "Art/UI/buttons/progress_bar_bg.png",
+        "w":  320,
+        "h":  32,
+        "category":  "buttons",
+        "nineSlice":  [
+                          16,
+                          0,
+                          16,
+                          0
+                      ],
+        "screenRect":  null,
+        "hasText":  false,
+        "description":  "Progress meter recessed paper trough; slice horizontally at fixed 32 px height."
+    },
+    {
+        "id":  "progress_bar_fill_green",
+        "path":  "Art/UI/buttons/progress_bar_fill_green.png",
+        "w":  320,
+        "h":  32,
+        "category":  "buttons",
+        "nineSlice":  [
+                          16,
+                          0,
+                          16,
+                          0
+                      ],
+        "screenRect":  null,
+        "hasText":  false,
+        "description":  "green progress meter fill; crop or mask horizontally for progress; fixed 32 px height."
+    },
+    {
+        "id":  "progress_bar_fill_red",
+        "path":  "Art/UI/buttons/progress_bar_fill_red.png",
+        "w":  320,
+        "h":  32,
+        "category":  "buttons",
+        "nineSlice":  [
+                          16,
+                          0,
+                          16,
+                          0
+                      ],
+        "screenRect":  null,
+        "hasText":  false,
+        "description":  "red progress meter fill; crop or mask horizontally for progress; fixed 32 px height."
+    },
+    {
+        "id":  "toggle_on",
+        "path":  "Art/UI/buttons/toggle_on.png",
+        "w":  112,
+        "h":  64,
+        "category":  "buttons",
+        "nineSlice":  null,
+        "screenRect":  null,
+        "hasText":  false,
+        "description":  "Fixed-size toggle switch; state conveyed by knob position and mark."
+    },
+    {
+        "id":  "toggle_off",
+        "path":  "Art/UI/buttons/toggle_off.png",
+        "w":  112,
+        "h":  64,
+        "category":  "buttons",
+        "nineSlice":  null,
+        "screenRect":  null,
+        "hasText":  false,
+        "description":  "Fixed-size toggle switch; state conveyed by knob position and mark."
+    },
+    {
+        "id":  "slider_track",
+        "path":  "Art/UI/buttons/slider_track.png",
+        "w":  320,
+        "h":  24,
+        "category":  "buttons",
+        "nineSlice":  [
+                          12,
+                          0,
+                          12,
+                          0
+                      ],
+        "screenRect":  null,
+        "hasText":  false,
+        "description":  "Recessed slider track; slice horizontally at fixed 24 px height."
+    },
+    {
+        "id":  "slider_knob",
+        "path":  "Art/UI/buttons/slider_knob.png",
+        "w":  64,
+        "h":  64,
+        "category":  "buttons",
+        "nineSlice":  null,
+        "screenRect":  null,
+        "hasText":  false,
+        "description":  "Paper slider thumb with office-green grip."
+    },
+    {
+        "id":  "tab_active",
+        "path":  "Art/UI/buttons/tab_active.png",
+        "w":  192,
+        "h":  72,
+        "category":  "buttons",
+        "nineSlice":  [
+                          24,
+                          24,
+                          24,
+                          24
+                      ],
+        "screenRect":  null,
+        "hasText":  false,
+        "description":  "Folder tab; overlay localized label in the center."
+    },
+    {
+        "id":  "tab_inactive",
+        "path":  "Art/UI/buttons/tab_inactive.png",
+        "w":  192,
+        "h":  72,
+        "category":  "buttons",
+        "nineSlice":  [
+                          24,
+                          24,
+                          24,
+                          24
+                      ],
+        "screenRect":  null,
+        "hasText":  false,
+        "description":  "Folder tab; overlay localized label in the center."
+    }
+]

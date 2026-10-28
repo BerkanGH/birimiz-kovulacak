@@ -1,0 +1,13 @@
+[
+  {
+    "id": "style_sheet",
+    "path": "Art/UI/style/style_sheet.png",
+    "w": 1600,
+    "h": 1000,
+    "category": "style",
+    "nineSlice": null,
+    "screenRect": null,
+    "hasText": false,
+    "description": "Locked warm stationery palette, outline/shading study, icon, button, card and blue-bean portrait; text-free."
+  }
+]

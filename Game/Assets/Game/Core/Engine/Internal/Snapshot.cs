@@ -70,6 +70,11 @@ namespace BirimizKovulacak.Core
                 ForceInformant = value.ForceInformant,
                 ForceObjectives = value.ForceObjectives == null ? null : new List<string>(value.ForceObjectives),
                 ForceTargets = value.ForceTargets == null ? null : new List<int>(value.ForceTargets),
+                Mode = value.Mode,
+                WeekDay = value.WeekDay,
+                ManagerProfileId = value.ManagerProfileId,
+                ForceCards = CopyList(value.ForceCards, item => item == null ? null : new List<SabotageType>(item)),
+                ForceFavourite = value.ForceFavourite,
             };
         }
 
@@ -83,6 +88,10 @@ namespace BirimizKovulacak.Core
                 TimesTargeted = value.TimesTargeted == null ? null : new List<int>(value.TimesTargeted),
                 PastCards = value.PastCards == null ? null : new List<string>(value.PastCards),
                 MatchesPlayed = value.MatchesPlayed,
+                NextWeekDay = value.NextWeekDay,
+                WeekNumber = value.WeekNumber,
+                CareerPoints = value.CareerPoints == null ? null : new List<int>(value.CareerPoints),
+                PastManagerProfiles = value.PastManagerProfiles == null ? null : new List<string>(value.PastManagerProfiles),
             };
         }
 
@@ -115,6 +124,9 @@ namespace BirimizKovulacak.Core
                 MatchRunning = value.MatchRunning,
                 MatchId = value.MatchId,
                 StatusKey = value.StatusKey,
+                Mode = value.Mode,
+                WeekDay = value.WeekDay,
+                CareerPoints = value.CareerPoints == null ? null : new List<int>(value.CareerPoints),
             };
         }
 
@@ -129,6 +141,7 @@ namespace BirimizKovulacak.Core
                 Ready = value.Ready,
                 IsHost = value.IsHost,
                 Name = value.Name,
+                IsBot = value.IsBot,
             };
         }
 
@@ -176,6 +189,13 @@ namespace BirimizKovulacak.Core
                 Verdict = Copy(value.Verdict),
                 Objectives = CopyList(value.Objectives, Copy),
                 Reconnect = Copy(value.Reconnect),
+                Cards = Copy(value.Cards),
+                Email = Copy(value.Email),
+                Calls = Copy(value.Calls),
+                Footage = Copy(value.Footage),
+                Career = Copy(value.Career),
+                ManagerProfiles = CopyList(value.ManagerProfiles, Copy),
+                WeekDays = CopyList(value.WeekDays, Copy),
             };
         }
 
@@ -249,6 +269,12 @@ namespace BirimizKovulacak.Core
                 ReportPoints = value.ReportPoints,
                 PhonePoints = value.PhonePoints,
                 CleanPoints = value.CleanPoints,
+                MailEnabled = value.MailEnabled,
+                InitialMail = value.InitialMail,
+                MailInterval = value.MailInterval,
+                MaxOpenMail = value.MaxOpenMail,
+                MailPoints = value.MailPoints,
+                TasteSeconds = value.TasteSeconds,
             };
         }
 
@@ -266,6 +292,8 @@ namespace BirimizKovulacak.Core
                 MaxActivePerDesk = value.MaxActivePerDesk,
                 EffectSeconds = value.EffectSeconds,
                 ReverseSeconds = value.ReverseSeconds,
+                Basic = value.Basic,
+                MaxPerMatch = value.MaxPerMatch,
             };
         }
 
@@ -290,6 +318,8 @@ namespace BirimizKovulacak.Core
                 Range = value.Range,
                 HalfAngle = value.HalfAngle,
                 RequireLineOfSight = value.RequireLineOfSight,
+                CrouchRangeFactor = value.CrouchRangeFactor,
+                DarkRange = value.DarkRange,
             };
         }
 
@@ -307,6 +337,10 @@ namespace BirimizKovulacak.Core
                 ReactionSeconds = value.ReactionSeconds,
                 ExpectedPerformanceAtRaid = value.ExpectedPerformanceAtRaid,
                 ExpectedPerformanceAtFinal = value.ExpectedPerformanceAtFinal,
+                DarkVisionRange = value.DarkVisionRange,
+                TipDwellBonus = value.TipDwellBonus,
+                SurpriseAtFraction = value.SurpriseAtFraction,
+                SurpriseSeconds = value.SurpriseSeconds,
             };
         }
 
@@ -330,6 +364,11 @@ namespace BirimizKovulacak.Core
                 CaughtInAct = value.CaughtInAct,
                 BehindOnWork = value.BehindOnWork,
                 WorkingHard = value.WorkingHard,
+                PersonalCall = value.PersonalCall,
+                InappropriateEmail = value.InappropriateEmail,
+                SaltyCoffee = value.SaltyCoffee,
+                TipClean = value.TipClean,
+                EmailLog = value.EmailLog,
                 MeterThresholds = value.MeterThresholds == null ? null : (float[])value.MeterThresholds.Clone(),
             };
         }
@@ -344,6 +383,8 @@ namespace BirimizKovulacak.Core
                 MovedRecentlySeconds = value.MovedRecentlySeconds,
                 ItemScanRange = value.ItemScanRange,
                 AvoidRepeatInformant = value.AvoidRepeatInformant,
+                CallLogCharges = value.CallLogCharges,
+                FootageCharges = value.FootageCharges,
             };
         }
 
@@ -358,6 +399,7 @@ namespace BirimizKovulacak.Core
                 RiskScale = value.RiskScale,
                 PerformanceScale = value.PerformanceScale,
                 FalseAccusationPenalty = value.FalseAccusationPenalty,
+                FavorWeight = value.FavorWeight,
             };
         }
 
@@ -401,6 +443,8 @@ namespace BirimizKovulacak.Core
                 MeetingSeats = CopyList(value.MeetingSeats, Copy),
                 BoundsMin = value.BoundsMin,
                 BoundsMax = value.BoundsMax,
+                Rooms = CopyList(value.Rooms, Copy),
+                Cameras = CopyList(value.Cameras, Copy),
             };
         }
 
@@ -513,6 +557,8 @@ namespace BirimizKovulacak.Core
                 RiskNormalized = value.RiskNormalized,
                 Performance = value.Performance,
                 PerformanceDeficit = value.PerformanceDeficit,
+                Favor = value.Favor,
+                FavorDiscount = value.FavorDiscount,
                 Score = value.Score,
             };
         }
@@ -535,6 +581,13 @@ namespace BirimizKovulacak.Core
                 Recap = CopyList(value.Recap, Copy),
                 MatchSeed = value.MatchSeed,
                 ResultHash = value.ResultHash,
+                Mode = value.Mode,
+                WeekDay = value.WeekDay,
+                ManagerProfileId = value.ManagerProfileId,
+                Calls = CopyList(value.Calls, Copy),
+                WeekFinished = value.WeekFinished,
+                EmployeeOfTheMonth = value.EmployeeOfTheMonth == null ? null : new List<int>(value.EmployeeOfTheMonth),
+                Favourites = value.Favourites == null ? null : new List<int>(value.Favourites),
             };
         }
 
@@ -560,6 +613,10 @@ namespace BirimizKovulacak.Core
                 TasksCompleted = value.TasksCompleted,
                 SabotageCount = value.SabotageCount,
                 Titles = value.Titles == null ? null : new List<string>(value.Titles),
+                Cards = value.Cards == null ? null : new List<SabotageType>(value.Cards),
+                Favor = value.Favor,
+                CareerDelta = value.CareerDelta,
+                CareerTotal = value.CareerTotal,
             };
         }
 
@@ -614,6 +671,10 @@ namespace BirimizKovulacak.Core
                 QuotaPoints = value.QuotaPoints,
                 ProcessedRequests = value.ProcessedRequests,
                 RejectedRequests = value.RejectedRequests,
+                ManagerProfileId = value.ManagerProfileId,
+                Cards = CopyList(value.Cards, item => item == null ? null : new List<SabotageType>(item)),
+                Calls = CopyList(value.Calls, Copy),
+                SaltedItems = value.SaltedItems == null ? null : new List<string>(value.SaltedItems),
             };
         }
 
@@ -643,6 +704,13 @@ namespace BirimizKovulacak.Core
                 Meeting = Copy(value.Meeting),
                 Me = Copy(value.Me),
                 Result = Copy(value.Result),
+                Mode = value.Mode,
+                WeekDay = value.WeekDay,
+                ManagerProfileId = value.ManagerProfileId,
+                Favourite = value.Favourite,
+                Features = Copy(value.Features),
+                Office = Copy(value.Office),
+                Inbox = CopyList(value.Inbox, Copy),
             };
         }
 
@@ -659,6 +727,7 @@ namespace BirimizKovulacak.Core
                 PhoneRingEnds = value.PhoneRingEnds,
                 DirtyDesks = value.DirtyDesks,
                 Frozen = value.Frozen,
+                OpenMail = value.OpenMail,
             };
         }
 
@@ -683,6 +752,12 @@ namespace BirimizKovulacak.Core
                 ActivityEnd = value.ActivityEnd,
                 WorkPose = value.WorkPose,
                 AccusationsReceived = value.AccusationsReceived,
+                Crouched = value.Crouched,
+                Ringing = value.Ringing,
+                Favor = value.Favor,
+                Emote = value.Emote,
+                EmoteUntil = value.EmoteUntil,
+                CareerPoints = value.CareerPoints,
             };
         }
 
@@ -705,6 +780,8 @@ namespace BirimizKovulacak.Core
                 NameplateOf = value.NameplateOf,
                 Sealed = value.Sealed,
                 IsEvidence = value.IsEvidence,
+                AddressedDesk = value.AddressedDesk,
+                KnownSalted = value.KnownSalted,
             };
         }
 
@@ -723,6 +800,10 @@ namespace BirimizKovulacak.Core
                 PcLockedAt = value.PcLockedAt,
                 PcLockedUntil = value.PcLockedUntil,
                 ClutterCount = value.ClutterCount,
+                ScreenOpen = value.ScreenOpen,
+                ScreenOpenUntil = value.ScreenOpenUntil,
+                Unplugged = value.Unplugged,
+                PcImmuneUntil = value.PcImmuneUntil,
             };
         }
 
@@ -765,6 +846,15 @@ namespace BirimizKovulacak.Core
                 ScanReliability = value.ScanReliability,
                 ScanSignal = value.ScanSignal,
                 RiskWeight = value.RiskWeight,
+                Contents = value.Contents == null ? null : new List<string>(value.Contents),
+                EmailTemplate = value.EmailTemplate,
+                CameraId = value.CameraId,
+                WindowStart = value.WindowStart,
+                WindowEnd = value.WindowEnd,
+                NoRecording = value.NoRecording,
+                Sightings = CopyList(value.Sightings, Copy),
+                Calls = CopyList(value.Calls, Copy),
+                Salted = value.Salted,
             };
         }
 
@@ -810,6 +900,7 @@ namespace BirimizKovulacak.Core
                 ReactionObservation = value.ReactionObservation,
                 ReactionUntil = value.ReactionUntil,
                 ArrivesAt = value.ArrivesAt,
+                Surprise = value.Surprise,
             };
         }
 
@@ -857,6 +948,11 @@ namespace BirimizKovulacak.Core
                 RematchVoted = value.RematchVoted,
                 SabotageCooldowns = value.SabotageCooldowns == null ? null : new List<double>(value.SabotageCooldowns),
                 ReconnectToken = value.ReconnectToken,
+                Cards = value.Cards == null ? null : new List<SabotageType>(value.Cards),
+                Call = Copy(value.Call),
+                CallCooldownUntil = value.CallCooldownUntil,
+                TipsLeft = value.TipsLeft,
+                FootageLeft = value.FootageLeft,
             };
         }
 
@@ -898,6 +994,7 @@ namespace BirimizKovulacak.Core
                 SealsLeft = value.SealsLeft,
                 SealedEvidenceId = value.SealedEvidenceId,
                 Scans = CopyList(value.Scans, Copy),
+                CallLogsLeft = value.CallLogsLeft,
             };
         }
 
@@ -936,6 +1033,225 @@ namespace BirimizKovulacak.Core
                 Contents = value.Contents == null ? null : new List<string>(value.Contents),
                 ScanId = value.ScanId,
                 Presented = value.Presented,
+                Calls = CopyList(value.Calls, Copy),
+                ItemId = value.ItemId,
+                Salted = value.Salted,
+            };
+        }
+
+        internal static CallConfig Copy(CallConfig value)
+        {
+            if (value == null) return null;
+            return new CallConfig
+            {
+                Enabled = value.Enabled,
+                RingSeconds = value.RingSeconds,
+                MaxCallSeconds = value.MaxCallSeconds,
+                CooldownSeconds = value.CooldownSeconds,
+                TipLineEnabled = value.TipLineEnabled,
+                TipSeconds = value.TipSeconds,
+                TipsPerPlayer = value.TipsPerPlayer,
+            };
+        }
+
+        internal static CallRecordView Copy(CallRecordView value)
+        {
+            if (value == null) return null;
+            return new CallRecordView
+            {
+                Caller = value.Caller,
+                Callee = value.Callee,
+                Start = value.Start,
+                End = value.End,
+                Answered = value.Answered,
+                Tip = value.Tip,
+                TipDesk = value.TipDesk,
+            };
+        }
+
+        internal static CallView Copy(CallView value)
+        {
+            if (value == null) return null;
+            return new CallView
+            {
+                State = value.State,
+                Other = value.Other,
+                Since = value.Since,
+                Until = value.Until,
+            };
+        }
+
+        internal static CameraDef Copy(CameraDef value)
+        {
+            if (value == null) return null;
+            return new CameraDef
+            {
+                Id = value.Id,
+                Position = value.Position,
+                Yaw = value.Yaw,
+                ZoneMin = value.ZoneMin,
+                ZoneMax = value.ZoneMax,
+                RoomId = value.RoomId,
+            };
+        }
+
+        internal static CardConfig Copy(CardConfig value)
+        {
+            if (value == null) return null;
+            return new CardConfig
+            {
+                Enabled = value.Enabled,
+                CardsPerPlayer = value.CardsPerPlayer,
+            };
+        }
+
+        internal static CareerConfig Copy(CareerConfig value)
+        {
+            if (value == null) return null;
+            return new CareerConfig
+            {
+                QuotaMet = value.QuotaMet,
+                Survived = value.Survived,
+                ObjectiveWon = value.ObjectiveWon,
+                InformantWon = value.InformantWon,
+                Fired = value.Fired,
+                Favourite = value.Favourite,
+            };
+        }
+
+        internal static EmailConfig Copy(EmailConfig value)
+        {
+            if (value == null) return null;
+            return new EmailConfig
+            {
+                ScreenOpenSeconds = value.ScreenOpenSeconds,
+                LockScreenSeconds = value.LockScreenSeconds,
+                TemplateCount = value.TemplateCount,
+            };
+        }
+
+        internal static EmailView Copy(EmailView value)
+        {
+            if (value == null) return null;
+            return new EmailView
+            {
+                Id = value.Id,
+                Time = value.Time,
+                FromPlayer = value.FromPlayer,
+                DeskIndex = value.DeskIndex,
+                TemplateId = value.TemplateId,
+            };
+        }
+
+        internal static FeaturesView Copy(FeaturesView value)
+        {
+            if (value == null) return null;
+            return new FeaturesView
+            {
+                Cards = value.Cards,
+                Calls = value.Calls,
+                TipLine = value.TipLine,
+                Footage = value.Footage,
+                Mail = value.Mail,
+                CareerMultiplier = value.CareerMultiplier,
+            };
+        }
+
+        internal static FootageConfig Copy(FootageConfig value)
+        {
+            if (value == null) return null;
+            return new FootageConfig
+            {
+                Enabled = value.Enabled,
+                SampleInterval = value.SampleInterval,
+                WindowSeconds = value.WindowSeconds,
+                SpeakerRequests = value.SpeakerRequests,
+            };
+        }
+
+        internal static FootageSighting Copy(FootageSighting value)
+        {
+            if (value == null) return null;
+            return new FootageSighting
+            {
+                Player = value.Player,
+                Time = value.Time,
+                Activity = value.Activity,
+                Carrying = value.Carrying,
+                Crouched = value.Crouched,
+            };
+        }
+
+        internal static ManagerProfileDef Copy(ManagerProfileDef value)
+        {
+            if (value == null) return null;
+            return new ManagerProfileDef
+            {
+                Id = value.Id,
+                QuotaDelta = value.QuotaDelta,
+                VoteWeight = value.VoteWeight,
+                RiskWeight = value.RiskWeight,
+                PerformanceWeight = value.PerformanceWeight,
+                FavorWeight = value.FavorWeight,
+                ObservationFactors = CopyList(value.ObservationFactors, Copy),
+                EvidenceFactor = value.EvidenceFactor,
+                EmailFactor = value.EmailFactor,
+                VisionRange = value.VisionRange,
+                VisionHalfAngle = value.VisionHalfAngle,
+                SurpriseInspection = value.SurpriseInspection,
+                HasFavourite = value.HasFavourite,
+                FavorSource = value.FavorSource,
+                FavorPerAction = value.FavorPerAction,
+                SearchAllDrawers = value.SearchAllDrawers,
+                ExtraFootageRequests = value.ExtraFootageRequests,
+            };
+        }
+
+        internal static ObservationFactor Copy(ObservationFactor value)
+        {
+            if (value == null) return null;
+            return new ObservationFactor
+            {
+                Kind = value.Kind,
+                Factor = value.Factor,
+            };
+        }
+
+        internal static OfficeStatusView Copy(OfficeStatusView value)
+        {
+            if (value == null) return null;
+            return new OfficeStatusView
+            {
+                InternetDown = value.InternetDown,
+                InternetBackAt = value.InternetBackAt,
+                PowerDown = value.PowerDown,
+                PowerBackAt = value.PowerBackAt,
+            };
+        }
+
+        internal static RoomDef Copy(RoomDef value)
+        {
+            if (value == null) return null;
+            return new RoomDef
+            {
+                Id = value.Id,
+                Min = value.Min,
+                Max = value.Max,
+            };
+        }
+
+        internal static WeekDayDef Copy(WeekDayDef value)
+        {
+            if (value == null) return null;
+            return new WeekDayDef
+            {
+                ProfileId = value.ProfileId,
+                Cards = value.Cards,
+                TipLine = value.TipLine,
+                Footage = value.Footage,
+                Mail = value.Mail,
+                Calls = value.Calls,
+                CareerMultiplier = value.CareerMultiplier,
             };
         }
 

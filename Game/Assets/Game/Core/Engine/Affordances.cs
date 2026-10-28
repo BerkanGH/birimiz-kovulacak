@@ -21,6 +21,8 @@ namespace BirimizKovulacak.Core
             if (item != null)
             {
                 AddPickup(options, view, config, layout, actor, item, actorPosition);
+                if (item.Id == actor.CarryingItemId && item.Kind == ItemKind.Mug && item.Fill == MugFill.Full)
+                    AddTaste(options, view, config, actor);
                 if (view.Me.Role == Role.Informant &&
                     (item.Kind == ItemKind.Suspicious || item.Kind == ItemKind.Report || item.Kind == ItemKind.Nameplate))
                 {
@@ -55,6 +57,18 @@ namespace BirimizKovulacak.Core
                         if (brew == FailureCode.None) brew = busy;
                         AddPhysical(options, view, config, actor, ActionVerb.BrewCoffee, station.Id, "brew_coffee",
                             config.Tasks.BrewSeconds, false, brew, actorPosition, station.Position);
+                        if (HasCard(view, config, SabotageType.SaltCoffee))
+                        {
+                            FailureCode salt = Equipment(actor, held, ItemKind.Mug);
+                            if (salt == FailureCode.None && held.Fill != MugFill.Full) salt = FailureCode.WrongItem;
+                            if (salt == FailureCode.None && held.KnownSalted) salt = FailureCode.AlreadyActive;
+                            if (salt == FailureCode.None) salt = Cooldown(view, SabotageType.SaltCoffee);
+                            if (salt == FailureCode.None) salt = busy;
+                            AddPhysical(options, view, config, actor, ActionVerb.SaltCoffee, station.Id, "salt_coffee",
+                                Duration(config, SabotageType.SaltCoffee), true, salt, actorPosition, station.Position);
+                        }
+                        if (held != null && held.Kind == ItemKind.Mug && held.Fill == MugFill.Full)
+                            AddTaste(options, view, config, actor);
                         break;
                     case StationKind.Phone:
                         FailureCode phone = view.Quota == null || !view.Quota.PhoneRinging ? FailureCode.NotRinging : busy;
@@ -65,25 +79,47 @@ namespace BirimizKovulacak.Core
                         var desk = FindDesk(view, station.DeskIndex);
                         if (desk == null) break;
                         if (desk.AssignedOwner == actor.Id)
+                        {
+                            FailureCode write = PcBlocked(view, desk, true, false);
+                            if (write == FailureCode.None) write = busy;
                             AddPhysical(options, view, config, actor, ActionVerb.WriteReport, station.Id, "write_report",
-                                config.Tasks.WriteReportSeconds, false, desk.PcLocked ? FailureCode.StationLocked : busy,
-                                actorPosition, station.Position);
+                                config.Tasks.WriteReportSeconds, false, write, actorPosition, station.Position);
+                            FailureCode screen = PcBlocked(view, desk, false, true);
+                            if (screen == FailureCode.None) screen = busy;
+                            AddPhysical(options, view, config, actor, ActionVerb.LockScreen, station.Id, "lock_screen",
+                                config.Email.LockScreenSeconds, false, screen, actorPosition, station.Position);
+                        }
                         if (desk.PcLocked)
                             AddPhysical(options, view, config, actor, ActionVerb.UnlockWorkstation, station.Id, "unlock_pc",
-                                Duration(config, SabotageType.LockWorkstation, true), false, busy, actorPosition, station.Position);
-                        if (desk.AssignedOwner != actor.Id)
+                                Duration(config, SabotageType.LockWorkstation, true), false,
+                                desk.Unplugged ? FailureCode.PcUnplugged : busy, actorPosition, station.Position);
+                        if (desk.AssignedOwner != PlayerIds.None && desk.AssignedOwner != actor.Id)
                         {
-                            FailureCode blocked = desk.PcLocked ? FailureCode.AlreadyLocked : FailureCode.None;
-                            // PcLockedUntil is the last lock end; an early unlock can only be hinted by the host.
-                            if (blocked == FailureCode.None && desk.PcLockedUntil > 0 &&
-                                view.ServerTime >= desk.PcLockedUntil &&
-                                view.ServerTime < desk.PcLockedUntil + config.AntiGrief.WorkstationImmunitySeconds)
-                                blocked = FailureCode.TargetImmune;
-                            if (blocked == FailureCode.None) blocked = Cooldown(view, SabotageType.LockWorkstation);
-                            if (blocked == FailureCode.None) blocked = busy;
-                            AddPhysical(options, view, config, actor, ActionVerb.LockWorkstation, station.Id, "lock_pc",
-                                Duration(config, SabotageType.LockWorkstation), true, blocked, actorPosition, station.Position);
+                            if (HasCard(view, config, SabotageType.LockWorkstation))
+                            {
+                                FailureCode locked = desk.Unplugged ? FailureCode.PcUnplugged : desk.PcLocked ? FailureCode.AlreadyLocked : FailureCode.None;
+                                if (locked == FailureCode.None && view.ServerTime < desk.PcImmuneUntil) locked = FailureCode.TargetImmune;
+                                if (locked == FailureCode.None) locked = Cooldown(view, SabotageType.LockWorkstation);
+                                if (locked == FailureCode.None) locked = busy;
+                                AddPhysical(options, view, config, actor, ActionVerb.LockWorkstation, station.Id, "lock_pc",
+                                    Duration(config, SabotageType.LockWorkstation), true, locked, actorPosition, station.Position);
+                            }
+                            if (HasCard(view, config, SabotageType.FakeEmail))
+                            {
+                                FailureCode email = PcBlocked(view, desk, true, true);
+                                if (email == FailureCode.None) email = Cooldown(view, SabotageType.FakeEmail);
+                                if (email == FailureCode.None) email = busy;
+                                // IntParam remains -1: the adapter opens the email-template picker.
+                                AddPhysical(options, view, config, actor, ActionVerb.SendFakeEmail, station.Id, "send_fake_email",
+                                    Duration(config, SabotageType.FakeEmail), true, email, actorPosition, station.Position);
+                            }
                         }
+                        break;
+                    case StationKind.Router:
+                        AddOutage(options, view, config, actor, station, actorPosition, busy, false);
+                        break;
+                    case StationKind.FuseBox:
+                        AddOutage(options, view, config, actor, station, actorPosition, busy, true);
                         break;
                     case StationKind.Printer:
                         ForwardSlot(options, view, config, layout, actor, held, EntityIds.PrinterTray, actorPosition);
@@ -102,6 +138,20 @@ namespace BirimizKovulacak.Core
             if (deskDef == null) return options;
             var deskView = FindDesk(view, deskDef.Index);
             if (deskView == null) return options;
+            if (deskView.AssignedOwner != PlayerIds.None)
+            {
+                FailureCode plugBusy = ActivityBusy(view, targetId, PublicActivity.Plugging);
+                if (deskView.Unplugged)
+                    AddPhysical(options, view, config, actor, ActionVerb.PlugIn, targetId, "plug_in",
+                        Duration(config, SabotageType.PullPlug, true), false, plugBusy, actorPosition, deskDef.Position);
+                if (deskView.AssignedOwner != actor.Id && HasCard(view, config, SabotageType.PullPlug))
+                {
+                    FailureCode pull = deskView.Unplugged ? FailureCode.AlreadyActive : Cooldown(view, SabotageType.PullPlug);
+                    if (pull == FailureCode.None) pull = plugBusy;
+                    AddPhysical(options, view, config, actor, ActionVerb.PullPlug, targetId, "pull_plug",
+                        Duration(config, SabotageType.PullPlug), true, pull, actorPosition, deskDef.Position);
+                }
+            }
             if (deskView.Dirty || (held != null && held.Kind == ItemKind.Spray))
             {
                 FailureCode blocked = Equipment(actor, held, ItemKind.Spray);
@@ -237,6 +287,9 @@ namespace BirimizKovulacak.Core
                     blocked = FailureCode.SlotFull;
             }
             var desk = FindDesk(view, slot.DeskIndex);
+            if (held != null && held.Kind == ItemKind.Mail && slot.Kind == SlotKind.DeskSurface &&
+                held.AddressedDesk == slot.DeskIndex && desk != null && desk.AssignedOwner != PlayerIds.None)
+                label = "deliver_mail";
             SabotageType? sabotage = null;
             if (held != null)
             {
@@ -249,9 +302,13 @@ namespace BirimizKovulacak.Core
                 { sabotage = SabotageType.MoveClutter; seconds = Duration(config, sabotage.Value); }
                 else if (held.Kind == ItemKind.Report && held.ReportOwner != actor.Id && slot.Closed)
                 { sabotage = SabotageType.HideReport; seconds = Duration(config, sabotage.Value); }
+                else if (held.Kind == ItemKind.Report && held.ReportOwner == actor.Id && slot.Kind == SlotKind.Drawer &&
+                    desk != null && desk.AssignedOwner != PlayerIds.None && desk.AssignedOwner != actor.Id)
+                { sabotage = SabotageType.PlantItem; seconds = Duration(config, sabotage.Value); }
                 else if (held.Kind == ItemKind.Nameplate && desk != null && slot.Kind == SlotKind.NameplateHolder &&
                     held.NameplateOf != desk.AssignedOwner)
                 { sabotage = SabotageType.NameplateSwap; seconds = Duration(config, sabotage.Value); }
+                if (sabotage.HasValue && !HasCard(view, config, sabotage.Value)) return;
                 if (sabotage.HasValue && blocked == FailureCode.None)
                 {
                     blocked = Cooldown(view, sabotage.Value);
@@ -267,6 +324,54 @@ namespace BirimizKovulacak.Core
             bool disposalWarning = slot.Kind == SlotKind.JunkBin && held != null && HasDisposableEvidence(view, held.Id);
             AddPhysical(options, view, config, actor, ActionVerb.Place, slot.Id, label, seconds, sabotage.HasValue || disposalWarning,
                 blocked, position, slot.Position);
+        }
+
+        private static bool HasCard(PlayerView view, MatchConfig config, SabotageType type)
+        {
+            SabotageDef definition = config.GetSabotage(type);
+            return definition != null && (definition.Basic ||
+                (view.Features != null && view.Features.Cards && view.Me.Cards != null && view.Me.Cards.Contains(type)));
+        }
+
+        private static FailureCode PcBlocked(PlayerView view, DeskView desk, bool internet, bool screen)
+        {
+            if (desk.Unplugged) return FailureCode.PcUnplugged;
+            if (internet && view.Office != null && view.Office.InternetDown) return FailureCode.NoInternet;
+            if (desk.PcLocked) return FailureCode.StationLocked;
+            if (screen && !desk.ScreenOpen) return FailureCode.ScreenLocked;
+            return FailureCode.None;
+        }
+
+        private static void AddTaste(List<Affordance> options, PlayerView view, MatchConfig config, PlayerPublicView actor)
+        {
+            Add(options, view, actor, ActionVerb.TasteCoffee, "", "taste_coffee", config.Tasks.TasteSeconds,
+                false, FailureCode.None, true);
+        }
+
+        private static void AddOutage(List<Affordance> options, PlayerView view, MatchConfig config,
+            PlayerPublicView actor, StationDef station, Vec3 position, FailureCode busy, bool power)
+        {
+            SabotageType type = power ? SabotageType.PowerCut : SabotageType.InternetOutage;
+            bool active = view.Office != null && (power ? view.Office.PowerDown : view.Office.InternetDown);
+            if (HasCard(view, config, type))
+            {
+                FailureCode blocked = active ? FailureCode.AlreadyActive : Cooldown(view, type);
+                if (blocked == FailureCode.None) blocked = busy;
+                AddPhysical(options, view, config, actor, power ? ActionVerb.CutPower : ActionVerb.CutInternet, station.Id,
+                    power ? "cut_power" : "cut_internet", Duration(config, type), true, blocked, position, station.Position);
+            }
+            if (active)
+                AddPhysical(options, view, config, actor, power ? ActionVerb.ResetFuse : ActionVerb.RestartRouter, station.Id,
+                    power ? "reset_fuse" : "restart_router", Duration(config, type, true), false, busy, position, station.Position);
+        }
+
+        private static FailureCode ActivityBusy(PlayerView view, string target, PublicActivity activity)
+        {
+            if (view.Players != null)
+                foreach (PlayerPublicView player in view.Players)
+                    if (player != null && player.Activity == activity && player.ActivityTargetId == target &&
+                        player.ActivityEnd > view.ServerTime) return FailureCode.TargetBusy;
+            return FailureCode.None;
         }
 
         private static bool HasDisposableEvidence(PlayerView view, string itemId)

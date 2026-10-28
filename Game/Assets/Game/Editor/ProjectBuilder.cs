@@ -105,6 +105,13 @@ namespace BirimizKovulacak.EditorTools
             PlayerSettings.colorSpace = ColorSpace.Linear;
             PlayerSettings.SetScriptingBackend(NamedBuildTarget.Standalone, ScriptingImplementation.Mono2x);
             PlayerSettings.SetApiCompatibilityLevel(NamedBuildTarget.Standalone, ApiCompatibilityLevel.NET_Standard);
+            // Memory (docs/PERFORMANCE.md): D3D11 first (smaller driver footprint than D3D12 for this scene), incremental GC,
+            // strip unused mesh channels and mips.
+            PlayerSettings.SetUseDefaultGraphicsAPIs(BuildTarget.StandaloneWindows64, false);
+            PlayerSettings.SetGraphicsAPIs(BuildTarget.StandaloneWindows64, new[] { UnityEngine.Rendering.GraphicsDeviceType.Direct3D11, UnityEngine.Rendering.GraphicsDeviceType.Direct3D12 });
+            PlayerSettings.gcIncremental = true;
+            PlayerSettings.stripUnusedMeshComponents = true;
+            PlayerSettings.mipStripping = true;
 
             var ps = AssetDatabase.LoadAllAssetsAtPath("ProjectSettings/ProjectSettings.asset").FirstOrDefault();
             if (ps != null)
@@ -120,6 +127,7 @@ namespace BirimizKovulacak.EditorTools
             SetLayer(layers, Layers.Glass, Layers.GlassName);
             SetLayer(layers, Layers.Furniture, Layers.FurnitureName);
             SetLayer(layers, Layers.Avatar, Layers.AvatarName);
+            SetLayer(layers, Layers.Partitions, Layers.PartitionsName);
             tm.ApplyModifiedProperties();
             Log("Project settings configured");
         }
@@ -182,7 +190,7 @@ namespace BirimizKovulacak.EditorTools
             }
             var so = new SerializedObject(asset);
             SetProp(so, "m_SupportsHDR", true);
-            SetProp(so, "m_MSAA", 4);
+            SetProp(so, "m_MSAA", 2);
             SetProp(so, "m_ShadowDistance", 32f);
             SetProp(so, "m_ShadowCascadeCount", 2);
             SetProp(so, "m_SoftShadowsSupported", true);
@@ -480,7 +488,14 @@ namespace BirimizKovulacak.EditorTools
         static void WriteStreamingAssets()
         {
             string cfgPath = "Assets/StreamingAssets/Config/match_config.json";
-            if (!File.Exists(cfgPath)) File.WriteAllText(cfgPath, GameConfig.ToJson(MatchConfig.CreateDefault()));
+            // (Re)write the balance file when it is missing or was written for another protocol version.
+            bool current = false;
+            if (File.Exists(cfgPath))
+            {
+                try { var c = Newtonsoft.Json.JsonConvert.DeserializeObject<MatchConfig>(File.ReadAllText(cfgPath), GameConfig.JsonSettings); current = c != null && c.ConfigVersion == Protocol.Version; }
+                catch (Exception) { current = false; }
+            }
+            if (!current) { File.WriteAllText(cfgPath, GameConfig.ToJson(MatchConfig.CreateDefault())); Log("match_config.json (re)written for protocol " + Protocol.Version); }
             string id = DateTime.UtcNow.ToString("yyyyMMddHHmm") + "-" + Guid.NewGuid().ToString("N").Substring(0, 6);
             File.WriteAllText(Root + "/Resources/build_id.txt", id);
             if (!File.Exists("Assets/StreamingAssets/Localization/tr.json")) Log("WARNING: tr.json missing");

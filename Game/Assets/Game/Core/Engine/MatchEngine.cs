@@ -14,7 +14,14 @@ namespace BirimizKovulacak.Core
         public int StateVersion { get; private set; }
         public bool IsFinished { get { return Phase == MatchPhase.Results || Phase == MatchPhase.Abandoned; } }
         public MatchResultView Result { get; private set; }
-        private readonly PlayerState[] players = new PlayerState[4];
+        private readonly PlayerState[] players = new PlayerState[Protocol.MaxPlayers];
+        private readonly List<int> playerIds = new List<int>();
+        public IReadOnlyList<int> Players { get; private set; }
+        public int CallPartnerOf(int player)
+        {
+            return Present(player) && players[player].Private.Call.State == CallState.Active ? players[player].Private.Call.Other : PlayerIds.None;
+        }
+        private bool Present(int player) { return PlayerIds.IsValid(player) && players[player] != null; }
         private readonly List<ItemState> items = new List<ItemState>();
         private readonly List<DeskState> desks = new List<DeskState>();
         private readonly List<IncidentState> incidents = new List<IncidentState>();
@@ -34,33 +41,49 @@ namespace BirimizKovulacak.Core
 
         public MatchEngine(MatchConfig config, OfficeLayout layout, MatchSetup setup, IWorldQueries world)
         {
-            Config = config ?? throw new ArgumentNullException(nameof(config)); Layout = layout ?? throw new ArgumentNullException(nameof(layout));
+            Config = Snapshot.Copy(config ?? throw new ArgumentNullException(nameof(config))); Layout = layout ?? throw new ArgumentNullException(nameof(layout));
             if (setup == null) throw new ArgumentNullException(nameof(setup));
-            if (setup.Players == null || setup.Players.Count != 4) throw new ArgumentException("Exactly four players are required.", nameof(setup));
+            if (setup.Players == null || setup.Players.Count < Protocol.MinPlayers || setup.Players.Count > Protocol.MaxPlayers) throw new ArgumentException("Three to six players are required.", nameof(setup));
             this.world = world ?? OpenWorld.Instance; MatchId = setup.MatchId; Seed = setup.Seed;
             random = new DeterministicRandom(Seed); history = CopyHistory(setup.History); clock = setup.StartTime;
             var assignments = new List<int>(); foreach (DeskDef d in layout.Desks) assignments.Add(d.Index); assignments.Sort();
-            if (assignments.Count < 4) throw new ArgumentException("Four desks are required.", nameof(layout));
-            if (config.ShuffleDesks) random.Shuffle(assignments);
+            if (assignments.Count < setup.Players.Count) throw new ArgumentException("One desk per player is required.", nameof(layout));
+            var assigned = new List<int>();
+            for (int k = 0; k < setup.Players.Count; k++)
+            {
+                if (!assignments.Contains(k)) throw new ArgumentException("Assigned desks must have contiguous indices from zero.", nameof(layout));
+                assigned.Add(k);
+            }
+            if (config.ShuffleDesks) random.Shuffle(assigned);
             foreach (PlayerSlotInfo p in setup.Players)
             {
-                if (p == null || !PlayerIds.IsValid(p.Id) || players[p.Id] != null) throw new ArgumentException("Player ids must be distinct slots 0..3.", nameof(setup));
+                if (p == null || !PlayerIds.IsValid(p.Id) || players[p.Id] != null) throw new ArgumentException("Player ids must be distinct slots 0..5.", nameof(setup));
                 var state = new PlayerState(); players[p.Id] = state;
-                state.Public = new PlayerPublicView { Id = p.Id, Name = p.Name ?? "", ColorIndex = p.ColorIndex, DeskIndex = assignments[p.Id], Connected = true };
-                state.Avatar.Position = layout.GetDesk(assignments[p.Id]).SeatPosition;
-                for (int s = 0; s < 7; s++) state.Private.SabotageCooldowns.Add(0);
+                playerIds.Add(p.Id);
+                state.Public = new PlayerPublicView { Id = p.Id, Name = p.Name ?? "", ColorIndex = p.ColorIndex, Connected = true };
+                for (int s = 0; s <= (int)SabotageType.PowerCut; s++) state.Private.SabotageCooldowns.Add(0);
+            }
+            playerIds.Sort(); Players = playerIds.AsReadOnly();
+            for (int k = 0; k < playerIds.Count; k++)
+            {
+                PlayerState state = players[playerIds[k]];
+                state.Public.DeskIndex = assigned[k];
+                state.Avatar.Position = layout.GetDesk(assigned[k]).SeatPosition;
             }
             foreach (int index in assignments) { DeskDef d = layout.GetDesk(index); desks.Add(new DeskState { Def = d, View = new DeskView { Index = index, Id = d.Id, AssignedOwner = OwnerOfDesk(index) } }); }
             desks.Sort((a, b) => a.View.Index.CompareTo(b.View.Index));
             foreach (ItemDef def in layout.Items)
             {
+                if (def.Kind == ItemKind.Nameplate && !Present(def.NameplateOf)) continue;
                 string slot = def.InitialSlotId;
-                if (def.Kind == ItemKind.Nameplate && PlayerIds.IsValid(def.NameplateOf)) slot = layout.GetDesk(players[def.NameplateOf].Public.DeskIndex).NameplateSlotId;
+                if (def.Kind == ItemKind.Nameplate && Present(def.NameplateOf)) slot = layout.GetDesk(players[def.NameplateOf].Public.DeskIndex).NameplateSlotId;
                 var item = new ItemState { View = new ItemView { Id = def.Id, Kind = def.Kind, Variant = def.Variant ?? "", NameplateOf = def.NameplateOf, SlotId = slot ?? "", Location = ItemLocationKind.Slot, SlotIndex = FreeIndex(slot) } };
                 item.PlacementSlot = item.View.SlotId; items.Add(item);
             }
-            RefreshDesks(); quota.Target = config.QuotaTarget; manager.Position = layout.ManagerHome; manager.Yaw = layout.ManagerHomeYaw;
-            AssignRoles(setup); InitializeTasks(); ChangePhase(MatchPhase.Briefing, clock);
+            InitializeProfiles(setup);
+            InitializeCareer();
+            RefreshDesks(); quota.Target = Config.QuotaTarget; manager.Position = layout.ManagerHome; manager.Yaw = layout.ManagerHomeYaw;
+            AssignRoles(setup); InitializeSabotageV2(setup); InitializeCalls(); InitializeTasks(); ChangePhase(MatchPhase.Briefing, clock); InitializeMail(); InitializeFootage();
         }
         public void Tick(double now)
         {
@@ -69,23 +92,23 @@ namespace BirimizKovulacak.Core
             do
             {
                 double next = now; if (!IsFinished) next = Math.Min(next, phaseEnd);
-                for (int p = 0; p < 4; p++)
+                foreach (int p in playerIds)
                 {
                     if (players[p].Interaction != null) next = Math.Min(next, Math.Max(clock, players[p].Interaction.End));
                     if (!players[p].Public.Connected && !IsFinished) next = Math.Min(next, Math.Max(clock, players[p].Public.DisconnectDeadline));
                 }
-                NextTaskTime(ref next); NextManagerTime(ref next);
+                NextTaskTime(ref next); NextManagerTime(ref next); NextSabotageV2Time(ref next); NextCallTime(ref next); NextMailTime(ref next); NextFootageTime(ref next);
                 double previous = clock; clock = Math.Max(clock, next); CheckReconnectExpiry();
                 if (Phase == MatchPhase.Abandoned) break;
                 if (!IsFinished && clock >= phaseEnd) ChangePhase((MatchPhase)((int)Phase + 1), phaseEnd);
-                AdvanceTasks();
-                for (int p = 0; p < 4; p++) { InteractionState a = players[p].Interaction; if (a != null && a.End <= clock) CompleteInteraction(p, a); }
-                AdvanceManager(previous);
+                AdvanceSabotageV2(); AdvanceCalls(); AdvanceTasks(); AdvanceMail();
+                foreach (int p in playerIds) { InteractionState a = players[p].Interaction; if (a != null && a.End <= clock) CompleteInteraction(p, a); }
+                AdvanceManager(previous); AdvanceFootage();
                 if (clock >= now)
                 {
                     // A zero-length phase or a print finishing at this timestamp still has to drain.
                     double due = IsFinished ? double.PositiveInfinity : phaseEnd;
-                    NextTaskTime(ref due); NextManagerTime(ref due);
+                    NextTaskTime(ref due); NextManagerTime(ref due); NextSabotageV2Time(ref due); NextCallTime(ref due); NextMailTime(ref due); NextFootageTime(ref due);
                     if (due > clock) break;
                 }
             } while (true);
@@ -95,32 +118,46 @@ namespace BirimizKovulacak.Core
             uint id = request == null ? 0 : request.RequestId;
             if (request == null) return Reject(player, id, FailureCode.InvalidTarget);
             if (request.MatchId != MatchId) return Reject(player, id, FailureCode.WrongMatch);
-            if (!PlayerIds.IsValid(player) || !players[player].Public.Connected) return Reject(player, id, FailureCode.NotConnected);
+            if (!Present(player) || !players[player].Public.Connected) return Reject(player, id, FailureCode.NotConnected);
             PlayerState p = players[player]; if (p.Requests.Contains(id)) return Reject(player, id, FailureCode.Duplicate);
             p.Requests.Enqueue(id); if (p.Requests.Count > 64) p.Requests.Dequeue(); processedRequests++; Tick(now);
             if (!Allowed(request.Verb)) return Reject(player, id, FailureCode.WrongPhase);
             if (IsPhysical(request.Verb) && p.Interaction != null) return Reject(player, id, FailureCode.Busy);
+            SabotageType? card = CardTypeV2(request.Verb);
+            if (card.HasValue)
+            {
+                FailureCode permission = CheckCardAndLimitV2(player, card.Value);
+                if (permission != FailureCode.None) return Reject(player, id, permission);
+            }
             if (request.Verb == ActionVerb.CancelInteraction) { Cancel(player); return ActionResult.Ok(id); }
             if (request.Verb == ActionVerb.SetWorkPose) { p.Public.WorkPose = request.IntParam == 1; Changed(); return ActionResult.Ok(id); }
+            if (request.Verb == ActionVerb.Emote)
+            {
+                FailureCode emote = SubmitEmote(player, request.IntParam);
+                return emote == FailureCode.None ? ActionResult.Ok(id) : Reject(player, id, emote);
+            }
             FailureCode failure = FailureCode.InvalidTarget; bool handled = false; double end = 0;
+            SubmitCalls(player, request, ref handled, ref failure, ref end);
             SubmitPhysical(player, request, ref handled, ref failure, ref end);
             SubmitInformant(player, request, ref handled, ref failure); SubmitMeeting(player, request, ref handled, ref failure);
+            SubmitFootage(player, request, ref handled, ref failure);
             if (!handled || failure != FailureCode.None) return Reject(player, id, failure);
             Changed(); return ActionResult.Ok(id, end);
         }
         public void UpdateAvatar(int player, AvatarSample sample)
         {
-            if (!PlayerIds.IsValid(player) || !Finite(sample.Position.X) || !Finite(sample.Position.Y) || !Finite(sample.Position.Z) || !Finite(sample.Yaw) || !Finite(sample.Speed)) return;
+            if (!Present(player) || !Finite(sample.Position.X) || !Finite(sample.Position.Y) || !Finite(sample.Position.Z) || !Finite(sample.Yaw) || !Finite(sample.Speed)) return;
             PlayerState p = players[player]; p.Avatar = sample;
+            if (p.Public.Crouched != sample.Crouched) { p.Public.Crouched = sample.Crouched; Changed(); }
             if (p.Public.WorkPose && sample.Speed > 0.5f) { p.Public.WorkPose = false; Changed(); }
             if (p.Interaction != null && Vec3.FlatDistance(p.Interaction.StartPosition, sample.Position) > Config.Interaction.MoveCancelDistance) Cancel(player);
         }
         public void SetConnected(int player, bool connected, double now)
         {
-            if (!PlayerIds.IsValid(player)) return; Tick(now); if (Phase == MatchPhase.Abandoned) return;
+            if (!Present(player)) return; Tick(now); if (Phase == MatchPhase.Abandoned) return;
             PlayerState p = players[player]; if (p.Public.Connected == connected) return;
             p.Public.Connected = connected; p.Public.DisconnectDeadline = connected ? 0 : clock + Config.Reconnect.GraceSeconds;
-            if (!connected) { Cancel(player); DropItem(player, false); p.Public.WorkPose = false; }
+            if (!connected) { EndCall(player); Cancel(player); DropItem(player, false); p.Public.WorkPose = false; }
             Emit(connected ? EventType.PlayerReconnected : EventType.PlayerDisconnected, player);
         }
         public void Abandon(AbandonReason reason, double now)
@@ -132,16 +169,20 @@ namespace BirimizKovulacak.Core
         public List<GameEvent> DrainEvents() { var result = new List<GameEvent>(events); events.Clear(); return result; }
         public bool AllRematchVotesIn
         {
-            get { if (Phase != MatchPhase.Results) return false; bool any = false; foreach (PlayerState p in players) if (p.Public.Connected) { any = true; if (!p.Private.RematchVoted) return false; } return any; }
+            get { if (Phase != MatchPhase.Results) return false; bool any = false; foreach (int id in playerIds) { PlayerState p = players[id]; if (p.Public.Connected) { any = true; if (!p.Private.RematchVoted) return false; } } return any; }
         }
         private void ChangePhase(MatchPhase phase, double start)
         {
             MatchPhase previous = Phase; Phase = phase; phaseStart = start; phaseEnd = start + Duration(phase); PhaseSerial++;
             if (phase == MatchPhase.MeetingDiscussion || phase == MatchPhase.Abandoned)
             {
-                for (int p = 0; p < 4; p++) { Cancel(p); DropItem(p, false); players[p].Public.WorkPose = false; }
+                foreach (int p in playerIds) { Cancel(p); DropItem(p, false); players[p].Public.WorkPose = false; }
                 quota.Frozen = true; FreezeEvidence();
+                EndOutagesV2();
             }
+            CallsPhaseChanged();
+            MailPhaseChanged();
+            FootagePhaseChanged();
             Emit(EventType.PhaseChanged, arg: (int)phase); TasksPhaseChanged(previous); ManagerPhaseChanged(previous); MeetingPhaseChanged(previous);
         }
         private double Duration(MatchPhase phase)
@@ -165,7 +206,13 @@ namespace BirimizKovulacak.Core
         private bool Office { get { return Phase >= MatchPhase.Work1 && Phase <= MatchPhase.FinalInspection; } }
         private bool Allowed(ActionVerb verb)
         {
-            if (Phase == MatchPhase.Abandoned || verb == ActionVerb.None || (int)verb > (int)ActionVerb.RematchVote) return false;
+            if (Phase == MatchPhase.Abandoned || verb == ActionVerb.None || (int)verb > (int)ActionVerb.Emote) return false;
+            if (verb == ActionVerb.Emote) return true;
+            if (verb >= ActionVerb.CallPlayer && verb <= ActionVerb.HangUp) return Phase >= MatchPhase.Briefing && Phase <= MatchPhase.FinalInspection;
+            if (verb == ActionVerb.TipManager) return Office;
+            if (verb == ActionVerb.PullCallLogs) return Phase >= MatchPhase.Briefing && Phase <= MatchPhase.MeetingDefense2;
+            if (verb == ActionVerb.RequestFootage) return FootageMeeting;
+            if (verb >= ActionVerb.LockScreen && verb <= ActionVerb.ResetFuse) return Office;
             if (verb == ActionVerb.CancelInteraction) return true;
             if (verb <= ActionVerb.SetWorkPose || verb == ActionVerb.AuditScanItem || verb == ActionVerb.SealEvidence) return Office;
             if (verb == ActionVerb.AuditScanEvidence) return Office || Phase == MatchPhase.MeetingDiscussion;
@@ -174,12 +221,12 @@ namespace BirimizKovulacak.Core
             if (verb == ActionVerb.CastBallot) return Phase == MatchPhase.MeetingVote;
             return verb == ActionVerb.RematchVote && Phase == MatchPhase.Results;
         }
-        private static bool IsPhysical(ActionVerb verb) { return verb >= ActionVerb.PickUp && verb <= ActionVerb.SetWorkPose; }
+        private static bool IsPhysical(ActionVerb verb) { return (verb >= ActionVerb.PickUp && verb <= ActionVerb.SetWorkPose) || (verb >= ActionVerb.LockScreen && verb <= ActionVerb.ResetFuse) || verb == ActionVerb.TipManager; }
         private static bool Finite(double number) { return !double.IsNaN(number) && !double.IsInfinity(number); }
         private void Changed() { StateVersion++; }
         private ActionResult Reject(int player, uint id, FailureCode failure)
         {
-            rejectedRequests++; if (PlayerIds.IsValid(player)) Emit(EventType.ActionRejected, player, arg: (int)failure, audience: Audience.Player, recipient: player);
+            rejectedRequests++; if (Present(player)) Emit(EventType.ActionRejected, player, arg: (int)failure, audience: Audience.Player, recipient: player);
             return ActionResult.Fail(id, failure);
         }
         private void Emit(EventType type, int actor = PlayerIds.None, string target = "", string item = "", int arg = -1, string text = "", Audience audience = Audience.All, int recipient = PlayerIds.None)
@@ -193,10 +240,10 @@ namespace BirimizKovulacak.Core
             if (players[player].Interaction == null) return; players[player].Interaction = null; ClearActivity(player);
             Emit(EventType.InteractionCancelled, player, audience: Audience.Player, recipient: player);
         }
-        private void ClearActivity(int p) { players[p].Public.Activity = PublicActivity.None; players[p].Public.ActivityTargetId = ""; players[p].Public.ActivityStart = players[p].Public.ActivityEnd = 0; }
-        private int OwnerOfDesk(int index) { for (int p = 0; p < 4; p++) if (players[p] != null && players[p].Public.DeskIndex == index) return p; return PlayerIds.None; }
-        private DeskState Desk(int index) { return desks.Find(d => d.View.Index == index); }
-        private ItemState Item(string id) { return items.Find(i => i.View.Id == id); }
+        private void ClearActivity(int p) { players[p].Public.Activity = PublicActivity.None; players[p].Public.ActivityTargetId = ""; players[p].Public.ActivityStart = players[p].Public.ActivityEnd = 0; RefreshCallActivity(p); }
+        private int OwnerOfDesk(int index) { foreach (int p in playerIds) if (players[p] != null && players[p].Public.DeskIndex == index) return p; return PlayerIds.None; }
+        private DeskState Desk(int index) { foreach (DeskState desk in desks) if (desk.View.Index == index) return desk; return null; }
+        private ItemState Item(string id) { foreach (ItemState item in items) if (item.View.Id == id) return item; return null; }
         private ItemState Held(int p) { return Item(players[p].Public.CarryingItemId); }
         private int FreeIndex(string slot) { for (int n = 0; ; n++) { bool occupied = false; foreach (ItemState i in items) if (i.View.Location == ItemLocationKind.Slot && i.View.SlotId == slot && i.View.SlotIndex == n) { occupied = true; break; } if (!occupied) return n; } }
         private int ApparentOwner(int desk) { DeskState d = Desk(desk); return d == null ? PlayerIds.None : d.View.DisplayedNameplateOf == PlayerIds.None ? d.View.AssignedOwner : d.View.DisplayedNameplateOf; }

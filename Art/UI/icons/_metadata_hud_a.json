@@ -1,0 +1,134 @@
+[
+  {
+    "id": "ballot",
+    "path": "Art/UI/icons/ballot.png",
+    "w": 256,
+    "h": 256,
+    "category": "icons",
+    "nineSlice": null,
+    "screenRect": null,
+    "hasText": false,
+    "description": "A small manila office ballot box seen in gentle three-quarter view, blank cream voting paper with one large office-green check mark slipping diagonally into dark slot. No writing. A simple bureaucratic voting icon."
+  },
+  {
+    "id": "footage",
+    "path": "Art/UI/icons/footage.png",
+    "w": 256,
+    "h": 256,
+    "category": "icons",
+    "nineSlice": null,
+    "screenRect": null,
+    "hasText": false,
+    "description": "A friendly chunky office-green CCTV surveillance camera on a small navy wall bracket, paper-colored lens ring facing down-left, one small red status light. Clean large silhouette; no film text or lettering."
+  },
+  {
+    "id": "settings",
+    "path": "Art/UI/icons/settings.png",
+    "w": 256,
+    "h": 256,
+    "category": "icons",
+    "nineSlice": null,
+    "screenRect": null,
+    "hasText": false,
+    "description": "One chunky rounded eight-tooth office-green settings gear, navy outline and circular hollow transparent center, cream highlight upper-left, restrained green shading bottom-right. Front view. No surrounding objects."
+  },
+  {
+    "id": "bot",
+    "path": "Art/UI/icons/bot.png",
+    "w": 256,
+    "h": 256,
+    "category": "icons",
+    "nineSlice": null,
+    "screenRect": null,
+    "hasText": false,
+    "description": "A cute robot colleague HEAD ONLY: short rounded teal capsule robot face, two large friendly cream oval eyes with navy pupils, simple small smile, manila side ear bolts and a short antenna with red tip. Front facing, symmetric compact silhouette. Not a humanoid body."
+  },
+  {
+    "id": "ready",
+    "path": "Art/UI/icons/ready.png",
+    "w": 256,
+    "h": 256,
+    "category": "icons",
+    "nineSlice": null,
+    "screenRect": null,
+    "hasText": false,
+    "description": "A front-facing office ID badge: cream portrait-format rounded paper rectangle in an office-green thick border, tiny navy clip at the top, ONE very large green check mark at center. No portrait, no details, no lines or other symbols. Readiness/status icon. The badge itself is the only object."
+  },
+  {
+    "id": "not_ready",
+    "path": "Art/UI/icons/not_ready.png",
+    "w": 256,
+    "h": 256,
+    "category": "icons",
+    "nineSlice": null,
+    "screenRect": null,
+    "hasText": false,
+    "description": "A front-facing office ID badge: cream portrait-format rounded paper rectangle in a muted manila thick border, tiny navy clip at the top, ONE very large stamp-red X at center. No portrait, no details, no lines or other symbols. Not-ready status icon. The badge itself is the only object."
+  },
+  {
+    "id": "accuse",
+    "path": "Art/UI/icons/accuse.png",
+    "w": 256,
+    "h": 256,
+    "category": "icons",
+    "nineSlice": null,
+    "screenRect": null,
+    "hasText": false,
+    "description": "ONLY ONE DISMEMBERED CARTOON GLOVED POINTING HAND, isolated symbol, NO person and NO bean body and NO face. A large cream cartoon mitten hand points right with extended index finger; navy shirt cuff at left wrist; stamp-red three-ray attention burst over fingertip. Chunky bold shape with very few interior lines. The hand occupies most of image. Accusation gesture icon."
+  },
+  {
+    "id": "crown",
+    "path": "Art/UI/icons/crown.png",
+    "w": 256,
+    "h": 256,
+    "category": "icons",
+    "nineSlice": null,
+    "screenRect": null,
+    "hasText": false,
+    "description": "One manila-gold paper crown, broad front view, three tall rounded points each capped by a small circle, a central stamp-red diamond jewel and tiny green side gems. Bold compact leadership reward silhouette, no text."
+  },
+  {
+    "id": "star",
+    "path": "Art/UI/icons/star.png",
+    "w": 256,
+    "h": 256,
+    "category": "icons",
+    "nineSlice": null,
+    "screenRect": null,
+    "hasText": false,
+    "description": "One large five-point yellow-gold reward star, soft rounded tips and strong navy outline, simple cream top-left shine and manila bottom-right shaded edge. Straight-on view, no face, no extra sparkles or surrounding objects. Clean classic star silhouette."
+  },
+  {
+    "id": "favor_heart",
+    "path": "Art/UI/icons/favor_heart.png",
+    "w": 256,
+    "h": 256,
+    "category": "icons",
+    "nineSlice": null,
+    "screenRect": null,
+    "hasText": false,
+    "description": "One large plump stamp-red heart symbol with rounded lobes, navy outline, warm cream top-left shine and darker red bottom-right rim. Inside lower right of heart a very small gold four-point glint for a manager's favor. No arrow, no wings, no face, no letters."
+  },
+  {
+    "id": "lock_screen",
+    "path": "Art/UI/icons/lock_screen.png",
+    "w": 256,
+    "h": 256,
+    "category": "icons",
+    "nineSlice": null,
+    "screenRect": null,
+    "hasText": false,
+    "description": "A single chunky office-green desktop computer monitor with warm paper bezel and simple navy stand, screen is muted teal and contains one large manila padlock with navy keyhole. Front view, no keyboard, no cables, no writing. Simple screen-lock action icon."
+  },
+  {
+    "id": "email",
+    "path": "Art/UI/icons/email.png",
+    "w": 256,
+    "h": 256,
+    "category": "icons",
+    "nineSlice": null,
+    "screenRect": null,
+    "hasText": false,
+    "description": "One large cream office email envelope, chunky rounded corners outlined navy, folded triangular flap, small office-green circular notification medallion on lower-right containing a simple cream lightning bolt. No letters, no @, no text; do not add red warning signs. Front view with a slight playful tilt, clear unmistakable envelope silhouette."
+  }
+]

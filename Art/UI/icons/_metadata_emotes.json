@@ -1,0 +1,57 @@
+[
+  {
+    "id": "emote_wave",
+    "path": "Art/UI/icons/emote_wave.png",
+    "w": 256,
+    "h": 256,
+    "category": "icons",
+    "nineSlice": null,
+    "screenRect": null,
+    "hasText": false,
+    "description": "Blue bean wave gesture. Text-free emote, readable at 48px."
+  },
+  {
+    "id": "emote_point",
+    "path": "Art/UI/icons/emote_point.png",
+    "w": 256,
+    "h": 256,
+    "category": "icons",
+    "nineSlice": null,
+    "screenRect": null,
+    "hasText": false,
+    "description": "Blue bean point gesture. Text-free emote, readable at 48px."
+  },
+  {
+    "id": "emote_facepalm",
+    "path": "Art/UI/icons/emote_facepalm.png",
+    "w": 256,
+    "h": 256,
+    "category": "icons",
+    "nineSlice": null,
+    "screenRect": null,
+    "hasText": false,
+    "description": "Blue bean facepalm gesture. Text-free emote, readable at 48px."
+  },
+  {
+    "id": "emote_shrug",
+    "path": "Art/UI/icons/emote_shrug.png",
+    "w": 256,
+    "h": 256,
+    "category": "icons",
+    "nineSlice": null,
+    "screenRect": null,
+    "hasText": false,
+    "description": "Blue bean shrug gesture. Text-free emote, readable at 48px."
+  },
+  {
+    "id": "emote_laugh",
+    "path": "Art/UI/icons/emote_laugh.png",
+    "w": 256,
+    "h": 256,
+    "category": "icons",
+    "nineSlice": null,
+    "screenRect": null,
+    "hasText": false,
+    "description": "Blue bean laugh gesture. Text-free emote, readable at 48px."
+  }
+]

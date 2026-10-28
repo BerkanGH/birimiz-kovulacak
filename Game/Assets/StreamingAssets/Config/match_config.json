@@ -1,4 +1,5 @@
 {
+  "ConfigVersion": 2,
   "PlayerCount": 4,
   "QuotaTarget": 22.0,
   "ShuffleDesks": false,
@@ -10,7 +11,7 @@
     "Work2": 90.0,
     "FinalInspection": 30.0,
     "FinalWarning": 5.0,
-    "MeetingDiscussion": 30.0,
+    "MeetingDiscussion": 45.0,
     "MeetingDefense": 20.0,
     "MeetingVote": 10.0,
     "MeetingVerdict": 10.0,
@@ -55,7 +56,13 @@
     "CoffeePoints": 1.0,
     "ReportPoints": 2.0,
     "PhonePoints": 1.0,
-    "CleanPoints": 1.0
+    "CleanPoints": 1.0,
+    "MailEnabled": true,
+    "InitialMail": 1,
+    "MailInterval": 30.0,
+    "MaxOpenMail": 2,
+    "MailPoints": 1.0,
+    "TasteSeconds": 1.0
   },
   "Sabotage": [
     {
@@ -67,7 +74,9 @@
       "ConsequenceMisconduct": 1.0,
       "MaxActivePerDesk": 1,
       "EffectSeconds": 0.0,
-      "ReverseSeconds": 0.0
+      "ReverseSeconds": 0.0,
+      "Basic": true,
+      "MaxPerMatch": 0
     },
     {
       "Type": "PlantItem",
@@ -78,18 +87,9 @@
       "ConsequenceMisconduct": 1.0,
       "MaxActivePerDesk": 2,
       "EffectSeconds": 0.0,
-      "ReverseSeconds": 0.0
-    },
-    {
-      "Type": "LockWorkstation",
-      "DurationSeconds": 4.0,
-      "ActorCooldownSeconds": 30.0,
-      "SameTargetCooldownSeconds": 30.0,
-      "BaseMisconduct": 2.0,
-      "ConsequenceMisconduct": 1.0,
-      "MaxActivePerDesk": 1,
-      "EffectSeconds": 45.0,
-      "ReverseSeconds": 5.0
+      "ReverseSeconds": 0.0,
+      "Basic": true,
+      "MaxPerMatch": 0
     },
     {
       "Type": "HideReport",
@@ -100,7 +100,9 @@
       "ConsequenceMisconduct": 1.0,
       "MaxActivePerDesk": 3,
       "EffectSeconds": 0.0,
-      "ReverseSeconds": 0.0
+      "ReverseSeconds": 0.0,
+      "Basic": true,
+      "MaxPerMatch": 0
     },
     {
       "Type": "SpillCoffee",
@@ -111,7 +113,9 @@
       "ConsequenceMisconduct": 1.0,
       "MaxActivePerDesk": 1,
       "EffectSeconds": 0.0,
-      "ReverseSeconds": 5.0
+      "ReverseSeconds": 5.0,
+      "Basic": true,
+      "MaxPerMatch": 0
     },
     {
       "Type": "MoveClutter",
@@ -122,7 +126,9 @@
       "ConsequenceMisconduct": 1.0,
       "MaxActivePerDesk": 2,
       "EffectSeconds": 0.0,
-      "ReverseSeconds": 0.0
+      "ReverseSeconds": 0.0,
+      "Basic": true,
+      "MaxPerMatch": 0
     },
     {
       "Type": "EvidenceTampering",
@@ -133,7 +139,87 @@
       "ConsequenceMisconduct": 0.0,
       "MaxActivePerDesk": 99,
       "EffectSeconds": 0.0,
-      "ReverseSeconds": 0.0
+      "ReverseSeconds": 0.0,
+      "Basic": true,
+      "MaxPerMatch": 0
+    },
+    {
+      "Type": "LockWorkstation",
+      "DurationSeconds": 4.0,
+      "ActorCooldownSeconds": 30.0,
+      "SameTargetCooldownSeconds": 30.0,
+      "BaseMisconduct": 2.0,
+      "ConsequenceMisconduct": 1.0,
+      "MaxActivePerDesk": 1,
+      "EffectSeconds": 45.0,
+      "ReverseSeconds": 5.0,
+      "Basic": false,
+      "MaxPerMatch": 0
+    },
+    {
+      "Type": "FakeEmail",
+      "DurationSeconds": 4.0,
+      "ActorCooldownSeconds": 35.0,
+      "SameTargetCooldownSeconds": 60.0,
+      "BaseMisconduct": 2.0,
+      "ConsequenceMisconduct": 1.0,
+      "MaxActivePerDesk": 1,
+      "EffectSeconds": 0.0,
+      "ReverseSeconds": 0.0,
+      "Basic": false,
+      "MaxPerMatch": 0
+    },
+    {
+      "Type": "PullPlug",
+      "DurationSeconds": 2.0,
+      "ActorCooldownSeconds": 30.0,
+      "SameTargetCooldownSeconds": 60.0,
+      "BaseMisconduct": 2.0,
+      "ConsequenceMisconduct": 1.0,
+      "MaxActivePerDesk": 1,
+      "EffectSeconds": 0.0,
+      "ReverseSeconds": 2.0,
+      "Basic": false,
+      "MaxPerMatch": 0
+    },
+    {
+      "Type": "SaltCoffee",
+      "DurationSeconds": 2.0,
+      "ActorCooldownSeconds": 30.0,
+      "SameTargetCooldownSeconds": 0.0,
+      "BaseMisconduct": 2.0,
+      "ConsequenceMisconduct": 1.0,
+      "MaxActivePerDesk": 99,
+      "EffectSeconds": 0.0,
+      "ReverseSeconds": 0.0,
+      "Basic": false,
+      "MaxPerMatch": 0
+    },
+    {
+      "Type": "InternetOutage",
+      "DurationSeconds": 4.0,
+      "ActorCooldownSeconds": 60.0,
+      "SameTargetCooldownSeconds": 0.0,
+      "BaseMisconduct": 3.0,
+      "ConsequenceMisconduct": 0.0,
+      "MaxActivePerDesk": 99,
+      "EffectSeconds": 40.0,
+      "ReverseSeconds": 6.0,
+      "Basic": false,
+      "MaxPerMatch": 2
+    },
+    {
+      "Type": "PowerCut",
+      "DurationSeconds": 3.0,
+      "ActorCooldownSeconds": 60.0,
+      "SameTargetCooldownSeconds": 0.0,
+      "BaseMisconduct": 2.0,
+      "ConsequenceMisconduct": 0.0,
+      "MaxActivePerDesk": 99,
+      "EffectSeconds": 25.0,
+      "ReverseSeconds": 4.0,
+      "Basic": false,
+      "MaxPerMatch": 2
     }
   ],
   "AntiGrief": {
@@ -146,7 +232,9 @@
   "Witness": {
     "Range": 8.0,
     "HalfAngle": 120.0,
-    "RequireLineOfSight": true
+    "RequireLineOfSight": true,
+    "CrouchRangeFactor": 0.6,
+    "DarkRange": 2.5
   },
   "Manager": {
     "WalkSpeed": 2.6,
@@ -157,7 +245,11 @@
     "MovingNoticeSeconds": 0.75,
     "ReactionSeconds": 1.5,
     "ExpectedPerformanceAtRaid": 1.0,
-    "ExpectedPerformanceAtFinal": 3.0
+    "ExpectedPerformanceAtFinal": 3.0,
+    "DarkVisionRange": 3.0,
+    "TipDwellBonus": 2.5,
+    "SurpriseAtFraction": 0.45,
+    "SurpriseSeconds": 20.0
   },
   "Risk": {
     "SuspiciousItem": 3.0,
@@ -175,6 +267,11 @@
     "CaughtInAct": 3.0,
     "BehindOnWork": 1.0,
     "WorkingHard": -0.5,
+    "PersonalCall": 1.0,
+    "InappropriateEmail": 1.5,
+    "SaltyCoffee": 1.5,
+    "TipClean": -0.5,
+    "EmailLog": 0.0,
     "MeterThresholds": [
       1.5,
       3.0,
@@ -187,7 +284,9 @@
     "SealedReports": 1,
     "MovedRecentlySeconds": 90.0,
     "ItemScanRange": 2.5,
-    "AvoidRepeatInformant": true
+    "AvoidRepeatInformant": true,
+    "CallLogCharges": 1,
+    "FootageCharges": 1
   },
   "Verdict": {
     "VoteWeight": 0.45,
@@ -195,7 +294,8 @@
     "PerformanceWeight": 0.2,
     "RiskScale": 6.0,
     "PerformanceScale": 4.0,
-    "FalseAccusationPenalty": 1.0
+    "FalseAccusationPenalty": 1.0,
+    "FavorWeight": 0.1
   },
   "Objectives": [
     {
@@ -297,5 +397,201 @@
   ],
   "Reconnect": {
     "GraceSeconds": 30.0
-  }
+  },
+  "Cards": {
+    "Enabled": true,
+    "CardsPerPlayer": 2
+  },
+  "Email": {
+    "ScreenOpenSeconds": 60.0,
+    "LockScreenSeconds": 1.0,
+    "TemplateCount": 10
+  },
+  "Calls": {
+    "Enabled": true,
+    "RingSeconds": 10.0,
+    "MaxCallSeconds": 45.0,
+    "CooldownSeconds": 8.0,
+    "TipLineEnabled": true,
+    "TipSeconds": 3.0,
+    "TipsPerPlayer": 1
+  },
+  "Footage": {
+    "Enabled": true,
+    "SampleInterval": 1.0,
+    "WindowSeconds": 5.0,
+    "SpeakerRequests": 1
+  },
+  "Career": {
+    "QuotaMet": 1,
+    "Survived": 1,
+    "ObjectiveWon": 3,
+    "InformantWon": 3,
+    "Fired": -2,
+    "Favourite": 1
+  },
+  "ManagerProfiles": [
+    {
+      "Id": "paragoz",
+      "QuotaDelta": 2.0,
+      "VoteWeight": 0.4,
+      "RiskWeight": 0.2,
+      "PerformanceWeight": 0.4,
+      "FavorWeight": -1.0,
+      "ObservationFactors": [
+        {
+          "Kind": "MessyDesk",
+          "Factor": 0.0
+        },
+        {
+          "Kind": "BehindOnWork",
+          "Factor": 2.0
+        },
+        {
+          "Kind": "WorkingHard",
+          "Factor": 2.0
+        }
+      ],
+      "EvidenceFactor": 1.0,
+      "EmailFactor": 1.0,
+      "VisionRange": -1.0,
+      "VisionHalfAngle": -1.0,
+      "SurpriseInspection": false,
+      "HasFavourite": false,
+      "FavorSource": "ReportsDelivered",
+      "FavorPerAction": 1.0,
+      "SearchAllDrawers": false,
+      "ExtraFootageRequests": 0
+    },
+    {
+      "Id": "disiplinci",
+      "QuotaDelta": 0.0,
+      "VoteWeight": -1.0,
+      "RiskWeight": -1.0,
+      "PerformanceWeight": -1.0,
+      "FavorWeight": -1.0,
+      "ObservationFactors": [
+        {
+          "Kind": "MessyDesk",
+          "Factor": 2.0
+        },
+        {
+          "Kind": "NotAtDesk",
+          "Factor": 2.0
+        },
+        {
+          "Kind": "MovingDuringInspection",
+          "Factor": 1.5
+        },
+        {
+          "Kind": "PersonalCall",
+          "Factor": 2.0
+        }
+      ],
+      "EvidenceFactor": 1.0,
+      "EmailFactor": 1.5,
+      "VisionRange": -1.0,
+      "VisionHalfAngle": -1.0,
+      "SurpriseInspection": true,
+      "HasFavourite": false,
+      "FavorSource": "AnyTask",
+      "FavorPerAction": 0.5,
+      "SearchAllDrawers": false,
+      "ExtraFootageRequests": 0
+    },
+    {
+      "Id": "kayirmaci",
+      "QuotaDelta": 0.0,
+      "VoteWeight": -1.0,
+      "RiskWeight": -1.0,
+      "PerformanceWeight": -1.0,
+      "FavorWeight": 0.2,
+      "ObservationFactors": [],
+      "EvidenceFactor": 1.0,
+      "EmailFactor": 1.0,
+      "VisionRange": -1.0,
+      "VisionHalfAngle": -1.0,
+      "SurpriseInspection": false,
+      "HasFavourite": true,
+      "FavorSource": "CoffeeDelivered",
+      "FavorPerAction": 1.0,
+      "SearchAllDrawers": false,
+      "ExtraFootageRequests": 0
+    },
+    {
+      "Id": "paranoyak",
+      "QuotaDelta": 0.0,
+      "VoteWeight": -1.0,
+      "RiskWeight": -1.0,
+      "PerformanceWeight": -1.0,
+      "FavorWeight": -1.0,
+      "ObservationFactors": [
+        {
+          "Kind": "CaughtInAct",
+          "Factor": 1.5
+        },
+        {
+          "Kind": "CarryingSuspicious",
+          "Factor": 1.5
+        }
+      ],
+      "EvidenceFactor": 1.5,
+      "EmailFactor": 1.0,
+      "VisionRange": -1.0,
+      "VisionHalfAngle": 85.0,
+      "SurpriseInspection": false,
+      "HasFavourite": false,
+      "FavorSource": "None",
+      "FavorPerAction": 1.0,
+      "SearchAllDrawers": true,
+      "ExtraFootageRequests": 1
+    }
+  ],
+  "WeekDays": [
+    {
+      "ProfileId": "paragoz",
+      "Cards": false,
+      "TipLine": false,
+      "Footage": false,
+      "Mail": true,
+      "Calls": true,
+      "CareerMultiplier": 1.0
+    },
+    {
+      "ProfileId": "disiplinci",
+      "Cards": true,
+      "TipLine": false,
+      "Footage": false,
+      "Mail": true,
+      "Calls": true,
+      "CareerMultiplier": 1.0
+    },
+    {
+      "ProfileId": "kayirmaci",
+      "Cards": true,
+      "TipLine": true,
+      "Footage": true,
+      "Mail": true,
+      "Calls": true,
+      "CareerMultiplier": 1.0
+    },
+    {
+      "ProfileId": "paranoyak",
+      "Cards": true,
+      "TipLine": true,
+      "Footage": true,
+      "Mail": true,
+      "Calls": true,
+      "CareerMultiplier": 1.0
+    },
+    {
+      "ProfileId": "",
+      "Cards": true,
+      "TipLine": true,
+      "Footage": true,
+      "Mail": true,
+      "Calls": true,
+      "CareerMultiplier": 2.0
+    }
+  ]
 }
