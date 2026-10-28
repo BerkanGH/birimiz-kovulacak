@@ -41,6 +41,16 @@ namespace BirimizKovulacak.Core
         public List<string> ForceObjectives;
         /// <summary>Test hook: force objective targets per player (null = random).</summary>
         public List<int> ForceTargets;
+        // v2
+        public GameMode Mode;
+        /// <summary>Week mode day (0..4); ignored in quick play.</summary>
+        public int WeekDay;
+        /// <summary>Manager profile id; empty = the engine picks (week schedule, else seeded random avoiding the last one).</summary>
+        public string ManagerProfileId = "";
+        /// <summary>Test hook: force card hands per player id (null = deal randomly).</summary>
+        public List<List<SabotageType>> ForceCards;
+        /// <summary>Test hook: force the Kayirmaci favourite (PlayerIds.None = random).</summary>
+        public int ForceFavourite = PlayerIds.None;
     }
 
     /// <summary>Cross-match memory used to reduce repetition (Informant and objective targets).</summary>
@@ -54,5 +64,12 @@ namespace BirimizKovulacak.Core
         public List<int> TimesTargeted = new List<int>();
         public List<string> PastCards = new List<string>();
         public int MatchesPlayed;
+        // v2
+        /// <summary>Week mode: the day the NEXT match is (0..4; wraps to 0 after Friday and CareerPoints reset).</summary>
+        public int NextWeekDay;
+        public int WeekNumber;
+        /// <summary>Career points per player id for the current week.</summary>
+        public List<int> CareerPoints = new List<int>();
+        public List<string> PastManagerProfiles = new List<string>();
     }
 }

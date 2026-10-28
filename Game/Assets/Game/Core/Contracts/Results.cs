@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 
 namespace BirimizKovulacak.Core
@@ -30,6 +30,9 @@ namespace BirimizKovulacak.Core
         public float RiskNormalized;
         public float Performance;
         public float PerformanceDeficit;
+        /// <summary>v2: candidate's favour and the discount it earned (score already includes it).</summary>
+        public float Favor;
+        public float FavorDiscount;
         public float Score;
     }
 
@@ -52,6 +55,18 @@ namespace BirimizKovulacak.Core
         public int MatchSeed;
         /// <summary>Deterministic hash of the result content; clients log it to prove they all received the same result.</summary>
         public string ResultHash = "";
+        // v2
+        public GameMode Mode;
+        public int WeekDay;
+        public string ManagerProfileId = "";
+        /// <summary>Every call / tip of the match, in start order.</summary>
+        public List<CallRecordView> Calls = new List<CallRecordView>();
+        /// <summary>True when this was the last day of the week (WeekDay 4).</summary>
+        public bool WeekFinished;
+        /// <summary>Week winners ("Ayin Elemani") when WeekFinished; ties allowed.</summary>
+        public List<int> EmployeeOfTheMonth = new List<int>();
+        /// <summary>Player(s) with the highest positive favour at the verdict.</summary>
+        public List<int> Favourites = new List<int>();
     }
 
     [Serializable]
@@ -77,6 +92,12 @@ namespace BirimizKovulacak.Core
         public int TasksCompleted;
         public int SabotageCount;
         public List<string> Titles = new List<string>();
+        // v2
+        public List<SabotageType> Cards = new List<SabotageType>();
+        public float Favor;
+        /// <summary>Week mode: points earned this match (after the day multiplier) and the new total.</summary>
+        public int CareerDelta;
+        public int CareerTotal;
     }
 
     [Serializable]
@@ -126,5 +147,10 @@ namespace BirimizKovulacak.Core
         public float QuotaPoints;
         public int ProcessedRequests;
         public int RejectedRequests;
+        // v2
+        public string ManagerProfileId = "";
+        public List<List<SabotageType>> Cards = new List<List<SabotageType>>();
+        public List<CallRecordView> Calls = new List<CallRecordView>();
+        public List<string> SaltedItems = new List<string>();
     }
 }

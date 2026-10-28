@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 
 namespace BirimizKovulacak.Core
@@ -37,6 +37,19 @@ namespace BirimizKovulacak.Core
         public PrivateView Me = new PrivateView();
         /// <summary>Null until the Results phase; then the full post-match reveal (identical for everyone).</summary>
         public MatchResultView Result;
+
+        // ---- v2 (public) ----
+        public GameMode Mode;
+        /// <summary>Week mode day index (0 = Pazartesi); 0 in quick play.</summary>
+        public int WeekDay;
+        /// <summary>Manager personality of this match (ManagerProfileIds.*).</summary>
+        public string ManagerProfileId = "";
+        /// <summary>Kayirmaci's public favourite (PlayerIds.None if the profile has none).</summary>
+        public int Favourite = PlayerIds.None;
+        public FeaturesView Features = new FeaturesView();
+        public OfficeStatusView Office = new OfficeStatusView();
+        /// <summary>Every email sent this match ("from" = apparent sender), newest last.</summary>
+        public List<EmailView> Inbox = new List<EmailView>();
     }
 
     [Serializable]
@@ -50,6 +63,8 @@ namespace BirimizKovulacak.Core
         public double PhoneRingEnds;
         public int DirtyDesks;
         public bool Frozen; // true after the final inspection
+        /// <summary>v2: mail items currently waiting in the mail room or being carried.</summary>
+        public int OpenMail;
     }
 
     [Serializable]
@@ -74,6 +89,17 @@ namespace BirimizKovulacak.Core
         public bool WorkPose;
         /// <summary>Official accusations received (only meaningful from the meeting onwards).</summary>
         public int AccusationsReceived;
+        // v2
+        public bool Crouched;
+        /// <summary>This player's phone is ringing (incoming call; caller hidden).</summary>
+        public bool Ringing;
+        /// <summary>Manager favour (public, 0+).</summary>
+        public float Favor;
+        /// <summary>Current emote (-1 = none) and its end time.</summary>
+        public int Emote = -1;
+        public double EmoteUntil;
+        /// <summary>Week mode: career points before this match.</summary>
+        public int CareerPoints;
     }
 
     [Serializable]
@@ -97,6 +123,10 @@ namespace BirimizKovulacak.Core
         public bool Sealed;
         /// <summary>True if this item is the subject of an Active evidence record.</summary>
         public bool IsEvidence;
+        /// <summary>v2: for mail, the desk it is addressed to (-1 otherwise).</summary>
+        public int AddressedDesk = -1;
+        /// <summary>v2: recipient-specific: true only if the recipient salted or tasted this mug and it is salted.</summary>
+        public bool KnownSalted;
     }
 
     [Serializable]
@@ -113,6 +143,13 @@ namespace BirimizKovulacak.Core
         public double PcLockedAt;
         public double PcLockedUntil;
         public int ClutterCount;
+        // v2
+        /// <summary>Screen session open (fake emails possible) until ScreenOpenUntil.</summary>
+        public bool ScreenOpen;
+        public double ScreenOpenUntil;
+        public bool Unplugged;
+        /// <summary>Workstation cannot be password-locked again before this time.</summary>
+        public double PcImmuneUntil;
     }
 
     [Serializable]
@@ -157,6 +194,21 @@ namespace BirimizKovulacak.Core
         public ScanSignal ScanSignal;
         /// <summary>Weight this record currently adds to its attributed/subject player's observed risk.</summary>
         public float RiskWeight;
+        // v2
+        /// <summary>Search statements: item variants seen in the container (replaces the comma-joined ItemVariant).</summary>
+        public List<string> Contents = new List<string>();
+        /// <summary>EmailLog: template index.</summary>
+        public int EmailTemplate = -1;
+        /// <summary>CctvFootage: camera, requested window (host time) and who was seen.</summary>
+        public string CameraId = "";
+        public double WindowStart;
+        public double WindowEnd;
+        public bool NoRecording;
+        public List<FootageSighting> Sightings = new List<FootageSighting>();
+        /// <summary>CallLogStatement: the call records in the presented note.</summary>
+        public List<CallRecordView> Calls = new List<CallRecordView>();
+        /// <summary>TasteStatement: whether the tasted mug was salted.</summary>
+        public bool Salted;
     }
 
     [Serializable]
@@ -197,6 +249,8 @@ namespace BirimizKovulacak.Core
         public double ReactionUntil;
         /// <summary>Host time at which the manager leaves the office (during warnings).</summary>
         public double ArrivesAt;
+        /// <summary>v2: the current walk is the unannounced Work2 inspection.</summary>
+        public bool Surprise;
     }
 
     [Serializable]
@@ -240,6 +294,15 @@ namespace BirimizKovulacak.Core
         public List<double> SabotageCooldowns = new List<double>();
         /// <summary>Reconnect token echo (so a client that lost local state can recover it).</summary>
         public string ReconnectToken = "";
+        // v2
+        /// <summary>Card sabotage types this player holds (private until Results).</summary>
+        public List<SabotageType> Cards = new List<SabotageType>();
+        public CallView Call = new CallView();
+        /// <summary>Host time until which the recipient cannot start a new call.</summary>
+        public double CallCooldownUntil;
+        public int TipsLeft;
+        /// <summary>Footage requests left (defense speaker allowance + Informant charges + profile bonus).</summary>
+        public int FootageLeft;
     }
 
     [Serializable]
@@ -273,6 +336,8 @@ namespace BirimizKovulacak.Core
         public int SealsLeft;
         public int SealedEvidenceId = -1;
         public List<ScanResultView> Scans = new List<ScanResultView>();
+        // v2
+        public int CallLogsLeft;
     }
 
     [Serializable]
@@ -310,5 +375,83 @@ namespace BirimizKovulacak.Core
         /// <summary>Scan: result id.</summary>
         public int ScanId = -1;
         public bool Presented;
+        // v2
+        /// <summary>CallLog: snapshot of call records at the time it was pulled.</summary>
+        public List<CallRecordView> Calls = new List<CallRecordView>();
+        /// <summary>TasteResult: the mug and whether it was salted.</summary>
+        public string ItemId = "";
+        public bool Salted;
+    }
+
+    // ---------------- v2 ----------------
+
+    /// <summary>Which optional systems are on for this match (week day / host settings).</summary>
+    [Serializable]
+    public sealed class FeaturesView
+    {
+        public bool Cards = true;
+        public bool Calls = true;
+        public bool TipLine = true;
+        public bool Footage = true;
+        public bool Mail = true;
+        public float CareerMultiplier = 1f;
+    }
+
+    [Serializable]
+    public sealed class OfficeStatusView
+    {
+        public bool InternetDown;
+        public double InternetBackAt;
+        public bool PowerDown;
+        public double PowerBackAt;
+    }
+
+    [Serializable]
+    public sealed class EmailView
+    {
+        public int Id;
+        public double Time;
+        /// <summary>Apparent sender = assigned owner of the pc it was sent from (never the true actor).</summary>
+        public int FromPlayer = PlayerIds.None;
+        public int DeskIndex = -1;
+        public int TemplateId;
+    }
+
+    /// <summary>Owner-only call state.</summary>
+    [Serializable]
+    public sealed class CallView
+    {
+        public CallState State;
+        public int Other = PlayerIds.None;
+        /// <summary>When the current state started (ringing or active).</summary>
+        public double Since;
+        /// <summary>Ringing: when it times out. Active: when the call is cut (max length).</summary>
+        public double Until;
+    }
+
+    [Serializable]
+    public sealed class FootageSighting
+    {
+        public int Player = PlayerIds.None;
+        /// <summary>Host time of the sample.</summary>
+        public double Time;
+        public PublicActivity Activity;
+        /// <summary>Variant of the carried item ("" if empty-handed).</summary>
+        public string Carrying = "";
+        public bool Crouched;
+    }
+
+    /// <summary>A call record (host-only until revealed via call logs or Results).</summary>
+    [Serializable]
+    public sealed class CallRecordView
+    {
+        public int Caller = PlayerIds.None;
+        /// <summary>PlayerIds.None for a tip-line call.</summary>
+        public int Callee = PlayerIds.None;
+        public double Start;
+        public double End;
+        public bool Answered;
+        public bool Tip;
+        public int TipDesk = -1;
     }
 }

@@ -41,8 +41,14 @@ namespace BirimizKovulacak.Core
         public List<LobbySlot> Slots = new List<LobbySlot>();
         public bool MatchRunning;
         public int MatchId;
-        /// <summary>Message key shown when the lobby cannot start, e.g. "lobby.need_four".</summary>
+        /// <summary>Message key shown when the lobby cannot start, e.g. "lobby.need_players".</summary>
         public string StatusKey = "";
+        // v2
+        public GameMode Mode;
+        /// <summary>Week mode: the day the next match will be.</summary>
+        public int WeekDay;
+        /// <summary>Career points per slot for the running week (empty in quick play).</summary>
+        public List<int> CareerPoints = new List<int>();
     }
 
     [Serializable]
@@ -54,6 +60,8 @@ namespace BirimizKovulacak.Core
         public bool Ready;
         public bool IsHost;
         public string Name = "";
+        /// <summary>v2: seat filled by a host-side bot.</summary>
+        public bool IsBot;
     }
 
     /// <summary>Payload sent with the transport connection request (connection approval).</summary>

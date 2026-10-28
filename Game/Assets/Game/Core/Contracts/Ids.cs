@@ -1,4 +1,4 @@
-// Shared contract: stable identifiers.
+﻿// Shared contract: stable identifiers.
 // Owner: Claude (contract). Changes require a note in docs/CONTRACTS.md "Changelog".
 // C# 9 / netstandard2.1 only (Unity-compatible): no records, no init accessors, no file-scoped namespaces.
 
@@ -8,12 +8,13 @@ namespace BirimizKovulacak.Core
     public static class Protocol
     {
         /// <summary>Bump whenever any wire format or rule contract changes incompatibly.</summary>
-        public const int Version = 1;
-        public const int MaxPlayers = 4;
+        public const int Version = 2;
+        public const int MaxPlayers = 6;
+        public const int MinPlayers = 3;
     }
 
     /// <summary>
-    /// Player identifiers are lobby slot indices 0..3. They are stable for the whole session (including
+    /// Player identifiers are lobby slot indices 0..5 (3–6 players; slots are contiguous from 0 within a match). They are stable for the whole session (including
     /// reconnects and rematches). <see cref="None"/> means "no player".
     /// </summary>
     public static class PlayerIds
@@ -41,6 +42,8 @@ namespace BirimizKovulacak.Core
         public const string Phone = "st.phone";
         public const string DeliveryPoint = "st.delivery";
         public const string CleaningCloset = "st.cleaning";
+        public const string Router = "st.router";       // server room: InternetOutage / RestartRouter
+        public const string FuseBox = "st.fusebox";     // storage: PowerCut / ResetFuse
 
         // Shared slots / containers
         public const string MugShelf = "slot.mugshelf";
@@ -52,6 +55,12 @@ namespace BirimizKovulacak.Core
         public const string HideBehindPrinter = "spot.printer_back";
         public const string HideInPlant = "spot.plant";
         public const string HideInCabinet = "spot.cabinet";
+        public const string HideInToilet = "spot.toilet";
+        public const string Mailroom = "slot.mailroom"; // new mail appears here
+
+        // Security cameras ("cam.<name>") and rooms ("room.<name>")
+        public static string Camera(string name) { return "cam." + name; }
+        public static string Room(string name) { return "room." + name; }
 
         // Items (reports are created dynamically: "item.report.<n>")
         public static string Mug(int i) { return "item.mug." + i; }
@@ -60,6 +69,7 @@ namespace BirimizKovulacak.Core
         public static string Spray(int i) { return "item.spray." + i; }
         public static string Suspicious(string variant) { return "item.sus." + variant; }
         public static string Report(int serial) { return "item.report." + serial; }
+        public static string Mail(int serial) { return "item.mail." + serial; }
 
         /// <summary>Returns the desk index encoded in ids like "desk.2", "desk.2.drawer"; -1 otherwise.</summary>
         public static int DeskIndexOf(string id)
@@ -87,5 +97,15 @@ namespace BirimizKovulacak.Core
         public const string RivalCv = "rival_cv";
         public const string BossMug = "boss_mug";
         public const string SalaryList = "salary_list";
+        public const string Mail = "mail";
+    }
+
+    /// <summary>Manager personality ids (data in <see cref="MatchConfig.ManagerProfiles"/>; loc keys "manager.&lt;id&gt;.*").</summary>
+    public static class ManagerProfileIds
+    {
+        public const string Paragoz = "paragoz";
+        public const string Disiplinci = "disiplinci";
+        public const string Kayirmaci = "kayirmaci";
+        public const string Paranoyak = "paranoyak";
     }
 }

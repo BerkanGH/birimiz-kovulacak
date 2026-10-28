@@ -73,5 +73,7 @@ namespace BirimizKovulacak.Core
         public Vec3 Position;
         public float Yaw;
         public float Speed;
+        /// <summary>v2: sneaking (crouch walk). Witnesses notice a crouched actor only within a shorter range.</summary>
+        public bool Crouched;
     }
 }
