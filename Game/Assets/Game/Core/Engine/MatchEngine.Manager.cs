@@ -8,10 +8,14 @@ namespace BirimizKovulacak.Core
         private int noteSerial, evidenceSerial, observationSerial, managerRouteIndex;
         private double managerDeadline = double.PositiveInfinity, managerSampleAt = double.PositiveInfinity;
         private double managerSegmentStart;
+        private double surpriseAt = double.PositiveInfinity, surpriseEnds = double.PositiveInfinity;
+        private readonly List<ManagerStop> inspectionRoute = new List<ManagerStop>();
+        private readonly List<int> inspectionTipDesks = new List<int>();
         private Vec3 managerSegmentFrom, managerSegmentTo;
-        private readonly double[] movingSince = { -1, -1, -1, -1 };
-        private readonly bool[] movementObserved = new bool[4];
-        private readonly List<string> observedCarry = new List<string>();
+        private readonly double[] movingSince = new double[Protocol.MaxPlayers];
+        private readonly bool[] movementObserved = new bool[Protocol.MaxPlayers];
+        private struct CarryObservation { internal int Player; internal ItemState Item; }
+        private readonly List<CarryObservation> observedCarry = new List<CarryObservation>();
         private readonly List<InteractionState> observedInteractions = new List<InteractionState>();
         private readonly List<string> inspectedDesks = new List<string>();
 
@@ -20,35 +24,72 @@ namespace BirimizKovulacak.Core
             manager.InspectingDesk = -1;
             manager.ReactionObservation = -1;
             manager.ReactionUntil = 0;
-            managerDeadline = managerSampleAt = double.PositiveInfinity;
+            manager.ArrivesAt = 0;
+            manager.Surprise = false;
+            surpriseAt = surpriseEnds = managerDeadline = managerSampleAt = double.PositiveInfinity;
             if (Phase == MatchPhase.Raid || Phase == MatchPhase.FinalInspection)
-            {
-                manager.State = ManagerState.Warning;
-                manager.Position = Layout.ManagerHome;
-                manager.Yaw = Layout.ManagerHomeYaw;
-                manager.ArrivesAt = phaseStart + Math.Max(0, Phase == MatchPhase.Raid ? Config.Durations.RaidWarning : Config.Durations.FinalWarning);
-                managerDeadline = manager.ArrivesAt;
-                managerRouteIndex = 0;
-                observedCarry.Clear(); observedInteractions.Clear();
-                for (int p = 0; p < 4; p++) { movingSince[p] = -1; movementObserved[p] = false; }
-                Emit(EventType.ManagerWarning);
-            }
+                BeginManagerInspection(false);
             else if (Phase >= MatchPhase.MeetingDiscussion && Phase != MatchPhase.Abandoned)
             {
                 manager.State = ManagerState.InMeeting; manager.Position = Layout.ManagerMeetingSpot; manager.Yaw = Layout.ManagerMeetingYaw;
             }
-            else { manager.State = ManagerState.InOffice; manager.Position = Layout.ManagerHome; manager.Yaw = Layout.ManagerHomeYaw; }
+            else
+            {
+                ManagerHome();
+                if (Phase == MatchPhase.Work2 && managerProfile != null && managerProfile.SurpriseInspection)
+                    surpriseAt = phaseStart + Math.Max(0, Math.Min(1, Config.Manager.SurpriseAtFraction)) * Math.Max(0, Config.Durations.Work2);
+            }
+        }
+
+        private void BeginManagerInspection(bool surprise)
+        {
+            manager.Position = Layout.ManagerHome; manager.Yaw = Layout.ManagerHomeYaw;
+            manager.Surprise = surprise;
+            managerRouteIndex = 0;
+            inspectionRoute.Clear(); inspectionRoute.AddRange(Layout.ManagerRoute);
+            inspectionTipDesks.Clear();
+            observedCarry.Clear(); observedInteractions.Clear();
+            foreach (int p in playerIds) { movingSince[p] = -1; movementObserved[p] = false; }
+            if (surprise)
+            {
+                manager.ArrivesAt = clock;
+                surpriseEnds = Math.Min(phaseEnd, clock + Math.Max(0, Config.Manager.SurpriseSeconds));
+                Emit(EventType.SurpriseInspection);
+                PrepareCallInspectionRoute();
+                StartManagerLeg();
+            }
+            else
+            {
+                manager.State = ManagerState.Warning;
+                manager.ArrivesAt = phaseStart + Math.Max(0, Phase == MatchPhase.Raid ? Config.Durations.RaidWarning : Config.Durations.FinalWarning);
+                managerDeadline = manager.ArrivesAt;
+                Emit(EventType.ManagerWarning);
+            }
+        }
+
+        private void ManagerHome()
+        {
+            manager.Position = Layout.ManagerHome; manager.Yaw = Layout.ManagerHomeYaw;
+            manager.State = ManagerState.InOffice; manager.InspectingDesk = -1; manager.Surprise = false;
+            managerDeadline = managerSampleAt = surpriseEnds = double.PositiveInfinity;
         }
 
         partial void NextManagerTime(ref double next)
         {
-            if (Phase != MatchPhase.Raid && Phase != MatchPhase.FinalInspection) return;
+            if (Phase == MatchPhase.Work2) next = Math.Min(next, Math.Max(clock, Math.Min(surpriseAt, surpriseEnds)));
+            if (Phase != MatchPhase.Raid && Phase != MatchPhase.FinalInspection && !manager.Surprise) return;
             next = Math.Min(next, Math.Max(clock, Math.Min(managerDeadline, managerSampleAt)));
         }
 
         partial void AdvanceManager(double previous)
         {
-            if (Phase != MatchPhase.Raid && Phase != MatchPhase.FinalInspection) return;
+            if (Phase == MatchPhase.Work2 && clock >= surpriseAt)
+            {
+                surpriseAt = double.PositiveInfinity;
+                BeginManagerInspection(true);
+            }
+            if (manager.Surprise && clock >= surpriseEnds) { ManagerHome(); Changed(); return; }
+            if (Phase != MatchPhase.Raid && Phase != MatchPhase.FinalInspection && !manager.Surprise) return;
             if (manager.State == ManagerState.Walking || manager.State == ManagerState.Returning)
             {
                 double duration = managerDeadline - managerSegmentStart;
@@ -57,13 +98,14 @@ namespace BirimizKovulacak.Core
                 if (!manager.Position.Equals(position)) { manager.Position = position; Changed(); }
             }
             int guard = 0;
-            while (clock >= managerDeadline && guard++ < Layout.ManagerRoute.Count * 2 + 4)
+            while (clock >= managerDeadline && guard++ < inspectionRoute.Count * 2 + 4)
             {
-                if (manager.State == ManagerState.Warning) StartManagerLeg();
+                if (manager.State == ManagerState.Warning) { PrepareCallInspectionRoute(); StartManagerLeg(); }
                 else if (manager.State == ManagerState.Walking)
                 {
-                    ManagerStop stop = Layout.ManagerRoute[managerRouteIndex];
+                    ManagerStop stop = inspectionRoute[managerRouteIndex];
                     manager.Position = stop.Position; manager.Yaw = stop.Yaw;
+                    if (stop.DeskIndex >= 0 && !Present(OwnerOfDesk(stop.DeskIndex))) { managerRouteIndex++; StartManagerLeg(); continue; }
                     manager.InspectingDesk = stop.DeskIndex;
                     manager.State = ManagerState.Inspecting;
                     managerDeadline = clock + Math.Max(0, stop.DwellSeconds);
@@ -71,12 +113,7 @@ namespace BirimizKovulacak.Core
                     if (stop.DwellSeconds <= 0) { managerRouteIndex++; StartManagerLeg(); }
                 }
                 else if (manager.State == ManagerState.Inspecting) { managerRouteIndex++; StartManagerLeg(); }
-                else if (manager.State == ManagerState.Returning)
-                {
-                    manager.Position = Layout.ManagerHome; manager.Yaw = Layout.ManagerHomeYaw;
-                    manager.State = ManagerState.InOffice; manager.InspectingDesk = -1;
-                    managerDeadline = managerSampleAt = double.PositiveInfinity;
-                }
+                else if (manager.State == ManagerState.Returning) ManagerHome();
                 else break;
                 Changed();
             }
@@ -92,8 +129,8 @@ namespace BirimizKovulacak.Core
         {
             manager.InspectingDesk = -1;
             managerSegmentFrom = manager.Position;
-            managerSegmentTo = managerRouteIndex < Layout.ManagerRoute.Count ? Layout.ManagerRoute[managerRouteIndex].Position : Layout.ManagerHome;
-            manager.State = managerRouteIndex < Layout.ManagerRoute.Count ? ManagerState.Walking : ManagerState.Returning;
+            managerSegmentTo = managerRouteIndex < inspectionRoute.Count ? inspectionRoute[managerRouteIndex].Position : Layout.ManagerHome;
+            manager.State = managerRouteIndex < inspectionRoute.Count ? ManagerState.Walking : ManagerState.Returning;
             manager.Yaw = Vec3.YawTo(managerSegmentFrom, managerSegmentTo);
             managerSegmentStart = clock;
             managerDeadline = clock + Vec3.FlatDistance(managerSegmentFrom, managerSegmentTo) / Math.Max(0.001f, Config.Manager.WalkSpeed);
@@ -109,15 +146,16 @@ namespace BirimizKovulacak.Core
 
         private bool ManagerSees(Vec3 target)
         {
-            return InVision(manager.Position, manager.Yaw, target, Config.Manager.VisionRange, Config.Manager.VisionHalfAngle, true);
+            return InVision(manager.Position, manager.Yaw, target, ManagerRangeV2(), Config.Manager.VisionHalfAngle, true);
         }
 
         private void ObservePlayers()
         {
-            for (int p = 0; p < 4; p++)
+            foreach (int p in playerIds)
             {
                 PlayerState player = players[p];
                 if (!player.Public.Connected || !ManagerSees(player.Avatar.Position)) { movingSince[p] = -1; continue; }
+                ObservePersonalCall(p);
                 if (player.Avatar.Speed > Config.Manager.MovingSpeedThreshold)
                 {
                     if (movingSince[p] < 0) movingSince[p] = clock;
@@ -126,9 +164,13 @@ namespace BirimizKovulacak.Core
                 }
                 else movingSince[p] = -1;
                 ItemState held = Held(p);
-                string carryKey = p + ":" + (held == null ? "" : held.View.Id);
-                if (held != null && held.View.Kind == ItemKind.Suspicious && !observedCarry.Contains(carryKey))
-                { observedCarry.Add(carryKey); AddObservation(ObservationKind.CarryingSuspicious, p, -1, Config.Risk.CarryingSuspicious, held.View.Variant); }
+                if (held != null && held.View.Kind == ItemKind.Suspicious)
+                {
+                    bool seen = false;
+                    foreach (CarryObservation carry in observedCarry) if (carry.Player == p && carry.Item == held) { seen = true; break; }
+                    if (!seen)
+                    { observedCarry.Add(new CarryObservation { Player = p, Item = held }); AddObservation(ObservationKind.CarryingSuspicious, p, -1, Config.Risk.CarryingSuspicious, held.View.Variant); }
+                }
                 InteractionState active = player.Interaction;
                 if (active != null && active.Sabotage.HasValue && !observedInteractions.Contains(active))
                 { observedInteractions.Add(active); AddObservation(ObservationKind.CaughtInAct, p, active.DeskIndex, Config.Risk.CaughtInAct, active.Activity.ToString()); }
@@ -138,7 +180,7 @@ namespace BirimizKovulacak.Core
         private void InspectDesk(int index)
         {
             DeskState desk = Desk(index);
-            if (desk == null || !ManagerSees(desk.Def.Position)) return;
+            if (desk == null || !Present(desk.View.AssignedOwner) || !ManagerSees(desk.Def.Position)) return;
             inspectedDesks.Add(((int)Phase) + ":" + index);
             if (Phase == MatchPhase.FinalInspection) RefreshEvidenceStatus(index);
             int owner = ApparentOwner(index);
@@ -147,6 +189,7 @@ namespace BirimizKovulacak.Core
                 if (item.View.Location != ItemLocationKind.Slot) continue;
                 bool drawer = item.View.SlotId == desk.Def.DrawerSlotId;
                 if (!drawer && item.View.SlotId != desk.Def.SurfaceSlotId) continue;
+                if (drawer && Phase != MatchPhase.FinalInspection && !(managerProfile != null && managerProfile.SearchAllDrawers) && !inspectionTipDesks.Contains(index)) continue;
                 bool suspicious = item.View.Kind == ItemKind.Suspicious;
                 bool hidden = drawer && item.View.Kind == ItemKind.Report && item.View.ReportOwner != desk.View.AssignedOwner;
                 if (!suspicious && !hidden) continue;
@@ -169,12 +212,13 @@ namespace BirimizKovulacak.Core
                 AddObservation(ObservationKind.MessyDesk, owner, index, Math.Min(Config.Risk.MessyDeskCap, mess), string.Join(",", detail));
                 ObserveConsequences(index, owner, false, true, "");
             }
-            if (!PlayerIds.IsValid(owner)) return;
+            ObserveTippedDesk(index);
+            if (!Present(owner)) return;
             bool present = Vec3.FlatDistance(players[owner].Avatar.Position, desk.Def.SeatPosition) <= Config.Manager.AtDeskRadius;
             if (!present) AddObservation(ObservationKind.NotAtDesk, owner, index, Config.Risk.NotAtDesk);
-            for (int p = 0; p < 4; p++) if (p != owner && players[p].Public.Connected && Vec3.FlatDistance(players[p].Avatar.Position, desk.Def.SeatPosition) <= Config.Manager.AtDeskRadius && ManagerSees(players[p].Avatar.Position))
+            foreach (int p in playerIds) if (p != owner && players[p].Public.Connected && Vec3.FlatDistance(players[p].Avatar.Position, desk.Def.SeatPosition) <= Config.Manager.AtDeskRadius && ManagerSees(players[p].Avatar.Position))
                 AddObservation(ObservationKind.AtWrongDesk, p, index, Config.Risk.AtWrongDesk);
-            float expected = Phase == MatchPhase.Raid ? Config.Manager.ExpectedPerformanceAtRaid : Config.Manager.ExpectedPerformanceAtFinal;
+            float expected = Phase == MatchPhase.FinalInspection ? Config.Manager.ExpectedPerformanceAtFinal : Config.Manager.ExpectedPerformanceAtRaid;
             if (players[owner].Public.Performance < expected) AddObservation(ObservationKind.BehindOnWork, owner, index, Config.Risk.BehindOnWork);
             PublicActivity activity = players[owner].Public.Activity;
             bool working = activity == PublicActivity.Typing || activity == PublicActivity.Cleaning || activity == PublicActivity.Brewing || activity == PublicActivity.OnPhone;
@@ -183,7 +227,7 @@ namespace BirimizKovulacak.Core
 
         private void AddObservation(ObservationKind kind, int subject, int desk, float severity, string detail = "")
         {
-            var observation = new ObservationView { Id = ++observationSerial, Kind = kind, Subject = subject, DeskIndex = desk, Time = clock, Phase = Phase, Severity = severity, Detail = detail };
+            var observation = new ObservationView { Id = ++observationSerial, Kind = kind, Subject = subject, DeskIndex = desk, Time = clock, Phase = Phase, Severity = ObservationSeverity(kind, severity), Detail = detail };
             observations.Add(observation); manager.ReactionObservation = observation.Id; manager.ReactionUntil = clock + Config.Manager.ReactionSeconds;
             Emit(EventType.ManagerObservation, target: desk < 0 ? "" : EntityIds.Desk(desk), arg: observation.Id);
             if (desk >= 0 && subject == ApparentOwner(desk) && kind != ObservationKind.CaughtInAct && kind != ObservationKind.AtWrongDesk) ObserveConsequences(desk, subject, false, false, "");
@@ -236,11 +280,12 @@ namespace BirimizKovulacak.Core
             }
             int desk = slot != null ? slot.DeskIndex : action.DeskIndex;
             bool witnessable = action.Request.Verb == ActionVerb.SpillCoffee || (slot != null && (slot.Kind == SlotKind.NameplateHolder || slot.Kind == SlotKind.HidingSpot)) || (desk >= 0 && OwnerOfDesk(desk) != p);
+            witnessable |= action.Request.Verb == ActionVerb.SaltCoffee || action.Request.Verb == ActionVerb.BrewCoffee || action.Request.Verb == ActionVerb.TasteCoffee || (action.Request.Verb >= ActionVerb.CutInternet && action.Request.Verb <= ActionVerb.ResetFuse);
             if (!witnessable) return;
-            for (int witness = 0; witness < 4; witness++)
+            foreach (int witness in playerIds)
             {
                 PlayerState observer = players[witness];
-                if (witness == p || !observer.Public.Connected || !InVision(observer.Avatar.Position, observer.Avatar.Yaw, players[p].Avatar.Position, Config.Witness.Range, Config.Witness.HalfAngle, Config.Witness.RequireLineOfSight)) continue;
+                if (witness == p || !observer.Public.Connected || !InVision(observer.Avatar.Position, observer.Avatar.Yaw, players[p].Avatar.Position, WitnessRangeV2(p), Config.Witness.HalfAngle, Config.Witness.RequireLineOfSight)) continue;
                 AddNote(witness, new PrivateNote { Kind = NoteKind.Witness, Subject = p, Activity = action.Activity, TargetId = action.Request.TargetId, DeskIndex = desk, HeldBefore = action.HeldBefore, HeldAfter = heldAfter ?? "" });
             }
         }
