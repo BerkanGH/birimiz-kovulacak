@@ -932,6 +932,7 @@ namespace BirimizKovulacak.Core
             w.Write(value.WeekFinished);
             WriteList(w, value.EmployeeOfTheMonth, (writer, item) => writer.Write(item));
             WriteList(w, value.Favourites, (writer, item) => writer.Write(item));
+            WriteHighlightView(w, value.Highlight);
         }
 
         private static MatchResultView ReadMatchResultView(BinaryReader r)
@@ -959,6 +960,7 @@ namespace BirimizKovulacak.Core
                 WeekFinished = ReadBoolean(r),
                 EmployeeOfTheMonth = ReadList(r, reader => reader.ReadInt32()),
                 Favourites = ReadList(r, reader => reader.ReadInt32()),
+                Highlight = ReadHighlightView(r),
             };
         }
 
@@ -1367,6 +1369,8 @@ namespace BirimizKovulacak.Core
             w.Write((byte)value.Activity);
             WriteString(w, value.Carrying);
             w.Write(value.Crouched);
+            WriteVec3(w, value.Position);
+            w.Write(value.Yaw);
         }
 
         private static FootageSighting ReadFootageSighting(BinaryReader r)
@@ -1379,6 +1383,36 @@ namespace BirimizKovulacak.Core
                 Activity = (PublicActivity)r.ReadByte(),
                 Carrying = ReadString(r),
                 Crouched = ReadBoolean(r),
+                Position = ReadVec3(r),
+                Yaw = r.ReadSingle(),
+            };
+        }
+
+        private static void WriteHighlightView(BinaryWriter w, HighlightView value)
+        {
+            w.Write(value != null);
+            if (value == null) return;
+            WriteString(w, value.Key);
+            w.Write(value.IncidentId);
+            w.Write(value.Actor);
+            w.Write(value.DeskIndex);
+            w.Write(value.Start);
+            w.Write(value.End);
+            WriteList(w, value.Samples, (writer, item) => WriteFootageSighting(writer, item));
+        }
+
+        private static HighlightView ReadHighlightView(BinaryReader r)
+        {
+            if (!ReadBoolean(r)) return null;
+            return new HighlightView
+            {
+                Key = ReadString(r),
+                IncidentId = r.ReadInt32(),
+                Actor = r.ReadInt32(),
+                DeskIndex = r.ReadInt32(),
+                Start = r.ReadDouble(),
+                End = r.ReadDouble(),
+                Samples = ReadList(r, reader => ReadFootageSighting(reader)),
             };
         }
 

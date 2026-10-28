@@ -185,6 +185,7 @@ namespace BirimizKovulacak.Core
                     IncidentState fake = RecordIncident(p, SabotageType.FakeEmail, email.FromPlayer, email.DeskIndex, "", a.Request.TargetId);
                     fake.Reveal.Discovered = true; fake.Reveal.BlamedPlayer = email.FromPlayer; fake.BlamedPlayers.Add(email.FromPlayer);
                     EvidenceState record = AddEvidence(EvidenceKind.EmailLog, null, a.Request.TargetId, email.DeskIndex, DiscoverySource.System, attribution: email.FromPlayer);
+                    fake.EvidenceIds.Add(record.View.Id);
                     record.View.EmailTemplate = email.TemplateId;
                     Emit(EventType.EmailSent, arg: email.Id);
                     AddObservation(ObservationKind.InappropriateEmail, email.FromPlayer, email.DeskIndex, Config.Risk.InappropriateEmail);

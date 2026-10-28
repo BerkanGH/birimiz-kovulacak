@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
@@ -105,6 +105,13 @@ namespace BirimizKovulacak.EditorTools
             PlayerSettings.colorSpace = ColorSpace.Linear;
             PlayerSettings.SetScriptingBackend(NamedBuildTarget.Standalone, ScriptingImplementation.Mono2x);
             PlayerSettings.SetApiCompatibilityLevel(NamedBuildTarget.Standalone, ApiCompatibilityLevel.NET_Standard);
+            // Memory (docs/PERFORMANCE.md): D3D11 first (smaller driver footprint than D3D12 for this scene), incremental GC,
+            // strip unused mesh channels and mips.
+            PlayerSettings.SetUseDefaultGraphicsAPIs(BuildTarget.StandaloneWindows64, false);
+            PlayerSettings.SetGraphicsAPIs(BuildTarget.StandaloneWindows64, new[] { UnityEngine.Rendering.GraphicsDeviceType.Direct3D11, UnityEngine.Rendering.GraphicsDeviceType.Direct3D12 });
+            PlayerSettings.gcIncremental = true;
+            PlayerSettings.stripUnusedMeshComponents = true;
+            PlayerSettings.mipStripping = true;
 
             var ps = AssetDatabase.LoadAllAssetsAtPath("ProjectSettings/ProjectSettings.asset").FirstOrDefault();
             if (ps != null)
@@ -120,6 +127,7 @@ namespace BirimizKovulacak.EditorTools
             SetLayer(layers, Layers.Glass, Layers.GlassName);
             SetLayer(layers, Layers.Furniture, Layers.FurnitureName);
             SetLayer(layers, Layers.Avatar, Layers.AvatarName);
+            SetLayer(layers, Layers.Partitions, Layers.PartitionsName);
             tm.ApplyModifiedProperties();
             Log("Project settings configured");
         }

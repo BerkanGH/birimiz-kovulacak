@@ -8,6 +8,10 @@ namespace BirimizKovulacak.Game
     /// <summary>
     /// Keyboard + mouse actions built in code (no asset dependency) with remappable bindings persisted in
     /// PlayerPrefs ("input.overrides").
+    ///
+    /// Default layout (v2): WASD move, mouse look, wheel zoom, E/F interact, Q drop, R work pose, G use held item
+    /// (taste coffee), Left Ctrl hold / C toggle crouch (sneak), T hold = emote wheel, 1-5 quick emotes,
+    /// Y answer call, N decline / hang up, Tab phone, V push-to-talk (read by the voice module only), Esc pause.
     /// </summary>
     public static class GameInput
     {
@@ -15,7 +19,14 @@ namespace BirimizKovulacak.Game
         static InputActionAsset _asset;
         public static InputActionMap Gameplay { get; private set; }
 
-        public static InputAction Move, Look, Zoom, Interact, Secondary, Drop, WorkPose, Slow, Phone, Pause;
+        public static InputAction Move, Look, Zoom, Interact, Secondary, Drop, WorkPose, Phone, Pause;
+        // v2
+        public static InputAction Crouch, CrouchToggle, EmoteWheel, AnswerCall, HangUp, UseItem, PushToTalk;
+        /// <summary>Quick emotes 1..5 (index = LocalPlayerController.WheelEmotes index).</summary>
+        public static readonly InputAction[] EmoteKeys = new InputAction[5];
+
+        /// <summary>v1 name of the hold-to-sneak key (now crouch). Kept for existing callers (HUD hints).</summary>
+        public static InputAction Slow => Crouch;
 
         /// <summary>Rebindable entries shown in Settings: (action, binding index, label key).</summary>
         public static readonly List<(InputAction action, int binding, string labelKey)> Rebindable = new List<(InputAction, int, string)>();
@@ -39,9 +50,19 @@ namespace BirimizKovulacak.Game
             Secondary = Gameplay.AddAction("Secondary", InputActionType.Button, "<Keyboard>/f");
             Drop = Gameplay.AddAction("Drop", InputActionType.Button, "<Keyboard>/q");
             WorkPose = Gameplay.AddAction("WorkPose", InputActionType.Button, "<Keyboard>/r");
-            Slow = Gameplay.AddAction("Slow", InputActionType.Button, "<Keyboard>/leftCtrl");
             Phone = Gameplay.AddAction("Phone", InputActionType.Button, "<Keyboard>/tab");
             Pause = Gameplay.AddAction("Pause", InputActionType.Button, "<Keyboard>/escape");
+
+            Crouch = Gameplay.AddAction("Crouch", InputActionType.Button, "<Keyboard>/leftCtrl");
+            CrouchToggle = Gameplay.AddAction("CrouchToggle", InputActionType.Button, "<Keyboard>/c");
+            EmoteWheel = Gameplay.AddAction("EmoteWheel", InputActionType.Button, "<Keyboard>/t");
+            for (int i = 0; i < EmoteKeys.Length; i++)
+                EmoteKeys[i] = Gameplay.AddAction("Emote" + (i + 1), InputActionType.Button, "<Keyboard>/" + (i + 1));
+            AnswerCall = Gameplay.AddAction("AnswerCall", InputActionType.Button, "<Keyboard>/y");
+            HangUp = Gameplay.AddAction("HangUp", InputActionType.Button, "<Keyboard>/n");
+            UseItem = Gameplay.AddAction("UseItem", InputActionType.Button, "<Keyboard>/g");
+            // Owned by the voice module: nothing else may read it or bind V.
+            PushToTalk = Gameplay.AddAction("PushToTalk", InputActionType.Button, "<Keyboard>/v");
 
             Rebindable.Clear();
             Rebindable.Add((Move, 1, "input.move_up"));
@@ -51,9 +72,15 @@ namespace BirimizKovulacak.Game
             Rebindable.Add((Interact, 0, "input.interact"));
             Rebindable.Add((Secondary, 0, "input.secondary"));
             Rebindable.Add((Drop, 0, "input.drop"));
+            Rebindable.Add((UseItem, 0, "input.use_item"));
             Rebindable.Add((WorkPose, 0, "input.work_pose"));
-            Rebindable.Add((Slow, 0, "input.slow"));
+            Rebindable.Add((Crouch, 0, "input.crouch"));
+            Rebindable.Add((CrouchToggle, 0, "input.crouch_toggle"));
+            Rebindable.Add((EmoteWheel, 0, "input.emote"));
+            Rebindable.Add((AnswerCall, 0, "input.answer_call"));
+            Rebindable.Add((HangUp, 0, "input.hang_up"));
             Rebindable.Add((Phone, 0, "input.phone"));
+            Rebindable.Add((PushToTalk, 0, "input.push_to_talk"));
 
             LoadOverrides();
             Gameplay.Enable();

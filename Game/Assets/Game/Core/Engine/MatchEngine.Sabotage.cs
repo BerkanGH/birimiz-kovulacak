@@ -65,13 +65,14 @@ namespace BirimizKovulacak.Core
         private IncidentState RecordIncident(int actor, SabotageType type, int victim, int desk, string item, string location)
         {
             SabotageDef def = Config.GetSabotage(type);
-            var i = new IncidentState { Reveal = new IncidentReveal { Id = incidents.Count + 1, Actor = actor, Type = type, Victim = victim, DeskIndex = desk, ItemId = item ?? "", Time = clock, Misconduct = def.BaseMisconduct }, LocationId = location ?? "", Active = type != SabotageType.EvidenceTampering };
+            var i = new IncidentState { Reveal = new IncidentReveal { Id = incidents.Count + 1, Actor = actor, Type = type, Victim = victim, DeskIndex = desk, ItemId = item ?? "", Time = clock, Misconduct = def.BaseMisconduct }, Start = clock, LocationId = location ?? "", Active = type != SabotageType.EvidenceTampering };
             incidents.Add(i); players[actor].Private.SabotageCooldowns[(int)type] = clock + def.ActorCooldownSeconds; Changed(); return i;
         }
         partial void ApplySabotage(int p, InteractionState a, ItemState item)
         {
             if (!a.Sabotage.HasValue) return;
             IncidentState i = RecordIncident(p, a.Sabotage.Value, a.Victim, a.DeskIndex, item?.View.Id, a.Request.TargetId);
+            if (item != null && (a.Sabotage == SabotageType.PlantItem || a.Sabotage == SabotageType.HideReport)) item.PlacementIncident = i.Reveal.Id;
             if (a.Sabotage == SabotageType.SpillCoffee) Desk(a.DeskIndex).SpillIncident = i.Reveal.Id;
             if (a.Sabotage == SabotageType.LockWorkstation) Desk(a.DeskIndex).LockIncident = i.Reveal.Id;
         }

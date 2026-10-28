@@ -10,6 +10,7 @@
 - Stage 6: preallocated private position log, camera/time/dark filters, meeting request allowances, footage evidence and recipient-specific remaining charges.
 - Stage 7: week/career totals and final winners, next-day/reset history, all result/debug reveals, new recap keys/titles, all new world affordances and precise visible-state blocking hints.
 - Stage 8: differential encoded-view/event privacy tests for every new secret, completion races and shared limits, malformed-request matrices, deterministic all-39-verb six-player replay, full five-day six-player week, and measured performance/allocation budgets.
+- Follow-up v2.1: preserve `ConfigVersion` on private config copies; record and expose camera-filtered footage position/yaw; build the Results-only "Günün klibi" highlight with causal evidence ranking, actual incident start/completion windows, full logged poses (including darkness), deep snapshots and complete wire/hash coverage.
 
 ## Interpretations
 
@@ -20,14 +21,16 @@
 - Fake emails remain active desk effects for anti-grief limits because their evidence is irreversible. Salt starts with no victim; delivery records the deliverer as victim without changing the actor. Tasting consumes the salt immediately, leaving knowledge in the taster's private note.
 - Tips queue when completed, deduplicate desks for one extra dwell, and use apparent-nameplate attribution like other manager observations. Incoming calls do not check the callee's cooldown (only the caller's, per normative text).
 - Mail intervals restart when Work1/Work2 begins; arrivals stop during inspections. Open mail means room/carried, exactly as specified (floor/desk mail does not count). The mailroom is a system-filled slot, like the printer tray, so player placement into it is rejected.
-- Footage starts at match start, excludes the exact meeting boundary, and retains the latest 32,768 samples for extreme custom schedules (default full matches fit without eviction). Nonpositive sample intervals use 1 second. Empty windows are empty recordings, not all-dark recordings. An Informant speaker spends their speaker allowance first.
+- Footage starts at match start, excludes the exact meeting boundary (also when intermediate phases have zero duration), and retains the latest 32,768 samples for extreme custom schedules (default full matches fit without eviction). Nonpositive sample intervals use 1 second. Empty windows are empty recordings, not all-dark recordings. An Informant speaker spends their speaker allowance first.
+- Highlight ranking sums the selected incident's linked evidence weights against the fired player, using the same current status/profile weights and witness-subject attribution as the verdict. Item placement, causal nameplate swaps, fake emails and presented witnesses retain private links; one evidence record may contribute to both a planting and its causal nameplate swap, once per incident. Observations alone do not count as discovered evidence. If no incident has positive contributing evidence, highest misconduct wins; ties use incident completion time, then incident id.
+- Highlight windows use the actual completed interaction's start minus 6 seconds and completion plus 4 seconds, clamped to the retained position-log endpoints. They contain every logged sample in that window in time/player order, including darkness and players outside camera zones. The log still records only connected players (§9); replay does not invent poses during disconnections.
 - Career multiplies only the quota-met term, following the normative formula; midpoint rounding is away from zero. Quick play preserves incoming career/day history and adds its completed manager profile. New titles take priority over old titles while retaining the two-title limit. Personal calls, excluding tips, count for scam artist. Restoring one's own outage can earn IT hero but gives no reversal credit.
 
 ## Known gaps
 
 - No known unimplemented v2 engine rules. Unity/network/UI/voice integration was not run in this owned-core worktree.
-- Git staging is blocked: Windows denied creation of `.git/worktrees/codex-engine-v2/index.lock`. No permissions or ACL changes attempted. Following the work package, implementation continues and the lead must commit the owned paths. Suggested stage 1 message: `Support sparse 3–6 player rosters and protocol v2` followed by a blank line and `Co-Authored-By: Codex <noreply@openai.com>`.
-- Staging was attempted at all eight stage boundaries and remained blocked. No commits, pushes, or history rewrites were performed. All code/test/documentation changes remain in `codex/engine-v2`.
+- Historical v2 staging attempts at all eight stage boundaries were blocked by Windows denying `.git/worktrees/codex-engine-v2/index.lock`; the lead subsequently committed and merged that package in `04bd6e9`. No permissions or ACL changes were attempted.
+- v2.1 staging is still blocked by the same `index.lock` permission denial. The completed changes remain uncommitted in this worktree, as requested; no permission changes, pushes or history rewrites were attempted. Suggested commit: `Implement Results highlight replay and complete v2.1 field coverage`, followed by a blank line and `Co-Authored-By: Codex <noreply@openai.com>`.
 
 Adapter responsibilities:
 
@@ -36,6 +39,8 @@ Adapter responsibilities:
 - Use `engine.Config` for the privately adjusted profile config and `view.Features` for effective day/config switches. Send `AvatarSample.Crouched`. Render the new office, screen, plug, mail, favour, inbox, emote and call fields from recipient snapshots.
 - Fake-email affordances have `IntParam = -1`: open the template picker, then submit a valid template index. Mail delivery is still `Place` on the addressed surface. Tasting has no target; the engine canonicalizes it to an empty target even when selected through a mug affordance.
 - Calls, tips, call logs, footage and emotes are phone/meeting UI actions. Footage `IntParam` is seconds since match start, not absolute host time. During an internet outage `PrintEndsAt` is positive infinity for a paused current job; display a paused state using `view.Office.InternetDown`.
+- Use the updated codec on both endpoints: the lead's additions keep `Protocol.Version = 2` but extend the encoded view/result layout. `ConfigVersion` survives the engine's config snapshot; persisted-config migration/default rewriting remains with the config loader.
+- Render `Result.Highlight` only in Results and handle null (no incidents). `Start`, `End` and sample `Time` are absolute host times; replay time can be `sample.Time - Start`. Samples contain `Position`, `Yaw`, neutral public activity, carried variant and crouch; the highlight reveals the true `Actor`, target `DeskIndex`, `IncidentId` and recap `Key`. Dark samples are included without a separate darkness field in the contract. Camera evidence uses the same sample DTO but only includes light samples inside that camera's zone.
 - For the next week match use `BuildNextHistory()` and set `MatchSetup.WeekDay` from `NextWeekDay`. Finale results retain final totals/winners; the next history resets career points and increments the week number. Abandoned matches preserve career/day data.
 - The inherited reconnect-token echo limitation remains: the adapter owns the token and may populate `Me.ReconnectToken` on the detached view. No new contract change is needed.
 
@@ -55,16 +60,17 @@ Adapter responsibilities:
 - Stage 6: **264 passed**, including 16 footage cases. Suggested commit: `Record bounded CCTV samples and present filtered meeting footage` (same coauthor trailer).
 - Stage 7: **300 passed**, including 13 career/result cases and 23 affordance cases. Suggested commit: `Complete week careers, result reveals and v2 world affordances` (same coauthor trailer).
 - Stage 8: **347 passed, 0 failed, 0 skipped**, including 9 differential byte privacy cases, 33 limit/malformed-input cases, 2 full replay/week cases and 3 six-player performance cases. Suggested commit: `Harden v2 privacy, input handling, determinism and performance` (same coauthor trailer).
+- Follow-up v2.1: **382 passed, 0 failed, 0 skipped**. All four main-branch regressions are fixed; 35 new cases cover 27 highlight rules/privacy cases, four buffer-retention and zero-phase boundary cases, two same-time placement causality cases, and two codec/snapshot cases. Coverage includes summed evidence against the fired player, current moved/disposed risk, witness linkage, fallback/ties/null, absolute clamped windows, sparse 3–6-player poses, dark samples, camera-only positions, deterministic result hashes and detached snapshots. The generic hash test now writes boxed `Vec3` mutations back to their owners so X/Y/Z are actually checked.
 - Final command: `dotnet test --no-restore --logger "console;verbosity=normal"` in `Tools/CoreTests/Tests`; C# 9 / netstandard2.1 core and NUnit tests compile without compiler warnings. `git diff --check` passes. Only the four allowed path groups were changed.
 - The full six-player script successfully executes every one of the 39 non-None verbs, all five task types and all twelve incident types; repeated runs compare full event bytes and result hashes. The chained five-day week checks each day's features/profile, independently recomputed deltas/totals, finale ties/winners and history reset.
 - Malformed target hardening: targetless TasteCoffee/Drop requests now canonicalize their target to empty. This prevents an invalid UTF-16 target from poisoning view encoding and prevents a forged Drop target from creating a witness note at a false location.
 
-Measured on this machine, Debug harness, warm-up then 4,000 iterations (budgets asserted):
+Measured on this machine for v2.1, Debug harness, warm-up then 4,000 iterations (budgets asserted):
 
 | Six-player state | Tick | Six-recipient BuildView batch | Stable Tick allocation |
 |---|---:|---:|---:|
-| Work1 | 0.00124 ms | 0.07877 ms | 0 B |
-| Active inspection, visible carried suspicious items | 0.00318 ms | 0.08035 ms | 0 B |
-| Populated Results from full v2 script | 0.00050 ms | 0.15227 ms | 0 B |
+| Work1 | 0.00105 ms | 0.08644 ms | 0 B |
+| Active inspection, visible carried suspicious items | 0.00376 ms | 0.07466 ms | 0 B |
+| Populated Results including highlight from full v2 script | 0.00101 ms | 0.25545 ms | 0 B |
 
 Budgets: Tick <0.2 ms; six-view batch <0.3 ms. Advancing Tick measurements include scheduled work; allocation assertions measure the stable hot loop separately. Item/desk lookup and continuous manager carry checks avoid closure/string allocations. These are core harness timings, not Unity-player process profiling.

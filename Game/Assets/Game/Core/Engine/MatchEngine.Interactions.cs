@@ -142,6 +142,7 @@ namespace BirimizKovulacak.Core
         }
         private void ApplyPhysical(int p, InteractionState a)
         {
+            int firstIncident = incidents.Count;
             ItemState held = Held(p); string id = a.Request.TargetId; DeskState desk = Desk(a.DeskIndex); SlotDef slot = Layout.GetSlot(id);
             switch (a.Request.Verb)
             {
@@ -176,7 +177,9 @@ namespace BirimizKovulacak.Core
                     AddPrivateNote(p, note); break;
                 default: ApplyPhysicalV2(p, a); break;
             }
-            RefreshDesks(); WitnessCompleted(p, a, Held(p)?.View.Variant ?? ""); Changed();
+            // Preserve the actual interaction start, including incidental tampering during pickup/placement.
+            for (int n = firstIncident; n < incidents.Count; n++) incidents[n].Start = a.Start;
+            RefreshDesks(); WitnessCompleted(p, a, Held(p)?.View.Variant ?? "", firstIncident); Changed();
         }
         private void Take(int p, ItemState item)
         {
@@ -189,7 +192,7 @@ namespace BirimizKovulacak.Core
         {
             item.View.Location = ItemLocationKind.Slot; item.View.SlotId = slot.Id; item.View.SlotIndex = index; item.View.CarrierId = PlayerIds.None;
             Array.Clear(item.KnownBy, 0, item.KnownBy.Length); if (slot.Closed) item.KnownBy[p] = true;
-            item.LastPlacer = p; item.PlacedAt = item.MovedAt = clock; item.PlacementSlot = slot.Id; players[p].Public.CarryingItemId = "";
+            item.LastPlacer = p; item.PlacementIncident = 0; item.PlacedAt = item.MovedAt = clock; item.PlacementSlot = slot.Id; players[p].Public.CarryingItemId = "";
             if (slot.Kind == SlotKind.NameplateHolder) Desk(slot.DeskIndex).NameplateChangedAt = clock;
         }
         partial void DropItem(int p, bool forward)
@@ -197,7 +200,7 @@ namespace BirimizKovulacak.Core
             ItemState item = Held(p); if (item == null) return;
             item.View.Location = ItemLocationKind.Floor; item.View.SlotId = ""; item.View.CarrierId = PlayerIds.None; item.View.SlotIndex = 0;
             item.View.FloorPosition = players[p].Avatar.Position + Vec3.FromYaw(players[p].Avatar.Yaw) * (forward ? Config.Interaction.DropForwardOffset : 0);
-            item.View.FloorYaw = players[p].Avatar.Yaw; item.MovedAt = clock; item.LastPlacer = p; item.PlacedAt = clock; item.PlacementSlot = "";
+            item.View.FloorYaw = players[p].Avatar.Yaw; item.MovedAt = clock; item.LastPlacer = p; item.PlacementIncident = 0; item.PlacedAt = clock; item.PlacementSlot = "";
             Array.Clear(item.KnownBy, 0, item.KnownBy.Length); players[p].Public.CarryingItemId = "";
             if (!forward) Emit(EventType.ItemDropped, p, item: item.View.Id);
         }
@@ -222,6 +225,6 @@ namespace BirimizKovulacak.Core
         partial void OwnerBlocked(DeskState desk);
         partial void AddPrivateNote(int p, PrivateNote note);
         partial void LockEvidence(DeskState desk);
-        partial void WitnessCompleted(int p, InteractionState a, string heldAfter);
+        partial void WitnessCompleted(int p, InteractionState a, string heldAfter, int firstIncident);
     }
 }

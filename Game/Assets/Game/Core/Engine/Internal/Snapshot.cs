@@ -174,6 +174,7 @@ namespace BirimizKovulacak.Core
             if (value == null) return null;
             return new MatchConfig
             {
+                ConfigVersion = value.ConfigVersion,
                 PlayerCount = value.PlayerCount,
                 QuotaTarget = value.QuotaTarget,
                 ShuffleDesks = value.ShuffleDesks,
@@ -588,6 +589,7 @@ namespace BirimizKovulacak.Core
                 WeekFinished = value.WeekFinished,
                 EmployeeOfTheMonth = value.EmployeeOfTheMonth == null ? null : new List<int>(value.EmployeeOfTheMonth),
                 Favourites = value.Favourites == null ? null : new List<int>(value.Favourites),
+                Highlight = Copy(value.Highlight),
             };
         }
 
@@ -1179,6 +1181,23 @@ namespace BirimizKovulacak.Core
                 Activity = value.Activity,
                 Carrying = value.Carrying,
                 Crouched = value.Crouched,
+                Position = value.Position,
+                Yaw = value.Yaw,
+            };
+        }
+
+        internal static HighlightView Copy(HighlightView value)
+        {
+            if (value == null) return null;
+            return new HighlightView
+            {
+                Key = value.Key,
+                IncidentId = value.IncidentId,
+                Actor = value.Actor,
+                DeskIndex = value.DeskIndex,
+                Start = value.Start,
+                End = value.End,
+                Samples = CopyList(value.Samples, Copy),
             };
         }
 
