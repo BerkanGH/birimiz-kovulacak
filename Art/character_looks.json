@@ -1,0 +1,618 @@
+{
+ "players": [
+  {
+   "id": "Mavi",
+   "accessories": [
+    "Acc_Collar",
+    "Acc_Tie"
+   ],
+   "swaps": {
+    "skin": "M_BeanBlue",
+    "tie": "M_TieGreenDark"
+   },
+   "scale": [
+    1.0,
+    1.08,
+    1.0
+   ],
+   "tilt": 0,
+   "face": "Neutral",
+   "tris": 2952
+  },
+  {
+   "id": "Sari",
+   "accessories": [
+    "Acc_Collar",
+    "Acc_GlassesRound"
+   ],
+   "swaps": {
+    "skin": "M_BeanYellow"
+   },
+   "scale": [
+    1.1,
+    0.95,
+    1.1
+   ],
+   "tilt": 0,
+   "face": "Neutral",
+   "tris": 3140
+  },
+  {
+   "id": "Pembe",
+   "accessories": [
+    "Acc_CollarRound",
+    "Acc_HairBun"
+   ],
+   "swaps": {
+    "skin": "M_BeanPink"
+   },
+   "scale": [
+    1.0,
+    1.0,
+    1.0
+   ],
+   "tilt": 0,
+   "face": "Neutral",
+   "tris": 3364
+  },
+  {
+   "id": "Yesil",
+   "accessories": [
+    "Acc_Collar",
+    "Acc_Tie",
+    "Acc_Headset"
+   ],
+   "swaps": {
+    "skin": "M_BeanGreen",
+    "tie": "M_TieForest"
+   },
+   "scale": [
+    0.98,
+    0.9,
+    0.98
+   ],
+   "tilt": 0,
+   "face": "Neutral",
+   "tris": 3386
+  },
+  {
+   "id": "Turuncu",
+   "accessories": [
+    "Acc_Collar",
+    "Acc_Tie",
+    "Acc_Beanie"
+   ],
+   "swaps": {
+    "skin": "M_BeanOrange",
+    "tie": "M_TieOrange"
+   },
+   "scale": [
+    1.0,
+    1.0,
+    1.0
+   ],
+   "tilt": 0,
+   "face": "Neutral",
+   "tris": 3688
+  },
+  {
+   "id": "Mor",
+   "accessories": [
+    "Acc_Curls",
+    "Acc_Scarf"
+   ],
+   "swaps": {
+    "skin": "M_BeanPurple"
+   },
+   "scale": [
+    1.0,
+    0.98,
+    1.0
+   ],
+   "tilt": 0,
+   "face": "Neutral",
+   "tris": 3922
+  }
+ ],
+ "playerAccessories": [
+  "Acc_Beanie",
+  "Acc_Collar",
+  "Acc_CollarRound",
+  "Acc_Curls",
+  "Acc_GlassesRound",
+  "Acc_HairBun",
+  "Acc_Headset",
+  "Acc_Scarf",
+  "Acc_Tie"
+ ],
+ "playerProps": {
+  "Prop_Handset": 160,
+  "Prop_Mobile": 24,
+  "Prop_Box": 296
+ },
+ "playerGroups": {
+  "skin": [
+   "M_BeanBlue",
+   "M_BeanYellow",
+   "M_BeanPink",
+   "M_BeanGreen",
+   "M_BeanOrange",
+   "M_BeanPurple",
+   "M_BeanSlate"
+  ],
+  "tie": [
+   "M_TieGreenDark",
+   "M_TieForest",
+   "M_TieOrange"
+  ]
+ },
+ "playerClips": [
+  {
+   "name": "Idle",
+   "loop": true,
+   "frames": 60
+  },
+  {
+   "name": "Idle2",
+   "loop": false,
+   "frames": 90
+  },
+  {
+   "name": "Walk",
+   "loop": true,
+   "frames": 20
+  },
+  {
+   "name": "Run",
+   "loop": true,
+   "frames": 12
+  },
+  {
+   "name": "CrouchIdle",
+   "loop": true,
+   "frames": 60
+  },
+  {
+   "name": "Sneak",
+   "loop": true,
+   "frames": 32
+  },
+  {
+   "name": "CarryIdle",
+   "loop": true,
+   "frames": 40
+  },
+  {
+   "name": "CarryWalk",
+   "loop": true,
+   "frames": 12
+  },
+  {
+   "name": "FiredIdle",
+   "loop": true,
+   "frames": 60
+  },
+  {
+   "name": "FiredWalk",
+   "loop": true,
+   "frames": 26
+  },
+  {
+   "name": "Typing",
+   "loop": true,
+   "frames": 16
+  },
+  {
+   "name": "WorkPose",
+   "loop": true,
+   "frames": 10
+  },
+  {
+   "name": "PhoneStand",
+   "loop": true,
+   "frames": 60
+  },
+  {
+   "name": "PhoneArm",
+   "loop": true,
+   "frames": 60
+  },
+  {
+   "name": "Cleaning",
+   "loop": true,
+   "frames": 24
+  },
+  {
+   "name": "Rummaging",
+   "loop": true,
+   "frames": 32
+  },
+  {
+   "name": "Fiddling",
+   "loop": true,
+   "frames": 24
+  },
+  {
+   "name": "Brewing",
+   "loop": true,
+   "frames": 40
+  },
+  {
+   "name": "Delivering",
+   "loop": true,
+   "frames": 30
+  },
+  {
+   "name": "Placing",
+   "loop": true,
+   "frames": 24
+  },
+  {
+   "name": "Spilling",
+   "loop": true,
+   "frames": 30
+  },
+  {
+   "name": "Drinking",
+   "loop": true,
+   "frames": 40
+  },
+  {
+   "name": "Plugging",
+   "loop": true,
+   "frames": 30
+  },
+  {
+   "name": "ReachUp",
+   "loop": true,
+   "frames": 20
+  },
+  {
+   "name": "Sit",
+   "loop": true,
+   "frames": 60
+  },
+  {
+   "name": "SitTalk",
+   "loop": true,
+   "frames": 40
+  },
+  {
+   "name": "Talk",
+   "loop": true,
+   "frames": 40
+  },
+  {
+   "name": "Wave",
+   "loop": false,
+   "frames": 45
+  },
+  {
+   "name": "Point",
+   "loop": false,
+   "frames": 40
+  },
+  {
+   "name": "Facepalm",
+   "loop": false,
+   "frames": 50
+  },
+  {
+   "name": "Shrug",
+   "loop": false,
+   "frames": 40
+  },
+  {
+   "name": "Laugh",
+   "loop": false,
+   "frames": 46
+  },
+  {
+   "name": "Shocked",
+   "loop": false,
+   "frames": 30
+  },
+  {
+   "name": "Panic",
+   "loop": true,
+   "frames": 16
+  },
+  {
+   "name": "Cheer",
+   "loop": true,
+   "frames": 20
+  }
+ ],
+ "managers": [
+  {
+   "id": "default",
+   "accessories": [
+    "Acc_MgrTie",
+    "Acc_Moustache"
+   ],
+   "swaps": {
+    "skin": "M_BeanBrown",
+    "suit": "M_SuitDefault",
+    "tie": "M_TieRed"
+   },
+   "scale": [
+    1,
+    1,
+    1
+   ],
+   "tilt": 0,
+   "face": "Stern",
+   "tris": 3592,
+   "name": "Müdür",
+   "idle": "Idle"
+  },
+  {
+   "id": "paragoz",
+   "accessories": [
+    "Acc_MgrTie",
+    "Acc_Handlebar",
+    "Acc_Watch"
+   ],
+   "swaps": {
+    "skin": "M_BeanGold",
+    "suit": "M_SuitNavy",
+    "tie": "M_TieGold"
+   },
+   "scale": [
+    1.08,
+    0.98,
+    1.08
+   ],
+   "tilt": 0,
+   "face": "Smug",
+   "tris": 3808,
+   "name": "Hasan Bey",
+   "idle": "IdleCrossed"
+  },
+  {
+   "id": "disiplinci",
+   "accessories": [
+    "Acc_GlassesCatEye",
+    "Acc_TightBun",
+    "Prop_Clipboard"
+   ],
+   "swaps": {
+    "skin": "M_BeanTeal",
+    "suit": "M_SuitGreen"
+   },
+   "scale": [
+    0.95,
+    1.05,
+    0.95
+   ],
+   "tilt": 0,
+   "face": "Stern",
+   "tris": 3780,
+   "name": "Nermin Hanım",
+   "idle": "IdleClipboard"
+  },
+  {
+   "id": "kayirmaci",
+   "accessories": [
+    "Acc_SunglassesUp",
+    "Acc_SilkScarf",
+    "Acc_Earrings"
+   ],
+   "swaps": {
+    "skin": "M_BeanCoral",
+    "suit": "M_SuitGreen"
+   },
+   "scale": [
+    1,
+    1,
+    1
+   ],
+   "tilt": 0,
+   "face": "Cheerful",
+   "tris": 3884,
+   "name": "Selin Hanım",
+   "idle": "IdleHips"
+  },
+  {
+   "id": "paranoyak",
+   "accessories": [
+    "Acc_MgrTie",
+    "Acc_DarkGlasses",
+    "Acc_Trench"
+   ],
+   "swaps": {
+    "skin": "M_BeanViolet",
+    "suit": "M_SuitTrench",
+    "tie": "M_TieGreenDark"
+   },
+   "scale": [
+    1.03,
+    0.95,
+    1.03
+   ],
+   "tilt": 7,
+   "face": "Sneaky",
+   "tris": 4016,
+   "name": "Kemal Bey",
+   "idle": "IdleSteeple"
+  }
+ ],
+ "managerAccessories": [
+  "Acc_DarkGlasses",
+  "Acc_Earrings",
+  "Acc_GlassesCatEye",
+  "Acc_Handlebar",
+  "Acc_MgrTie",
+  "Acc_Moustache",
+  "Acc_SilkScarf",
+  "Acc_SunglassesUp",
+  "Acc_TightBun",
+  "Acc_Trench",
+  "Acc_Watch"
+ ],
+ "managerProps": {
+  "Prop_Clipboard": 84
+ },
+ "managerGroups": {
+  "skin": [
+   "M_BeanBrown",
+   "M_BeanGold",
+   "M_BeanTeal",
+   "M_BeanCoral",
+   "M_BeanViolet"
+  ],
+  "suit": [
+   "M_SuitDefault",
+   "M_SuitNavy",
+   "M_SuitGreen",
+   "M_SuitTrench"
+  ],
+  "tie": [
+   "M_TieRed",
+   "M_TieGold",
+   "M_TieGreenDark"
+  ]
+ },
+ "managerClips": [
+  {
+   "name": "Idle",
+   "loop": true,
+   "frames": 60
+  },
+  {
+   "name": "IdleCrossed",
+   "loop": true,
+   "frames": 60
+  },
+  {
+   "name": "IdleClipboard",
+   "loop": true,
+   "frames": 60
+  },
+  {
+   "name": "IdleSteeple",
+   "loop": true,
+   "frames": 60
+  },
+  {
+   "name": "IdleHips",
+   "loop": true,
+   "frames": 60
+  },
+  {
+   "name": "Walk",
+   "loop": true,
+   "frames": 22
+  },
+  {
+   "name": "Inspect",
+   "loop": true,
+   "frames": 60
+  },
+  {
+   "name": "Angry",
+   "loop": true,
+   "frames": 24
+  },
+  {
+   "name": "Pleased",
+   "loop": true,
+   "frames": 40
+  },
+  {
+   "name": "Talk",
+   "loop": true,
+   "frames": 40
+  },
+  {
+   "name": "Point",
+   "loop": true,
+   "frames": 15
+  },
+  {
+   "name": "Sit",
+   "loop": true,
+   "frames": 60
+  },
+  {
+   "name": "SitTalk",
+   "loop": true,
+   "frames": 40
+  }
+ ],
+ "atlas": {
+  "file": "FaceAtlas.png",
+  "size": 512,
+  "cells": 4,
+  "eyes": [
+   "neutral",
+   "happy",
+   "sneaky",
+   "shocked",
+   "angry",
+   "sad",
+   "blink",
+   "laugh"
+  ],
+  "mouths": [
+   "neutral",
+   "happy",
+   "smirk",
+   "shocked",
+   "angry",
+   "sad",
+   "talk_a",
+   "talk_e"
+  ]
+ },
+ "expressions": {
+  "Neutral": [
+   0,
+   0
+  ],
+  "Happy": [
+   1,
+   1
+  ],
+  "Sneaky": [
+   2,
+   2
+  ],
+  "Shocked": [
+   3,
+   3
+  ],
+  "Angry": [
+   4,
+   4
+  ],
+  "Sad": [
+   5,
+   5
+  ],
+  "Talking": [
+   0,
+   6
+  ],
+  "Laugh": [
+   7,
+   1
+  ],
+  "Smug": [
+   2,
+   1
+  ],
+  "Stern": [
+   4,
+   5
+  ],
+  "Cheerful": [
+   0,
+   1
+  ],
+  "Nervous": [
+   5,
+   4
+  ]
+ }
+}

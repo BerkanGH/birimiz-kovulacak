@@ -174,71 +174,8 @@ namespace BirimizKovulacak.EditorTools
                 set.Items[kv.Key] = prefab.GetComponent<ItemVisual>();
             }
 
-            // ---------------- animators
-            var empModel = Model("Characters", "Employee");
-            var mgrModel = Model("Characters", "Manager");
-            var empCtrl = Controller(GenDir + "/EmployeeAnimator.controller", empModel, "Idle");
-            var mgrCtrl = Controller(GenDir + "/ManagerAnimator.controller", mgrModel, "Idle");
-
-            // ---------------- avatar (network player)
-            {
-                var root = new GameObject("PlayerAvatar");
-                root.layer = Layers.Avatar;
-                var no = root.AddComponent<NetworkObject>();
-                var nt = root.AddComponent<OwnerNetworkTransform>();
-                nt.SyncPositionX = nt.SyncPositionY = nt.SyncPositionZ = true;
-                nt.SyncRotAngleX = false; nt.SyncRotAngleY = true; nt.SyncRotAngleZ = false;
-                nt.SyncScaleX = nt.SyncScaleY = nt.SyncScaleZ = false;
-                nt.Interpolate = true;
-                var cc = root.AddComponent<CharacterController>();
-                cc.radius = 0.33f; cc.height = 1.2f; cc.center = new Vector3(0, 0.62f, 0); cc.stepOffset = 0.25f; cc.skinWidth = 0.03f;
-                var avatar = root.AddComponent<PlayerAvatar>();
-                var modelRoot = new GameObject("ModelRoot").transform;
-                modelRoot.SetParent(root.transform, false);
-                var model = Inst(empModel, modelRoot, Vector3.zero, 0, "Employee");
-                var anim = model.GetComponent<Animator>() ?? model.AddComponent<Animator>();
-                anim.runtimeAnimatorController = empCtrl;
-                anim.applyRootMotion = false;
-                anim.cullingMode = AnimatorCullingMode.AlwaysAnimate;
-                avatar.Animator = anim;
-                avatar.ModelRoot = modelRoot;
-                // "Body" is both a bone and the skinned mesh: look the mesh up by component.
-                avatar.BodyRenderer = model.GetComponentsInChildren<SkinnedMeshRenderer>(true).FirstOrDefault(r => r.name == "Body");
-                var accNames = new[] { "Acc_Collar", "Acc_Tie", "Acc_HairTuft", "Acc_Glasses", "Acc_HairBun", "Acc_Headset" };
-                var smrs = model.GetComponentsInChildren<SkinnedMeshRenderer>(true);
-                avatar.Accessories = smrs.Where(r => accNames.Contains(r.name)).Select(r => r.gameObject).ToArray();
-                avatar.TieRenderer = smrs.FirstOrDefault(r => r.name == "Acc_Tie");
-                avatar.SkinMaterials = new[] { Mat("M_SkinBlue"), Mat("M_SkinYellow"), Mat("M_SkinPink"), Mat("M_SkinGreen") };
-                avatar.TieRed = Mat("M_TieRed");
-                avatar.TieGreen = Mat("M_TieGreen");
-                foreach (var smr in model.GetComponentsInChildren<SkinnedMeshRenderer>()) smr.updateWhenOffscreen = true;
-                var carry = new GameObject("CarrySocket").transform;
-                carry.SetParent(root.transform, false);
-                carry.localPosition = new Vector3(0, 0.62f, 0.42f);
-                avatar.CarrySocket = carry;
-                var hand = new GameObject("HandSocket").transform;
-                hand.SetParent(root.transform, false);
-                hand.localPosition = new Vector3(0.42f, 0.95f, 0.1f);
-                avatar.HandSocket = hand;
-                var handset = Cube(hand, "PhoneHandset", Vector3.zero, new Vector3(0.05f, 0.2f, 0.05f), Mat("M_PlasticDark"));
-                handset.transform.localRotation = Quaternion.Euler(0, 0, 20);
-                handset.SetActive(false);
-                avatar.PhoneHandset = handset;
-                var boxModel = Model("Props", "ClutterBox");
-                if (boxModel != null)
-                {
-                    var box = Inst(boxModel, carry, new Vector3(0, -0.12f, 0.02f), 0, "FiredBox");
-                    box.SetActive(false);
-                    avatar.FiredBox = box;
-                }
-                var tag = Label3D(root.transform, "NameTag", new Vector3(0, 1.62f, 0), Vector3.zero, new Vector2(1.6f, 0.26f), fonts.Tmp, Color.white, "", 2.2f);
-                tag.outlineWidth = 0.25f;
-                tag.outlineColor = new Color32(30, 24, 60, 255);
-                avatar.NameTag = tag;
-                SetLayerRecursive(root, Layers.Avatar);
-                set.Avatar = PrefabUtility.SaveAsPrefabAsset(root, PrefabDir + "/PlayerAvatar.prefab");
-                Object.DestroyImmediate(root);
-            }
+            // ---------------- characters: player avatar + manager (ProjectBuilder.Characters.cs)
+            CreateCharacterPrefabs(set, fonts);
 
             // ---------------- net session
             {
@@ -249,32 +186,6 @@ namespace BirimizKovulacak.EditorTools
                 Object.DestroyImmediate(root);
             }
 
-            // ---------------- manager (local visual driven by the public view)
-            {
-                var root = new GameObject("Manager");
-                var mv = root.AddComponent<ManagerVisual>();
-                var model = Inst(mgrModel, root.transform, Vector3.zero, 0, "ManagerModel");
-                var anim = model.GetComponent<Animator>() ?? model.AddComponent<Animator>();
-                anim.runtimeAnimatorController = mgrCtrl;
-                anim.applyRootMotion = false;
-                anim.cullingMode = AnimatorCullingMode.AlwaysAnimate;
-                mv.Animator = anim;
-                var bubble = new GameObject("Bubble");
-                bubble.transform.SetParent(root.transform, false);
-                bubble.transform.localPosition = new Vector3(0, 2.05f, 0);
-                var bg = Quad(bubble.transform, "Bg", new Vector3(0, 0, 0.01f), Vector3.zero, new Vector3(2.3f, 0.5f, 1), Mat("M_BubbleBg"));
-                mv.Bubble = Label3D(bubble.transform, "Text", Vector3.zero, Vector3.zero, new Vector2(2.2f, 0.42f), fonts.Tmp, new Color(0.7f, 0.1f, 0.1f), "!", 2.5f);
-                mv.BubbleRoot = bubble;
-                var cone = new GameObject("VisionCone");
-                cone.transform.SetParent(root.transform, false);
-                cone.transform.localPosition = new Vector3(0, 0.03f, 0);
-                mv.ConeFilter = cone.AddComponent<MeshFilter>();
-                mv.ConeRenderer = cone.AddComponent<MeshRenderer>();
-                mv.ConeRenderer.sharedMaterial = Mat("M_VisionCone");
-                mv.ConeRenderer.shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;
-                set.Manager = PrefabUtility.SaveAsPrefabAsset(root, PrefabDir + "/Manager.prefab");
-                Object.DestroyImmediate(root);
-            }
             AssetDatabase.SaveAssets();
             Log("Prefabs: " + set.Items.Count + " items + avatar, manager, session");
             return set;
@@ -284,29 +195,6 @@ namespace BirimizKovulacak.EditorTools
         {
             go.layer = layer;
             foreach (Transform c in go.transform) SetLayerRecursive(c.gameObject, layer);
-        }
-
-        static AnimatorController Controller(string path, GameObject model, string defaultState)
-        {
-            AssetDatabase.DeleteAsset(path);
-            var ctrl = AnimatorController.CreateAnimatorControllerAtPath(path);
-            var sm = ctrl.layers[0].stateMachine;
-            string modelPath = AssetDatabase.GetAssetPath(model);
-            var clips = AssetDatabase.LoadAllAssetsAtPath(modelPath).OfType<AnimationClip>().Where(c => !c.name.StartsWith("__preview")).ToList();
-            AnimatorState def = null;
-            int i = 0;
-            foreach (var clip in clips)
-            {
-                var st = sm.AddState(clip.name, new Vector3(250 + (i % 4) * 220, (i / 4) * 70, 0));
-                st.motion = clip;
-                st.writeDefaultValues = true;
-                if (clip.name == defaultState) def = st;
-                i++;
-            }
-            if (def != null) sm.defaultState = def;
-            EditorUtility.SetDirty(ctrl);
-            Log("Animator " + path + ": " + string.Join(",", clips.Select(c => c.name)));
-            return ctrl;
         }
     }
 }
