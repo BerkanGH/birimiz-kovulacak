@@ -23,6 +23,7 @@ namespace BirimizKovulacak.Game
             MatchLog.Initialize(name);
             Loc.Load("tr");
             GameInput.Initialize();
+            if (GetComponent<VoiceSystem>() == null) gameObject.AddComponent<VoiceSystem>();
             if (args.Bot) gameObject.AddComponent<NetworkBotDriver>();
             if (args.Screenshots) gameObject.AddComponent<ScreenshotRecorder>();
             if (args.InputSim && !args.Bot) gameObject.AddComponent<InputSimDriver>();
@@ -146,7 +147,7 @@ namespace BirimizKovulacak.Game
                 while (Time.realtimeSinceStartup - start < d * Mathf.Max(0.3f, LaunchArgs.Current.DurationScale)) yield return null;
                 var v = ClientState.I.View;
                 if (v == null || v.Phase != phase) yield break;
-                string dir = Path.Combine(MatchLog.Directory ?? Application.persistentDataPath, "shots");
+                string dir = Path.GetFullPath(Path.Combine(MatchLog.Directory ?? Application.persistentDataPath, "shots"));
                 Directory.CreateDirectory(dir);
                 string file = Path.Combine(dir, string.Format("{0}_m{1}_{2}_{3:000}.png", ConnectionManager.I.PlayerName, match, phase, (int)(Time.realtimeSinceStartup - start)));
                 yield return new WaitForEndOfFrame();

@@ -1,0 +1,20 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <!-- Compiles the Unity-independent voice core (Scripts/Voice/Core) as Unity does: netstandard2.1, C# 9, no UnityEngine. -->
+  <PropertyGroup>
+    <TargetFramework>netstandard2.1</TargetFramework>
+    <LangVersion>9.0</LangVersion>
+    <Nullable>disable</Nullable>
+    <AssemblyName>BirimizKovulacak.VoiceCore</AssemblyName>
+    <RootNamespace>BirimizKovulacak.Voice</RootNamespace>
+    <EnableDefaultCompileItems>false</EnableDefaultCompileItems>
+    <TreatWarningsAsErrors>false</TreatWarningsAsErrors>
+  </PropertyGroup>
+  <ItemGroup>
+    <Compile Include="../../../Game/Assets/Game/Scripts/Voice/Core/**/*.cs" />
+  </ItemGroup>
+  <ItemGroup>
+    <Reference Include="Concentus">
+      <HintPath>../../../Game/Assets/Plugins/Concentus/Concentus.dll</HintPath>
+    </Reference>
+  </ItemGroup>
+</Project>

@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Globalization;
 
 namespace BirimizKovulacak.Game
@@ -74,7 +74,10 @@ namespace BirimizKovulacak.Game
                     case "-week": a.WeekMode = true; break;
                     case "-expectplayers": a.ExpectPlayers = int.Parse(next, CultureInfo.InvariantCulture); i++; break;
                     case "-manager": a.ManagerProfile = next; i++; break;
-                    case "-voicetest": a.VoiceTest = next ?? "sine"; i++; break;
+                    case "-voicetest":
+                        if (next != null && !next.StartsWith("-")) { a.VoiceTest = next; i++; }
+                        else a.VoiceTest = "sine";
+                        break;
                     case "-botaggression": a.BotAggression = float.Parse(next, CultureInfo.InvariantCulture); i++; break;
                 }
             }
