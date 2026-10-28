@@ -474,8 +474,12 @@ def storage_room(L):
     # Cleaning closet in the SW corner, diagonal (front faces the user, yaw from the contract).
     cx, _, cz = cl["p"]
     yaw = math.radians(cl["yaw"])
-    back = 0.35  # closet centre sits behind the user point
-    L.prop("CleaningCloset", (cx + math.sin(yaw) * back, 0, cz + math.cos(yaw) * back), cl["yaw"], id="st.cleaning", anchors=["slot.sprayrack"], role="closet", room="room.storage")
+    # The spray rack items sit at local x -0.15/0.15/0.45 of the anchor (= the station point), on the closet's
+    # 0.88 m shelf: centre the 0.9 m closet 0.15 m to the anchor's right and 0.1 m behind it.
+    fwd = (math.sin(yaw), math.cos(yaw))
+    right = (math.cos(yaw), -math.sin(yaw))
+    L.prop("CleaningCloset", (cx + fwd[0] * 0.1 + right[0] * 0.15, 0, cz + fwd[1] * 0.1 + right[1] * 0.15), cl["yaw"], id="st.cleaning",
+           anchors=["slot.sprayrack"], role="closet", room="room.storage")
     L.prop("FuseBox", (fb["p"][0], 1.25, -9.99), fb["yaw"], c=False, id="st.fusebox", role="fusebox", room="room.storage")
     L.prop("LowPallet", (lf["p"][0], 0, lf["p"][2]), lf["yaw"], room="room.storage")
     L.prop("LostFoundBox", (lf["p"][0], 0.33, lf["p"][2]), lf["yaw"], c=False, anchors=["slot.lostfound"], role="lostfound", room="room.storage")
@@ -483,7 +487,7 @@ def storage_room(L):
     L.prop("StorageShelf", (-15.7, 0, -7.75), FACE["E"], room="room.storage")
     L.prop("StorageShelf", (-10.32, 0, -6.6), FACE["W"], room="room.storage")
     L.prop("CardboardStack", (-11.4, 0, -5.6), 12, room="room.storage")
-    L.prop("MopBucket", (-14.0, 0, -9.55), 0, room="room.storage")
+    L.prop("MopBucket", (-10.55, 0, -8.85), 30, room="room.storage")
     L.prop("Ladder", (-10.3, 0, -8.2), FACE["W"], c=False, room="room.storage")
     L.prop("WetFloorSign", (-12.4, 0, -6.3), 200, c=False, room="room.storage")
     L.prop("CardboardStack", (-14.6, 0, -5.55), -20, room="room.storage")
@@ -570,7 +574,7 @@ def cameras_and_safety(L):
     L.prop("FireExtinguisher", (-15.95, 0.0, -0.1), FACE["E"], c=False, room="room.office")
     L.prop("FireExtinguisher", (2.6, 0.0, -4.93), FACE["N"], c=False, room="room.office")
     L.prop("FireExtinguisher", (2.08, 0.0, 5.0), FACE["E"], c=False, room="room.kitchen")
-    em = [("room.office", (-12.0, 2.55, 3.93), FACE["S"]), ("room.office", (-2.0, 2.55, 3.93), FACE["S"]),
+    em = [("room.office", (-15.93, 2.55, 0.8), FACE["E"]), ("room.office", (-2.0, 2.55, 3.93), FACE["S"]),
           ("room.office", (-7.0, 2.55, -4.93), FACE["N"]), ("room.reception", (11.5, 2.55, 3.93), FACE["S"]),
           ("room.kitchen", (6.0, 2.55, 9.99), FACE["S"]), ("room.lounge", (9.0, 2.55, -5.07), FACE["S"]),
           ("room.storage", (-13.0, 2.55, -5.07), FACE["S"]), ("room.server", (-1.0, 2.55, -5.07), FACE["S"]),

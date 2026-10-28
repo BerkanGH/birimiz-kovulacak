@@ -23,6 +23,8 @@ namespace BirimizKovulacak.Game
         public StationVisual[] Stations;
         public Light[] AlarmLights;
         public Transform AlarmRotor;
+        /// <summary>v2 device state lights (router, fuse box, CCTV, server racks).</summary>
+        public DeviceVisual[] Devices;
 
         readonly Dictionary<string, Transform> _anchors = new Dictionary<string, Transform>();
         readonly Dictionary<string, ItemVisual> _items = new Dictionary<string, ItemVisual>();
@@ -73,6 +75,15 @@ namespace BirimizKovulacak.Game
 
         public static Vector3 V(Vec3 v) { return new Vector3(v.X, v.Y, v.Z); }
 
+        /// <summary>Pooled visual of an item (active or not), or null if it was never shown.</summary>
+        public bool TryGetItemVisual(string itemId, out Transform visual)
+        {
+            ItemVisual iv;
+            if (!string.IsNullOrEmpty(itemId) && _items.TryGetValue(itemId, out iv) && iv != null) { visual = iv.transform; return true; }
+            visual = null;
+            return false;
+        }
+
         // ------------------------------------------------------------------ per frame
 
         void Update()
@@ -101,7 +112,7 @@ namespace BirimizKovulacak.Game
                 {
                     DeskView d = null;
                     foreach (var x in view.Desks) if (x.Index == dv.DeskIndex) d = x;
-                    if (d != null) dv.Apply(d);
+                    if (d != null) dv.Apply(d, view);
                     dv.WantOpen = DrawerBusy(view, EntityIds.DeskDrawer(dv.DeskIndex));
                 }
             if (Stations != null)
@@ -111,6 +122,12 @@ namespace BirimizKovulacak.Game
                     foreach (var x in view.Stations) if (x.Id == sv.StationId) s = x;
                     sv.Apply(view, s, now);
                 }
+            if (Devices != null)
+            {
+                float t = Time.time;
+                var real = cs != null ? cs.View : null;
+                for (int i = 0; i < Devices.Length; i++) if (Devices[i] != null) Devices[i].Tick(real, now, t);
+            }
             if (Manager != null) Manager.Apply(cs != null ? cs.View : null, now);
             UpdateAlarm(cs != null ? cs.View : null, now);
         }
@@ -191,7 +208,8 @@ namespace BirimizKovulacak.Game
                 case SlotKind.DeskSurface: local = new Vector3(-0.28f + 0.28f * i, 0f, 0f); break;
                 case SlotKind.Drawer: local = new Vector3(-0.1f + 0.1f * i, 0f, 0f); scale = 0.55f; break;
                 case SlotKind.NameplateHolder: local = Vector3.zero; break;
-                case SlotKind.HidingSpot: local = new Vector3(0f, 0f, -0.15f + 0.3f * i); scale = 0.8f; break;
+                case SlotKind.HidingSpot: local = new Vector3(-0.13f + 0.26f * i, 0f, 0f); scale = 0.8f; break;
+                case SlotKind.Mailroom: local = new Vector3(-0.45f + 0.3f * (i % 4), 0.012f * (i / 4), 0.1f); break;
                 case SlotKind.MugShelf: local = new Vector3(-0.18f + 0.12f * i, 0.02f, 0f); break;
                 case SlotKind.PrinterTray: local = new Vector3(0f, 0.012f * i, 0f); break;
                 case SlotKind.DeliveryTray:
@@ -207,6 +225,7 @@ namespace BirimizKovulacak.Game
             pos = a.TransformPoint(local);
             rot = a.rotation * Quaternion.Euler(0, (i * 37) % 30 - 15 + (item.Kind == ItemKind.Mug ? 0 : 0), 0);
             if (slot.Kind == SlotKind.NameplateHolder || slot.Kind == SlotKind.MugShelf || slot.Kind == SlotKind.SprayRack) rot = a.rotation;
+            else if (slot.Kind == SlotKind.Mailroom) rot = a.rotation * Quaternion.Euler(0, 180f + (i * 23) % 14 - 7, 0);
         }
 
         static int CountBefore(PlayerView view, ItemView item, ItemKind kind)
@@ -226,6 +245,7 @@ namespace BirimizKovulacak.Game
             var counts = new Dictionary<string, int>();
             foreach (var def in layout.Items)
             {
+                if (def.Kind == ItemKind.Nameplate && def.NameplateOf >= 4) continue;
                 string slot = def.InitialSlotId ?? (def.Kind == ItemKind.Nameplate ? EntityIds.DeskNameplate(def.NameplateOf) : null);
                 if (slot == null) continue;
                 int idx;
@@ -233,7 +253,9 @@ namespace BirimizKovulacak.Game
                 counts[slot] = idx + 1;
                 v.Items.Add(new ItemView { Id = def.Id, Kind = def.Kind, Variant = def.Variant, Location = ItemLocationKind.Slot, SlotId = slot, SlotIndex = idx, NameplateOf = def.NameplateOf });
             }
-            foreach (var d in layout.Desks) v.Desks.Add(new DeskView { Index = d.Index, Id = d.Id, AssignedOwner = d.Index, DisplayedNameplateOf = d.Index, Dirty = d.Index == 2 });
+            foreach (var d in layout.Desks)
+                v.Desks.Add(new DeskView { Index = d.Index, Id = d.Id, AssignedOwner = d.Index < 4 ? d.Index : PlayerIds.None, DisplayedNameplateOf = d.Index < 4 ? d.Index : PlayerIds.None,
+                                           Dirty = d.Index == 2, ScreenOpen = d.Index == 0 || d.Index == 3 });
             v.Manager = new ManagerView { State = ManagerState.InOffice, Position = layout.ManagerHome, Yaw = layout.ManagerHomeYaw };
             _attractView = v;
             return v;

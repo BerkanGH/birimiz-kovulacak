@@ -28,14 +28,27 @@ namespace BirimizKovulacak.Game
                 string text = null;
                 if (item.Kind == ItemKind.Nameplate) text = Loc.PlayerName(view, item.NameplateOf).ToUpperInvariant();
                 else if (item.Kind == ItemKind.Report) text = Loc.PlayerName(view, item.ReportOwner);
+                else if (item.Kind == ItemKind.Mail && item.AddressedDesk != _mailDesk) { _mailOwner = MailOwner(view, item.AddressedDesk); _mailDesk = item.AddressedDesk; }
+                if (item.Kind == ItemKind.Mail && _mailOwner >= 0) text = Loc.PlayerName(view, _mailOwner);
                 if (text != null)
                     foreach (var l in Labels) if (l != null && l.text != text) l.text = text;
             }
-            if (StripeRenderer != null && item.Kind == ItemKind.Nameplate)
+            if (StripeRenderer != null && WorldPalette.I != null)
             {
-                var mats = WorldPalette.I != null ? WorldPalette.I.PlayerColors : null;
-                if (mats != null && item.NameplateOf >= 0 && item.NameplateOf < mats.Length) StripeRenderer.sharedMaterial = mats[item.NameplateOf];
+                int who = item.Kind == ItemKind.Nameplate ? item.NameplateOf : item.Kind == ItemKind.Mail ? MailOwner(view, item.AddressedDesk) : PlayerIds.None;
+                var m = who >= 0 ? WorldPalette.I.PlayerColor(view, who) : null;
+                if (m != null && StripeRenderer.sharedMaterial != m) StripeRenderer.sharedMaterial = m;
             }
+        }
+
+        int _mailDesk = int.MinValue, _mailOwner = PlayerIds.None;
+
+        /// <summary>Owner of the desk a mail item is addressed to (the addressee's colour is printed on the envelope).</summary>
+        static int MailOwner(PlayerView view, int desk)
+        {
+            if (view == null || desk < 0) return PlayerIds.None;
+            for (int i = 0; i < view.Desks.Count; i++) if (view.Desks[i].Index == desk) return view.Desks[i].AssignedOwner;
+            return PlayerIds.None;
         }
 
         public void MoveTo(Vector3 pos, Quaternion rot, bool snap)
