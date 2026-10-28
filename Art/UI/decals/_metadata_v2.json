@@ -1,0 +1,233 @@
+[
+  {
+    "id": "poster_teamwork",
+    "path": "Art/UI/decals/poster_teamwork.png",
+    "w": 360,
+    "h": 510,
+    "category": "decals",
+    "nineSlice": null,
+    "screenRect": null,
+    "hasText": true,
+    "description": "TAKIM RUHU. Ironic rowing team: blue and yellow beans row while the orange bean sleeps. Opaque wall texture; exact physical aspect ratio."
+  },
+  {
+    "id": "poster_motivation",
+    "path": "Art/UI/decals/poster_motivation.png",
+    "w": 360,
+    "h": 510,
+    "category": "decals",
+    "nineSlice": null,
+    "screenRect": null,
+    "hasText": true,
+    "description": "BAŞARI = MESAİ. Overtime satire with an exhausted worker, paper tower and oversized clock. Opaque wall texture; exact physical aspect ratio."
+  },
+  {
+    "id": "poster_safety",
+    "path": "Art/UI/decals/poster_safety.png",
+    "w": 360,
+    "h": 510,
+    "category": "decals",
+    "nineSlice": null,
+    "screenRect": null,
+    "hasText": true,
+    "description": "DİKKAT. Red rubber-stamp office safety poster with a slipping bean, coffee spill and cable. Opaque wall texture; exact physical aspect ratio."
+  },
+  {
+    "id": "memo_board",
+    "path": "Art/UI/decals/memo_board.png",
+    "w": 756,
+    "h": 468,
+    "category": "decals",
+    "nineSlice": null,
+    "screenRect": null,
+    "hasText": false,
+    "description": "Cork notice board with blank pinned memo sheets and sticky notes; no small text. Opaque wall texture; exact physical aspect ratio."
+  },
+  {
+    "id": "poster_quota",
+    "path": "Art/UI/decals/poster_quota.png",
+    "w": 504,
+    "h": 360,
+    "category": "decals",
+    "nineSlice": null,
+    "screenRect": null,
+    "hasText": true,
+    "description": "KOTA. Declining quota bars with a dominant descending red arrow. Opaque wall texture; exact physical aspect ratio."
+  },
+  {
+    "id": "portrait_manager",
+    "path": "Art/UI/decals/portrait_manager.png",
+    "w": 392,
+    "h": 504,
+    "category": "decals",
+    "nineSlice": null,
+    "screenRect": null,
+    "hasText": false,
+    "description": "Gold-framed oil-painted portrait of a pompous bean manager in a suit. Opaque wall texture; exact physical aspect ratio."
+  },
+  {
+    "id": "diploma",
+    "path": "Art/UI/decals/diploma.png",
+    "w": 495,
+    "h": 374,
+    "category": "decals",
+    "nineSlice": null,
+    "screenRect": null,
+    "hasText": true,
+    "description": "DİPLOMA. Framed diploma with a gold seal and abstract decorative rules; no small text. Opaque wall texture; exact physical aspect ratio."
+  },
+  {
+    "id": "poster_kpi",
+    "path": "Art/UI/decals/poster_kpi.png",
+    "w": 512,
+    "h": 384,
+    "category": "decals",
+    "nineSlice": null,
+    "screenRect": null,
+    "hasText": true,
+    "description": "KPI. Presentation chart with three thick bars and a three-sector pie chart. Opaque wall texture; exact physical aspect ratio."
+  },
+  {
+    "id": "poster_mission",
+    "path": "Art/UI/decals/poster_mission.png",
+    "w": 504,
+    "h": 364,
+    "category": "decals",
+    "nineSlice": null,
+    "screenRect": null,
+    "hasText": true,
+    "description": "VİZYONUMUZ. Corporate mission poster with a bold sunrise above green hills. Opaque wall texture; exact physical aspect ratio."
+  },
+  {
+    "id": "poster_coffee",
+    "path": "Art/UI/decals/poster_coffee.png",
+    "w": 360,
+    "h": 510,
+    "category": "decals",
+    "nineSlice": null,
+    "screenRect": null,
+    "hasText": true,
+    "description": "KAHVE KURALLARI. Coffee rules with exactly three large icon bullets. Opaque wall texture; exact physical aspect ratio."
+  },
+  {
+    "id": "sign_salt",
+    "path": "Art/UI/decals/sign_salt.png",
+    "w": 512,
+    "h": 352,
+    "category": "decals",
+    "nineSlice": null,
+    "screenRect": null,
+    "hasText": true,
+    "description": "TUZ ≠ ŞEKER. Salt-versus-sugar warning label with two contrasting shakers. Opaque wall texture; exact physical aspect ratio."
+  },
+  {
+    "id": "poster_fridge_rules",
+    "path": "Art/UI/decals/poster_fridge_rules.png",
+    "w": 384,
+    "h": 504,
+    "category": "decals",
+    "nineSlice": null,
+    "screenRect": null,
+    "hasText": true,
+    "description": "YOĞURDUMU YİYEN?. Passive-aggressive fridge note with an irritated half-eaten yogurt pot. Opaque wall texture; exact physical aspect ratio."
+  },
+  {
+    "id": "poster_printer",
+    "path": "Art/UI/decals/poster_printer.png",
+    "w": 384,
+    "h": 512,
+    "category": "decals",
+    "nineSlice": null,
+    "screenRect": null,
+    "hasText": true,
+    "description": "YAZICI: SABIR. Printer instructions with a frustrated bean kicking a jammed printer. Opaque wall texture; exact physical aspect ratio."
+  },
+  {
+    "id": "sign_out_of_order",
+    "path": "Art/UI/decals/sign_out_of_order.png",
+    "w": 504,
+    "h": 308,
+    "category": "decals",
+    "nineSlice": null,
+    "screenRect": null,
+    "hasText": true,
+    "description": "ARIZALI. Red out-of-order sign with crossed wrench and gear. Opaque wall texture; exact physical aspect ratio."
+  },
+  {
+    "id": "logo_company",
+    "path": "Art/UI/decals/logo_company.png",
+    "w": 768,
+    "h": 384,
+    "category": "decals",
+    "nineSlice": null,
+    "screenRect": null,
+    "hasText": true,
+    "description": "KOVA HOLDİNG. Fictional reception company logo: simple green bucket and rising sun mark. Opaque wall texture; exact physical aspect ratio."
+  },
+  {
+    "id": "poster_welcome",
+    "path": "Art/UI/decals/poster_welcome.png",
+    "w": 504,
+    "h": 360,
+    "category": "decals",
+    "nineSlice": null,
+    "screenRect": null,
+    "hasText": true,
+    "description": "HOŞ GELDİNİZ. Two friendly waving bean coworkers on a welcome poster. Opaque wall texture; exact physical aspect ratio."
+  },
+  {
+    "id": "sign_fusebox",
+    "path": "Art/UI/decals/sign_fusebox.png",
+    "w": 512,
+    "h": 512,
+    "category": "decals",
+    "nineSlice": null,
+    "screenRect": null,
+    "hasText": true,
+    "description": "YÜKSEK GERİLİM. High-voltage warning with a large navy lightning bolt in a yellow triangle. Opaque wall texture; exact physical aspect ratio."
+  },
+  {
+    "id": "sign_wash_hands",
+    "path": "Art/UI/decals/sign_wash_hands.png",
+    "w": 384,
+    "h": 512,
+    "category": "decals",
+    "nineSlice": null,
+    "screenRect": null,
+    "hasText": true,
+    "description": "ELLERİNİZİ YIKAYIN. Wash-hands sign with two hands, faucet and large water droplets. Opaque wall texture; exact physical aspect ratio."
+  },
+  {
+    "id": "sign_server_danger",
+    "path": "Art/UI/decals/sign_server_danger.png",
+    "w": 512,
+    "h": 512,
+    "category": "decals",
+    "nineSlice": null,
+    "screenRect": null,
+    "hasText": true,
+    "description": "YETKİSİZ GİRİLMEZ. Unauthorized-access sign with a red stop hand and server rack. Opaque wall texture; exact physical aspect ratio."
+  },
+  {
+    "id": "poster_relax",
+    "path": "Art/UI/decals/poster_relax.png",
+    "w": 504,
+    "h": 360,
+    "category": "decals",
+    "nineSlice": null,
+    "screenRect": null,
+    "hasText": true,
+    "description": "MOLA. Lounge poster with bean coworkers relaxing on a beach. Opaque wall texture; exact physical aspect ratio."
+  },
+  {
+    "id": "poster_vending",
+    "path": "Art/UI/decals/poster_vending.png",
+    "w": 384,
+    "h": 512,
+    "category": "decals",
+    "nineSlice": null,
+    "screenRect": null,
+    "hasText": true,
+    "description": "ATIŞTIR!. Vending snack advertisement with a happy bean, crisp packet and cookie. Opaque wall texture; exact physical aspect ratio."
+  }
+]

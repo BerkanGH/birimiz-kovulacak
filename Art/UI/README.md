@@ -1,6 +1,6 @@
 # Birimiz Kovulacak — 2D UI art kit
 
-The kit contains **183 final PNG assets plus one multi-resolution ICO** for the warm office satire direction, plus review sheets, source records and finishing scripts. The second run adds **34 PNGs + 1 ICO**; the original 149 PNGs are preserved byte-for-byte. [manifest.json](manifest.json) is the asset inventory; it excludes `_sources`, `_sheets`, `_tools` and category metadata. [validation.json](validation.json) records the final file audit. Start with the [second-run overview](_sheets/second_run.png), [complete overview](_sheets/index.png), or [icons at their actual 48px display size](_sheets/icons_48.png).
+The kit contains **204 final PNG assets plus one multi-resolution ICO** for the warm office satire direction, plus review sheets, source records and finishing scripts. The third run adds **21 wall decal PNGs**; all 184 previous PNG/ICO assets are preserved byte-for-byte. The second run added **34 PNGs + 1 ICO**. [manifest.json](manifest.json) is the asset inventory; it excludes `_sources`, `_sheets`, `_tools` and category metadata. [validation.json](validation.json) records the final file audit. Start with the [third-run wall decals](_sheets/decals_v2.png), [second-run overview](_sheets/second_run.png), [original overview](_sheets/index.png), or [icons at their actual 48px display size](_sheets/icons_48.png).
 
 | Category | PNG count | Primary sizes |
 | --- | ---: | --- |
@@ -14,13 +14,49 @@ The kit contains **183 final PNG assets plus one multi-resolution ICO** for the 
 | `stamps` | 6 | 960×320 |
 | `phone` | 8 | 600×1200 frame, 192×192 apps, 504×984 wallpaper |
 | `meeting` | 5 | 1600×900 projector/board, 1280×720 CCTV, 1200×1600 letter, 800×600 folder |
-| `decals` | 8 | 512×768 posters/sign; other sizes in manifest |
+| `decals` | 29 | 8 existing decals; 21 new wall textures at 308–768 px, exact physical aspect ratios |
 | `howto` | 6 | 1280×720, text-free |
 | `week` | 6 | Five 960×200 weekday banners; 512×512 trophy |
 | `titles` | 10 | 256×256 round badges |
 | `bubbles` | 8 | 256×256 speech/thought sprites |
 | `app` | 1 + 1 ICO | 1024×1024 PNG; ICO at 16, 24, 32, 48, 64, 128, 256 |
 | `store` | 3 | 920×430, 1232×706 capsules; 1920×1080 key art |
+
+## Third art run — office wall posters and signs
+
+The 21 new filenames match the decal spots in [`docs/MAP.md` §7](../../docs/MAP.md#7-decal-spots-posterssigns-for-the-2d-art-run). Each PNG is a straight-on, opaque printed-paper or framed texture: the rectangle contains the artwork, with no photographed wall or exterior backdrop. The memo board is 756×468 and the reception logo is 768×384; all other new textures have a long side of 495–512 px. Every pixel aspect ratio exactly matches the specified size in metres, with no stretching required on the wall.
+
+The artwork uses the locked stationery palette, rounded beans, navy contours, simple shading and paper grain. The manager portrait deliberately uses oil-painting brush texture. The 19 required labels use Arial Bold with exact NFC Turkish Unicode lettering; the memo board and manager portrait are text-free. No small readable text is baked into memos, charts or the diploma. The salt sign retains the correctly rendered `≠` symbol.
+
+| New decal | Pixels | Size (m) | Exact visible text |
+| --- | --- | --- | --- |
+| `poster_teamwork` | 360×510 | 0.6×0.85 | TAKIM RUHU |
+| `poster_motivation` | 360×510 | 0.6×0.85 | BAŞARI = MESAİ |
+| `poster_safety` | 360×510 | 0.6×0.85 | DİKKAT |
+| `memo_board` | 756×468 | 1.05×0.65 | None |
+| `poster_quota` | 504×360 | 0.7×0.5 | KOTA |
+| `portrait_manager` | 392×504 | 0.7×0.9 | None |
+| `diploma` | 495×374 | 0.45×0.34 | DİPLOMA |
+| `poster_kpi` | 512×384 | 0.8×0.6 | KPI |
+| `poster_mission` | 504×364 | 0.9×0.65 | VİZYONUMUZ |
+| `poster_coffee` | 360×510 | 0.6×0.85 | KAHVE KURALLARI |
+| `sign_salt` | 512×352 | 0.32×0.22 | TUZ ≠ ŞEKER |
+| `poster_fridge_rules` | 384×504 | 0.32×0.42 | YOĞURDUMU YİYEN? |
+| `poster_printer` | 384×512 | 0.6×0.8 | YAZICI: SABIR |
+| `sign_out_of_order` | 504×308 | 0.36×0.22 | ARIZALI |
+| `logo_company` | 768×384 | 1.3×0.65 | KOVA HOLDİNG |
+| `poster_welcome` | 504×360 | 0.7×0.5 | HOŞ GELDİNİZ |
+| `sign_fusebox` | 512×512 | 0.3×0.3 | YÜKSEK GERİLİM |
+| `sign_wash_hands` | 384×512 | 0.3×0.4 | ELLERİNİZİ YIKAYIN |
+| `sign_server_danger` | 512×512 | 0.35×0.35 | YETKİSİZ GİRİLMEZ |
+| `poster_relax` | 504×360 | 0.7×0.5 | MOLA |
+| `poster_vending` | 384×512 | 0.45×0.6 | ATIŞTIR! |
+
+Review the [full decal contact sheet](_sheets/decals_v2.png) and [small foreshortened preview](_sheets/decals_v2_distance.png). The latter assumes 140 screen pixels per metre, 65% horizontal and 82% vertical scale; it is a comparative readability check, not a calibrated 5–7 m Unity render. At the smallest physical sign sizes, symbols remain clearer than multiword labels. Actual readability at 5–7 m still depends on camera projection, resolution, mipmaps and lighting and needs an in-game check.
+
+All 21 raw generations and the full prompt sets are archived under [`_sources/decals_v2/`](_sources/decals_v2/): [group A prompts](_sources/decals_v2/prompts_a.json), [group B prompts](_sources/decals_v2/prompts_b.json), [group C prompts](_sources/decals_v2/prompts_c.json). [Finishing records](_sources/decals_v2/finishing.json) store exact text, codepoints, type size and glyph bounds. [Visual review](_sources/decals_v2/review.json) records the final reviewed file hashes. Generated art uses the built-in image-generation tool; frames, composition, final resizing and typography use deterministic finishing, following this kit's existing workflow. Rebuild with `_tools/decals_v2_finish.py`, then run the strict validator. Any changed PNG needs renewed visual review before the strict audit passes.
+
+No Unity files, `.meta` files or git state were changed in this run. Import these new opaque textures using the office builder's decal settings: sRGB, mipmaps enabled, Clamp wrap, max size 1024 and the chosen platform compression. Existing screen-space sprite guidance below is separate from world decals.
 
 ## Second art run
 
@@ -114,7 +150,7 @@ For other images, convert rectangle y using `imageHeight - y - height`. Place `c
 
 ## Production and adding assets
 
-Illustrations were created with the built-in image-generation tool, using the locked style reference. Typography, buttons, device/meeting frames, paper tiling, compositing, crop/padding and PNG optimization use scripts. Prompts and source locations are recorded in `_sources/*prompts*.json` and the other category source ledgers. Some first-run generation originals live in the tool cache; selected cleaned/generated inputs are retained under `_sources`. Every second-run raw generation is archived locally. Final assets are local PNGs and the application ICO in the named category folders.
+Illustrations were created with the built-in image-generation tool, using the locked style reference. Typography, buttons, device/meeting frames, paper tiling, compositing, crop/padding and PNG optimization use scripts. Prompts and source locations are recorded in `_sources/*prompts*.json` and the other category source ledgers. Some first-run generation originals live in the tool cache; selected cleaned/generated inputs are retained under `_sources`. Every second- and third-run raw generation is archived locally. Final assets are local PNGs and the application ICO in the named category folders.
 
 Second-run prompt and provenance records:
 
@@ -148,7 +184,7 @@ On the production workstation, the Windows `python` alias could not launch; the 
 & 'C:/Program Files/Blender Foundation/Blender 5.2/5.2/python/bin/python.exe' -B Art/UI/_tools/validate_kit.py --strict
 ```
 
-`kit.py` locates the workstation's existing Pillow installation. The validator rebuilds `manifest.json` and `validation.json`, checks all 184 expected entries and dimensions, verifies real alpha/corners and screen apertures, checks ghost centers and paper-tile seams, checks file-size budgets and all seven ICO entries, verifies the original 149 asset hashes, and requires every category review sheet plus removal of `_smoke/`. The `-B` flag prevents Python bytecode writes outside the art workspace. No Unity or repository-state commands are needed.
+`kit.py` locates the workstation's existing Pillow installation. The validator rebuilds `manifest.json` and `validation.json`, checks all 205 expected entries and dimensions, verifies real alpha/corners for cutouts and full opacity for designated surfaces, checks screen apertures, ghost centers, paper-tile seams, file-size budgets and all seven ICO entries. It verifies the original 149 hashes and all 184 pre-third-run asset hashes, audits every archived second/third-run generation, checks exact world aspect ratios and Turkish typography records, and requires current reviewed decal hashes and review sheets. The `-B` flag prevents Python bytecode writes outside the art workspace. No Unity or repository-state commands are needed.
 
 ## Review sheets
 
@@ -167,6 +203,8 @@ All category sheets use neutral mid-grey behind transparency and show filenames:
 - [_sheets/phone.png](_sheets/phone.png)
 - [_sheets/meeting.png](_sheets/meeting.png)
 - [_sheets/decals.png](_sheets/decals.png)
+- [_sheets/decals_v2.png — 21 third-run wall decals](_sheets/decals_v2.png)
+- [_sheets/decals_v2_distance.png — small foreshortened readability preview](_sheets/decals_v2_distance.png)
 - [_sheets/second_run.png — second-run overview](_sheets/second_run.png)
 - [_sheets/howto.png](_sheets/howto.png)
 - [_sheets/week.png](_sheets/week.png)

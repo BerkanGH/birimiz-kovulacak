@@ -1,4 +1,4 @@
-"""Build the 184-asset manifest and audit the PNG/ICO kit. Writes only beneath Art/UI.
+"""Build the 205-asset manifest and audit the PNG/ICO kit. Writes only beneath Art/UI.
 
 Run with Python + Pillow, optionally --strict to return a failure exit code when
 the kit is incomplete or a required check fails. Review sheets remain untouched.
@@ -12,6 +12,7 @@ import datetime
 import hashlib
 import json
 from kit import Image, ROOT, safe
+from decals_v2_spec import DECAL_SIZES, DECAL_TEXT, DECAL_ASPECTS
 
 FIELDS = ['id', 'path', 'w', 'h', 'category', 'nineSlice', 'screenRect', 'hasText', 'description']
 EXPECTED = {}
@@ -58,6 +59,7 @@ group('decals', 'poster_takim_ruhu poster_verimlilik poster_sadakat poster_kahve
 group('decals', 'whiteboard_doodles', (1024,512))
 group('decals', 'corkboard_notes', (1024,768))
 group('decals', 'exit_sign', (512,256))
+for name,size in DECAL_SIZES.items():group('decals',[name],size)
 group('howto', 'howto_1_work howto_2_sabotage howto_3_manager howto_4_calls howto_5_meeting howto_6_week', (1280,720))
 group('week', 'week_pazartesi week_sali week_carsamba week_persembe week_cuma', (960,200))
 group('week', 'week_trophy', (512,512))
@@ -70,8 +72,8 @@ group('app', 'app_icon', (256,256))
 group('store', 'capsule_header_920x430', (920,430))
 group('store', 'capsule_main_1232x706', (1232,706))
 group('store', 'key_art_1920x1080', (1920,1080))
-assert len(EXPECTED)==184, len(EXPECTED)
-assert len({name for _,name in EXPECTED})==184, 'Asset ids must be globally unique'
+assert len(EXPECTED)==205, len(EXPECTED)
+assert len({name for _,name in EXPECTED})==205, 'Asset ids must be globally unique'
 SECOND_CATEGORIES = ['howto','week','titles','bubbles','app','store']
 ICO_SIZES = {(n,n) for n in [16,24,32,48,64,128,256]}
 
@@ -87,6 +89,7 @@ REQUIRED_TEXT = {
     'capsule_header_920x430':'BİRİMİZ KOVULACAK', 'capsule_main_1232x706':'BİRİMİZ KOVULACAK',
     'bubble_exclaim':'!', 'bubble_question':'?', 'bubble_zzz':'ZZZ',
 }
+REQUIRED_TEXT.update(DECAL_TEXT)
 SLICE_EXPECTED = {
     **{f'{kind}_{state}':[32,32,32,32] for kind in ['primary','secondary','danger','ghost']
        for state in ['normal','hover','pressed','disabled']},
@@ -179,13 +182,13 @@ def main(strict=False):
             a=im.getchannel('A');aw,ah=im.size
             corners=[a.getpixel(p) for p in [(0,0),(aw-1,0),(0,ah-1),(aw-1,ah-1)]]
             hist=a.histogram(); total=aw*ah; bounds=a.point(lambda v:255 if v>16 else 0).getbbox()
-            opaque_expected=cat in ['backgrounds','style','howto','store'] or name=='call_screen_bg'
+            opaque_expected=cat in ['backgrounds','style','howto','store'] or name=='call_screen_bg' or name in DECAL_SIZES
             transparent_inside=0;inside_fraction=0.0
             if bounds:
                 inner=a.crop(bounds);ih=inner.histogram();transparent_inside=ih[0]
                 inside_fraction=transparent_inside/(inner.width*inner.height)
             if opaque_expected:
-                if a.getextrema()!=(255,255):errors.append(f'{rel}: background/style surface must be opaque')
+                if a.getextrema()!=(255,255):errors.append(f'{rel}: designated opaque surface must be opaque')
             else:
                 if not has_alpha: errors.append(f'{rel}: no alpha channel/transparency table')
                 if corners!=[0,0,0,0]:errors.append(f'{rel}: nontransparent corner(s) {corners}')
@@ -222,6 +225,7 @@ def main(strict=False):
     if extra: warnings.append('Additional PNGs excluded from manifest: '+', '.join(extra))
     if (ROOT/'_smoke').exists():errors.append('Art/UI/_smoke/ still exists; remove before delivery.')
     required_sheets=[f'_sheets/{cat}.png' for cat in cats]
+    required_sheets += ['_sheets/decals_v2.png','_sheets/decals_v2_distance.png']
     for s in required_sheets:
         if not (ROOT/s).exists():errors.append(f'Missing category contact sheet: Art/UI/{s}')
     known_fallbacks=[x for x in fallbacks if not x.endswith('/style_sheet.png')]
@@ -232,7 +236,7 @@ def main(strict=False):
         prior=json.loads(baseline_path.read_text(encoding='utf-8-sig'))
         if len(prior['assets'])!=149:errors.append('Original asset baseline must contain exactly 149 entries')
         baseline_paths={a['path'] for a in prior['assets']}
-        original_paths={f'Art/UI/{cat}/{name}.png' for cat,name in EXPECTED if cat not in SECOND_CATEGORIES}
+        original_paths={f'Art/UI/{cat}/{name}.png' for cat,name in EXPECTED if cat not in SECOND_CATEGORIES and name not in DECAL_SIZES}
         if baseline_paths!=original_paths:errors.append('Original asset baseline path set differs from the original 149 inventory')
         current={a['path']:a.get('sha256') for a in audits}
         for asset in prior['assets']:
@@ -260,6 +264,74 @@ def main(strict=False):
                 source_audits.append(dict(id=row['id'],path=rel,ledger='_sources/'+ledger,
                     bytes=path.stat().st_size,sha256=hashlib.sha256(path.read_bytes()).hexdigest()))
         except Exception as exc:errors.append(f'Source archive {ledger}: {exc}')
+    second_source_count=len(source_audits)
+    third_preserved=[]
+    try:
+        prior=json.loads((ROOT/'_sources/decals_v2_baseline.json').read_text(encoding='utf-8-sig'))
+        baseline_paths={a['path'] for a in prior['assets']}
+        prior_paths={entry['path'] for entry in manifest if entry['id'] not in DECAL_SIZES}
+        if len(prior['assets'])!=184 or baseline_paths!=prior_paths:
+            errors.append('Third-run preservation baseline must match all 184 prior asset paths')
+        current={a['path']:a.get('sha256') for a in audits}
+        for asset in prior['assets']:
+            ok=current.get(asset['path'])==asset['sha256']
+            third_preserved.append(ok)
+            if not ok:errors.append('Pre-third-run asset changed: '+asset['path'])
+    except Exception as exc:errors.append('Third-run preservation baseline: '+str(exc))
+    third_source_ids=[]
+    for ledger,field in [('prompts_a.json','raw'),('prompts_b.json','raw'),('prompts_c.json','path')]:
+        try:
+            rows=json.loads((ROOT/'_sources/decals_v2'/ledger).read_text(encoding='utf-8-sig'))
+            if len(rows)!=7:errors.append('Third-run ledger must contain seven assets: '+ledger)
+            for row in rows:
+                if not row.get('prompt'):errors.append('Missing decal prompt: '+str(row.get('id')))
+                rel=row[field]
+                path=(ROOT.parents[1]/rel).resolve()
+                if (ROOT/'_sources/decals_v2') not in path.parents:raise ValueError('Decal raw source outside archive: '+rel)
+                with Image.open(path) as raw:raw.verify()
+                third_source_ids.append(row['id'])
+                source_audits.append(dict(id=row['id'],path=rel,ledger='_sources/decals_v2/'+ledger,
+                    bytes=path.stat().st_size,sha256=hashlib.sha256(path.read_bytes()).hexdigest()))
+        except Exception as exc:errors.append('Third-run source archive '+ledger+': '+str(exc))
+    if len(third_source_ids)!=21 or set(third_source_ids)!=set(DECAL_SIZES):
+        errors.append('Third-run raw sources do not match the exact 21 requested decals')
+    aspect_checks=[]
+    for name,(cw,ch) in DECAL_ASPECTS.items():
+        w,h=DECAL_SIZES[name]
+        ok=w*ch==h*cw
+        aspect_checks.append(dict(id=name,sizePx=[w,h],sizeCm=[cw,ch],exact=ok))
+        if not ok:errors.append('Decal physical aspect mismatch: '+name)
+        if max(w,h)>(768 if name in ['memo_board','logo_company'] else 512):
+            errors.append('Decal exceeds assigned resolution cap: '+name)
+    text_checks=[]
+    try:
+        import unicodedata
+        finishing=json.loads((ROOT/'_sources/decals_v2/finishing.json').read_text(encoding='utf-8-sig'))
+        records=finishing['textRecords']
+        if len(records)!=19 or {r['id'] for r in records}!=set(DECAL_TEXT):
+            errors.append('Third-run typography records must match the 19 requested labels')
+        for row in records:
+            expected=DECAL_TEXT[row['id']]
+            w,h=DECAL_SIZES[row['id']]
+            exact=(row['text']==expected and ' '.join(row['lines'])==expected and
+                   row['codepoints']==[f'U+{ord(c):04X}' for c in expected] and
+                   unicodedata.normalize('NFC',row['text'])==row['text'])
+            bounds_ok=all(0<=x0<x1<=w and 0<=y0<y1<=h for x0,y0,x1,y1 in row['glyphBoundsPx'])
+            if not exact:errors.append('Incorrect Turkish typography record: '+row['id'])
+            if not bounds_ok:errors.append('Turkish label clips outside its decal: '+row['id'])
+            text_checks.append(dict(id=row['id'],text=expected,unicodeExact=exact,glyphBoundsInsideTexture=bounds_ok,fontSizePx=row['fontSizePx']))
+    except Exception as exc:errors.append('Third-run typography: '+str(exc))
+    review=None
+    try:
+        review=json.loads((ROOT/'_sources/decals_v2/review.json').read_text(encoding='utf-8-sig'))
+        if not review.get('allFinalsVisuallyReviewed') or not review.get('allTurkishGlyphsVisuallyReviewed'):
+            errors.append('Third-run visual/text review incomplete')
+        actual={a['path']:a.get('sha256') for a in audits}
+        if set(review.get('finalSha256',{}))!={f'Art/UI/decals/{n}.png' for n in DECAL_SIZES}:
+            errors.append('Third-run review must cover exactly 21 finals')
+        for rel,digest in review.get('finalSha256',{}).items():
+            if actual.get(rel)!=digest:errors.append('Decal changed since visual review: '+rel)
+    except Exception as exc:errors.append('Third-run visual review: '+str(exc))
     report=dict(
         generatedAtUtc=datetime.datetime.now(datetime.timezone.utc).isoformat(),
         passed=not errors, expectedAssetCount=len(EXPECTED), presentAssetCount=sum(counts.values()),
@@ -268,17 +340,26 @@ def main(strict=False):
         formatCounts=dict(format_counts),
         secondRun=dict(addedAssetCount=35,addedPngCount=34,addedIcoCount=1,
             categories=SECOND_CATEGORIES,originalAssetsPreserved=all(preserved) and len(preserved)==149,
-            originalAssetHashCheckCount=len(preserved),archivedGenerationCount=len(source_audits)),
+            originalAssetHashCheckCount=len(preserved),archivedGenerationCount=second_source_count),
+        thirdRun=dict(addedAssetCount=21,addedPngCount=21,addedIcoCount=0,
+            priorAssetsPreserved=all(third_preserved) and len(third_preserved)==184,
+            priorAssetHashCheckCount=len(third_preserved),archivedGenerationCount=len(third_source_ids),
+            exactPhysicalAspectChecks=aspect_checks,typographyChecks=text_checks,visualReview=review),
         errorCount=len(errors),errors=errors,warnings=warnings,
         checks=['Exact requested inventory and PNG/ICO dimensions','True alpha including clear pixels within silhouette bounds',
                 'Transparent corners for cutouts','Icons below 80000 bytes; backgrounds below 1500000 bytes',
                 'Phone/projector screen rectangles fully transparent','Ghost centers fully transparent',
                 'Paper-tile opposite edges byte-identical','Manifest schema and metadata consistency','Category review sheets present','Smoke folder absent',
                 'ICO contains 16, 24, 32, 48, 64, 128, 256 resolutions with real alpha','Original 149 asset SHA-256 hashes preserved',
-                'Second-run raw generations and prompts retained under Art/UI/_sources'],
+                'Second-run raw generations and prompts retained under Art/UI/_sources',
+                'All 184 pre-third-run assets preserved byte-for-byte',
+                '21 opaque wall decals with exact world-space aspect ratios and resolution caps',
+                '21 third-run raw generations and full prompts archived locally',
+                '19 exact NFC Turkish labels, codepoints and glyph bounds checked',
+                'Third-run visual review hashes match final PNGs'],
         textReview=dict(method='Deterministic Unicode Turkish font rendering; visual review of final lettering and generated bubble symbols; not OCR.',
                         requiredStrings=REQUIRED_TEXT,reviewSheets=['_sheets/logo.png','_sheets/stamps.png','_sheets/decals.png',
-                            '_sheets/week.png','_sheets/store.png','_sheets/bubbles.png']),
+                            '_sheets/week.png','_sheets/store.png','_sheets/bubbles.png','_sheets/decals_v2.png']),
         unityIntegrationTested=False,requiredContactSheets=required_sheets,
         assets=audits,sourceArchives=source_audits,
     )

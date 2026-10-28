@@ -1,8 +1,8 @@
 {
-  "generatedAtUtc": "2026-10-28T23:14:21.312246+00:00",
+  "generatedAtUtc": "2026-10-28T23:48:19.737385+00:00",
   "passed": true,
-  "expectedAssetCount": 184,
-  "presentAssetCount": 184,
+  "expectedAssetCount": 205,
+  "presentAssetCount": 205,
   "expectedCountsByCategory": {
     "style": 1,
     "logo": 2,
@@ -14,7 +14,7 @@
     "stamps": 6,
     "phone": 8,
     "meeting": 5,
-    "decals": 8,
+    "decals": 29,
     "howto": 6,
     "week": 6,
     "titles": 10,
@@ -33,7 +33,7 @@
     "stamps": 6,
     "phone": 8,
     "meeting": 5,
-    "decals": 8,
+    "decals": 29,
     "howto": 6,
     "week": 6,
     "titles": 10,
@@ -41,10 +41,10 @@
     "app": 2,
     "store": 3
   },
-  "totalFinalPngBytes": 30943064,
-  "totalFinalBytes": 31087841,
+  "totalFinalPngBytes": 34539073,
+  "totalFinalBytes": 34683850,
   "formatCounts": {
-    "png": 183,
+    "png": 204,
     "ico": 1
   },
   "secondRun": {
@@ -63,6 +63,454 @@
     "originalAssetHashCheckCount": 149,
     "archivedGenerationCount": 27
   },
+  "thirdRun": {
+    "addedAssetCount": 21,
+    "addedPngCount": 21,
+    "addedIcoCount": 0,
+    "priorAssetsPreserved": true,
+    "priorAssetHashCheckCount": 184,
+    "archivedGenerationCount": 21,
+    "exactPhysicalAspectChecks": [
+      {
+        "id": "poster_teamwork",
+        "sizePx": [
+          360,
+          510
+        ],
+        "sizeCm": [
+          60,
+          85
+        ],
+        "exact": true
+      },
+      {
+        "id": "poster_motivation",
+        "sizePx": [
+          360,
+          510
+        ],
+        "sizeCm": [
+          60,
+          85
+        ],
+        "exact": true
+      },
+      {
+        "id": "poster_safety",
+        "sizePx": [
+          360,
+          510
+        ],
+        "sizeCm": [
+          60,
+          85
+        ],
+        "exact": true
+      },
+      {
+        "id": "memo_board",
+        "sizePx": [
+          756,
+          468
+        ],
+        "sizeCm": [
+          105,
+          65
+        ],
+        "exact": true
+      },
+      {
+        "id": "poster_quota",
+        "sizePx": [
+          504,
+          360
+        ],
+        "sizeCm": [
+          70,
+          50
+        ],
+        "exact": true
+      },
+      {
+        "id": "portrait_manager",
+        "sizePx": [
+          392,
+          504
+        ],
+        "sizeCm": [
+          70,
+          90
+        ],
+        "exact": true
+      },
+      {
+        "id": "diploma",
+        "sizePx": [
+          495,
+          374
+        ],
+        "sizeCm": [
+          45,
+          34
+        ],
+        "exact": true
+      },
+      {
+        "id": "poster_kpi",
+        "sizePx": [
+          512,
+          384
+        ],
+        "sizeCm": [
+          80,
+          60
+        ],
+        "exact": true
+      },
+      {
+        "id": "poster_mission",
+        "sizePx": [
+          504,
+          364
+        ],
+        "sizeCm": [
+          90,
+          65
+        ],
+        "exact": true
+      },
+      {
+        "id": "poster_coffee",
+        "sizePx": [
+          360,
+          510
+        ],
+        "sizeCm": [
+          60,
+          85
+        ],
+        "exact": true
+      },
+      {
+        "id": "sign_salt",
+        "sizePx": [
+          512,
+          352
+        ],
+        "sizeCm": [
+          32,
+          22
+        ],
+        "exact": true
+      },
+      {
+        "id": "poster_fridge_rules",
+        "sizePx": [
+          384,
+          504
+        ],
+        "sizeCm": [
+          32,
+          42
+        ],
+        "exact": true
+      },
+      {
+        "id": "poster_printer",
+        "sizePx": [
+          384,
+          512
+        ],
+        "sizeCm": [
+          60,
+          80
+        ],
+        "exact": true
+      },
+      {
+        "id": "sign_out_of_order",
+        "sizePx": [
+          504,
+          308
+        ],
+        "sizeCm": [
+          36,
+          22
+        ],
+        "exact": true
+      },
+      {
+        "id": "logo_company",
+        "sizePx": [
+          768,
+          384
+        ],
+        "sizeCm": [
+          130,
+          65
+        ],
+        "exact": true
+      },
+      {
+        "id": "poster_welcome",
+        "sizePx": [
+          504,
+          360
+        ],
+        "sizeCm": [
+          70,
+          50
+        ],
+        "exact": true
+      },
+      {
+        "id": "sign_fusebox",
+        "sizePx": [
+          512,
+          512
+        ],
+        "sizeCm": [
+          30,
+          30
+        ],
+        "exact": true
+      },
+      {
+        "id": "sign_wash_hands",
+        "sizePx": [
+          384,
+          512
+        ],
+        "sizeCm": [
+          30,
+          40
+        ],
+        "exact": true
+      },
+      {
+        "id": "sign_server_danger",
+        "sizePx": [
+          512,
+          512
+        ],
+        "sizeCm": [
+          35,
+          35
+        ],
+        "exact": true
+      },
+      {
+        "id": "poster_relax",
+        "sizePx": [
+          504,
+          360
+        ],
+        "sizeCm": [
+          70,
+          50
+        ],
+        "exact": true
+      },
+      {
+        "id": "poster_vending",
+        "sizePx": [
+          384,
+          512
+        ],
+        "sizeCm": [
+          45,
+          60
+        ],
+        "exact": true
+      }
+    ],
+    "typographyChecks": [
+      {
+        "id": "poster_teamwork",
+        "text": "TAKIM RUHU",
+        "unicodeExact": true,
+        "glyphBoundsInsideTexture": true,
+        "fontSizePx": 57.667
+      },
+      {
+        "id": "poster_motivation",
+        "text": "BAŞARI = MESAİ",
+        "unicodeExact": true,
+        "glyphBoundsInsideTexture": true,
+        "fontSizePx": 46.667
+      },
+      {
+        "id": "poster_safety",
+        "text": "DİKKAT",
+        "unicodeExact": true,
+        "glyphBoundsInsideTexture": true,
+        "fontSizePx": 48.0
+      },
+      {
+        "id": "poster_quota",
+        "text": "KOTA",
+        "unicodeExact": true,
+        "glyphBoundsInsideTexture": true,
+        "fontSizePx": 59.667
+      },
+      {
+        "id": "diploma",
+        "text": "DİPLOMA",
+        "unicodeExact": true,
+        "glyphBoundsInsideTexture": true,
+        "fontSizePx": 52.0
+      },
+      {
+        "id": "poster_kpi",
+        "text": "KPI",
+        "unicodeExact": true,
+        "glyphBoundsInsideTexture": true,
+        "fontSizePx": 61.333
+      },
+      {
+        "id": "poster_mission",
+        "text": "VİZYONUMUZ",
+        "unicodeExact": true,
+        "glyphBoundsInsideTexture": true,
+        "fontSizePx": 56.0
+      },
+      {
+        "id": "poster_coffee",
+        "text": "KAHVE KURALLARI",
+        "unicodeExact": true,
+        "glyphBoundsInsideTexture": true,
+        "fontSizePx": 51.333
+      },
+      {
+        "id": "sign_salt",
+        "text": "TUZ ≠ ŞEKER",
+        "unicodeExact": true,
+        "glyphBoundsInsideTexture": true,
+        "fontSizePx": 48.0
+      },
+      {
+        "id": "poster_fridge_rules",
+        "text": "YOĞURDUMU YİYEN?",
+        "unicodeExact": true,
+        "glyphBoundsInsideTexture": true,
+        "fontSizePx": 46.667
+      },
+      {
+        "id": "poster_printer",
+        "text": "YAZICI: SABIR",
+        "unicodeExact": true,
+        "glyphBoundsInsideTexture": true,
+        "fontSizePx": 56.667
+      },
+      {
+        "id": "sign_out_of_order",
+        "text": "ARIZALI",
+        "unicodeExact": true,
+        "glyphBoundsInsideTexture": true,
+        "fontSizePx": 64.0
+      },
+      {
+        "id": "logo_company",
+        "text": "KOVA HOLDİNG",
+        "unicodeExact": true,
+        "glyphBoundsInsideTexture": true,
+        "fontSizePx": 87.667
+      },
+      {
+        "id": "poster_welcome",
+        "text": "HOŞ GELDİNİZ",
+        "unicodeExact": true,
+        "glyphBoundsInsideTexture": true,
+        "fontSizePx": 40.0
+      },
+      {
+        "id": "sign_fusebox",
+        "text": "YÜKSEK GERİLİM",
+        "unicodeExact": true,
+        "glyphBoundsInsideTexture": true,
+        "fontSizePx": 55.667
+      },
+      {
+        "id": "sign_wash_hands",
+        "text": "ELLERİNİZİ YIKAYIN",
+        "unicodeExact": true,
+        "glyphBoundsInsideTexture": true,
+        "fontSizePx": 52.0
+      },
+      {
+        "id": "sign_server_danger",
+        "text": "YETKİSİZ GİRİLMEZ",
+        "unicodeExact": true,
+        "glyphBoundsInsideTexture": true,
+        "fontSizePx": 55.0
+      },
+      {
+        "id": "poster_relax",
+        "text": "MOLA",
+        "unicodeExact": true,
+        "glyphBoundsInsideTexture": true,
+        "fontSizePx": 59.667
+      },
+      {
+        "id": "poster_vending",
+        "text": "ATIŞTIR!",
+        "unicodeExact": true,
+        "glyphBoundsInsideTexture": true,
+        "fontSizePx": 48.0
+      }
+    ],
+    "visualReview": {
+      "allFinalsVisuallyReviewed": true,
+      "allTurkishGlyphsVisuallyReviewed": true,
+      "reviewMethod": "Primary agent inspected the complete contact sheet and selected individual finals at native size. An independent agent inspected 20 final decals, the small foreshortened preview and selected enlarged labels; primary agent subsequently inspected the completed vending decal. A separate agent checked all 19 specification strings character-for-character against the requested wording. This is visual and deterministic Unicode review, not OCR.",
+      "reviewSheets": [
+        "Art/UI/_sheets/decals_v2.png",
+        "Art/UI/_sheets/decals_v2_distance.png"
+      ],
+      "reviewedFinalCount": 21,
+      "reviewedLabelCount": 19,
+      "blockingVisualDefects": [],
+      "weaknesses": [
+        "At the smallest physical sign sizes, multiword labels are difficult to read in the reduced foreshortened preview, especially sign_salt, sign_fusebox, sign_wash_hands, sign_server_danger and poster_fridge_rules. Large pictograms retain their meaning.",
+        "Actual 5–7 m readability from the 3/4 top-down Unity game camera is not tested. The preview uses an explicitly documented approximation, not the game's projection or material pipeline."
+      ],
+      "styleNotes": [
+        "Cream paper, manila frames, navy contours, office green, red warnings and simple large shapes match the existing stationery kit.",
+        "The manager portrait uses oil-painting texture intentionally, as requested.",
+        "The beach scene is richer than the warning signs, while retaining a clear two-bean silhouette."
+      ],
+      "textNotes": [
+        "All required strings match exactly, including Turkish dotted capital İ, dotless uppercase I, Ş, Ğ and Ü; no unrequested lowercase substitutions or additional words.",
+        "TUZ ≠ ŞEKER uses a clear true not-equal glyph; the fallback was unnecessary.",
+        "ATIŞTIR!, YAZICI: SABIR, ARIZALI, TAKIM RUHU and BAŞARI correctly retain their dotless-uppercase I characters.",
+        "KPI retains the exact requested Latin acronym. Memo board and manager portrait contain no text."
+      ],
+      "unityIntegrationTested": false,
+      "finalSha256": {
+        "Art/UI/decals/poster_teamwork.png": "1b32a9fb91ffc7f3557ed8721d8275d5d9527f6e7eb24e1d0fd78f90e921a5bc",
+        "Art/UI/decals/poster_motivation.png": "5116c291a5719bb2bede529336d59299d098f93b94eb68d9c4609cbd13bf3a6d",
+        "Art/UI/decals/poster_safety.png": "c17725dc04fd683cc926f306a60e8e65393b40c1813e2cb53f03e3867b0a23e9",
+        "Art/UI/decals/memo_board.png": "828de99957b6b8995b859cc4561533f52915ce5d6b04d62907df2f2787e48a11",
+        "Art/UI/decals/poster_quota.png": "50d84303a3d17664813826b910c01697abccc44c5f0e546d0db397d9da82a0a7",
+        "Art/UI/decals/portrait_manager.png": "8fb34b910607d8ddfe9e6d6f6e2b16eb5cc4c64154242b2d9312a76096659fc4",
+        "Art/UI/decals/diploma.png": "e98355a17edf09b999044b546b6e3e7d036b30aee6bdd9a6cb8600f31e554b32",
+        "Art/UI/decals/poster_kpi.png": "81826084ddf82fa421e3d3c4bdfe8bff9b555b99fece89436e25ebd0d717f5d2",
+        "Art/UI/decals/poster_mission.png": "97c5ee143cefbafe8593273adcea06e2d25cd22600953d0c144bd7e5bece4bfb",
+        "Art/UI/decals/poster_coffee.png": "dfd843adaa4b79d0739685068080df91ef0ec9c5ecaad9af8b0f88db0906e2b8",
+        "Art/UI/decals/sign_salt.png": "0669d81f74bc30a5957dad756f89657f6f74d9f503a33504c19033f89a14b7f0",
+        "Art/UI/decals/poster_fridge_rules.png": "9ac815edf058241ee175086a820458f9d4c7d51abe6936423ea3b517b0ef2378",
+        "Art/UI/decals/poster_printer.png": "5206759f6b3f85ad7f8bb28c24bdf996c4618b7faa931b41516e6099a1648e8f",
+        "Art/UI/decals/sign_out_of_order.png": "f9a7b05c67ed74b7aeec85be7bc205ce9759934b57876fb0a3b0154063f334a1",
+        "Art/UI/decals/logo_company.png": "47f76c38298f688059522a9a7b0a6c721dd7cde04a558d6287fc32436223a4e4",
+        "Art/UI/decals/poster_welcome.png": "2b4248071559fab9f00c78a4224f8d86a96a43fcc0e2039a4920e7aedd4c81e5",
+        "Art/UI/decals/sign_fusebox.png": "5454bfac40eda0fd837432675dbf8444ade744f9ff4ce9f19c7ade5190a114dc",
+        "Art/UI/decals/sign_wash_hands.png": "3278962a957de96de8cac26b7b169b3121575cc89cc5c8a2da7b2b3d91b5504b",
+        "Art/UI/decals/sign_server_danger.png": "549743166de27ed95a538655f197c65a1d21a0702b2d8d17389f698b3ecaa95b",
+        "Art/UI/decals/poster_relax.png": "6c915da3216eb88b354dd159c4c1009bdaab7f95dfe84f5eb88fbf01fc8bb243",
+        "Art/UI/decals/poster_vending.png": "f4d1b8670a94ef2eda1db1cf4f33f493584ff6f2db65bc9dc92659887d367bd9"
+      }
+    }
+  },
   "errorCount": 0,
   "errors": [],
   "warnings": [],
@@ -79,7 +527,12 @@
     "Smoke folder absent",
     "ICO contains 16, 24, 32, 48, 64, 128, 256 resolutions with real alpha",
     "Original 149 asset SHA-256 hashes preserved",
-    "Second-run raw generations and prompts retained under Art/UI/_sources"
+    "Second-run raw generations and prompts retained under Art/UI/_sources",
+    "All 184 pre-third-run assets preserved byte-for-byte",
+    "21 opaque wall decals with exact world-space aspect ratios and resolution caps",
+    "21 third-run raw generations and full prompts archived locally",
+    "19 exact NFC Turkish labels, codepoints and glyph bounds checked",
+    "Third-run visual review hashes match final PNGs"
   ],
   "textReview": {
     "method": "Deterministic Unicode Turkish font rendering; visual review of final lettering and generated bubble symbols; not OCR.",
@@ -105,7 +558,26 @@
       "capsule_main_1232x706": "BİRİMİZ KOVULACAK",
       "bubble_exclaim": "!",
       "bubble_question": "?",
-      "bubble_zzz": "ZZZ"
+      "bubble_zzz": "ZZZ",
+      "poster_teamwork": "TAKIM RUHU",
+      "poster_motivation": "BAŞARI = MESAİ",
+      "poster_safety": "DİKKAT",
+      "poster_quota": "KOTA",
+      "diploma": "DİPLOMA",
+      "poster_kpi": "KPI",
+      "poster_mission": "VİZYONUMUZ",
+      "poster_coffee": "KAHVE KURALLARI",
+      "sign_salt": "TUZ ≠ ŞEKER",
+      "poster_fridge_rules": "YOĞURDUMU YİYEN?",
+      "poster_printer": "YAZICI: SABIR",
+      "sign_out_of_order": "ARIZALI",
+      "logo_company": "KOVA HOLDİNG",
+      "poster_welcome": "HOŞ GELDİNİZ",
+      "sign_fusebox": "YÜKSEK GERİLİM",
+      "sign_wash_hands": "ELLERİNİZİ YIKAYIN",
+      "sign_server_danger": "YETKİSİZ GİRİLMEZ",
+      "poster_relax": "MOLA",
+      "poster_vending": "ATIŞTIR!"
     },
     "reviewSheets": [
       "_sheets/logo.png",
@@ -113,7 +585,8 @@
       "_sheets/decals.png",
       "_sheets/week.png",
       "_sheets/store.png",
-      "_sheets/bubbles.png"
+      "_sheets/bubbles.png",
+      "_sheets/decals_v2.png"
     ]
   },
   "unityIntegrationTested": false,
@@ -134,7 +607,9 @@
     "_sheets/titles.png",
     "_sheets/bubbles.png",
     "_sheets/app.png",
-    "_sheets/store.png"
+    "_sheets/store.png",
+    "_sheets/decals_v2.png",
+    "_sheets/decals_v2_distance.png"
   ],
   "assets": [
     {
@@ -4310,6 +4785,594 @@
       "icoFrames": null
     },
     {
+      "path": "Art/UI/decals/poster_teamwork.png",
+      "exists": true,
+      "w": 360,
+      "h": 510,
+      "bytes": 156256,
+      "mode": "RGB",
+      "hasAlpha": false,
+      "alphaExtrema": [
+        255,
+        255
+      ],
+      "cornerAlpha": [
+        255,
+        255,
+        255,
+        255
+      ],
+      "transparentFraction": 0.0,
+      "clearFractionInsideSilhouetteBounds": 0.0,
+      "screenRectClear": null,
+      "tileEdgesMatch": null,
+      "metadataSource": "decals/_metadata_v2.json",
+      "sha256": "1b32a9fb91ffc7f3557ed8721d8275d5d9527f6e7eb24e1d0fd78f90e921a5bc",
+      "format": "PNG",
+      "icoResolutions": null,
+      "icoFrames": null
+    },
+    {
+      "path": "Art/UI/decals/poster_motivation.png",
+      "exists": true,
+      "w": 360,
+      "h": 510,
+      "bytes": 172508,
+      "mode": "RGB",
+      "hasAlpha": false,
+      "alphaExtrema": [
+        255,
+        255
+      ],
+      "cornerAlpha": [
+        255,
+        255,
+        255,
+        255
+      ],
+      "transparentFraction": 0.0,
+      "clearFractionInsideSilhouetteBounds": 0.0,
+      "screenRectClear": null,
+      "tileEdgesMatch": null,
+      "metadataSource": "decals/_metadata_v2.json",
+      "sha256": "5116c291a5719bb2bede529336d59299d098f93b94eb68d9c4609cbd13bf3a6d",
+      "format": "PNG",
+      "icoResolutions": null,
+      "icoFrames": null
+    },
+    {
+      "path": "Art/UI/decals/poster_safety.png",
+      "exists": true,
+      "w": 360,
+      "h": 510,
+      "bytes": 135770,
+      "mode": "RGB",
+      "hasAlpha": false,
+      "alphaExtrema": [
+        255,
+        255
+      ],
+      "cornerAlpha": [
+        255,
+        255,
+        255,
+        255
+      ],
+      "transparentFraction": 0.0,
+      "clearFractionInsideSilhouetteBounds": 0.0,
+      "screenRectClear": null,
+      "tileEdgesMatch": null,
+      "metadataSource": "decals/_metadata_v2.json",
+      "sha256": "c17725dc04fd683cc926f306a60e8e65393b40c1813e2cb53f03e3867b0a23e9",
+      "format": "PNG",
+      "icoResolutions": null,
+      "icoFrames": null
+    },
+    {
+      "path": "Art/UI/decals/memo_board.png",
+      "exists": true,
+      "w": 756,
+      "h": 468,
+      "bytes": 503880,
+      "mode": "RGB",
+      "hasAlpha": false,
+      "alphaExtrema": [
+        255,
+        255
+      ],
+      "cornerAlpha": [
+        255,
+        255,
+        255,
+        255
+      ],
+      "transparentFraction": 0.0,
+      "clearFractionInsideSilhouetteBounds": 0.0,
+      "screenRectClear": null,
+      "tileEdgesMatch": null,
+      "metadataSource": "decals/_metadata_v2.json",
+      "sha256": "828de99957b6b8995b859cc4561533f52915ce5d6b04d62907df2f2787e48a11",
+      "format": "PNG",
+      "icoResolutions": null,
+      "icoFrames": null
+    },
+    {
+      "path": "Art/UI/decals/poster_quota.png",
+      "exists": true,
+      "w": 504,
+      "h": 360,
+      "bytes": 118773,
+      "mode": "RGB",
+      "hasAlpha": false,
+      "alphaExtrema": [
+        255,
+        255
+      ],
+      "cornerAlpha": [
+        255,
+        255,
+        255,
+        255
+      ],
+      "transparentFraction": 0.0,
+      "clearFractionInsideSilhouetteBounds": 0.0,
+      "screenRectClear": null,
+      "tileEdgesMatch": null,
+      "metadataSource": "decals/_metadata_v2.json",
+      "sha256": "50d84303a3d17664813826b910c01697abccc44c5f0e546d0db397d9da82a0a7",
+      "format": "PNG",
+      "icoResolutions": null,
+      "icoFrames": null
+    },
+    {
+      "path": "Art/UI/decals/portrait_manager.png",
+      "exists": true,
+      "w": 392,
+      "h": 504,
+      "bytes": 247016,
+      "mode": "RGB",
+      "hasAlpha": false,
+      "alphaExtrema": [
+        255,
+        255
+      ],
+      "cornerAlpha": [
+        255,
+        255,
+        255,
+        255
+      ],
+      "transparentFraction": 0.0,
+      "clearFractionInsideSilhouetteBounds": 0.0,
+      "screenRectClear": null,
+      "tileEdgesMatch": null,
+      "metadataSource": "decals/_metadata_v2.json",
+      "sha256": "8fb34b910607d8ddfe9e6d6f6e2b16eb5cc4c64154242b2d9312a76096659fc4",
+      "format": "PNG",
+      "icoResolutions": null,
+      "icoFrames": null
+    },
+    {
+      "path": "Art/UI/decals/diploma.png",
+      "exists": true,
+      "w": 495,
+      "h": 374,
+      "bytes": 180770,
+      "mode": "RGB",
+      "hasAlpha": false,
+      "alphaExtrema": [
+        255,
+        255
+      ],
+      "cornerAlpha": [
+        255,
+        255,
+        255,
+        255
+      ],
+      "transparentFraction": 0.0,
+      "clearFractionInsideSilhouetteBounds": 0.0,
+      "screenRectClear": null,
+      "tileEdgesMatch": null,
+      "metadataSource": "decals/_metadata_v2.json",
+      "sha256": "e98355a17edf09b999044b546b6e3e7d036b30aee6bdd9a6cb8600f31e554b32",
+      "format": "PNG",
+      "icoResolutions": null,
+      "icoFrames": null
+    },
+    {
+      "path": "Art/UI/decals/poster_kpi.png",
+      "exists": true,
+      "w": 512,
+      "h": 384,
+      "bytes": 123269,
+      "mode": "RGB",
+      "hasAlpha": false,
+      "alphaExtrema": [
+        255,
+        255
+      ],
+      "cornerAlpha": [
+        255,
+        255,
+        255,
+        255
+      ],
+      "transparentFraction": 0.0,
+      "clearFractionInsideSilhouetteBounds": 0.0,
+      "screenRectClear": null,
+      "tileEdgesMatch": null,
+      "metadataSource": "decals/_metadata_v2.json",
+      "sha256": "81826084ddf82fa421e3d3c4bdfe8bff9b555b99fece89436e25ebd0d717f5d2",
+      "format": "PNG",
+      "icoResolutions": null,
+      "icoFrames": null
+    },
+    {
+      "path": "Art/UI/decals/poster_mission.png",
+      "exists": true,
+      "w": 504,
+      "h": 364,
+      "bytes": 156845,
+      "mode": "RGB",
+      "hasAlpha": false,
+      "alphaExtrema": [
+        255,
+        255
+      ],
+      "cornerAlpha": [
+        255,
+        255,
+        255,
+        255
+      ],
+      "transparentFraction": 0.0,
+      "clearFractionInsideSilhouetteBounds": 0.0,
+      "screenRectClear": null,
+      "tileEdgesMatch": null,
+      "metadataSource": "decals/_metadata_v2.json",
+      "sha256": "97c5ee143cefbafe8593273adcea06e2d25cd22600953d0c144bd7e5bece4bfb",
+      "format": "PNG",
+      "icoResolutions": null,
+      "icoFrames": null
+    },
+    {
+      "path": "Art/UI/decals/poster_coffee.png",
+      "exists": true,
+      "w": 360,
+      "h": 510,
+      "bytes": 149819,
+      "mode": "RGB",
+      "hasAlpha": false,
+      "alphaExtrema": [
+        255,
+        255
+      ],
+      "cornerAlpha": [
+        255,
+        255,
+        255,
+        255
+      ],
+      "transparentFraction": 0.0,
+      "clearFractionInsideSilhouetteBounds": 0.0,
+      "screenRectClear": null,
+      "tileEdgesMatch": null,
+      "metadataSource": "decals/_metadata_v2.json",
+      "sha256": "dfd843adaa4b79d0739685068080df91ef0ec9c5ecaad9af8b0f88db0906e2b8",
+      "format": "PNG",
+      "icoResolutions": null,
+      "icoFrames": null
+    },
+    {
+      "path": "Art/UI/decals/sign_salt.png",
+      "exists": true,
+      "w": 512,
+      "h": 352,
+      "bytes": 153946,
+      "mode": "RGB",
+      "hasAlpha": false,
+      "alphaExtrema": [
+        255,
+        255
+      ],
+      "cornerAlpha": [
+        255,
+        255,
+        255,
+        255
+      ],
+      "transparentFraction": 0.0,
+      "clearFractionInsideSilhouetteBounds": 0.0,
+      "screenRectClear": null,
+      "tileEdgesMatch": null,
+      "metadataSource": "decals/_metadata_v2.json",
+      "sha256": "0669d81f74bc30a5957dad756f89657f6f74d9f503a33504c19033f89a14b7f0",
+      "format": "PNG",
+      "icoResolutions": null,
+      "icoFrames": null
+    },
+    {
+      "path": "Art/UI/decals/poster_fridge_rules.png",
+      "exists": true,
+      "w": 384,
+      "h": 504,
+      "bytes": 175172,
+      "mode": "RGB",
+      "hasAlpha": false,
+      "alphaExtrema": [
+        255,
+        255
+      ],
+      "cornerAlpha": [
+        255,
+        255,
+        255,
+        255
+      ],
+      "transparentFraction": 0.0,
+      "clearFractionInsideSilhouetteBounds": 0.0,
+      "screenRectClear": null,
+      "tileEdgesMatch": null,
+      "metadataSource": "decals/_metadata_v2.json",
+      "sha256": "9ac815edf058241ee175086a820458f9d4c7d51abe6936423ea3b517b0ef2378",
+      "format": "PNG",
+      "icoResolutions": null,
+      "icoFrames": null
+    },
+    {
+      "path": "Art/UI/decals/poster_printer.png",
+      "exists": true,
+      "w": 384,
+      "h": 512,
+      "bytes": 190710,
+      "mode": "RGB",
+      "hasAlpha": false,
+      "alphaExtrema": [
+        255,
+        255
+      ],
+      "cornerAlpha": [
+        255,
+        255,
+        255,
+        255
+      ],
+      "transparentFraction": 0.0,
+      "clearFractionInsideSilhouetteBounds": 0.0,
+      "screenRectClear": null,
+      "tileEdgesMatch": null,
+      "metadataSource": "decals/_metadata_v2.json",
+      "sha256": "5206759f6b3f85ad7f8bb28c24bdf996c4618b7faa931b41516e6099a1648e8f",
+      "format": "PNG",
+      "icoResolutions": null,
+      "icoFrames": null
+    },
+    {
+      "path": "Art/UI/decals/sign_out_of_order.png",
+      "exists": true,
+      "w": 504,
+      "h": 308,
+      "bytes": 80478,
+      "mode": "RGB",
+      "hasAlpha": false,
+      "alphaExtrema": [
+        255,
+        255
+      ],
+      "cornerAlpha": [
+        255,
+        255,
+        255,
+        255
+      ],
+      "transparentFraction": 0.0,
+      "clearFractionInsideSilhouetteBounds": 0.0,
+      "screenRectClear": null,
+      "tileEdgesMatch": null,
+      "metadataSource": "decals/_metadata_v2.json",
+      "sha256": "f9a7b05c67ed74b7aeec85be7bc205ce9759934b57876fb0a3b0154063f334a1",
+      "format": "PNG",
+      "icoResolutions": null,
+      "icoFrames": null
+    },
+    {
+      "path": "Art/UI/decals/logo_company.png",
+      "exists": true,
+      "w": 768,
+      "h": 384,
+      "bytes": 127055,
+      "mode": "RGB",
+      "hasAlpha": false,
+      "alphaExtrema": [
+        255,
+        255
+      ],
+      "cornerAlpha": [
+        255,
+        255,
+        255,
+        255
+      ],
+      "transparentFraction": 0.0,
+      "clearFractionInsideSilhouetteBounds": 0.0,
+      "screenRectClear": null,
+      "tileEdgesMatch": null,
+      "metadataSource": "decals/_metadata_v2.json",
+      "sha256": "47f76c38298f688059522a9a7b0a6c721dd7cde04a558d6287fc32436223a4e4",
+      "format": "PNG",
+      "icoResolutions": null,
+      "icoFrames": null
+    },
+    {
+      "path": "Art/UI/decals/poster_welcome.png",
+      "exists": true,
+      "w": 504,
+      "h": 360,
+      "bytes": 133843,
+      "mode": "RGB",
+      "hasAlpha": false,
+      "alphaExtrema": [
+        255,
+        255
+      ],
+      "cornerAlpha": [
+        255,
+        255,
+        255,
+        255
+      ],
+      "transparentFraction": 0.0,
+      "clearFractionInsideSilhouetteBounds": 0.0,
+      "screenRectClear": null,
+      "tileEdgesMatch": null,
+      "metadataSource": "decals/_metadata_v2.json",
+      "sha256": "2b4248071559fab9f00c78a4224f8d86a96a43fcc0e2039a4920e7aedd4c81e5",
+      "format": "PNG",
+      "icoResolutions": null,
+      "icoFrames": null
+    },
+    {
+      "path": "Art/UI/decals/sign_fusebox.png",
+      "exists": true,
+      "w": 512,
+      "h": 512,
+      "bytes": 147711,
+      "mode": "RGB",
+      "hasAlpha": false,
+      "alphaExtrema": [
+        255,
+        255
+      ],
+      "cornerAlpha": [
+        255,
+        255,
+        255,
+        255
+      ],
+      "transparentFraction": 0.0,
+      "clearFractionInsideSilhouetteBounds": 0.0,
+      "screenRectClear": null,
+      "tileEdgesMatch": null,
+      "metadataSource": "decals/_metadata_v2.json",
+      "sha256": "5454bfac40eda0fd837432675dbf8444ade744f9ff4ce9f19c7ade5190a114dc",
+      "format": "PNG",
+      "icoResolutions": null,
+      "icoFrames": null
+    },
+    {
+      "path": "Art/UI/decals/sign_wash_hands.png",
+      "exists": true,
+      "w": 384,
+      "h": 512,
+      "bytes": 162200,
+      "mode": "RGB",
+      "hasAlpha": false,
+      "alphaExtrema": [
+        255,
+        255
+      ],
+      "cornerAlpha": [
+        255,
+        255,
+        255,
+        255
+      ],
+      "transparentFraction": 0.0,
+      "clearFractionInsideSilhouetteBounds": 0.0,
+      "screenRectClear": null,
+      "tileEdgesMatch": null,
+      "metadataSource": "decals/_metadata_v2.json",
+      "sha256": "3278962a957de96de8cac26b7b169b3121575cc89cc5c8a2da7b2b3d91b5504b",
+      "format": "PNG",
+      "icoResolutions": null,
+      "icoFrames": null
+    },
+    {
+      "path": "Art/UI/decals/sign_server_danger.png",
+      "exists": true,
+      "w": 512,
+      "h": 512,
+      "bytes": 121184,
+      "mode": "RGB",
+      "hasAlpha": false,
+      "alphaExtrema": [
+        255,
+        255
+      ],
+      "cornerAlpha": [
+        255,
+        255,
+        255,
+        255
+      ],
+      "transparentFraction": 0.0,
+      "clearFractionInsideSilhouetteBounds": 0.0,
+      "screenRectClear": null,
+      "tileEdgesMatch": null,
+      "metadataSource": "decals/_metadata_v2.json",
+      "sha256": "549743166de27ed95a538655f197c65a1d21a0702b2d8d17389f698b3ecaa95b",
+      "format": "PNG",
+      "icoResolutions": null,
+      "icoFrames": null
+    },
+    {
+      "path": "Art/UI/decals/poster_relax.png",
+      "exists": true,
+      "w": 504,
+      "h": 360,
+      "bytes": 165170,
+      "mode": "RGB",
+      "hasAlpha": false,
+      "alphaExtrema": [
+        255,
+        255
+      ],
+      "cornerAlpha": [
+        255,
+        255,
+        255,
+        255
+      ],
+      "transparentFraction": 0.0,
+      "clearFractionInsideSilhouetteBounds": 0.0,
+      "screenRectClear": null,
+      "tileEdgesMatch": null,
+      "metadataSource": "decals/_metadata_v2.json",
+      "sha256": "6c915da3216eb88b354dd159c4c1009bdaab7f95dfe84f5eb88fbf01fc8bb243",
+      "format": "PNG",
+      "icoResolutions": null,
+      "icoFrames": null
+    },
+    {
+      "path": "Art/UI/decals/poster_vending.png",
+      "exists": true,
+      "w": 384,
+      "h": 512,
+      "bytes": 193634,
+      "mode": "RGB",
+      "hasAlpha": false,
+      "alphaExtrema": [
+        255,
+        255
+      ],
+      "cornerAlpha": [
+        255,
+        255,
+        255,
+        255
+      ],
+      "transparentFraction": 0.0,
+      "clearFractionInsideSilhouetteBounds": 0.0,
+      "screenRectClear": null,
+      "tileEdgesMatch": null,
+      "metadataSource": "decals/_metadata_v2.json",
+      "sha256": "f4d1b8670a94ef2eda1db1cf4f33f493584ff6f2db65bc9dc92659887d367bd9",
+      "format": "PNG",
+      "icoResolutions": null,
+      "icoFrames": null
+    },
+    {
       "path": "Art/UI/howto/howto_1_work.png",
       "exists": true,
       "w": 1280,
@@ -5579,6 +6642,153 @@
       "ledger": "_sources/second_run_root_prompts.json",
       "bytes": 1462335,
       "sha256": "98ac333cbfdf9f8c7805cea0f87672ba911e6e91b924cebd7802d2da124e0264"
+    },
+    {
+      "id": "poster_teamwork",
+      "path": "Art/UI/_sources/decals_v2/poster_teamwork_raw.png",
+      "ledger": "_sources/decals_v2/prompts_a.json",
+      "bytes": 1877907,
+      "sha256": "50df02532626b6994bb7fc3a0cedc1240b5997d28e2e7fe8b675dbef25f48d7b"
+    },
+    {
+      "id": "poster_motivation",
+      "path": "Art/UI/_sources/decals_v2/poster_motivation_raw.png",
+      "ledger": "_sources/decals_v2/prompts_a.json",
+      "bytes": 2038679,
+      "sha256": "5a2d45e0ffc02f585ad481e7c98f50e9ff82ee61e6283e3e1317d135e30d8019"
+    },
+    {
+      "id": "poster_safety",
+      "path": "Art/UI/_sources/decals_v2/poster_safety_raw.png",
+      "ledger": "_sources/decals_v2/prompts_a.json",
+      "bytes": 1641424,
+      "sha256": "a352eedb9a82b889d103d4a2484c79ef7ff51229f7691fec07724e1befbd2aa4"
+    },
+    {
+      "id": "memo_board",
+      "path": "Art/UI/_sources/decals_v2/memo_board_raw.png",
+      "ledger": "_sources/decals_v2/prompts_a.json",
+      "bytes": 2207517,
+      "sha256": "b9e7873ff9289ceb5937495c42ba0191002274b7947351e3d607820e2de1ac0e"
+    },
+    {
+      "id": "poster_quota",
+      "path": "Art/UI/_sources/decals_v2/poster_quota_raw.png",
+      "ledger": "_sources/decals_v2/prompts_a.json",
+      "bytes": 1829415,
+      "sha256": "6741b4a05e97e226bbefa93d944d5a6e15d9bf52eb748e4b797737b9e3cc862f"
+    },
+    {
+      "id": "portrait_manager",
+      "path": "Art/UI/_sources/decals_v2/portrait_manager_raw.png",
+      "ledger": "_sources/decals_v2/prompts_a.json",
+      "bytes": 2508800,
+      "sha256": "c648013be02e17548df4b6e764161e2ed8a9b938453b8aed72570bf97df57188"
+    },
+    {
+      "id": "diploma",
+      "path": "Art/UI/_sources/decals_v2/diploma_raw.png",
+      "ledger": "_sources/decals_v2/prompts_a.json",
+      "bytes": 1989817,
+      "sha256": "1408a9edd5685b9556425c735c8cb05d17a8b7f0553723819e5840e249080730"
+    },
+    {
+      "id": "poster_kpi",
+      "path": "Art/UI/_sources/decals_v2/poster_kpi_raw.png",
+      "ledger": "_sources/decals_v2/prompts_b.json",
+      "bytes": 1816003,
+      "sha256": "52aa3c816acf4ac882036edad31b8354067be70a0e65e06945709e93ff89cca7"
+    },
+    {
+      "id": "poster_mission",
+      "path": "Art/UI/_sources/decals_v2/poster_mission_raw.png",
+      "ledger": "_sources/decals_v2/prompts_b.json",
+      "bytes": 2131996,
+      "sha256": "b0e1713da088cf555d0087b680c42e553b71be35fb4181664d717f4a233bf0fe"
+    },
+    {
+      "id": "poster_coffee",
+      "path": "Art/UI/_sources/decals_v2/poster_coffee_raw.png",
+      "ledger": "_sources/decals_v2/prompts_b.json",
+      "bytes": 1976622,
+      "sha256": "de7bfb4c99c63255f9eb74483ea32881665634ca2f48cfa5ff14346c8baf39cb"
+    },
+    {
+      "id": "sign_salt",
+      "path": "Art/UI/_sources/decals_v2/sign_salt_raw.png",
+      "ledger": "_sources/decals_v2/prompts_b.json",
+      "bytes": 1953419,
+      "sha256": "c3aacf3ab883a1b8a9050381feacbdcdb24f8e5127c61d8bc469876d339ca910"
+    },
+    {
+      "id": "poster_fridge_rules",
+      "path": "Art/UI/_sources/decals_v2/poster_fridge_rules_raw.png",
+      "ledger": "_sources/decals_v2/prompts_b.json",
+      "bytes": 2144267,
+      "sha256": "ecdb7e0658707e0056d6955118aafc44b2a7737b21d1534c011438dc86fd070d"
+    },
+    {
+      "id": "poster_printer",
+      "path": "Art/UI/_sources/decals_v2/poster_printer_raw.png",
+      "ledger": "_sources/decals_v2/prompts_b.json",
+      "bytes": 2069711,
+      "sha256": "f3f74c1126694a5ccc0a0987bf4d95b6e5ff1afeebb3d677265c9141f055626a"
+    },
+    {
+      "id": "sign_out_of_order",
+      "path": "Art/UI/_sources/decals_v2/sign_out_of_order_raw.png",
+      "ledger": "_sources/decals_v2/prompts_b.json",
+      "bytes": 1890760,
+      "sha256": "f046c5b2a0ee9ba92a5c3564449eed8199918249de7e8600f540f521dae92088"
+    },
+    {
+      "id": "logo_company",
+      "path": "Art/UI/_sources/decals_v2/logo_company_raw.png",
+      "ledger": "_sources/decals_v2/prompts_c.json",
+      "bytes": 2147423,
+      "sha256": "8b09e8b60b1faed9e024575dffae51b381d6259852eae7da8b57c01e677f80d6"
+    },
+    {
+      "id": "poster_welcome",
+      "path": "Art/UI/_sources/decals_v2/poster_welcome_raw.png",
+      "ledger": "_sources/decals_v2/prompts_c.json",
+      "bytes": 2006868,
+      "sha256": "5fb7050bb7ccc26d76f287a1dcdda0b2d7eb7867f74142f3b21a73b38086f238"
+    },
+    {
+      "id": "sign_fusebox",
+      "path": "Art/UI/_sources/decals_v2/sign_fusebox_raw.png",
+      "ledger": "_sources/decals_v2/prompts_c.json",
+      "bytes": 1777514,
+      "sha256": "50ad03f238b21a65e7fab0851941e4fe227928079154b6ec522969245e7a3383"
+    },
+    {
+      "id": "sign_wash_hands",
+      "path": "Art/UI/_sources/decals_v2/sign_wash_hands_raw.png",
+      "ledger": "_sources/decals_v2/prompts_c.json",
+      "bytes": 1922290,
+      "sha256": "ef565edfb50c0a4bb5b7faa2a098f650dc54f730e9943b6a078bb8b501c44edd"
+    },
+    {
+      "id": "sign_server_danger",
+      "path": "Art/UI/_sources/decals_v2/sign_server_danger_raw.png",
+      "ledger": "_sources/decals_v2/prompts_c.json",
+      "bytes": 1505339,
+      "sha256": "ee3aa42151143bf6a2ab8590bf76a1f9bc70352bfb83e532e2ed670ef7cbc34c"
+    },
+    {
+      "id": "poster_relax",
+      "path": "Art/UI/_sources/decals_v2/poster_relax_raw.png",
+      "ledger": "_sources/decals_v2/prompts_c.json",
+      "bytes": 2461705,
+      "sha256": "c6c78f5e74a12aed863b9c07568267c1f1a626de42660fc5554bab840c191413"
+    },
+    {
+      "id": "poster_vending",
+      "path": "Art/UI/_sources/decals_v2/poster_vending_raw.png",
+      "ledger": "_sources/decals_v2/prompts_c.json",
+      "bytes": 2244880,
+      "sha256": "9ef9bcb0bde71fded0ac765f6d44332d09e904d211d758154bb37cd77fa92ce3"
     }
   ]
 }
