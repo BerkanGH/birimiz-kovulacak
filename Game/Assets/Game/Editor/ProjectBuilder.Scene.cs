@@ -30,7 +30,7 @@ namespace BirimizKovulacak.EditorTools
         public const string MapJsonPath = "../Art/Layout/office_v2.json";
         public const string DecalSourceDir = "../Art/UI/decals";
         public const string DecalDir = Root + "/Art/Decals";
-        static readonly string[] PlayerColorHex = { "#4A90E2", "#F5C842", "#F28AB2", "#6CC56A", "#FF8A3D", "#9D6BDB" };
+        static readonly string[] PlayerColorHex = { "#4A90E2", "#F5C842", "#F28AB2", "#6CC56A", "#F4853C", "#A872D0" };
 
         static Transform _env;
 

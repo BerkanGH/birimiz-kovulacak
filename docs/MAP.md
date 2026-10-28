@@ -179,8 +179,8 @@ MODEM) are TMP labels from `labels` in the JSON and in the builder.
    additional lights per-pixel, **no additional-light shadows**, cast shadows only from the main light; shadow distance
    25–30, 2 cascades, 2048 map is fine; SSAO: keep but consider *Downsample* + lower radius, or disable on a "low"
    quality level; HDR on (emissive LEDs/monitors bloom).
-4. `M_PlayerColor4` (Turuncu `#FF8A3D`) and `M_PlayerColor5` (Mor `#9D6BDB`) in `CreateMaterials` with the characters
-   agent's final colours. Until then my scene builder creates them if missing (it never overwrites existing ones).
+4. ~~`M_PlayerColor4/5`~~ done on main (`#F4853C`, `#A872D0`); my builder only creates them if they are missing and
+   uses the same values.
 5. Rules LOS now includes Partitions (`UnityWorldQueries.OccluderMask`): partitions are 1.15 m and the low counter wall
    1.1 m, so the manager (eye 1.6 m → target 1.0 m) loses sight of someone right behind a panel — intended? If you
    want the manager to see over cubicles, drop Partitions from the rules mask (feel's avatar LOS can keep it).

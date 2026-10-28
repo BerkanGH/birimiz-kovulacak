@@ -23,7 +23,7 @@ import build_architecture  # noqa: E402
 
 OUT_DIR = os.path.join(bk.PREVIEW_DIR, "map")
 ARGS = sys.argv[sys.argv.index("--") + 1:] if "--" in sys.argv else []
-PLAYER_COLORS = ["#4A90E2", "#F5C842", "#F28AB2", "#6CC56A", "#FF8A3D", "#9D6BDB"]
+PLAYER_COLORS = ["#4A90E2", "#F5C842", "#F28AB2", "#6CC56A", "#F4853C", "#A872D0"]
 PRESENT = [0, 1, 2, 3]  # preview a 4-player match: desks 4 and 5 are unassigned
 
 
