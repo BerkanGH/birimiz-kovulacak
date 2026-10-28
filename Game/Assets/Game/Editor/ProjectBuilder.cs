@@ -182,7 +182,7 @@ namespace BirimizKovulacak.EditorTools
             }
             var so = new SerializedObject(asset);
             SetProp(so, "m_SupportsHDR", true);
-            SetProp(so, "m_MSAA", 4);
+            SetProp(so, "m_MSAA", 2);
             SetProp(so, "m_ShadowDistance", 32f);
             SetProp(so, "m_ShadowCascadeCount", 2);
             SetProp(so, "m_SoftShadowsSupported", true);

@@ -1,4 +1,4 @@
-using BirimizKovulacak.Core;
+﻿using BirimizKovulacak.Core;
 using UnityEngine;
 
 namespace BirimizKovulacak.Game
