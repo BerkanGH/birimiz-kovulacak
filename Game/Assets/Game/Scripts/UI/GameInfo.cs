@@ -55,13 +55,8 @@ namespace BirimizKovulacak.Game
             return v != null && v.Me != null && i < v.Me.SabotageCooldowns.Count ? v.Me.SabotageCooldowns[i] : 0;
         }
 
-        /// <summary>Match seconds available for footage requests: [0, meeting start - match start].</summary>
-        public static int FootageMaxSecond(PlayerView v)
-        {
-            double end = MatchClock.MeetingStart > 0 && MatchClock.MeetingMatchId == (v != null ? v.MatchId : -1) ? MatchClock.MeetingStart : (v != null ? v.PhaseStartTime : 0);
-            int s = (int)(end - MatchClock.MatchStart);
-            return s < 1 ? 1 : s;
-        }
+        /// <summary>Match seconds available for footage requests: [0, end of the final inspection] from the effective config.</summary>
+        public static int FootageMaxSecond(PlayerView v) { return MatchClock.OfficeSeconds(); }
 
         public static float MaxFavor(PlayerView v)
         {

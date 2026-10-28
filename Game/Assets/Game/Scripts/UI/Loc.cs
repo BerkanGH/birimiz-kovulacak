@@ -163,12 +163,61 @@ namespace BirimizKovulacak.Game
         }
     }
 
-    /// <summary>Remembers when the current match started (host time of the Briefing start) and when the meeting began.</summary>
+    /// <summary>
+    /// Host time at which the current match started (= Briefing start; footage seconds and the "office clock" count
+    /// from it). Exact when this client saw the Briefing; otherwise (reconnect mid-match) derived from the current
+    /// phase start minus the configured durations of the phases before it. UIRoot calls <see cref="Update"/> every frame.
+    /// </summary>
     public static class MatchClock
     {
         public static double MatchStart;
         /// <summary>Host time the meeting (dossier freeze) started; 0 before the meeting.</summary>
         public static double MeetingStart;
         public static int MeetingMatchId = -1;
+
+        static int _briefingMatch = -1, _derivedMatch = -1, _derivedSerial = int.MinValue;
+        static double _briefingEpoch, _derived;
+
+        public static void Update(PlayerView v)
+        {
+            if (v == null || v.Phase == MatchPhase.None) return;
+            if (v.Phase == MatchPhase.Briefing) { _briefingMatch = v.MatchId; _briefingEpoch = v.PhaseStartTime; }
+            if (_derivedMatch != v.MatchId || _derivedSerial != v.PhaseSerial)
+            {
+                _derivedMatch = v.MatchId;
+                _derivedSerial = v.PhaseSerial;
+                _derived = v.PhaseStartTime - ElapsedBefore(v.Phase);
+            }
+            // The remembered Briefing start wins unless it obviously belongs to another session (same match id).
+            double want = _briefingMatch == v.MatchId && Math.Abs(_briefingEpoch - _derived) < 90.0 ? _briefingEpoch : _derived;
+            if (Math.Abs(MatchStart - want) > 0.001) MatchStart = want;
+        }
+
+        /// <summary>Configured seconds from the match start to the start of <paramref name="phase"/>.</summary>
+        public static double ElapsedBefore(MatchPhase phase)
+        {
+            var c = GameInfo.Config;
+            if (c == null || c.Durations == null) return 0;
+            var d = c.Durations;
+            double t = 0;
+            if (phase > MatchPhase.Briefing) t += d.Briefing;
+            if (phase > MatchPhase.Work1) t += d.Work1;
+            if (phase > MatchPhase.Raid) t += d.Raid;
+            if (phase > MatchPhase.Work2) t += d.Work2;
+            if (phase > MatchPhase.FinalInspection) t += d.FinalInspection;
+            if (phase > MatchPhase.MeetingDiscussion) t += d.MeetingDiscussion;
+            if (phase > MatchPhase.MeetingDefense1) t += d.MeetingDefense;
+            if (phase > MatchPhase.MeetingDefense2) t += d.MeetingDefense;
+            if (phase > MatchPhase.MeetingVote) t += d.MeetingVote;
+            if (phase > MatchPhase.MeetingVerdict) t += d.MeetingVerdict;
+            return t;
+        }
+
+        /// <summary>Seconds of office time (Briefing..FinalInspection): the range footage can be requested for.</summary>
+        public static int OfficeSeconds()
+        {
+            int s = (int)ElapsedBefore(MatchPhase.MeetingDiscussion);
+            return s < 1 ? 1 : s;
+        }
     }
 }

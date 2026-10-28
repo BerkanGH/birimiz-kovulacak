@@ -1028,5 +1028,7 @@
   "settings.input_gain": "Mikrofon kazancı",
   "settings.loopback": "Kendi sesimi duy (test)",
   "voice.error.generic": "Mikrofon açılamadı. Windows gizlilik ayarlarında mikrofon iznini kontrol et.",
-  "voice.error.no_device": "Mikrofon bulunamadı."
+  "voice.error.no_device": "Mikrofon bulunamadı.",
+  "feed.evidence_generic": "YENİ DELİL bulundu — ayrıntılar toplantı dosyasında.",
+  "contacts.out_of_sight": "Görüş alanında değil"
 }

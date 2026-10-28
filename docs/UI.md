@@ -106,6 +106,17 @@ Esc closes the top-most thing: modal → settings → how-to → phone → join 
 Briefing..FinalInspection. `UIRoot.BlocksGameplay` (cursor free, no movement) for menus, lobby, phone, pause, settings,
 how-to, modals, meeting, results and the undismissed briefing — **not** for the emote wheel (feel reads mouse deltas).
 
+## Privacy & robustness notes
+
+- Line of sight: crew-row ringing / on-call flags and speaking rings fade with `AvatarVisibility.Alpha` and take no
+  layout space while hidden; the phone's Rehber shows "Görüş alanında değil" instead of ringing/busy for someone out of
+  sight, and the call button never reflects the callee's state (the engine answers `Unavailable`).
+- Match clock (`MatchClock.Update`, every frame): the Briefing start when this client saw it, otherwise the current
+  phase start minus the configured phase durations (reconnects). Footage range = Briefing..FinalInspection durations.
+- Toasts for EvidenceCreated / FootageShown / ManagerObservation / EmailSent wait (≤ 3 s) for the snapshot that contains
+  the record; after that a generic line is shown.
+- Results reset their tab, replay and Ayın Elemanı overlay per match; meeting footage cards are cached per meeting only.
+
 ## Performance
 
 - HUD: built once; pooled crew rows (6), prompt rows (3), order chips, toast slots (7), wheel. On a view change
@@ -136,10 +147,9 @@ how-to, modals, meeting, results and the undismissed briefing — **not** for th
    `PickEmailTemplate`, `TextInputFocused`), sets `FeelHooks.UiDrivesResultsStamp = true` and calls
    `FeelHooks.ResultsStamp`; footage viewers hold `ScreenFx.SetCctv`. The UI no longer reads T/Y/N/G/1–5 itself and plays
    none of the FeelDirector sounds. `Hud.Toast(text, kind)` keeps its v1 signature (optional icon parameter added).
-5. **Manager bubbles (World/map):** new keys exist for v2 observations — in `ManagerVisual`'s bubble switch add
-   `PersonalCall → Loc.F("manager.bubble.call", who)`, `InappropriateEmail → "manager.bubble.email"`,
-   `SaltyCoffee → "manager.bubble.salty"`, `TipClean → Loc.T("manager.bubble.tip_clean")`,
-   `TipFound → Loc.T("manager.bubble.tip_found")`, surprise start → `Loc.T("manager.bubble.surprise")`.
+5. **Manager bubbles** — done in `Scripts/World/ManagerVisual.cs` (lead-approved edit): PersonalCall / InappropriateEmail /
+   SaltyCoffee / TipClean / TipFound map to `manager.bubble.call/.email/.salty/.tip_clean/.tip_found`, and the start of a
+   surprise inspection shows `manager.bubble.surprise`.
 6. **Lobby** uses the host API directly (`AddBot`, `RemoveBot`, `SetMode`, `CanStart`, `StartMatch`, `Mode`); nothing to
    add. `reject.full` now reads 6/6.
 7. Optional: if the host stops sending v1 `day.*` modifiers in `LobbyView.StatusKey`, the briefing simply omits that line.

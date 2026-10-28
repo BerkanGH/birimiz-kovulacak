@@ -104,6 +104,7 @@ namespace BirimizKovulacak.Game
             var cs = ClientState.I;
             var conn = ConnectionManager.I;
             var view = cs != null ? cs.View : null;
+            MatchClock.Update(view);
             bool online = conn != null && (conn.Current == ConnectionManager.State.Hosting || conn.Current == ConnectionManager.State.Connected || conn.Current == ConnectionManager.State.Reconnecting || conn.Current == ConnectionManager.State.Connecting);
             bool inMatch = view != null;
             MatchPhase phase = inMatch ? view.Phase : MatchPhase.None;

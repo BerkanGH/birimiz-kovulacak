@@ -108,6 +108,7 @@ namespace BirimizKovulacak.Game
             readonly VisualElement _icon;
             readonly Label _name;
             int _player = -99;
+            string _nameText;
             PublicActivity _activity = (PublicActivity)255;
 
             public Dot(VisualElement parent)
@@ -126,8 +127,9 @@ namespace BirimizKovulacak.Game
                 {
                     _player = player;
                     Root.style.backgroundColor = PlayerColor(player);
-                    _name.text = name ?? "";
                 }
+                string n = name ?? "";
+                if (!string.Equals(n, _nameText, System.StringComparison.Ordinal)) { _nameText = n; _name.text = n; }
                 _name.Show(showName);
                 if (activity != _activity)
                 {
@@ -238,7 +240,14 @@ namespace BirimizKovulacak.Game
             _h = h;
             _v = v;
             for (int i = 0; i < _byPlayer.Length; i++) _byPlayer[i].Clear();
-            if (h == null || h.Samples.Count == 0) { Root.Show(false); return false; }
+            if (h == null || h.Samples.Count == 0)
+            {
+                _h = null;
+                _playing = false;
+                _plan.HideDotsFrom(0);
+                Root.Show(false);
+                return false;
+            }
             Root.Show(true);
             for (int i = 0; i < h.Samples.Count; i++)
             {
