@@ -611,6 +611,8 @@ def check_driven(roots):
 
 
 def main():
+    import map_textures
+    map_textures.main()
     bk.reset_scene()
     roots = build_all()
     check_driven(roots)

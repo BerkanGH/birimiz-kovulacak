@@ -270,7 +270,39 @@ namespace BirimizKovulacak.EditorTools
             SetTransparent(ghost);
             ghost.SetShaderPassEnabled("ShadowCaster", true);   // faded walls keep their shadows
             EditorUtility.SetDirty(ghost);
+            ApplyScreenTextures();
             AssetDatabase.SaveAssets();
+        }
+
+        /// <summary>Monitor state textures (Art/Scripts/map_textures.py) as base + emission maps of the screen materials.</summary>
+        static void ApplyScreenTextures()
+        {
+            var pairs = new[] { ("M_ScreenDesktop", "Desktop", 1.25f), ("M_ScreenLockScreen", "LockScreen", 1.1f), ("M_ScreenLocked", "Locked", 1.25f), ("M_ScreenNoSignal", "NoSignal", 1.0f) };
+            foreach (var (matName, file, emit) in pairs)
+            {
+                string path = Root + "/Art/Textures/Screens/" + file + ".png";
+                var imp = AssetImporter.GetAtPath(path) as TextureImporter;
+                if (imp != null && (imp.maxTextureSize != 256 || imp.mipmapEnabled == false))
+                {
+                    imp.textureType = TextureImporterType.Default;
+                    imp.sRGBTexture = true;
+                    imp.mipmapEnabled = true;
+                    imp.maxTextureSize = 256;
+                    imp.wrapMode = TextureWrapMode.Clamp;
+                    imp.textureCompression = TextureImporterCompression.CompressedHQ;
+                    imp.SaveAndReimport();
+                }
+                var tex = AssetDatabase.LoadAssetAtPath<Texture2D>(path);
+                var m = Mat(matName);
+                if (tex == null || m == null) { Log("screen texture missing: " + path); continue; }
+                m.SetTexture("_BaseMap", tex);
+                m.SetColor("_BaseColor", Color.white);
+                m.SetTexture("_EmissionMap", tex);
+                m.SetColor("_EmissionColor", Color.white * emit);
+                m.EnableKeyword("_EMISSION");
+                m.globalIlluminationFlags = MaterialGlobalIlluminationFlags.RealtimeEmissive;
+                EditorUtility.SetDirty(m);
+            }
         }
 
         // ================================================================== architecture

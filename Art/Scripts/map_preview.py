@@ -248,6 +248,20 @@ def build_scene(data, power_cut=False):
         spec = bk.palette()["materials"].get(m.name)
         if spec and spec.get("alpha", 1.0) < 1.0 and hasattr(m, "surface_render_method"):
             m.surface_render_method = "BLENDED"
+    # monitor state textures (as in Unity)
+    tex_dir = os.path.join(bk.ROOT, "Game", "Assets", "Game", "Art", "Textures", "Screens")
+    for mname, f in (("M_ScreenDesktop", "Desktop"), ("M_ScreenLockScreen", "LockScreen"), ("M_ScreenLocked", "Locked"), ("M_ScreenNoSignal", "NoSignal")):
+        m = bpy.data.materials.get(mname)
+        fp = os.path.join(tex_dir, f + ".png")
+        if m is None or not os.path.exists(fp):
+            continue
+        nt = m.node_tree
+        bsdf = nt.nodes.get("Principled BSDF")
+        tn = nt.nodes.new("ShaderNodeTexImage")
+        tn.image = bpy.data.images.load(fp)
+        nt.links.new(tn.outputs["Color"], bsdf.inputs["Base Color"])
+        nt.links.new(tn.outputs["Color"], bsdf.inputs["Emission Color"])
+        bsdf.inputs["Emission Strength"].default_value = 1.2
     sun = bpy.data.lights.new("Sun", "SUN")
     sun.energy = 3.2 if not power_cut else 0.5
     sun.color = (1.0, 0.95, 0.87)
@@ -299,7 +313,7 @@ def setup_render(res, fast):
     world.use_nodes = True
     bg = world.node_tree.nodes.get("Background")
     bg.inputs["Color"].default_value = (0.62, 0.72, 0.85, 1)
-    bg.inputs["Strength"].default_value = 0.55
+    bg.inputs["Strength"].default_value = 0.07 if "--power-cut" in ARGS else 0.55
     sc.world = world
 
 
