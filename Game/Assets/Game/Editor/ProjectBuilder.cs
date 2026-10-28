@@ -283,6 +283,8 @@ namespace BirimizKovulacak.EditorTools
             CreateLit("M_PlayerColor1", lit, Hex("#F5C842"), 0.4f, 0, 0.15f, 1);
             CreateLit("M_PlayerColor2", lit, Hex("#F28AB2"), 0.4f, 0, 0.15f, 1);
             CreateLit("M_PlayerColor3", lit, Hex("#6CC56A"), 0.4f, 0, 0.15f, 1);
+            CreateLit("M_PlayerColor4", lit, Hex("#F4853C"), 0.4f, 0, 0.15f, 1);
+            CreateLit("M_PlayerColor5", lit, Hex("#A872D0"), 0.4f, 0, 0.15f, 1);
             CreateUnlit("M_VisionCone", unlit, new Color(1f, 0.85f, 0.2f, 0.22f));
             CreateUnlit("M_FocusMarker", unlit, new Color(1f, 0.78f, 0.15f, 0.95f));
             CreateUnlit("M_EvidenceRing", unlit, new Color(1f, 0.25f, 0.2f, 0.8f));
@@ -397,6 +399,7 @@ namespace BirimizKovulacak.EditorTools
                 var imp = AssetImporter.GetAtPath(path) as ModelImporter;
                 if (imp == null) continue;
                 bool character = path.Contains("/Characters/");
+                if (character) continue; // ProjectBuilder.Characters.ConfigureCharacterModel owns character imports (clips, loops)
                 imp.globalScale = 1f;
                 imp.useFileScale = true;
                 imp.bakeAxisConversion = true;
