@@ -1,0 +1,116 @@
+[
+  {
+    "id": "lcd_frame",
+    "path": "Art/UI/deskphone/lcd_frame.png",
+    "w": 480,
+    "h": 192,
+    "category": "deskphone",
+    "nineSlice": [
+      44,
+      44,
+      44,
+      44
+    ],
+    "screenRect": null,
+    "hasText": false,
+    "description": "Greenish LCD with a warm plastic bezel; draw dark LCD text inside inset 40."
+  },
+  {
+    "id": "deskphone_key",
+    "path": "Art/UI/deskphone/key.png",
+    "w": 128,
+    "h": 96,
+    "category": "deskphone",
+    "nineSlice": [
+      28,
+      28,
+      28,
+      28
+    ],
+    "screenRect": null,
+    "hasText": false,
+    "description": "Blank tactile keypad key; overlay all numerals at runtime."
+  },
+  {
+    "id": "deskphone_key_pressed",
+    "path": "Art/UI/deskphone/key_pressed.png",
+    "w": 128,
+    "h": 96,
+    "category": "deskphone",
+    "nineSlice": [
+      28,
+      28,
+      28,
+      28
+    ],
+    "screenRect": null,
+    "hasText": false,
+    "description": "Blank tactile keypad key; overlay all numerals at runtime."
+  },
+  {
+    "id": "phone_base",
+    "path": "Art/UI/deskphone/phone_base.png",
+    "w": 800,
+    "h": 600,
+    "category": "deskphone",
+    "nineSlice": null,
+    "screenRect": null,
+    "hasText": false,
+    "description": "Front-view phone base only. Shared 800x600 canvas with handset; composite at identical origin."
+  },
+  {
+    "id": "handset",
+    "path": "Art/UI/deskphone/handset.png",
+    "w": 800,
+    "h": 600,
+    "category": "deskphone",
+    "nineSlice": null,
+    "screenRect": null,
+    "hasText": false,
+    "description": "Separate resting handset. Shared 800x600 origin with phone_base; animate around pixel pivot [458,136]."
+  },
+  {
+    "id": "ring_waves",
+    "path": "Art/UI/deskphone/ring_waves.png",
+    "w": 800,
+    "h": 600,
+    "category": "deskphone",
+    "nineSlice": null,
+    "screenRect": null,
+    "hasText": false,
+    "description": "Separate green ringing arcs on the shared 800x600 phone canvas; toggle alpha."
+  },
+  {
+    "id": "rec_badge",
+    "path": "Art/UI/deskphone/rec_badge.png",
+    "w": 256,
+    "h": 144,
+    "category": "deskphone",
+    "nineSlice": null,
+    "screenRect": null,
+    "hasText": false,
+    "description": "Red-dot cassette recording badge, no REC text."
+  },
+  {
+    "id": "deskphone_busy",
+    "path": "Art/UI/deskphone/busy.png",
+    "w": 256,
+    "h": 256,
+    "category": "deskphone",
+    "nineSlice": null,
+    "screenRect": null,
+    "hasText": false,
+    "description": "Desk-phone busy symbol: receiver over paired pause bars."
+  },
+  {
+    "id": "deskphone_line_dead",
+    "path": "Art/UI/deskphone/line_dead.png",
+    "w": 256,
+    "h": 256,
+    "category": "deskphone",
+    "nineSlice": null,
+    "screenRect": null,
+    "hasText": false,
+    "description": "Phone receiver above a clearly severed cord."
+  }
+]

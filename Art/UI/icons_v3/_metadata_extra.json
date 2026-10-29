@@ -1,0 +1,101 @@
+[
+  {
+    "id": "v3_coffee_spill",
+    "path": "Art/UI/icons_v3/coffee_spill.png",
+    "w": 256,
+    "h": 256,
+    "category": "icons_v3",
+    "nineSlice": null,
+    "screenRect": null,
+    "hasText": false,
+    "description": "Tipping green mug pouring coffee onto a blank-key keyboard. Isolated silhouette, meaningful-alpha crop and centered 220px optical bounds; readable at 48px."
+  },
+  {
+    "id": "v3_phone_dead",
+    "path": "Art/UI/icons_v3/phone_dead.png",
+    "w": 256,
+    "h": 256,
+    "category": "icons_v3",
+    "nineSlice": null,
+    "screenRect": null,
+    "hasText": false,
+    "description": "Green handset with a visibly cut coiled telephone cord. Isolated silhouette, meaningful-alpha crop and centered 220px optical bounds; readable at 48px."
+  },
+  {
+    "id": "v3_wifi_off",
+    "path": "Art/UI/icons_v3/wifi_off.png",
+    "w": 256,
+    "h": 256,
+    "category": "icons_v3",
+    "nineSlice": null,
+    "screenRect": null,
+    "hasText": false,
+    "description": "Crossed Wi-Fi arcs above a navy-and-cream office router. Isolated silhouette, meaningful-alpha crop and centered 220px optical bounds; readable at 48px."
+  },
+  {
+    "id": "v3_manager_line",
+    "path": "Art/UI/icons_v3/manager_line.png",
+    "w": 256,
+    "h": 256,
+    "category": "icons_v3",
+    "nineSlice": null,
+    "screenRect": null,
+    "hasText": false,
+    "description": "Red manager desk phone with blank cream keys and green LCD. Isolated silhouette, meaningful-alpha crop and centered 220px optical bounds; readable at 48px."
+  },
+  {
+    "id": "v3_tip_off",
+    "path": "Art/UI/icons_v3/tip_off.png",
+    "w": 256,
+    "h": 256,
+    "category": "icons_v3",
+    "nineSlice": null,
+    "screenRect": null,
+    "hasText": false,
+    "description": "Blue bean with green tie cups its hand to whisper a confidential tip. Isolated silhouette, meaningful-alpha crop and centered 220px optical bounds; readable at 48px."
+  },
+  {
+    "id": "v3_intern",
+    "path": "Art/UI/icons_v3/intern.png",
+    "w": 256,
+    "h": 256,
+    "category": "icons_v3",
+    "nineSlice": null,
+    "screenRect": null,
+    "hasText": false,
+    "description": "Small yellow intern bean wearing an oversized teal lanyard and blank ID. Isolated silhouette, meaningful-alpha crop and centered 220px optical bounds; readable at 48px."
+  },
+  {
+    "id": "v3_defense",
+    "path": "Art/UI/icons_v3/defense.png",
+    "w": 256,
+    "h": 256,
+    "category": "icons_v3",
+    "nineSlice": null,
+    "screenRect": null,
+    "hasText": false,
+    "description": "Manila podium with a large gooseneck microphone and blank sheet. Isolated silhouette, meaningful-alpha crop and centered 220px optical bounds; readable at 48px."
+  },
+  {
+    "id": "v3_meeting",
+    "path": "Art/UI/icons_v3/meeting.png",
+    "w": 256,
+    "h": 256,
+    "category": "icons_v3",
+    "nineSlice": null,
+    "screenRect": null,
+    "hasText": false,
+    "description": "Oval manila meeting table and four office-green chairs. Isolated silhouette, meaningful-alpha crop and centered 220px optical bounds; readable at 48px."
+  },
+  {
+    "id": "v3_morning",
+    "path": "Art/UI/icons_v3/morning.png",
+    "w": 256,
+    "h": 256,
+    "category": "icons_v3",
+    "nineSlice": null,
+    "screenRect": null,
+    "hasText": false,
+    "description": "Morning sunrise behind a steaming office-green coffee mug. Isolated silhouette, meaningful-alpha crop and centered 220px optical bounds; readable at 48px."
+  }
+]

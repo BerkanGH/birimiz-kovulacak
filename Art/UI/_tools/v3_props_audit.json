@@ -1,0 +1,574 @@
+[
+  {
+    "path": "onboarding\\ob_1_rooms.png",
+    "w": 1280,
+    "h": 720,
+    "bytes": 1458624,
+    "alphaExtrema": [
+      255,
+      255
+    ],
+    "cornerAlpha": [
+      255,
+      255,
+      255,
+      255
+    ],
+    "alphaBounds": [
+      0,
+      0,
+      1280,
+      720
+    ]
+  },
+  {
+    "path": "onboarding\\ob_2_phone.png",
+    "w": 1280,
+    "h": 720,
+    "bytes": 1445633,
+    "alphaExtrema": [
+      255,
+      255
+    ],
+    "cornerAlpha": [
+      255,
+      255,
+      255,
+      255
+    ],
+    "alphaBounds": [
+      0,
+      0,
+      1280,
+      720
+    ]
+  },
+  {
+    "path": "onboarding\\ob_3_rounds.png",
+    "w": 1280,
+    "h": 720,
+    "bytes": 1406384,
+    "alphaExtrema": [
+      255,
+      255
+    ],
+    "cornerAlpha": [
+      255,
+      255,
+      255,
+      255
+    ],
+    "alphaBounds": [
+      0,
+      0,
+      1280,
+      720
+    ]
+  },
+  {
+    "path": "onboarding\\ob_4_blame.png",
+    "w": 1280,
+    "h": 720,
+    "bytes": 1399691,
+    "alphaExtrema": [
+      255,
+      255
+    ],
+    "cornerAlpha": [
+      255,
+      255,
+      255,
+      255
+    ],
+    "alphaBounds": [
+      0,
+      0,
+      1280,
+      720
+    ]
+  },
+  {
+    "path": "onboarding\\ob_5_tricks.png",
+    "w": 1280,
+    "h": 720,
+    "bytes": 1392067,
+    "alphaExtrema": [
+      255,
+      255
+    ],
+    "cornerAlpha": [
+      255,
+      255,
+      255,
+      255
+    ],
+    "alphaBounds": [
+      0,
+      0,
+      1280,
+      720
+    ]
+  },
+  {
+    "path": "onboarding\\ob_6_recording.png",
+    "w": 1280,
+    "h": 720,
+    "bytes": 213737,
+    "alphaExtrema": [
+      255,
+      255
+    ],
+    "cornerAlpha": [
+      255,
+      255,
+      255,
+      255
+    ],
+    "alphaBounds": [
+      0,
+      0,
+      1280,
+      720
+    ]
+  },
+  {
+    "path": "onboarding\\ob_7_friday.png",
+    "w": 1280,
+    "h": 720,
+    "bytes": 1312562,
+    "alphaExtrema": [
+      255,
+      255
+    ],
+    "cornerAlpha": [
+      255,
+      255,
+      255,
+      255
+    ],
+    "alphaBounds": [
+      0,
+      0,
+      1280,
+      720
+    ]
+  },
+  {
+    "path": "onboarding\\sticky_note_9slice.png",
+    "w": 384,
+    "h": 256,
+    "bytes": 2564,
+    "alphaExtrema": [
+      0,
+      255
+    ],
+    "cornerAlpha": [
+      0,
+      0,
+      0,
+      0
+    ],
+    "alphaBounds": [
+      7,
+      7,
+      375,
+      248
+    ]
+  },
+  {
+    "path": "onboarding\\coach_arrow.png",
+    "w": 512,
+    "h": 256,
+    "bytes": 16760,
+    "alphaExtrema": [
+      0,
+      255
+    ],
+    "cornerAlpha": [
+      0,
+      0,
+      0,
+      0
+    ],
+    "alphaBounds": [
+      23,
+      38,
+      462,
+      183
+    ]
+  },
+  {
+    "path": "deskphone\\lcd_frame.png",
+    "w": 480,
+    "h": 192,
+    "bytes": 8006,
+    "alphaExtrema": [
+      0,
+      255
+    ],
+    "cornerAlpha": [
+      0,
+      0,
+      0,
+      0
+    ],
+    "alphaBounds": [
+      4,
+      4,
+      476,
+      188
+    ]
+  },
+  {
+    "path": "deskphone\\key.png",
+    "w": 128,
+    "h": 96,
+    "bytes": 2934,
+    "alphaExtrema": [
+      0,
+      255
+    ],
+    "cornerAlpha": [
+      0,
+      0,
+      0,
+      0
+    ],
+    "alphaBounds": [
+      5,
+      5,
+      123,
+      91
+    ]
+  },
+  {
+    "path": "deskphone\\key_pressed.png",
+    "w": 128,
+    "h": 96,
+    "bytes": 2888,
+    "alphaExtrema": [
+      0,
+      255
+    ],
+    "cornerAlpha": [
+      0,
+      0,
+      0,
+      0
+    ],
+    "alphaBounds": [
+      5,
+      5,
+      123,
+      91
+    ]
+  },
+  {
+    "path": "deskphone\\phone_base.png",
+    "w": 800,
+    "h": 600,
+    "bytes": 289599,
+    "alphaExtrema": [
+      0,
+      255
+    ],
+    "cornerAlpha": [
+      0,
+      0,
+      0,
+      0
+    ],
+    "alphaBounds": [
+      72,
+      140,
+      739,
+      570
+    ]
+  },
+  {
+    "path": "deskphone\\handset.png",
+    "w": 800,
+    "h": 600,
+    "bytes": 50315,
+    "alphaExtrema": [
+      0,
+      255
+    ],
+    "cornerAlpha": [
+      0,
+      0,
+      0,
+      0
+    ],
+    "alphaBounds": [
+      235,
+      52,
+      685,
+      185
+    ]
+  },
+  {
+    "path": "deskphone\\ring_waves.png",
+    "w": 800,
+    "h": 600,
+    "bytes": 23793,
+    "alphaExtrema": [
+      0,
+      255
+    ],
+    "cornerAlpha": [
+      0,
+      0,
+      0,
+      0
+    ],
+    "alphaBounds": [
+      90,
+      43,
+      789,
+      228
+    ]
+  },
+  {
+    "path": "deskphone\\rec_badge.png",
+    "w": 256,
+    "h": 144,
+    "bytes": 10647,
+    "alphaExtrema": [
+      0,
+      255
+    ],
+    "cornerAlpha": [
+      0,
+      0,
+      0,
+      0
+    ],
+    "alphaBounds": [
+      13,
+      22,
+      240,
+      133
+    ]
+  },
+  {
+    "path": "deskphone\\busy.png",
+    "w": 256,
+    "h": 256,
+    "bytes": 15713,
+    "alphaExtrema": [
+      0,
+      255
+    ],
+    "cornerAlpha": [
+      0,
+      0,
+      0,
+      0
+    ],
+    "alphaBounds": [
+      19,
+      46,
+      240,
+      215
+    ]
+  },
+  {
+    "path": "deskphone\\line_dead.png",
+    "w": 256,
+    "h": 256,
+    "bytes": 18419,
+    "alphaExtrema": [
+      0,
+      255
+    ],
+    "cornerAlpha": [
+      0,
+      0,
+      0,
+      0
+    ],
+    "alphaBounds": [
+      19,
+      38,
+      240,
+      191
+    ]
+  },
+  {
+    "path": "meeting_v3\\tape_player.png",
+    "w": 1024,
+    "h": 512,
+    "bytes": 452996,
+    "alphaExtrema": [
+      0,
+      255
+    ],
+    "cornerAlpha": [
+      0,
+      0,
+      0,
+      0
+    ],
+    "alphaBounds": [
+      44,
+      33,
+      980,
+      480
+    ]
+  },
+  {
+    "path": "meeting_v3\\tape_reel.png",
+    "w": 256,
+    "h": 256,
+    "bytes": 35999,
+    "alphaExtrema": [
+      0,
+      255
+    ],
+    "cornerAlpha": [
+      0,
+      0,
+      0,
+      0
+    ],
+    "alphaBounds": [
+      17,
+      17,
+      239,
+      239
+    ]
+  },
+  {
+    "path": "meeting_v3\\waveform_bar.png",
+    "w": 384,
+    "h": 96,
+    "bytes": 3705,
+    "alphaExtrema": [
+      0,
+      255
+    ],
+    "cornerAlpha": [
+      0,
+      0,
+      0,
+      0
+    ],
+    "alphaBounds": [
+      4,
+      6,
+      380,
+      90
+    ]
+  },
+  {
+    "path": "meeting_v3\\spotlight.png",
+    "w": 1024,
+    "h": 1024,
+    "bytes": 46678,
+    "alphaExtrema": [
+      0,
+      82
+    ],
+    "cornerAlpha": [
+      0,
+      0,
+      0,
+      0
+    ],
+    "alphaBounds": [
+      22,
+      4,
+      1002,
+      1023
+    ]
+  },
+  {
+    "path": "meeting_v3\\warning_letter.png",
+    "w": 1200,
+    "h": 1600,
+    "bytes": 32785,
+    "alphaExtrema": [
+      0,
+      255
+    ],
+    "cornerAlpha": [
+      0,
+      0,
+      0,
+      0
+    ],
+    "alphaBounds": [
+      24,
+      24,
+      1176,
+      1576
+    ]
+  },
+  {
+    "path": "meeting_v3\\nameplate.png",
+    "w": 512,
+    "h": 160,
+    "bytes": 6585,
+    "alphaExtrema": [
+      0,
+      255
+    ],
+    "cornerAlpha": [
+      0,
+      0,
+      0,
+      0
+    ],
+    "alphaBounds": [
+      11,
+      14,
+      501,
+      146
+    ]
+  },
+  {
+    "path": "meeting_v3\\vote_token.png",
+    "w": 256,
+    "h": 256,
+    "bytes": 31339,
+    "alphaExtrema": [
+      0,
+      255
+    ],
+    "cornerAlpha": [
+      0,
+      0,
+      0,
+      0
+    ],
+    "alphaBounds": [
+      18,
+      14,
+      238,
+      243
+    ]
+  },
+  {
+    "path": "meeting_v3\\dossier_tab.png",
+    "w": 384,
+    "h": 144,
+    "bytes": 4410,
+    "alphaExtrema": [
+      0,
+      255
+    ],
+    "cornerAlpha": [
+      0,
+      0,
+      0,
+      0
+    ],
+    "alphaBounds": [
+      5,
+      16,
+      379,
+      139
+    ]
+  }
+]

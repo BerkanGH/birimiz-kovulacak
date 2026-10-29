@@ -1,0 +1,288 @@
+{
+  "method": "Deterministic native UI extension of existing stationery controls; original KOVA bucket art extracted from company decal; procedural alpha screen effects.",
+  "script": "Art/UI/_tools/v3_computer.py",
+  "details": [
+    {
+      "id": "boot_logo",
+      "source": "Art/UI/decals/logo_company.png",
+      "sourceSha256": "47f76c38298f688059522a9a7b0a6c721dd7cde04a558d6287fc32436223a4e4",
+      "sourceCrop": [
+        43,
+        49,
+        282,
+        314
+      ],
+      "method": "Connected-paper alpha matte; original bucket, sunrise, navy contours and colors retained."
+    },
+    {
+      "id": "cursor_hand",
+      "hotspot": [
+        27,
+        7
+      ]
+    }
+  ],
+  "nineSlice": {
+    "window_frame": [
+      40,
+      104,
+      40,
+      40
+    ],
+    "taskbar": [
+      26,
+      28,
+      26,
+      30
+    ],
+    "notification_card": [
+      36,
+      36,
+      36,
+      36
+    ],
+    "app_tile": [
+      40,
+      40,
+      40,
+      40
+    ]
+  },
+  "assets": [
+    {
+      "path": "computer/boot_logo.png",
+      "w": 512,
+      "h": 512,
+      "bytes": 156369,
+      "alphaExtrema": [
+        0,
+        255
+      ],
+      "cornerAlpha": [
+        0,
+        0,
+        0,
+        0
+      ],
+      "alphaBounds": [
+        67,
+        46,
+        444,
+        466
+      ],
+      "sha256": "2084030cd97e437bd09193a52b21b1d5d1a98dd9f8eff19fb88542273e670e1d"
+    },
+    {
+      "path": "computer/os_wallpaper.png",
+      "w": 1920,
+      "h": 1080,
+      "bytes": 122591,
+      "alphaExtrema": [
+        255,
+        255
+      ],
+      "cornerAlpha": [
+        255,
+        255,
+        255,
+        255
+      ],
+      "alphaBounds": [
+        0,
+        0,
+        1920,
+        1080
+      ],
+      "sha256": "aa5429153a49723604b678ea3d55129ed205512d388f91929e381c8d3144daa2"
+    },
+    {
+      "path": "computer/window_frame.png",
+      "w": 640,
+      "h": 480,
+      "bytes": 26161,
+      "alphaExtrema": [
+        0,
+        255
+      ],
+      "cornerAlpha": [
+        0,
+        0,
+        0,
+        0
+      ],
+      "alphaBounds": [
+        7,
+        7,
+        630,
+        473
+      ],
+      "sha256": "82fe006f2c077e801597cbfdfa4735e42869d1eb9301e15c2f4a524c9fb597de"
+    },
+    {
+      "path": "computer/taskbar.png",
+      "w": 640,
+      "h": 80,
+      "bytes": 5616,
+      "alphaExtrema": [
+        0,
+        255
+      ],
+      "cornerAlpha": [
+        0,
+        0,
+        0,
+        0
+      ],
+      "alphaBounds": [
+        5,
+        5,
+        635,
+        76
+      ],
+      "sha256": "8a3944463397bbdd3cf07609a5c531a556a5004d22022fe144902e95d16f752f"
+    },
+    {
+      "path": "computer/notification_card.png",
+      "w": 384,
+      "h": 192,
+      "bytes": 8724,
+      "alphaExtrema": [
+        0,
+        255
+      ],
+      "cornerAlpha": [
+        0,
+        0,
+        0,
+        0
+      ],
+      "alphaBounds": [
+        5,
+        5,
+        378,
+        187
+      ],
+      "sha256": "1f216488d089dcd2bb94ff87777e6f4edbeef095f7bce2ed5f6968a545158ce4"
+    },
+    {
+      "path": "computer/app_tile.png",
+      "w": 192,
+      "h": 192,
+      "bytes": 6765,
+      "alphaExtrema": [
+        0,
+        255
+      ],
+      "cornerAlpha": [
+        0,
+        0,
+        0,
+        0
+      ],
+      "alphaBounds": [
+        5,
+        5,
+        187,
+        187
+      ],
+      "sha256": "2bfabfaf403c79122840d1e19b6f66853716162a4134648fecf9e69c34740b7b"
+    },
+    {
+      "path": "computer/cursor_hand.png",
+      "w": 64,
+      "h": 64,
+      "bytes": 3271,
+      "alphaExtrema": [
+        0,
+        255
+      ],
+      "cornerAlpha": [
+        0,
+        0,
+        0,
+        0
+      ],
+      "alphaBounds": [
+        7,
+        1,
+        60,
+        62
+      ],
+      "sha256": "9a4785d7c69ac0117fb6cc367b7c1846350ad3f245dc11e7824c8d59c177d629"
+    },
+    {
+      "path": "computer/offline_overlay.png",
+      "w": 1920,
+      "h": 1080,
+      "bytes": 135589,
+      "alphaExtrema": [
+        0,
+        255
+      ],
+      "cornerAlpha": [
+        0,
+        0,
+        0,
+        0
+      ],
+      "alphaBounds": [
+        8,
+        8,
+        1920,
+        1072
+      ],
+      "sha256": "a3971b57324bb03844ef2271beb9b5e3f78c477ed5af6eebc843d8ef07e70298"
+    },
+    {
+      "path": "computer/coffee_overlay.png",
+      "w": 1920,
+      "h": 1080,
+      "bytes": 36481,
+      "alphaExtrema": [
+        0,
+        229
+      ],
+      "cornerAlpha": [
+        0,
+        0,
+        0,
+        0
+      ],
+      "alphaBounds": [
+        138,
+        55,
+        1888,
+        987
+      ],
+      "sha256": "3d1e60b49c1828da464a00ed4ee9830c944a64bee8838aa33a9698db9d989ae3"
+    }
+  ],
+  "originalPngCountVerified": 267,
+  "visualReview": {
+    "status": "reviewed",
+    "sheets": [
+      "Art/UI/_sheets/v3_computer.png",
+      "Art/UI/_sheets/v3_computer_slice.png",
+      "Art/UI/_sheets/v3_computer_effects.png"
+    ],
+    "findings": [
+      "All nine assets viewed over neutral grey and screen effects over a desktop preview.",
+      "Nine-slice borders protect outer and inset rounded corners, full title bar and lower shadows; wide and short stretched examples inspected.",
+      "Notification has no colored side stripe; controls use locked paper/manila/navy palette.",
+      "Boot mark uses the original company bucket/sun artwork; cream matte fringe removed for dark-background display.",
+      "Coffee blocks the central screen with a dark pooled spill; static overlay remains visibly transparent.",
+      "Cursor inspected at native 64 pixels; hotspot [27,7]."
+    ],
+    "assetSha256": {
+      "computer/boot_logo.png": "2084030cd97e437bd09193a52b21b1d5d1a98dd9f8eff19fb88542273e670e1d",
+      "computer/os_wallpaper.png": "aa5429153a49723604b678ea3d55129ed205512d388f91929e381c8d3144daa2",
+      "computer/window_frame.png": "82fe006f2c077e801597cbfdfa4735e42869d1eb9301e15c2f4a524c9fb597de",
+      "computer/taskbar.png": "8a3944463397bbdd3cf07609a5c531a556a5004d22022fe144902e95d16f752f",
+      "computer/notification_card.png": "1f216488d089dcd2bb94ff87777e6f4edbeef095f7bce2ed5f6968a545158ce4",
+      "computer/app_tile.png": "2bfabfaf403c79122840d1e19b6f66853716162a4134648fecf9e69c34740b7b",
+      "computer/cursor_hand.png": "9a4785d7c69ac0117fb6cc367b7c1846350ad3f245dc11e7824c8d59c177d629",
+      "computer/offline_overlay.png": "a3971b57324bb03844ef2271beb9b5e3f78c477ed5af6eebc843d8ef07e70298",
+      "computer/coffee_overlay.png": "3d1e60b49c1828da464a00ed4ee9830c944a64bee8838aa33a9698db9d989ae3"
+    }
+  }
+}

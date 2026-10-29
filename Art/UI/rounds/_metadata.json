@@ -1,0 +1,79 @@
+[
+  {
+    "id": "round_prim_havuzu",
+    "path": "Art/UI/rounds/round_prim_havuzu.png",
+    "w": 512,
+    "h": 716,
+    "category": "rounds",
+    "nineSlice": null,
+    "screenRect": null,
+    "hasText": false,
+    "description": "Bonus Pool: two beans over one bonus envelope, orange bean grabbing the whole envelope. Rounded manila frame matches source kit; runtime title/body safe area [52,552,408,104]."
+  },
+  {
+    "id": "round_farkli_eposta",
+    "path": "Art/UI/rounds/round_farkli_eposta.png",
+    "w": 512,
+    "h": 716,
+    "category": "rounds",
+    "nineSlice": null,
+    "screenRect": null,
+    "hasText": false,
+    "description": "Odd Email: five identical cream envelopes and one red envelope in a mail sorter. Rounded manila frame matches source kit; runtime title/body safe area [52,552,408,104]."
+  },
+  {
+    "id": "round_kayip_rapor",
+    "path": "Art/UI/rounds/round_kayip_rapor.png",
+    "w": 512,
+    "h": 716,
+    "category": "rounds",
+    "nineSlice": null,
+    "screenRect": null,
+    "hasText": false,
+    "description": "Lost Report: an empty manila folder and three beans accusing one another. Rounded manila frame matches source kit; runtime title/body safe area [52,552,408,104]."
+  },
+  {
+    "id": "round_ihbar_kutusu",
+    "path": "Art/UI/rounds/round_ihbar_kutusu.png",
+    "w": 512,
+    "h": 716,
+    "category": "rounds",
+    "nineSlice": null,
+    "screenRect": null,
+    "hasText": false,
+    "description": "Complaint Box: pink bean inserts a folded complaint slip through a box slot. Rounded manila frame matches source kit; runtime title/body safe area [52,552,408,104]."
+  },
+  {
+    "id": "round_terfi_listesi",
+    "path": "Art/UI/rounds/round_terfi_listesi.png",
+    "w": 512,
+    "h": 716,
+    "category": "rounds",
+    "nineSlice": null,
+    "screenRect": null,
+    "hasText": false,
+    "description": "Promotion List: two beans push a colleague up a podium toward a necktie. Rounded manila frame matches source kit; runtime title/body safe area [52,552,408,104]."
+  },
+  {
+    "id": "round_ortak_sifre",
+    "path": "Art/UI/rounds/round_ortak_sifre.png",
+    "w": 512,
+    "h": 716,
+    "category": "rounds",
+    "nineSlice": null,
+    "screenRect": null,
+    "hasText": true,
+    "description": "Shared Password: server keypad, six beans each holding a deterministic single-digit card; orange bean hides crossed fingers. Rounded manila frame matches source kit; runtime title/body safe area [52,552,408,104]."
+  },
+  {
+    "id": "round_card_back",
+    "path": "Art/UI/rounds/round_card_back.png",
+    "w": 512,
+    "h": 716,
+    "category": "rounds",
+    "nineSlice": null,
+    "screenRect": null,
+    "hasText": false,
+    "description": "Text-free round-deck back, office green with the existing box-carrying bean emblem inside a manila seal."
+  }
+]

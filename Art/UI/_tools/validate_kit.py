@@ -371,4 +371,9 @@ def main(strict=False):
 if __name__=='__main__':
     parser=argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--strict',action='store_true')
-    raise SystemExit(main(parser.parse_args().strict))
+    parser.add_argument('--legacy',action='store_true',help='Run the original 205-asset archive audit (requires ignored historical _sources and sheets).')
+    args=parser.parse_args()
+    if (ROOT/'_tools/v3_baseline.json').exists() and not args.legacy:
+        from v3_validate import main as validate_v3
+        raise SystemExit(validate_v3(args.strict))
+    raise SystemExit(main(args.strict))

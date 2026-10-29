@@ -1,0 +1,62 @@
+{
+  "reviewed": true,
+  "displayCardHeight": 180,
+  "sheets": [
+    "_sheets/v3_rounds.png",
+    "_sheets/v3_tricks.png"
+  ],
+  "observations": [
+    "Manila frame contour, navy outline weight, cream text-safe area and palette match existing sabotage cards.",
+    "Bonus envelope, five cream plus one red envelope, empty folder, inserted complaint slip and promotion tie read at 180px.",
+    "Shared Password depicts all six colored bean identities and six deterministic digits; server keypad reads at 180px. Crossed fingers are legible in full-size card art but remain a subtle detail at thumbnail size.",
+    "All three tricks are distinct at 180px: coffee over blank keyboard, clipped headphones and cassette/eraser.",
+    "No ornamental side stripes, neon, sparkles or model-generated letters. Original frame decorative dash omitted.",
+    "Coffee scene intentionally crops the mischievous bean at the illustration edge to keep the spill dominant."
+  ],
+  "files": [
+    {
+      "path": "rounds/round_card_back.png",
+      "sha256": "056507a05444b91207b1e46e11d12928641b49d1c00df90a285c50b220bf8188"
+    },
+    {
+      "path": "rounds/round_farkli_eposta.png",
+      "sha256": "1a9695286e0dc5f9d108ef2052d7ba44bff6fb3dd98519602510a64646a06d0f"
+    },
+    {
+      "path": "rounds/round_ihbar_kutusu.png",
+      "sha256": "f18a081fd62872613b2de1998eef4cfb3613e85252f9d516b8e0277bd3847095"
+    },
+    {
+      "path": "rounds/round_kayip_rapor.png",
+      "sha256": "b9a7824a197ab13fbfb2d3bb47205888f374e07d36644f03824eb45bc5916b6b"
+    },
+    {
+      "path": "rounds/round_ortak_sifre.png",
+      "sha256": "177c0b0f08b62a186e7932880d90edbd0ab378d3d2c21a57db9c532a3e6eef40"
+    },
+    {
+      "path": "rounds/round_prim_havuzu.png",
+      "sha256": "c2336c3747b3514c22a4dc5ae0421b2ded3f9ea0e89d19fd7a9578035d99ef95"
+    },
+    {
+      "path": "rounds/round_terfi_listesi.png",
+      "sha256": "4f365ca486b828f6442265cb527e5fd8f7e85e44752ca448604e55b060f507a3"
+    },
+    {
+      "path": "tricks/trick_coffee_spill.png",
+      "sha256": "7681b66efc3d7574bb7c404e939f51b7622440c6fbba418c6dcc9f93feae20f3"
+    },
+    {
+      "path": "tricks/trick_erase_tape.png",
+      "sha256": "f467dae970d6fdcef37d0e8f3eb584e0d9974e7f424e96d023b0ddc9cfc6da14"
+    },
+    {
+      "path": "tricks/trick_wiretap.png",
+      "sha256": "5efbef420edf64e5b2bca7f1344d23de5a9a009b64654132647004d834fc274d"
+    }
+  ],
+  "weaknesses": [
+    "Crossed fingers in the six-bean Shared Password scene are a secondary detail at 180px."
+  ],
+  "missing": []
+}

@@ -1,0 +1,105 @@
+[
+  {
+    "id": "tape_player",
+    "path": "Art/UI/meeting_v3/tape_player.png",
+    "w": 1024,
+    "h": 512,
+    "category": "meeting_v3",
+    "nineSlice": null,
+    "screenRect": null,
+    "hasText": false,
+    "description": "Text-free cassette deck body with two transparent reel apertures; separate reels overlay at documented centers."
+  },
+  {
+    "id": "tape_reel",
+    "path": "Art/UI/meeting_v3/tape_reel.png",
+    "w": 256,
+    "h": 256,
+    "category": "meeting_v3",
+    "nineSlice": null,
+    "screenRect": null,
+    "hasText": false,
+    "description": "One rotationally centered cassette reel. Pivot [128,128]; use twice over deck."
+  },
+  {
+    "id": "waveform_bar",
+    "path": "Art/UI/meeting_v3/waveform_bar.png",
+    "w": 384,
+    "h": 96,
+    "category": "meeting_v3",
+    "nineSlice": [
+      30,
+      30,
+      30,
+      30
+    ],
+    "screenRect": null,
+    "hasText": false,
+    "description": "Quiet waveform tray. Draw animated waveform inside the green inset."
+  },
+  {
+    "id": "spotlight",
+    "path": "Art/UI/meeting_v3/spotlight.png",
+    "w": 1024,
+    "h": 1024,
+    "category": "meeting_v3",
+    "nineSlice": null,
+    "screenRect": null,
+    "hasText": false,
+    "description": "Transparent warm soft light cone for final defense; alpha maximum below 0.33."
+  },
+  {
+    "id": "meeting_v3_warning_letter",
+    "path": "Art/UI/meeting_v3/warning_letter.png",
+    "w": 1200,
+    "h": 1600,
+    "category": "meeting_v3",
+    "nineSlice": null,
+    "screenRect": null,
+    "hasText": false,
+    "description": "Text-free warning stationery; existing termination letter composition with muted red letterhead tint."
+  },
+  {
+    "id": "meeting_v3_nameplate",
+    "path": "Art/UI/meeting_v3/nameplate.png",
+    "w": 512,
+    "h": 160,
+    "category": "meeting_v3",
+    "nineSlice": [
+      60,
+      32,
+      60,
+      32
+    ],
+    "screenRect": null,
+    "hasText": false,
+    "description": "Blank folded table name card. Preserve the folded side legs with nine-slice borders."
+  },
+  {
+    "id": "vote_token",
+    "path": "Art/UI/meeting_v3/vote_token.png",
+    "w": 256,
+    "h": 256,
+    "category": "meeting_v3",
+    "nineSlice": null,
+    "screenRect": null,
+    "hasText": false,
+    "description": "Ballot chip with a paper slip and hand-inked check."
+  },
+  {
+    "id": "dossier_tab",
+    "path": "Art/UI/meeting_v3/dossier_tab.png",
+    "w": 384,
+    "h": 144,
+    "category": "meeting_v3",
+    "nineSlice": [
+      42,
+      42,
+      42,
+      42
+    ],
+    "screenRect": null,
+    "hasText": false,
+    "description": "Blank manila dossier tab with a paper write-in inset."
+  }
+]

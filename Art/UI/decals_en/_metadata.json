@@ -1,0 +1,112 @@
+[
+  {
+    "id": "en_poster_teamwork",
+    "path": "Art/UI/decals_en/poster_teamwork.png",
+    "w": 360,
+    "h": 510,
+    "category": "decals_en",
+    "nineSlice": null,
+    "screenRect": null,
+    "hasText": true,
+    "description": "TEAM SPIRIT. Original wall poster artwork and pixel size preserved; deterministic English lettering replaces only the label."
+  },
+  {
+    "id": "en_poster_motivation",
+    "path": "Art/UI/decals_en/poster_motivation.png",
+    "w": 360,
+    "h": 510,
+    "category": "decals_en",
+    "nineSlice": null,
+    "screenRect": null,
+    "hasText": true,
+    "description": "SUCCESS = OVERTIME. Original wall poster artwork and pixel size preserved; deterministic English lettering replaces only the label."
+  },
+  {
+    "id": "en_poster_coffee",
+    "path": "Art/UI/decals_en/poster_coffee.png",
+    "w": 360,
+    "h": 510,
+    "category": "decals_en",
+    "nineSlice": null,
+    "screenRect": null,
+    "hasText": true,
+    "description": "COFFEE RULES. Original wall poster artwork and pixel size preserved; deterministic English lettering replaces only the label."
+  },
+  {
+    "id": "en_poster_mission",
+    "path": "Art/UI/decals_en/poster_mission.png",
+    "w": 504,
+    "h": 364,
+    "category": "decals_en",
+    "nineSlice": null,
+    "screenRect": null,
+    "hasText": true,
+    "description": "OUR VISION. Original wall poster artwork and pixel size preserved; deterministic English lettering replaces only the label."
+  },
+  {
+    "id": "en_poster_relax",
+    "path": "Art/UI/decals_en/poster_relax.png",
+    "w": 504,
+    "h": 360,
+    "category": "decals_en",
+    "nineSlice": null,
+    "screenRect": null,
+    "hasText": true,
+    "description": "BREAK. Original wall poster artwork and pixel size preserved; deterministic English lettering replaces only the label."
+  },
+  {
+    "id": "en_poster_welcome",
+    "path": "Art/UI/decals_en/poster_welcome.png",
+    "w": 504,
+    "h": 360,
+    "category": "decals_en",
+    "nineSlice": null,
+    "screenRect": null,
+    "hasText": true,
+    "description": "WELCOME. Original wall poster artwork and pixel size preserved; deterministic English lettering replaces only the label."
+  },
+  {
+    "id": "en_poster_fridge_rules",
+    "path": "Art/UI/decals_en/poster_fridge_rules.png",
+    "w": 384,
+    "h": 504,
+    "category": "decals_en",
+    "nineSlice": null,
+    "screenRect": null,
+    "hasText": true,
+    "description": "WHO ATE MY YOGURT?. Original wall poster artwork and pixel size preserved; deterministic English lettering replaces only the label."
+  },
+  {
+    "id": "en_logo_company",
+    "path": "Art/UI/decals_en/logo_company.png",
+    "w": 768,
+    "h": 384,
+    "category": "decals_en",
+    "nineSlice": null,
+    "screenRect": null,
+    "hasText": true,
+    "description": "KOVA HOLDINGS. Original wall poster artwork and pixel size preserved; deterministic English lettering replaces only the label."
+  },
+  {
+    "id": "en_poster_safety",
+    "path": "Art/UI/decals_en/poster_safety.png",
+    "w": 360,
+    "h": 510,
+    "category": "decals_en",
+    "nineSlice": null,
+    "screenRect": null,
+    "hasText": true,
+    "description": "CAUTION. Original wall poster artwork and pixel size preserved; deterministic English lettering replaces only the label."
+  },
+  {
+    "id": "en_poster_kpi",
+    "path": "Art/UI/decals_en/poster_kpi.png",
+    "w": 512,
+    "h": 384,
+    "category": "decals_en",
+    "nineSlice": null,
+    "screenRect": null,
+    "hasText": true,
+    "description": "KPI. Original wall poster artwork and pixel size preserved; deterministic English lettering replaces only the label."
+  }
+]

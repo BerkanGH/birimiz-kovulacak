@@ -1,0 +1,35 @@
+[
+  {
+    "id": "trick_coffee_spill",
+    "path": "Art/UI/tricks/trick_coffee_spill.png",
+    "w": 512,
+    "h": 716,
+    "category": "tricks",
+    "nineSlice": null,
+    "screenRect": null,
+    "hasText": false,
+    "description": "Coffee Spill: a tipping green mug pours coffee over a blank-key keyboard. Rounded manila frame matches source kit; runtime title/body safe area [52,552,408,104]."
+  },
+  {
+    "id": "trick_wiretap",
+    "path": "Art/UI/tricks/trick_wiretap.png",
+    "w": 512,
+    "h": 716,
+    "category": "tricks",
+    "nineSlice": null,
+    "screenRect": null,
+    "hasText": false,
+    "description": "Wiretap: headphones connected by a red alligator clip to a coiled desk-phone cord. Rounded manila frame matches source kit; runtime title/body safe area [52,552,408,104]."
+  },
+  {
+    "id": "trick_erase_tape",
+    "path": "Art/UI/tricks/trick_erase_tape.png",
+    "w": 512,
+    "h": 716,
+    "category": "tricks",
+    "nineSlice": null,
+    "screenRect": null,
+    "hasText": false,
+    "description": "Erase Tape: a cream-and-green eraser scrubs the blank label of a red cassette. Rounded manila frame matches source kit; runtime title/body safe area [52,552,408,104]."
+  }
+]

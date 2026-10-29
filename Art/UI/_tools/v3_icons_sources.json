@@ -1,0 +1,641 @@
+[
+  {
+    "id": "share",
+    "source": "C:\\Users\\agdem\\.codex\\generated_images\\01a18691-7fcd-7ec2-b5e5-5b206854c838\\exec-478ea257-371e-4d3a-9b2e-8f23b183c6e9.png",
+    "prompt": "Use case: illustration-story. Transparent game icon; two cream mitten hands each holding half of one manila bonus envelope with equal paper slips. Match style_sheet.png and task_coffee.png: warm stationery, rounded flat vector, navy contours, paper grain, no gradients/gloss/neon/sparkles/text, 48px readability.",
+    "archivedSource": "Art/UI/_tools/v3_raw_icons/share.png",
+    "sourceSha256": "f201ba390935442134c97094a22224c02b9011854e2480042d362dee1265e386",
+    "audit": {
+      "path": "icons_v3\\share.png",
+      "w": 256,
+      "h": 256,
+      "bytes": 42141,
+      "alphaExtrema": [
+        0,
+        255
+      ],
+      "cornerAlpha": [
+        0,
+        0,
+        0,
+        0
+      ],
+      "alphaBounds": [
+        18,
+        58,
+        238,
+        197
+      ]
+    }
+  },
+  {
+    "id": "take_all",
+    "source": "C:\\Users\\agdem\\.codex\\generated_images\\01a18691-7fcd-7ec2-b5e5-5b206854c838\\exec-d26d5a92-cd72-42f0-a2f3-4e6ac5fdf211.png",
+    "prompt": "Use case: illustration-story. Produce ONE transparent game inventory icon: One red mitten hand snatching an entire bulging manila bonus envelope to itself; two cream slips protrude; grasped possessively, strong diagonal gesture. Locked style match to references: warm office stationery, rounded flat vector, medium dark navy outline, muted manila/cream/office green/red palette, subtle fine paper grain, minimal single flat shadow. Strong readable silhouette at 48px, fill 216 of final 256 square pixels with clear breathing space. Real alpha background. No gloss, no gradients, no neon, no sparkles, no generic side stripes, no emoji, no text or pseudo text unless explicitly specified. Subject only, no enclosing badge or panel except a subject's physical paper.",
+    "archivedSource": "Art/UI/_tools/v3_raw_icons/take_all.png",
+    "sourceSha256": "273ba9fcd5b9f317b31d76f6c6cc39642838bb0e5b559b0d9247eb6ae4875e69",
+    "audit": {
+      "path": "icons_v3\\take_all.png",
+      "w": 256,
+      "h": 256,
+      "bytes": 57113,
+      "alphaExtrema": [
+        0,
+        255
+      ],
+      "cornerAlpha": [
+        0,
+        0,
+        0,
+        0
+      ],
+      "alphaBounds": [
+        19,
+        18,
+        237,
+        238
+      ]
+    }
+  },
+  {
+    "id": "odd_email",
+    "source": "C:\\Users\\agdem\\.codex\\generated_images\\01a18691-7fcd-7ec2-b5e5-5b206854c838\\exec-ad038df1-5363-40e0-8f09-b69c8421866e.png",
+    "prompt": "Use case: illustration-story. Produce ONE transparent game inventory icon: Six small identical sealed envelopes arranged in two rows of three: five cream envelopes with navy flap seams, exactly one muted red envelope. Bold repeated silhouette. Locked style match to references: warm office stationery, rounded flat vector, medium dark navy outline, muted manila/cream/office green/red palette, subtle fine paper grain, minimal single flat shadow. Strong readable silhouette at 48px, fill 216 of final 256 square pixels with clear breathing space. Real alpha background. No gloss, no gradients, no neon, no sparkles, no generic side stripes, no emoji, no text or pseudo text unless explicitly specified. Subject only, no enclosing badge or panel except a subject's physical paper.",
+    "archivedSource": "Art/UI/_tools/v3_raw_icons/odd_email.png",
+    "sourceSha256": "5a13d932eb030a2d197388212bfa3a8ef5b55f0d072cab3b0421259670ea9807",
+    "audit": {
+      "path": "icons_v3\\odd_email.png",
+      "w": 256,
+      "h": 256,
+      "bytes": 47248,
+      "alphaExtrema": [
+        0,
+        255
+      ],
+      "cornerAlpha": [
+        0,
+        0,
+        0,
+        0
+      ],
+      "alphaBounds": [
+        18,
+        69,
+        238,
+        187
+      ]
+    }
+  },
+  {
+    "id": "lost_report",
+    "source": "C:\\Users\\agdem\\.codex\\generated_images\\01a18691-7fcd-7ec2-b5e5-5b206854c838\\exec-d552b5a7-fd94-4191-b752-7994ce4d71e6.png",
+    "prompt": "Use case: illustration-story. Produce ONE transparent game inventory icon: Open empty manila file folder, turned toward viewer so empty interior reads. A single loose paper corner escaping behind the folder; no lettering or question mark. Locked style match to references: warm office stationery, rounded flat vector, medium dark navy outline, muted manila/cream/office green/red palette, subtle fine paper grain, minimal single flat shadow. Strong readable silhouette at 48px, fill 216 of final 256 square pixels with clear breathing space. Real alpha background. No gloss, no gradients, no neon, no sparkles, no generic side stripes, no emoji, no text or pseudo text unless explicitly specified. Subject only, no enclosing badge or panel except a subject's physical paper.",
+    "archivedSource": "Art/UI/_tools/v3_raw_icons/lost_report.png",
+    "sourceSha256": "fd6c5c347a86c3e025e761b9d47eb8a6c4d9d8bd082984d0eb70f95293e5e704",
+    "audit": {
+      "path": "icons_v3\\lost_report.png",
+      "w": 256,
+      "h": 256,
+      "bytes": 47737,
+      "alphaExtrema": [
+        0,
+        255
+      ],
+      "cornerAlpha": [
+        0,
+        0,
+        0,
+        0
+      ],
+      "alphaBounds": [
+        18,
+        43,
+        238,
+        212
+      ]
+    }
+  },
+  {
+    "id": "complaint",
+    "source": "C:\\Users\\agdem\\.codex\\generated_images\\01a18691-7fcd-7ec2-b5e5-5b206854c838\\exec-e127a667-08b3-4218-a36f-83f00412164b.png",
+    "prompt": "Use case: illustration-story. Produce ONE transparent game inventory icon: Small office-green anonymous complaint box with a wide black slot; a cream folded paper halfway entering the slot. Tiny inset lock below. Locked style match to references: warm office stationery, rounded flat vector, medium dark navy outline, muted manila/cream/office green/red palette, subtle fine paper grain, minimal single flat shadow. Strong readable silhouette at 48px, fill 216 of final 256 square pixels with clear breathing space. Real alpha background. No gloss, no gradients, no neon, no sparkles, no generic side stripes, no emoji, no text or pseudo text unless explicitly specified. Subject only, no enclosing badge or panel except a subject's physical paper.",
+    "archivedSource": "Art/UI/_tools/v3_raw_icons/complaint.png",
+    "sourceSha256": "65540691233044f59a47cea0140a8e8e4e64670dea4d469993eb127867f3b7db",
+    "audit": {
+      "path": "icons_v3\\complaint.png",
+      "w": 256,
+      "h": 256,
+      "bytes": 55416,
+      "alphaExtrema": [
+        0,
+        255
+      ],
+      "cornerAlpha": [
+        0,
+        0,
+        0,
+        0
+      ],
+      "alphaBounds": [
+        31,
+        18,
+        225,
+        238
+      ]
+    }
+  },
+  {
+    "id": "promotion",
+    "source": "C:\\Users\\agdem\\.codex\\generated_images\\01a18691-7fcd-7ec2-b5e5-5b206854c838\\exec-3f17e924-7c0a-44e0-aced-0648b4b17f42.png",
+    "prompt": "Use case: illustration-story. Produce ONE transparent game inventory icon: Manila office step podium with three steps rising toward a navy necktie hanging at the highest step. No trophy, stars, numbers. Locked style match to references: warm office stationery, rounded flat vector, medium dark navy outline, muted manila/cream/office green/red palette, subtle fine paper grain, minimal single flat shadow. Strong readable silhouette at 48px, fill 216 of final 256 square pixels with clear breathing space. Real alpha background. No gloss, no gradients, no neon, no sparkles, no generic side stripes, no emoji, no text or pseudo text unless explicitly specified. Subject only, no enclosing badge or panel except a subject's physical paper.",
+    "archivedSource": "Art/UI/_tools/v3_raw_icons/promotion.png",
+    "sourceSha256": "0fe389352a11dbb25e78e09e02610c3cd981e33b6bf48bb48dcaa59ac9e1cd7f",
+    "audit": {
+      "path": "icons_v3\\promotion.png",
+      "w": 256,
+      "h": 256,
+      "bytes": 47213,
+      "alphaExtrema": [
+        0,
+        255
+      ],
+      "cornerAlpha": [
+        0,
+        0,
+        0,
+        0
+      ],
+      "alphaBounds": [
+        18,
+        37,
+        238,
+        219
+      ]
+    }
+  },
+  {
+    "id": "keypad",
+    "source": "C:\\Users\\agdem\\.codex\\generated_images\\01a18691-7fcd-7ec2-b5e5-5b206854c838\\exec-bbc8d352-61d0-4e21-8c1d-24e82235530b.png",
+    "prompt": "Use case: illustration-story. Produce ONE transparent game inventory icon: Chunky server access keypad with a dark office-green blank LCD and nine cream square blank buttons, tiny red indicator dot. No numbers. Locked style match to references: warm office stationery, rounded flat vector, medium dark navy outline, muted manila/cream/office green/red palette, subtle fine paper grain, minimal single flat shadow. Strong readable silhouette at 48px, fill 216 of final 256 square pixels with clear breathing space. Real alpha background. No gloss, no gradients, no neon, no sparkles, no generic side stripes, no emoji, no text or pseudo text unless explicitly specified. Subject only, no enclosing badge or panel except a subject's physical paper.",
+    "archivedSource": "Art/UI/_tools/v3_raw_icons/keypad.png",
+    "sourceSha256": "6a9b5b5bbf9636b8115072a448193cfdc48c6e0befa4236879b1fd7bbc96b50c",
+    "audit": {
+      "path": "icons_v3\\keypad.png",
+      "w": 256,
+      "h": 256,
+      "bytes": 63072,
+      "alphaExtrema": [
+        0,
+        255
+      ],
+      "cornerAlpha": [
+        0,
+        0,
+        0,
+        0
+      ],
+      "alphaBounds": [
+        32,
+        18,
+        223,
+        238
+      ]
+    }
+  },
+  {
+    "id": "blame",
+    "source": "C:\\Users\\agdem\\.codex\\generated_images\\01a18691-7fcd-7ec2-b5e5-5b206854c838\\exec-04034c48-ff97-4a1a-a10e-4a404907e0d0.png",
+    "prompt": "Use case: illustration-story. Produce ONE transparent game inventory icon: An irregular dense black-navy rubber ink smudge with a bold diagonal brush strike through it, like a bureaucratic accusation mark. Pure ink mark, no object, no face, no label. Locked style match to references: warm office stationery, rounded flat vector, medium dark navy outline, muted manila/cream/office green/red palette, subtle fine paper grain, minimal single flat shadow. Strong readable silhouette at 48px, fill 216 of final 256 square pixels with clear breathing space. Real alpha background. No gloss, no gradients, no neon, no sparkles, no generic side stripes, no emoji, no text or pseudo text. Subject only, no enclosing badge or panel except a subject's physical paper.",
+    "archivedSource": "Art/UI/_tools/v3_raw_icons/blame.png",
+    "sourceSha256": "dfd09bcdf173a9f4c894a770d6ecbb1a6781c87409080e6e40aa65179c650c9d",
+    "audit": {
+      "path": "icons_v3\\blame.png",
+      "w": 256,
+      "h": 256,
+      "bytes": 49425,
+      "alphaExtrema": [
+        0,
+        255
+      ],
+      "cornerAlpha": [
+        0,
+        0,
+        0,
+        0
+      ],
+      "alphaBounds": [
+        18,
+        28,
+        238,
+        227
+      ]
+    }
+  },
+  {
+    "id": "warning_letter",
+    "source": "C:\\Users\\agdem\\.codex\\generated_images\\01a18691-7fcd-7ec2-b5e5-5b206854c838\\exec-93c51e96-9a59-410b-8829-a22b4168736b.png",
+    "prompt": "Use case: illustration-story. Produce ONE transparent game inventory icon: Cream official letter with folded corner, muted red letterhead square seal and a red circular warning seal. No letters or pseudo writing; warning shown by small navy exclamation pictogram only. Locked style match to references: warm office stationery, rounded flat vector, medium dark navy outline, muted manila/cream/office green/red palette, subtle fine paper grain, minimal single flat shadow. Strong readable silhouette at 48px, fill 216 of final 256 square pixels with clear breathing space. Real alpha background. No gloss, no gradients, no neon, no sparkles, no generic side stripes, no emoji, no text or pseudo text. Subject only, no enclosing badge or panel except a subject's physical paper.",
+    "archivedSource": "Art/UI/_tools/v3_raw_icons/warning_letter.png",
+    "sourceSha256": "7a81c927037c065dc8116e68bae1354f0d005782107e14bd7ab49b67e3d1f18b",
+    "audit": {
+      "path": "icons_v3\\warning_letter.png",
+      "w": 256,
+      "h": 256,
+      "bytes": 53587,
+      "alphaExtrema": [
+        0,
+        255
+      ],
+      "cornerAlpha": [
+        0,
+        0,
+        0,
+        0
+      ],
+      "alphaBounds": [
+        39,
+        18,
+        217,
+        238
+      ]
+    }
+  },
+  {
+    "id": "agenda_target",
+    "source": "C:\\Users\\agdem\\.codex\\generated_images\\01a18691-7fcd-7ec2-b5e5-5b206854c838\\exec-fec2f1d5-752a-4783-a14e-670ab22a107f.png",
+    "prompt": "Use case: illustration-story. Produce ONE transparent game inventory icon: Cream appointment card with a green bean silhouette at its center; overlaid thin bold red targeting crosshair, open clear silhouette, no gun or weapon. Locked style match to references: warm office stationery, rounded flat vector, medium dark navy outline, muted manila/cream/office green/red palette, subtle fine paper grain, minimal single flat shadow. Strong readable silhouette at 48px, fill 216 of final 256 square pixels with clear breathing space. Real alpha background. No gloss, no gradients, no neon, no sparkles, no generic side stripes, no emoji, no text or pseudo text. Subject only, no enclosing badge or panel except a subject's physical paper.",
+    "archivedSource": "Art/UI/_tools/v3_raw_icons/agenda_target.png",
+    "sourceSha256": "fe82f5ff7c7c5442feb625b617940a4fa6e17de8da4756a0e4f9ef2c70c30e78",
+    "audit": {
+      "path": "icons_v3\\agenda_target.png",
+      "w": 256,
+      "h": 256,
+      "bytes": 62160,
+      "alphaExtrema": [
+        0,
+        255
+      ],
+      "cornerAlpha": [
+        0,
+        0,
+        0,
+        0
+      ],
+      "alphaBounds": [
+        38,
+        18,
+        217,
+        238
+      ]
+    }
+  },
+  {
+    "id": "recording",
+    "source": "C:\\Users\\agdem\\.codex\\generated_images\\01a18691-7fcd-7ec2-b5e5-5b206854c838\\exec-b69bbb59-21de-4586-8b02-992a7e79230b.png",
+    "prompt": "Use case: illustration-story. Produce ONE transparent game inventory icon: Office cassette tape with a prominent red recording dot in top-right, cream label, two clear navy reels and black tape window. No letters. Locked style match to references: warm office stationery, rounded flat vector, medium dark navy outline, muted manila/cream/office green/red palette, subtle fine paper grain, minimal single flat shadow. Strong readable silhouette at 48px, fill 216 of final 256 square pixels with clear breathing space. Real alpha background. No gloss, no gradients, no neon, no sparkles, no generic side stripes, no emoji, no text or pseudo text. Subject only, no enclosing badge or panel except a subject's physical paper.",
+    "archivedSource": "Art/UI/_tools/v3_raw_icons/recording.png",
+    "sourceSha256": "6cc39818397f74752353b8237458257d9a4ce4bd39188f32fb8b323201578bd2",
+    "audit": {
+      "path": "icons_v3\\recording.png",
+      "w": 256,
+      "h": 256,
+      "bytes": 58191,
+      "alphaExtrema": [
+        0,
+        255
+      ],
+      "cornerAlpha": [
+        0,
+        0,
+        0,
+        0
+      ],
+      "alphaBounds": [
+        18,
+        44,
+        238,
+        211
+      ]
+    }
+  },
+  {
+    "id": "wiretap",
+    "source": "C:\\Users\\agdem\\.codex\\generated_images\\01a18691-7fcd-7ec2-b5e5-5b206854c838\\exec-ef2d3f66-0fb4-49ff-8d85-fa77cb3d032c.png",
+    "prompt": "Use case: illustration-story. Produce ONE transparent game inventory icon: Navy over-ear office headphones physically clipped by one red alligator clip to a coiled desk-phone cord. Simple large headphones and clear cord. Locked style match to references: warm office stationery, rounded flat vector, medium dark navy outline, muted manila/cream/office green/red palette, subtle fine paper grain, minimal single flat shadow. Strong readable silhouette at 48px, fill 216 of final 256 square pixels with clear breathing space. Real alpha background. No gloss, no gradients, no neon, no sparkles, no generic side stripes, no emoji, no text or pseudo text. Subject only, no enclosing badge or panel except a subject's physical paper.",
+    "archivedSource": "Art/UI/_tools/v3_raw_icons/wiretap.png",
+    "sourceSha256": "bd9580b70e1320612c56e2e73e41cecbdc28dabaab9f1571475a452233aee13c",
+    "audit": {
+      "path": "icons_v3\\wiretap.png",
+      "w": 256,
+      "h": 256,
+      "bytes": 58460,
+      "alphaExtrema": [
+        0,
+        255
+      ],
+      "cornerAlpha": [
+        0,
+        0,
+        0,
+        0
+      ],
+      "alphaBounds": [
+        18,
+        33,
+        238,
+        223
+      ]
+    }
+  },
+  {
+    "id": "erase_tape",
+    "source": "C:\\Users\\agdem\\.codex\\generated_images\\01a18691-7fcd-7ec2-b5e5-5b206854c838\\exec-9e871f9b-c760-478c-baae-dcce1f5805a1.png",
+    "prompt": "Use case: illustration-story. Produce ONE transparent game inventory icon: Cream cassette with two navy reels and a chunky red-and-cream rectangular eraser rubbing across its blank label; three tiny eraser crumbs below. Locked style match to references: warm office stationery, rounded flat vector, medium dark navy outline, muted manila/cream/office green/red palette, subtle fine paper grain, minimal single flat shadow. Strong readable silhouette at 48px, fill 216 of final 256 square pixels with clear breathing space. Real alpha background. No gloss, no gradients, no neon, no sparkles, no generic side stripes, no emoji, no text or pseudo text. Subject only, no enclosing badge or panel except a subject's physical paper.",
+    "archivedSource": "Art/UI/_tools/v3_raw_icons/erase_tape.png",
+    "sourceSha256": "a5f581695582c3e770c30d01e6bb39ca94abb2636509e19ae1bf8bbe17356e82",
+    "audit": {
+      "path": "icons_v3\\erase_tape.png",
+      "w": 256,
+      "h": 256,
+      "bytes": 57717,
+      "alphaExtrema": [
+        0,
+        255
+      ],
+      "cornerAlpha": [
+        0,
+        0,
+        0,
+        0
+      ],
+      "alphaBounds": [
+        18,
+        30,
+        238,
+        225
+      ]
+    }
+  },
+  {
+    "id": "task_app",
+    "source": "C:\\Users\\agdem\\.codex\\generated_images\\01a18691-7fcd-7ec2-b5e5-5b206854c838\\exec-8a8a7941-adf2-4ee5-977c-cb56b7ab6b9b.png",
+    "prompt": "Use case: illustration-story. Produce ONE transparent game inventory icon: Cream clipboard with a manila round-card sheet clipped to it and one bold office-green checkmark; task application stationery symbol. Locked style match to references: warm office stationery, rounded flat vector, medium dark navy outline, muted manila/cream/office green/red palette, subtle fine paper grain, minimal single flat shadow. Strong readable silhouette at 48px, fill 216 of final 256 square pixels with clear breathing space. Real alpha background. No gloss, no gradients, no neon, no sparkles, no generic side stripes, no emoji, no text or pseudo text. Subject only, no enclosing badge or panel except a subject's physical paper.",
+    "archivedSource": "Art/UI/_tools/v3_raw_icons/task_app.png",
+    "sourceSha256": "06264819c01d5c6a4e7daec1917ed711886b288ed3143df36da202bb9e37964c",
+    "audit": {
+      "path": "icons_v3\\task_app.png",
+      "w": 256,
+      "h": 256,
+      "bytes": 58359,
+      "alphaExtrema": [
+        0,
+        255
+      ],
+      "cornerAlpha": [
+        0,
+        0,
+        0,
+        0
+      ],
+      "alphaBounds": [
+        43,
+        18,
+        213,
+        238
+      ]
+    }
+  },
+  {
+    "id": "mail_app",
+    "source": "C:\\Users\\agdem\\.codex\\generated_images\\01a18691-7fcd-7ec2-b5e5-5b206854c838\\exec-d2e00a57-b953-4f13-8f2e-8a99273ecf61.png",
+    "prompt": "Use case: illustration-story. Produce ONE transparent game inventory icon: One fat cream envelope with navy folded flap and small green circular wax seal. Application icon cutout without square background. Locked style match to references: warm office stationery, rounded flat vector, medium dark navy outline, muted manila/cream/office green/red palette, subtle fine paper grain, minimal single flat shadow. Strong readable silhouette at 48px, fill 216 of final 256 square pixels with clear breathing space. Real alpha background. No gloss, no gradients, no neon, no sparkles, no generic side stripes, no emoji, no text or pseudo text. Subject only, no enclosing badge or panel except a subject's physical paper.",
+    "archivedSource": "Art/UI/_tools/v3_raw_icons/mail_app.png",
+    "sourceSha256": "02f774391c440fb772271e077a670204579579007458c1b7356d24dbb5c7e24d",
+    "audit": {
+      "path": "icons_v3\\mail_app.png",
+      "w": 256,
+      "h": 256,
+      "bytes": 55295,
+      "alphaExtrema": [
+        0,
+        255
+      ],
+      "cornerAlpha": [
+        0,
+        0,
+        0,
+        0
+      ],
+      "alphaBounds": [
+        18,
+        45,
+        238,
+        210
+      ]
+    }
+  },
+  {
+    "id": "record_app",
+    "source": "C:\\Users\\agdem\\.codex\\generated_images\\01a18691-7fcd-7ec2-b5e5-5b206854c838\\exec-c13cccdc-437f-4cda-93bd-0d4e6e1c0195.png",
+    "prompt": "Use case: illustration-story. Produce ONE transparent game inventory icon: Office personnel file: manila folder with small green bean silhouette card and two bold red circular marks on tab; no letters. Locked style match to references: warm office stationery, rounded flat vector, medium dark navy outline, muted manila/cream/office green/red palette, subtle fine paper grain, minimal single flat shadow. Strong readable silhouette at 48px, fill 216 of final 256 square pixels with clear breathing space. Real alpha background. No gloss, no gradients, no neon, no sparkles, no generic side stripes, no emoji, no text or pseudo text. Subject only, no enclosing badge or panel except a subject's physical paper.",
+    "archivedSource": "Art/UI/_tools/v3_raw_icons/record_app.png",
+    "sourceSha256": "3a1f1aeaf2ceb9fbaffda0bfce759a955cac0dfabf697e37dd145624331c502c",
+    "audit": {
+      "path": "icons_v3\\record_app.png",
+      "w": 256,
+      "h": 256,
+      "bytes": 64392,
+      "alphaExtrema": [
+        0,
+        255
+      ],
+      "cornerAlpha": [
+        0,
+        0,
+        0,
+        0
+      ],
+      "alphaBounds": [
+        18,
+        35,
+        238,
+        221
+      ]
+    }
+  },
+  {
+    "id": "trick_app",
+    "source": "C:\\Users\\agdem\\.codex\\generated_images\\01a18691-7fcd-7ec2-b5e5-5b206854c838\\exec-d3423be4-5afc-4501-ac7b-3cb818e84549.png",
+    "prompt": "Use case: illustration-story. Produce ONE transparent game inventory icon: Two overlapping manila trick cards with a sneaky red bean face peeking around the foremost card. No lettering. Locked style match to references: warm office stationery, rounded flat vector, medium dark navy outline, muted manila/cream/office green/red palette, subtle fine paper grain, minimal single flat shadow. Strong readable silhouette at 48px, fill 216 of final 256 square pixels with clear breathing space. Real alpha background. No gloss, no gradients, no neon, no sparkles, no generic side stripes, no emoji, no text or pseudo text. Subject only, no enclosing badge or panel except a subject's physical paper.",
+    "archivedSource": "Art/UI/_tools/v3_raw_icons/trick_app.png",
+    "sourceSha256": "7a52cad234800a209d4da4c55560d8376b3c4dc8d6a6fb814a1e28760f7daa1d",
+    "audit": {
+      "path": "icons_v3\\trick_app.png",
+      "w": 256,
+      "h": 256,
+      "bytes": 61600,
+      "alphaExtrema": [
+        0,
+        255
+      ],
+      "cornerAlpha": [
+        0,
+        0,
+        0,
+        0
+      ],
+      "alphaBounds": [
+        18,
+        18,
+        237,
+        238
+      ]
+    }
+  },
+  {
+    "id": "agenda_app",
+    "source": "C:\\Users\\agdem\\.codex\\generated_images\\01a18691-7fcd-7ec2-b5e5-5b206854c838\\exec-f7be304c-bc42-4d72-a8b9-782165432e88.png",
+    "prompt": "Use case: illustration-story. Produce ONE transparent game inventory icon: Cream pocket appointment diary with green spine, manila paper tab at top and a red bullseye on cover. No letters/numbers. Locked style match to references: warm office stationery, rounded flat vector, medium dark navy outline, muted manila/cream/office green/red palette, subtle fine paper grain, minimal single flat shadow. Strong readable silhouette at 48px, fill 216 of final 256 square pixels with clear breathing space. Real alpha background. No gloss, no gradients, no neon, no sparkles, no generic side stripes, no emoji, no text or pseudo text. Subject only, no enclosing badge or panel except a subject's physical paper.",
+    "archivedSource": "Art/UI/_tools/v3_raw_icons/agenda_app.png",
+    "sourceSha256": "f938b5f42397cbed25ac9f882f8d482b44bbd6ba068f2506a769e74972cd2ae7",
+    "audit": {
+      "path": "icons_v3\\agenda_app.png",
+      "w": 256,
+      "h": 256,
+      "bytes": 65357,
+      "alphaExtrema": [
+        0,
+        255
+      ],
+      "cornerAlpha": [
+        0,
+        0,
+        0,
+        0
+      ],
+      "alphaBounds": [
+        33,
+        18,
+        223,
+        238
+      ]
+    }
+  },
+  {
+    "id": "language",
+    "source": "C:\\Users\\agdem\\.codex\\generated_images\\01a18691-7fcd-7ec2-b5e5-5b206854c838\\exec-524d0e45-5b79-4cc6-8885-f35011eee597.png",
+    "prompt": "Use case: illustration-story. Produce ONE transparent game inventory icon: Two overlapping chunky cream speech bubbles with navy outlines, front slightly left and rear slightly right. Leave both speech bubble interiors completely blank for deterministic typography. No symbols, letters or flags. Locked style match to references: warm office stationery, rounded flat vector, medium dark navy outline, muted manila/cream/office green/red palette, subtle fine paper grain, minimal single flat shadow. Strong readable silhouette at 48px, fill 216 of final 256 square pixels with clear breathing space. Real alpha background. No gloss, no gradients, no neon, no sparkles, no generic side stripes, no emoji, no text or pseudo text. Subject only, no enclosing badge or panel except a subject's physical paper.",
+    "archivedSource": "Art/UI/_tools/v3_raw_icons/language.png",
+    "sourceSha256": "00ac87a6bf08426be78acc54aa3d704ed122987b8233356940186fd8d6297990",
+    "audit": {
+      "path": "icons_v3\\language.png",
+      "w": 256,
+      "h": 256,
+      "bytes": 49823,
+      "alphaExtrema": [
+        0,
+        255
+      ],
+      "cornerAlpha": [
+        0,
+        0,
+        0,
+        0
+      ],
+      "alphaBounds": [
+        15,
+        40,
+        241,
+        216
+      ]
+    }
+  },
+  {
+    "id": "hint_arrow",
+    "source": "C:\\Users\\agdem\\.codex\\generated_images\\01a18691-7fcd-7ec2-b5e5-5b206854c838\\exec-c4110081-2921-415a-88af-3bd1b86ddb12.png",
+    "prompt": "Use case: illustration-story. Regenerate ONE game hint_arrow icon. A HAND-DRAWN NAVY INK MARKER ARROW, ONLY a slightly irregular 12px thick curved stroke with two open diagonal strokes for arrowhead. Curves from upper-left toward lower-right. Flat single color #1F2A44 with subtle dry ink edges, like a colleague drew a helpful arrow on stationery. Transparent background, no paper. NO filled triangular arrow, NO yellow, NO manila, NO outline around a shape, NO 3D, NO shading, NO gloss or highlights. This is an ink doodle, not a plastic sign. Simple strong silhouette readable at48; target256x256 with20px padding. Match navy ink in the reference style sheet; real alpha.",
+    "archiveName": "hint_arrow_v2",
+    "archivedSource": "Art/UI/_tools/v3_raw_icons/hint_arrow_v2.png",
+    "sourceSha256": "9631a34bec4e30769da8d1c64bc2ed706e754427f422bb8e370b55d04f0f2091",
+    "audit": {
+      "path": "icons_v3\\hint_arrow.png",
+      "w": 256,
+      "h": 256,
+      "bytes": 14759,
+      "alphaExtrema": [
+        0,
+        255
+      ],
+      "cornerAlpha": [
+        0,
+        0,
+        0,
+        0
+      ],
+      "alphaBounds": [
+        18,
+        29,
+        238,
+        226
+      ]
+    }
+  },
+  {
+    "id": "sticky_check",
+    "source": "C:\\Users\\agdem\\.codex\\generated_images\\01a18691-7fcd-7ec2-b5e5-5b206854c838\\exec-12334165-3dd3-4aad-84bf-8cbc6d0a2cbc.png",
+    "prompt": "Use case: illustration-story. Produce ONE transparent game inventory icon: Small manila square sticky note with a gently folded lower-right corner and one large green checkmark centered, no decorative stripe. Locked style match to references: warm office stationery, rounded flat vector, medium dark navy outline, muted manila/cream/office green/red palette, subtle fine paper grain, minimal single flat shadow. Strong readable silhouette at 48px, fill 216 of final 256 square pixels with clear breathing space. Real alpha background. No gloss, no gradients, no neon, no sparkles, no generic side stripes, no emoji, no text or pseudo text. Subject only, no enclosing badge or panel except a subject's physical paper.",
+    "archivedSource": "Art/UI/_tools/v3_raw_icons/sticky_check.png",
+    "sourceSha256": "6a7adbf450d3ce79332f07921730cc7dc3e7b11ba022fad1de4666a06235b7f0",
+    "audit": {
+      "path": "icons_v3\\sticky_check.png",
+      "w": 256,
+      "h": 256,
+      "bytes": 70901,
+      "alphaExtrema": [
+        0,
+        255
+      ],
+      "cornerAlpha": [
+        0,
+        0,
+        0,
+        0
+      ],
+      "alphaBounds": [
+        18,
+        19,
+        238,
+        237
+      ]
+    }
+  },
+  {
+    "id": "sticky_todo",
+    "source": "C:\\Users\\agdem\\.codex\\generated_images\\01a18691-7fcd-7ec2-b5e5-5b206854c838\\exec-2e2705af-0084-4ad4-889a-0e52de261794.png",
+    "prompt": "Use case: illustration-story. Produce ONE transparent game inventory icon: Small manila square sticky note with a gently folded lower-right corner and one large empty navy checkbox centered, no decorative stripe. Locked style match to references: warm office stationery, rounded flat vector, medium dark navy outline, muted manila/cream/office green/red palette, subtle fine paper grain, minimal single flat shadow. Strong readable silhouette at 48px, fill 216 of final 256 square pixels with clear breathing space. Real alpha background. No gloss, no gradients, no neon, no sparkles, no generic side stripes, no emoji, no text or pseudo text. Subject only, no enclosing badge or panel except a subject's physical paper.",
+    "archivedSource": "Art/UI/_tools/v3_raw_icons/sticky_todo.png",
+    "sourceSha256": "11a8d5aa9b54132914a3de1c9351d833548fb4909ae513ae2dd26cb54dfac6fd",
+    "audit": {
+      "path": "icons_v3\\sticky_todo.png",
+      "w": 256,
+      "h": 256,
+      "bytes": 64265,
+      "alphaExtrema": [
+        0,
+        255
+      ],
+      "cornerAlpha": [
+        0,
+        0,
+        0,
+        0
+      ],
+      "alphaBounds": [
+        18,
+        18,
+        238,
+        237
+      ]
+    }
+  }
+]

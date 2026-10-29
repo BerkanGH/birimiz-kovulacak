@@ -1,0 +1,19 @@
+[
+  {
+    "id": "ob_1_rooms_v2",
+    "prompt": "Edit the FIRST image only; the SECOND image is the locked character style reference. Preserve precisely the 3 by 2 rooms, every desk and phone and linking cords, one bean alone per office. Replace all six beans' small dot eyes with the BIG CREAM OVAL EYES and navy pupils of the reference beans. Keep blue tie, yellow glasses, pink bun, green headset, orange beanie, purple curls and scarf identities. Make blue body a clearer saturated medium blue like reference. Flat rounded shapes and medium navy outlines, subtle paper grain. No gloss, gradients, sparkles, random decorative stripes. No text. Preserve 16:9 composition.",
+    "paths": [
+      "C:/Users/agdem/.codex/generated_images/01a18692-aeeb-7f13-8553-315d56b91cfe/exec-74c7a570-4355-4d4b-98c6-2aa13580a410.png",
+      "C:/Users/agdem/Desktop/Projects/LeonidasStudio/SomeoneGetsFired/.worktrees/art3/Art/UI/style/style_sheet.png"
+    ],
+    "source": "C:\\Users\\agdem\\.codex\\generated_images\\01a18692-aeeb-7f13-8553-315d56b91cfe\\exec-31139153-73b9-4052-886b-9e516ea81723.png"
+  },
+  {
+    "id": "ob_6_recording_v2",
+    "prompt": "Edit this meeting illustration: keep composition, manager pressing play, cassette deck, and embarrassed blue bean unchanged. There are currently FIVE colored employee beans. Add the missing SIXTH employee, a SHORT GREEN bean with a navy headset and cream oval eyes, seated at the near edge of the table between the foreground cup/plant area and the manager, looking shocked toward the embarrassed BLUE bean. Final exact people count is SEVEN: one grey manager plus six employees blue, yellow, pink bun, green headset, orange beanie, purple curly scarf. No duplicated colours. Keep the same warm stationery flat vector navy outlines and subtle grain, no text, no gloss. Enlarge table if needed only to fit the missing green bean; maintain other artwork.",
+    "paths": [
+      "C:\\Users\\agdem\\.codex\\generated_images\\01a18692-aeeb-7f13-8553-315d56b91cfe\\exec-f73a0270-e79c-49a1-92fe-4b5c93025f3a.png"
+    ],
+    "source": "C:\\Users\\agdem\\.codex\\generated_images\\01a18692-aeeb-7f13-8553-315d56b91cfe\\exec-257e57ef-5dda-4849-9f4a-a853e8c20d84.png"
+  }
+]

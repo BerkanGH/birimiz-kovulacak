@@ -1,0 +1,106 @@
+[
+  {
+    "id": "ob_1_rooms",
+    "path": "Art/UI/onboarding/ob_1_rooms.png",
+    "w": 1280,
+    "h": 720,
+    "category": "onboarding",
+    "nineSlice": null,
+    "screenRect": null,
+    "hasText": false,
+    "description": "Six employees alone in six offices, linked only by desk-phone cords."
+  },
+  {
+    "id": "ob_2_phone",
+    "path": "Art/UI/onboarding/ob_2_phone.png",
+    "w": 1280,
+    "h": 720,
+    "category": "onboarding",
+    "nineSlice": null,
+    "screenRect": null,
+    "hasText": false,
+    "description": "Two separate offices: pink bean whispers, yellow bean listens on desk phones."
+  },
+  {
+    "id": "ob_3_rounds",
+    "path": "Art/UI/onboarding/ob_3_rounds.png",
+    "w": 1280,
+    "h": 720,
+    "category": "onboarding",
+    "nineSlice": null,
+    "screenRect": null,
+    "hasText": false,
+    "description": "Blue employee calls while reading a bonus round card on the computer."
+  },
+  {
+    "id": "ob_4_blame",
+    "path": "Art/UI/onboarding/ob_4_blame.png",
+    "w": 1280,
+    "h": 720,
+    "category": "onboarding",
+    "nineSlice": null,
+    "screenRect": null,
+    "hasText": false,
+    "description": "Black blame strikes accumulate as the manager writes the record."
+  },
+  {
+    "id": "ob_5_tricks",
+    "path": "Art/UI/onboarding/ob_5_tricks.png",
+    "w": 1280,
+    "h": 720,
+    "category": "onboarding",
+    "nineSlice": null,
+    "screenRect": null,
+    "hasText": false,
+    "description": "A sneaky employee tips coffee onto a keyboard while using the phone."
+  },
+  {
+    "id": "ob_6_recording",
+    "path": "Art/UI/onboarding/ob_6_recording.png",
+    "w": 1280,
+    "h": 720,
+    "category": "onboarding",
+    "nineSlice": null,
+    "screenRect": null,
+    "hasText": false,
+    "description": "Manager plays a cassette recording; the meeting reacts to one employee."
+  },
+  {
+    "id": "ob_7_friday",
+    "path": "Art/UI/onboarding/ob_7_friday.png",
+    "w": 1280,
+    "h": 720,
+    "category": "onboarding",
+    "nineSlice": null,
+    "screenRect": null,
+    "hasText": false,
+    "description": "One employee exits carrying a box; five coworkers remain relieved."
+  },
+  {
+    "id": "sticky_note_9slice",
+    "path": "Art/UI/onboarding/sticky_note_9slice.png",
+    "w": 384,
+    "h": 256,
+    "category": "onboarding",
+    "nineSlice": [
+      32,
+      32,
+      40,
+      40
+    ],
+    "screenRect": null,
+    "hasText": false,
+    "description": "Plain sticky-note coaching panel with a folded corner and no stripe."
+  },
+  {
+    "id": "coach_arrow",
+    "path": "Art/UI/onboarding/coach_arrow.png",
+    "w": 512,
+    "h": 256,
+    "category": "onboarding",
+    "nineSlice": null,
+    "screenRect": null,
+    "hasText": false,
+    "description": "Hand-drawn looping ink coaching arrow, points right."
+  }
+]
