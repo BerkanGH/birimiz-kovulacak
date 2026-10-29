@@ -88,6 +88,16 @@ namespace BirimizKovulacak.Voice
         /// <summary>Peak relative transit delay (ms) that drives the playout delay.</summary>
         public double PeakDelayMs => _peakRelMs;
 
+        /// <summary>True when the frame the next <see cref="Pull"/> wants (mid-spurt) is already buffered.</summary>
+        public bool NextReady
+        {
+            get
+            {
+                int i = _nextSeq & (Capacity - 1);
+                return _present[i] && _seq[i] == _nextSeq;
+            }
+        }
+
         public byte[] PayloadAt(int index) { return _payload[index]; }
         public int LengthAt(int index) { return _length[index]; }
         public VoiceFrameFlags FlagsAt(int index) { return (VoiceFrameFlags)_flags[index]; }

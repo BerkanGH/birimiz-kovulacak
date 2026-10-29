@@ -4,7 +4,8 @@ using UnityEngine;
 namespace BirimizKovulacak.Game
 {
     /// <summary>
-    /// One pooled audio output per remote speaker slot (6 total, created by <see cref="VoiceSystem"/>).
+    /// One pooled audio output per remote speaker slot (6 total, created by <see cref="VoiceSystem"/>), plus one
+    /// for the meeting tape (<see cref="VoiceTapePlayer"/>, always 2D). Plays any <see cref="IVoicePcmSource"/>.
     /// The AudioSource loops a shared constant-1 "flatline" clip; OnAudioFilterRead multiplies the decoded voice
     /// into it. That way Unity applies its 3D panning to the voice whether spatialisation happens before or after
     /// the filter. Distance attenuation and the wall muffle are applied by <see cref="VoicePlaybackChannel"/> from
@@ -23,7 +24,7 @@ namespace BirimizKovulacak.Game
         static AnimationCurve _flatCurve;
 
         AudioSource _source;
-        VoicePlaybackChannel _channel;
+        IVoicePcmSource _channel;
         readonly PcmPlayoutReader _reader = new PcmPlayoutReader();
         long _lastCallbacks;
         double _lastCallbackMs;
@@ -38,7 +39,7 @@ namespace BirimizKovulacak.Game
         public PcmPlayoutReader Reader => _reader;
         public bool IsAudible => _source != null && _source.isPlaying;
 
-        public void Init(int slot, VoicePlaybackChannel channel, int outputRate)
+        public void Init(int slot, IVoicePcmSource channel, int outputRate)
         {
             Slot = slot;
             _channel = channel;
@@ -92,8 +93,7 @@ namespace BirimizKovulacak.Game
             // Follow the speaker's head.
             if (Target != null) transform.position = Target.position + Vector3.up * HeadHeight;
 
-            VoiceFrameFlags flags = _channel.CurrentFlags;
-            bool twoD = Target == null || (flags & (VoiceFrameFlags.Call | VoiceFrameFlags.AllHear | VoiceFrameFlags.Loopback)) != 0;
+            bool twoD = Target == null || _channel.Is2D;
             float blend = twoD ? 0f : 1f;
             if (blend != _currentBlend) { _source.spatialBlend = blend; _currentBlend = blend; }
 

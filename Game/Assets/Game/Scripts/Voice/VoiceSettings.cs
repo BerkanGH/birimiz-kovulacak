@@ -17,12 +17,14 @@ namespace BirimizKovulacak.Game
     public sealed class VoiceSettings
     {
         const string KDevice = "voice.device", KMode = "voice.mode", KVad = "voice.vad", KVolume = "voice.volume",
-            KInputGain = "voice.input_gain", KSelfMute = "voice.self_mute", KDeafen = "voice.deafen", KPlayer = "voice.player.";
+            KInputGain = "voice.input_gain", KSelfMute = "voice.self_mute", KDeafen = "voice.deafen", KPlayer = "voice.player.",
+            KPhoneEq = "voice.phone_eq";
 
         string _device = "";
         VoiceInputMode _mode = VoiceInputMode.PushToTalk;
         float _vad = 0.5f, _volume = 1f, _inputGain = 1f;
         bool _selfMute, _deafen;
+        bool _phoneEq = true;
 
         public event Action Changed;
 
@@ -73,6 +75,13 @@ namespace BirimizKovulacak.Game
             set { if (_deafen == value) return; _deafen = value; Notify(); }
         }
 
+        /// <summary>Subtle telephone colour on call audio (and wiretaps). Default on; off = flat wideband voice.</summary>
+        public bool PhoneEq
+        {
+            get => _phoneEq;
+            set { if (_phoneEq == value) return; _phoneEq = value; Notify(); }
+        }
+
         /// <summary>Per-player volume 0..2 keyed by player name (1 = default).</summary>
         public float GetPlayerVolume(string playerKey)
         {
@@ -100,6 +109,7 @@ namespace BirimizKovulacak.Game
                 _inputGain = Mathf.Clamp(PlayerPrefs.GetFloat(KInputGain, 1f), 0f, 4f),
                 _selfMute = PlayerPrefs.GetInt(KSelfMute, 0) != 0,
                 _deafen = PlayerPrefs.GetInt(KDeafen, 0) != 0,
+                _phoneEq = PlayerPrefs.GetInt(KPhoneEq, 1) != 0,
             };
             return s;
         }
@@ -113,6 +123,7 @@ namespace BirimizKovulacak.Game
             PlayerPrefs.SetFloat(KInputGain, _inputGain);
             PlayerPrefs.SetInt(KSelfMute, _selfMute ? 1 : 0);
             PlayerPrefs.SetInt(KDeafen, _deafen ? 1 : 0);
+            PlayerPrefs.SetInt(KPhoneEq, _phoneEq ? 1 : 0);
             PlayerPrefs.Save();
         }
     }

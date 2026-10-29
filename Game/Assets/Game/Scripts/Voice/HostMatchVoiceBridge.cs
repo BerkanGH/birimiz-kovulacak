@@ -83,6 +83,12 @@ namespace BirimizKovulacak.Game
             return engine != null ? engine.CallPartnerOf(slot) : -1;
         }
 
+        /// <summary>v3 seam stub: v2 has no call ids, so nothing is recorded.</summary>
+        public int GetCallId(int slot) { return -1; }
+
+        /// <summary>v3 seam stub: v2 has no wiretaps.</summary>
+        public int GetTappers(int target, int[] buffer) { return 0; }
+
         public VoiceMode CurrentMode
         {
             get

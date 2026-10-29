@@ -287,9 +287,10 @@ namespace BirimizKovulacak.VoiceTests
                 pkts.Add(p);
             }
 
+            // Gain/muffle rules only: the v3 phone EQ on calls has its own test (TapeTests.Playback_PhoneEqAndTapGain).
             float[] Play(VoiceFrameFlags flags, float proximityGain, float volume, out double hfRatio)
             {
-                var ch = new VoicePlaybackChannel(0, VoiceCodec.CreateDecoder(48000)) { ProximityGain = proximityGain, VolumeScale = volume };
+                var ch = new VoicePlaybackChannel(0, VoiceCodec.CreateDecoder(48000)) { ProximityGain = proximityGain, VolumeScale = volume, PhoneEqEnabled = false };
                 var all = new float[100 * 960];
                 int got = 0;
                 for (int f = 0; f < 100; f++)
