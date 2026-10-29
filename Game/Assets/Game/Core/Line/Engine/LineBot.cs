@@ -60,6 +60,14 @@ namespace BirimizKovulacak.Core
                     return Action(view, LineVerb.Vote, VoteTarget(view));
                 return null;
             }
+            if (view.Phase == LinePhase.WeekResults && view.Result != null && view.Result.Fired == player &&
+                string.IsNullOrEmpty(view.Result.NextManagerPick))
+            {
+                int pick = -1, count = 0;
+                for (int i = 0; i < LineManagerIds.All.Length; i++)
+                    if (LineManagerIds.All[i] != view.ManagerProfileId && NextInt(++count) == 0) pick = i;
+                return pick < 0 ? null : Action(view, LineVerb.PickNextManager, a: pick);
+            }
             if (!office) return null;
 
             if (view.Phase == LinePhase.RoundPlay && view.Round != null)
@@ -78,14 +86,16 @@ namespace BirimizKovulacak.Core
                 {
                     if (current.Type == RoundType.OrtakSifre)
                     {
-                        if (!current.Solved && current.AttemptsLeft > 0 && current.DigitPosition >= 0 &&
-                            current.Digit >= 0 && current.CodeLength > 0 && current.CodeLength <= 6)
+                        if (!current.Submitted && current.DigitPosition >= 0 && current.Digit >= 0 &&
+                            current.NeighborPosition >= 0 && current.NeighborDigit >= 0 &&
+                            current.CodeLength > 0 && current.CodeLength <= 6)
                         {
                             int code = 0;
                             for (int position = 0; position < current.CodeLength; position++)
-                                code = code * 10 + (position == current.DigitPosition ? current.Digit : NextInt(10));
-                            submitAt = now + Between(15, 35) * scale;
-                            return Action(view, LineVerb.Attempt, a: code);
+                                code = code * 10 + (position == current.DigitPosition ? current.Digit :
+                                    position == current.NeighborPosition ? current.NeighborDigit :
+                                    position == 0 ? 1 + NextInt(9) : NextInt(10));
+                            return Action(view, LineVerb.SubmitChoice, a: code);
                         }
                     }
                     else if (!current.Submitted)
@@ -102,7 +112,9 @@ namespace BirimizKovulacak.Core
                                 if (target >= 0) return Action(view, LineVerb.SubmitChoice, target, guess);
                                 break;
                             case RoundType.KayipRapor:
-                                target = Pick(view, exclude: current.ClueInnocent);
+                                target = current.IsCulprit && current.NoAlibi.Count > 0
+                                    ? current.NoAlibi[NextInt(current.NoAlibi.Count)]
+                                    : Pick(view, exclude: current.ClueInnocent);
                                 if (target >= 0) return Action(view, LineVerb.SubmitChoice, target);
                                 break;
                             case RoundType.IhbarKutusu:
@@ -119,7 +131,9 @@ namespace BirimizKovulacak.Core
                 if (phone != null && phone.Status == CallStatus.Idle && mine.PhoneDeadUntil <= now && now >= callAt)
                 {
                     callAt = now + Between(12, 30) * scale;
-                    int target = Pick(view, connectedOnly: true);
+                    int target = current.Type == RoundType.PrimHavuzu && current.Partners.Count > 0
+                        ? current.Partners[NextInt(current.Partners.Count)] : -1;
+                    if (!ValidOther(view, target, true)) target = Pick(view, connectedOnly: true);
                     // A colleague's phone state is private. Busy can only be discovered by calling.
                     if (target >= 0) return Action(view, LineVerb.Call, target);
                 }
@@ -132,7 +146,8 @@ namespace BirimizKovulacak.Core
                 }
             }
             if (view.Features != null && view.Features.TricksUnlocked && wantsTrick && !mine.TrickUsedToday &&
-                mine.Trick != TrickType.None && now >= trickAt && view.Phase != LinePhase.Morning)
+                mine.TricksLeftThisWeek > 0 && mine.Trick != TrickType.None && mine.Trick != TrickType.KayitSil &&
+                now >= trickAt && view.Phase != LinePhase.Morning)
             {
                 int target = Pick(view, connectedOnly: true);
                 if (target >= 0 && (mine.Trick != TrickType.SahteEposta || config.MailTemplates > 0))
@@ -143,7 +158,7 @@ namespace BirimizKovulacak.Core
                 }
             }
             if (view.Features != null && view.Features.TipLineUnlocked && wantsTip && !mine.TipUsedToday &&
-                mine.PhoneDeadUntil <= now && now >= tipAt)
+                mine.TipsLeftThisWeek > 0 && mine.PhoneDeadUntil <= now && now >= tipAt)
             {
                 int target = Pick(view, connectedOnly: true);
                 if (target >= 0) { wantsTip = false; return Action(view, LineVerb.TipOff, target); }
@@ -158,16 +173,23 @@ namespace BirimizKovulacak.Core
 
         private int VoteTarget(LineView view)
         {
-            if (Chance(0.5) && ValidOther(view, view.Mine.AgendaTarget, false)) return view.Mine.AgendaTarget;
+            if (Chance(0.5) && ValidVote(view, view.Mine.AgendaTarget)) return view.Mine.AgendaTarget;
             int chosen = -1, highest = int.MinValue, ties = 0;
             for (int i = 0; i < view.Players.Count; i++)
             {
                 var p = view.Players[i];
-                if (p.Id == player) continue;
+                if (!ValidVote(view, p.Id)) continue;
                 if (p.Blame > highest) { highest = p.Blame; chosen = p.Id; ties = 1; }
                 else if (p.Blame == highest && NextInt(++ties) == 0) chosen = p.Id;
             }
             return chosen;
+        }
+
+        private bool ValidVote(LineView view, int id)
+        {
+            if (!ValidOther(view, id, false)) return false;
+            if (view.Phase == LinePhase.FinalVote) return view.Meeting.Shortlist.Contains(id);
+            return Find(view, id).Ihtars == 0;
         }
 
         private int Pick(LineView view, bool connectedOnly = false, int exclude = -1)

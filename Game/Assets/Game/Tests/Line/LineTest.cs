@@ -23,6 +23,9 @@ namespace BirimizKovulacak.Core.Tests.Line
         internal LineTest(LineSetup setup = null, Action<LineConfig> configure = null)
         {
             Setup = setup ?? MakeSetup(); Config = LineConfig.CreateDefault();
+            // Isolated legacy round fixtures explicitly opt into complaints at smaller tables.
+            // Generated schedules and direct factory validation tests retain the production minimum.
+            if (Setup.ForceRounds != null && Setup.ForceRounds.Contains(RoundType.IhbarKutusu)) Config.Rounds.ComplaintMinPlayers = 3;
             configure?.Invoke(Config); Now = Setup.StartTime;
             Engine = LineEngineFactory.Create(Setup, Config);
         }
@@ -58,7 +61,7 @@ namespace BirimizKovulacak.Core.Tests.Line
             var s = MakeSetup(); s.ManagerProfileId = manager;
             s.ForceRounds = new List<RoundType> { RoundType.PrimHavuzu, round, RoundType.PrimHavuzu, RoundType.IhbarKutusu, RoundType.TerfiListesi, RoundType.OrtakSifre };
             s.ForceHidden = new List<int> { 0, 0, 0, 0, 0, 0 };
-            var m = new LineTest(s, c => { c.Rounds.PrimBothTake = 10; configure?.Invoke(c); });
+            var m = new LineTest(s, c => { c.StartBlame = 0; c.Rounds.PrimBothTake = 10; configure?.Invoke(c); });
             m.Until(LinePhase.RoundPlay);
             for (int i = 0; i < 4; i++) m.Ok(i, LineVerb.SubmitChoice, a: 1);
             m.Until(LinePhase.RoundPlay, 0, 1);
