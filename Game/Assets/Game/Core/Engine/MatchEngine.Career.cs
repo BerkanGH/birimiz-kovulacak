@@ -21,12 +21,12 @@ namespace BirimizKovulacak.Core
                 outcome.Favor = players[outcome.Player].Public.Favor;
                 if (mode != GameMode.Week) continue;
                 CareerConfig c = Config.Career;
-                double earned = features.CareerMultiplier * (result.CompanySucceeded && !outcome.Fired ? c.QuotaMet : 0)
+                double earned = features.CareerMultiplier * ((result.CompanySucceeded && !outcome.Fired ? c.QuotaMet : 0)
                     + (!outcome.Fired ? c.Survived : 0)
                     + (outcome.Role == Role.Employee && outcome.Won ? c.ObjectiveWon : 0)
                     + (outcome.Role == Role.Informant && result.InformantWon ? c.InformantWon : 0)
-                    + (outcome.Fired ? c.Fired : 0)
-                    + (result.Favourites.Contains(outcome.Player) ? c.Favourite : 0);
+                    + (result.Favourites.Contains(outcome.Player) ? c.Favourite : 0))
+                    + (outcome.Fired ? c.Fired : 0);
                 outcome.CareerDelta = (int)Math.Round(earned, MidpointRounding.AwayFromZero);
                 outcome.CareerTotal = players[outcome.Player].Public.CareerPoints + outcome.CareerDelta;
                 best = Math.Max(best, outcome.CareerTotal);
@@ -56,7 +56,7 @@ namespace BirimizKovulacak.Core
             foreach (int p in playerIds)
             {
                 int count = 0;
-                foreach (CallRecordView call in calls) if (!call.Tip && call.Caller == p) count++;
+                foreach (CallRecordView call in calls) if (!call.Tip && call.Answered && call.Caller == p) count++;
                 if (p == outcome.Player) placed = count;
                 most = Math.Max(most, count);
             }

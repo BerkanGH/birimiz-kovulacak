@@ -6,6 +6,8 @@ namespace BirimizKovulacak.Core
         partial void ConfigurePlacement(int p, ItemState item, SlotDef slot, InteractionState a, ref double duration)
         {
             int owner = OwnerOfDesk(slot.DeskIndex); a.Victim = owner;
+            // Empty desks are neutral storage, including their drawers and nameplate holders.
+            if (slot.DeskIndex >= 0 && !Present(owner)) return;
             if (item.View.Kind == ItemKind.Suspicious && slot.Kind == SlotKind.Drawer) duration = Config.GetSabotage(SabotageType.PlantItem).DurationSeconds;
             if (item.View.Kind == ItemKind.Suspicious && (slot.Kind == SlotKind.Drawer || slot.Kind == SlotKind.DeskSurface) && owner != p)
             {

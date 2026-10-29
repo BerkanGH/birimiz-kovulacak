@@ -60,8 +60,8 @@ namespace BirimizKovulacak.Core
             if (managerProfile.HasFavourite)
             {
                 favourite = Present(setup.ForceFavourite) ? setup.ForceFavourite : playerIds[random.Index(playerIds.Count)];
-                players[favourite].Public.Favor = 2f;
-                Emit(EventType.FavorChanged, favourite, text: "2");
+                players[favourite].Public.Favor = 1f;
+                Emit(EventType.FavorChanged, favourite, text: "1");
             }
         }
 

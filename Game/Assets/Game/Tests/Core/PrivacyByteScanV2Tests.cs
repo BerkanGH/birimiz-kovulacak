@@ -138,6 +138,12 @@ namespace BirimizKovulacak.Core.Tests
             }
             a.Do(0, ActionVerb.SaltCoffee, EntityIds.CoffeeMachine); b.AdvanceTo(a.Now);
             a.Do(0, ActionVerb.TasteCoffee); b.Do(0, ActionVerb.TasteCoffee);
+            // Mug fill is an intentional public consequence of tasting, unlike the private result payload.
+            Assert.AreEqual(MugFill.Used, a.Item(EntityIds.Mug(0), 3).Fill);
+            Assert.AreEqual(MugFill.Full, b.Item(EntityIds.Mug(0), 3).Fill);
+            CollectionAssert.AreEqual(EventBytes(a, 3), EventBytes(b, 3));
+            // Restore equal observable state through normal actions before comparing every recipient byte.
+            a.Do(0, ActionVerb.BrewCoffee, EntityIds.CoffeeMachine); b.AdvanceTo(a.Now);
             SameRecipientBytes(a, b, 3);
             Assert.IsTrue(a.View(0).Me.Notes.Single(n => n.Kind == NoteKind.TasteResult).Salted);
             Assert.IsFalse(b.View(0).Me.Notes.Single(n => n.Kind == NoteKind.TasteResult).Salted);

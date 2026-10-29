@@ -37,8 +37,24 @@ namespace BirimizKovulacak.Core
             {
                 ManagerHome();
                 if (Phase == MatchPhase.Work2 && managerProfile != null && managerProfile.SurpriseInspection)
-                    surpriseAt = phaseStart + Math.Max(0, Math.Min(1, Config.Manager.SurpriseAtFraction)) * Math.Max(0, Config.Durations.Work2);
+                    surpriseAt = phaseStart + DrawSurpriseFraction() * Math.Max(0, Config.Durations.Work2);
             }
+        }
+
+        private double DrawSurpriseFraction()
+        {
+            ManagerConfig config = Config.Manager;
+            if (config.SurpriseMinFraction == 0 && config.SurpriseMaxFraction == 0)
+                return ClampFraction(config.SurpriseAtFraction);
+            double min = ClampFraction(config.SurpriseMinFraction);
+            // Clamp a reversed interval to its lower bound rather than sampling backwards.
+            double max = Math.Max(min, ClampFraction(config.SurpriseMaxFraction));
+            return random.Between(min, max);
+        }
+
+        private static double ClampFraction(float value)
+        {
+            return float.IsNaN(value) ? 0 : Math.Max(0, Math.Min(1, value));
         }
 
         private void BeginManagerInspection(bool surprise)

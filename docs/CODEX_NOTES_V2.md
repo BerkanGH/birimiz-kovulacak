@@ -6,7 +6,7 @@
 - Stage 2: private config copies; profile selection and overrides; observation/evidence multipliers; public favour and verdict discounts; surprise inspection scheduling/truncation; final/profile/tip-aware drawer gate.
 - Stage 3: private sabotage card hands; fake emails/screen sessions; plug and salt actions/counters; internet and power outages with restore/timeout; paused printer jobs; crouch/dark vision and witness limits; incident limits/consequences and private salt views.
 - Stage 4: private calls, lifecycle/cooldowns, host voice partners, anonymous queued tips and priority drawer visits, Informant log snapshots, presented call/taste/search evidence, result/debug call lists.
-- Stage 5: deterministic addressed mail, capped arrivals, exactly-once delivery rewards, any-four-of-five all-rounder progress, public emotes with independent cooldowns.
+- Stage 5: deterministic addressed mail, capped arrivals, exactly-once delivery rewards, all-rounder progress (v2.2 uses the card's Count, default five), public emotes with independent cooldowns.
 - Stage 6: preallocated private position log, camera/time/dark filters, meeting request allowances, footage evidence and recipient-specific remaining charges.
 - Stage 7: week/career totals and final winners, next-day/reset history, all result/debug reveals, new recap keys/titles, all new world affordances and precise visible-state blocking hints.
 - Stage 8: differential encoded-view/event privacy tests for every new secret, completion races and shared limits, malformed-request matrices, deterministic all-39-verb six-player replay, full five-day six-player week, and measured performance/allocation budgets.
@@ -17,14 +17,52 @@
 - Host debug per-player lists are in ascending present-id order; map them using `MatchEngine.Players`. Per-player configuration/test-hook lists remain indexed by lobby id.
 - Initial/periodic dirt is generated only on assigned desks. Empty desks remain valid item destinations.
 - Forced objective cards must be distinct; invalid forced duplicates throw `ArgumentException` during host construction.
-- Unknown explicit manager profiles (when profiles exist) and invalid week days reject host setup. No profiles gives base weights/empty profile id but still uses v2 drawer rules. Surprise fraction clamps to [0,1]; phase boundaries take precedence. Duplicate observation factors use the first entry.
+- Unknown explicit manager profiles (when profiles exist) and invalid week days reject host setup. No profiles gives base weights/empty profile id but still uses v2 drawer rules. Surprise fractions clamp to [0,1]; phase boundaries take precedence. Duplicate observation factors use the first entry.
 - Fake emails remain active desk effects for anti-grief limits because their evidence is irreversible. Salt starts with no victim; delivery records the deliverer as victim without changing the actor. Tasting consumes the salt immediately, leaving knowledge in the taster's private note.
 - Tips queue when completed, deduplicate desks for one extra dwell, and use apparent-nameplate attribution like other manager observations. Incoming calls do not check the callee's cooldown (only the caller's, per normative text).
 - Mail intervals restart when Work1/Work2 begins; arrivals stop during inspections. Open mail means room/carried, exactly as specified (floor/desk mail does not count). The mailroom is a system-filled slot, like the printer tray, so player placement into it is rejected.
 - Footage starts at match start, excludes the exact meeting boundary (also when intermediate phases have zero duration), and retains the latest 32,768 samples for extreme custom schedules (default full matches fit without eviction). Nonpositive sample intervals use 1 second. Empty windows are empty recordings, not all-dark recordings. An Informant speaker spends their speaker allowance first.
 - Highlight ranking sums the selected incident's linked evidence weights against the fired player, using the same current status/profile weights and witness-subject attribution as the verdict. Item placement, causal nameplate swaps, fake emails and presented witnesses retain private links; one evidence record may contribute to both a planting and its causal nameplate swap, once per incident. Observations alone do not count as discovered evidence. If no incident has positive contributing evidence, highest misconduct wins; ties use incident completion time, then incident id.
 - Highlight windows use the actual completed interaction's start minus 6 seconds and completion plus 4 seconds, clamped to the retained position-log endpoints. They contain every logged sample in that window in time/player order, including darkness and players outside camera zones. The log still records only connected players (§9); replay does not invent poses during disconnections.
-- Career multiplies only the quota-met term, following the normative formula; midpoint rounding is away from zero. Quick play preserves incoming career/day history and adds its completed manager profile. New titles take priority over old titles while retaining the two-title limit. Personal calls, excluding tips, count for scam artist. Restoring one's own outage can earn IT hero but gives no reversal credit.
+- Career multiplies the sum of quota, survival, employee objective, Informant win and favourite rewards, then adds the Fired penalty unmultiplied; midpoint rounding is away from zero. Quick play preserves incoming career/day history and adds its completed manager profile. New titles take priority over old titles while retaining the two-title limit. Only answered personal calls, excluding tips, count for scam artist. Restoring one's own outage can earn IT hero but gives no reversal credit.
+
+## v2.2 balance rules
+
+Normative decisions: `docs/BALANCE_V2.md`. Contracts and default tuning remain owned by the lead; engine config snapshots now preserve `SurpriseMinFraction`, `SurpriseMaxFraction` and `DeclineBlockSeconds`.
+
+- Delivering a report adds its performance and ReportsDelivered/AnyTask favour to `ReportOwner`. Quota points and demand consumption are unchanged. The deliverer retains `TasksCompleted`, task-type and Work2 counts, plus `TaskCompleted.Actor`: they completed the delivery task. This keeps Clean Hands, Office All-Rounder and Under Pressure intuitive while Quiet Star/Performance Rival use the owner's performance. Own-report delivery still credits both kinds of progress to one player, exactly once.
+- `PublicActivity.OnCall` is reserved for active personal calls, subject to an ongoing physical interaction's activity taking precedence. Neither ringing direction nor tips exposes OnCall; even custom timed tips have neutral public activity/target/timing. `TipSeconds <= 0` completes synchronously without a temporary public activity snapshot. Incoming ringing remains public on the callee. Call partner identities and tip targets remain private until their existing reveal points.
+- Declined, rung-out and caller-cancelled calls apply only caller cooldown; answered calls apply both-party cooldown. An unanswered callee's prior cooldown is preserved, never extended. Decline by the callee or ring-out blocks only the caller-to-callee direction for `DeclineBlockSeconds`, returning `Unavailable` (including while caller cooldown also applies). Caller cancellation does not block the pair. Zero/negative block durations disable this block. Incoming calls still ignore callee cooldown. `title.scam_artist` counts answered personal calls only.
+- From MeetingDiscussion through Results, grace expiry leaves the player disconnected and rejects their requests with `NotConnected`; they remain eligible for accusation, shortlist and firing. Verdict, Results and career/history still complete, including with everybody disconnected. Pre-meeting timeout still abandons. Phase transitions, including zero-length phases, take precedence when expiry falls exactly at the meeting boundary.
+- A Kayirmaci favourite starts with favour 1 and a public `FavorChanged` value of `"1"`. Career applies the day multiplier to all reward terms before the Fired penalty. OFFICE_ALL_ROUNDER uses its configured `Count` (default five distinct task types, including mail).
+- CutInternet/CutPower reject with `WrongPhase` from the start of FinalInspection, including its warning. An interaction reaching completion at/after that boundary is cancelled without an incident. Restoration actions remain usable; existing outages can still expire normally. Affordance blocking hints match the phase restriction.
+- A surprise start is drawn once, using the match's deterministic random stream on entering Work2. Clamp each endpoint to [0,1], then raise max to min if reversed (a collapsed interval starts at min). NaN clamps to 0. Only an original pair of zero endpoints uses the clamped legacy `SurpriseAtFraction`. The inspection still ends on route completion, its configured duration or the Work2 boundary; a draw at 1 yields to FinalInspection.
+- Every item placement on an unassigned desk is neutral, including suspicious items, clutter, reports and nameplates in drawers/surfaces/holders. It does not create a sabotage incident or apply sabotage cooldown/card limits; affordances show the ordinary placement duration and no sabotage flag. Taking already discovered evidence can still have its existing pickup consequences.
+- Tasting unsalted coffee keeps the mug Full and deliverable; tasting salted coffee consumes the salt and makes it Used. The note/event remains private. The resulting fill is observable world state, so observers can infer the difference when they see the mug; encoded privacy tests compare otherwise equal public state.
+
+Adapter/UI notes: use authoritative performance/favour snapshots for report credit instead of inferring reward ownership from `TaskCompleted.Actor`. Show the returned `Unavailable` for a blocked phone pair; the pair deadline remains private engine state and has no new DTO. Do not remove disconnected meeting players from candidate/result views or abort the match on their expired deadline. Read the objective's `Required`, show the revised career totals, and use the final-inspection outage affordance hints. Phone contacts should still be filtered by line of sight in the adapter as called out by the design review. The host continues to call `ApplyHeadcount` once for its selected roster before constructing the engine. No wire/contract changes are required.
+
+Validation: **464 passed, 0 failed, 0 skipped**, using `dotnet test --no-restore --logger "console;verbosity=normal" --logger "trx;LogFileName=v22.trx" --results-directory ../TestResults` in `Tools/CoreTests/Tests`. Core and tests compile without compiler warnings. There are 84 new cases: 31 real-default inspection/route cases, 22 reward/placement/taste cases, 16 meeting/outage boundary cases, nine seeded surprise cases and six call cases. Two obsolete outage-at-meeting cases were replaced by final-inspection boundary coverage (net +82 from v2.1's 382).
+
+The six-player default route covers every assigned desk during raid/final for all four profiles, both without a tip and with each possible single tipped desk. Three seeds check five-player surprise coverage or its configured deadline. Fixtures that depend on fixed desk ownership explicitly disable ShuffleDesks; timed tips and v1 four-task scripts specify their own old timing/card requirements. Default smoke tests now assert the actual 515-second schedule and 40-second inspections. Determinism, encoded privacy, all-39-verb replay, five-day history, snapshot/codec field coverage and performance assertions remain enabled.
+
+Measured v2.2 Debug harness, warm-up then 4,000 iterations (existing budgets unchanged):
+
+| Six-player state | Tick | Six-recipient BuildView batch | Stable Tick allocation |
+|---|---:|---:|---:|
+| Work1 | 0.00098 ms | 0.06707 ms | 0 B |
+| Active inspection | 0.00294 ms | 0.06431 ms | 0 B |
+| Populated Results including highlight | 0.00059 ms | 0.16595 ms | 0 B |
+
+`git diff --check` passes. Only owned engine/tests/notes paths changed; no contracts or `.meta` files changed. Unity/network/UI/voice integration was not run in this core worktree.
+
+Commit attempt: `git add` was denied creating `.git/worktrees/codex-engine-v2/index.lock`. Changes remain uncommitted as authorized; no permission changes or history rewrites were attempted. Suggested commit message:
+
+```text
+Implement v2.2 balance rules and migrate core tests to new defaults
+
+Co-Authored-By: Codex <noreply@openai.com>
+```
 
 ## Known gaps
 

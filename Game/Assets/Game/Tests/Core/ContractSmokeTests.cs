@@ -8,7 +8,10 @@ namespace BirimizKovulacak.Core.Tests
         public void DefaultConfigTimelineIncludesV2Discussion()
         {
             var config = MatchConfig.CreateDefault();
-            Assert.AreEqual(495f, config.Durations.Total(), 0.001f);
+            Assert.AreEqual(515f, config.Durations.Total(), 0.001f);
+            Assert.AreEqual(40, config.Durations.Raid);
+            Assert.AreEqual(40, config.Durations.FinalInspection);
+            Assert.IsTrue(config.ShuffleDesks);
             Assert.AreEqual(12, config.Objectives.Count);
             Assert.AreEqual(12, config.Sabotage.Count);
         }

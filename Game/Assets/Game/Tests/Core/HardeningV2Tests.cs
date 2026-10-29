@@ -72,12 +72,12 @@ namespace BirimizKovulacak.Core.Tests
                 {
                     Assert.AreEqual(totals[outcome.Player], view.Players.Single(p => p.Id == outcome.Player).CareerPoints);
                     CareerConfig c = m.Config.Career;
-                    double expected = view.Features.CareerMultiplier * (result.CompanySucceeded && !outcome.Fired ? c.QuotaMet : 0)
+                    double expected = view.Features.CareerMultiplier * ((result.CompanySucceeded && !outcome.Fired ? c.QuotaMet : 0)
                         + (!outcome.Fired ? c.Survived : 0)
                         + (outcome.Role == Role.Employee && outcome.Won ? c.ObjectiveWon : 0)
                         + (outcome.Role == Role.Informant && result.InformantWon ? c.InformantWon : 0)
-                        + (outcome.Fired ? c.Fired : 0)
-                        + (result.Favourites.Contains(outcome.Player) ? c.Favourite : 0);
+                        + (result.Favourites.Contains(outcome.Player) ? c.Favourite : 0))
+                        + (outcome.Fired ? c.Fired : 0);
                     int delta = (int)Math.Round(expected, MidpointRounding.AwayFromZero);
                     Assert.AreEqual(delta, outcome.CareerDelta, "day " + day + " player " + outcome.Player);
                     totals[outcome.Player] += delta;

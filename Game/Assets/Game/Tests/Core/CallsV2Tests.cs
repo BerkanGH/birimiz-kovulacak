@@ -18,7 +18,9 @@ namespace BirimizKovulacak.Core.Tests
             Assert.AreEqual(CallState.RingingIn, m.View(1).Me.Call.State);
             Assert.AreEqual(1, m.View(0).Me.Call.Other);
             Assert.AreEqual(0, m.View(1).Me.Call.Other);
-            Assert.AreEqual(PublicActivity.OnCall, m.Player(0).Activity);
+            Assert.AreEqual(PublicActivity.None, m.Player(0).Activity);
+            Assert.AreEqual(0, m.Player(0).ActivityStart);
+            Assert.AreEqual(0, m.Player(0).ActivityEnd);
             Assert.AreEqual(PublicActivity.None, m.Player(1).Activity);
             Assert.IsTrue(m.Player(1).Ringing);
             Assert.AreEqual(PlayerIds.None, m.Engine.CallPartnerOf(0));
@@ -30,6 +32,7 @@ namespace BirimizKovulacak.Core.Tests
             m.Advance(0.2);
             m.Do(1, ActionVerb.AnswerCall);
             Assert.AreEqual(CallState.Active, m.View(0).Me.Call.State);
+            Assert.AreEqual(PublicActivity.OnCall, m.Player(0).Activity);
             Assert.AreEqual(1, m.Engine.CallPartnerOf(0));
             Assert.AreEqual(0, m.Engine.CallPartnerOf(1));
             Assert.IsFalse(m.Player(1).Ringing);
@@ -70,6 +73,60 @@ namespace BirimizKovulacak.Core.Tests
             Assert.IsFalse(m.Engine.BuildHostDebugView().Calls.Single().Answered);
             if (ending == 2) Assert.AreEqual(until, m.Engine.BuildHostDebugView().Calls.Single().End, 0.000001);
             Assert.AreEqual(2, m.Events.Count(e => e.Type == EventType.CallEnded && e.IntArg == 0));
+            double ended = m.Engine.BuildHostDebugView().Calls.Single().End;
+            Assert.AreEqual(ended + m.Config.Calls.CooldownSeconds, m.View(0).Me.CallCooldownUntil, 0.000001);
+            Assert.AreEqual(0, m.View(1).Me.CallCooldownUntil, "an unanswered callee gets no cooldown");
+            Assert.IsTrue(m.Request(1, ActionVerb.CallPlayer, param: 2).Accepted);
+        }
+
+        [TestCase(false)]
+        [TestCase(true)]
+        public void DeclineOrRingOutBlocksOnlyTheDirectedPairUntilItsExactDeadline(bool ringOut)
+        {
+            var m = new TestMatch(configure: c =>
+            { c.Calls.CooldownSeconds = 2; c.Calls.DeclineBlockSeconds = 10; c.Calls.RingSeconds = 1; });
+            m.Do(0, ActionVerb.CallPlayer, param: 1);
+            if (ringOut)
+            {
+                double until = m.View(0).Me.Call.Until;
+                m.AdvanceTo(until); m.Engine.Tick(until); m.Capture();
+            }
+            else m.Do(1, ActionVerb.DeclineCall);
+            double blockedUntil = m.Engine.BuildHostDebugView().Calls.Single().End + m.Config.Calls.DeclineBlockSeconds;
+            Assert.AreEqual(FailureCode.Unavailable, m.Request(0, ActionVerb.CallPlayer, param: 1).Failure);
+            m.Do(1, ActionVerb.CallPlayer, param: 0);
+            m.Do(1, ActionVerb.DeclineCall);
+            m.Advance(m.Config.Calls.CooldownSeconds);
+            Assert.AreEqual(FailureCode.Unavailable, m.Request(0, ActionVerb.CallPlayer, param: 1).Failure);
+            m.Do(0, ActionVerb.CallPlayer, param: 2);
+            m.Do(0, ActionVerb.DeclineCall);
+            m.AdvanceTo(blockedUntil - 0.0001);
+            Assert.AreEqual(FailureCode.Unavailable, m.Request(0, ActionVerb.CallPlayer, param: 1).Failure);
+            m.AdvanceTo(blockedUntil); m.Engine.Tick(blockedUntil); m.Capture();
+            Assert.IsTrue(m.Request(0, ActionVerb.CallPlayer, param: 1).Accepted);
+        }
+
+        [Test]
+        public void CallerCancellationDoesNotBlockThePairAndDoesNotChangeExistingCalleeCooldown()
+        {
+            var m = new TestMatch(configure: c => { c.Calls.CooldownSeconds = 2; c.Calls.DeclineBlockSeconds = 30; });
+            m.Do(1, ActionVerb.CallPlayer, param: 2); m.Do(2, ActionVerb.AnswerCall); m.Do(1, ActionVerb.HangUp);
+            double priorCooldown = m.View(1).Me.CallCooldownUntil;
+            m.Advance(0.5);
+            m.Do(0, ActionVerb.CallPlayer, param: 1);
+            m.Do(0, ActionVerb.DeclineCall);
+            Assert.AreEqual(priorCooldown, m.View(1).Me.CallCooldownUntil);
+            m.Advance(m.Config.Calls.CooldownSeconds);
+            Assert.IsTrue(m.Request(0, ActionVerb.CallPlayer, param: 1).Accepted);
+        }
+
+        [TestCase(0)]
+        [TestCase(-1)]
+        public void NonpositiveDeclineBlockDisablesThePairBlock(float seconds)
+        {
+            var m = new TestMatch(configure: c => { c.Calls.CooldownSeconds = 0; c.Calls.DeclineBlockSeconds = seconds; });
+            m.Do(0, ActionVerb.CallPlayer, param: 1); m.Do(1, ActionVerb.DeclineCall);
+            Assert.IsTrue(m.Request(0, ActionVerb.CallPlayer, param: 1).Accepted);
         }
 
         [TestCase(0)]
@@ -216,7 +273,7 @@ namespace BirimizKovulacak.Core.Tests
         [Test]
         public void TipIsRemoteAnonymousCancellableAndBoundedWithoutLeakingTargetActivity()
         {
-            var m = new TestMatch(configure: c => c.Tasks.InitialDirtyDesks = 0); m.Work();
+            var m = new TestMatch(configure: c => { c.Tasks.InitialDirtyDesks = 0; c.Calls.TipSeconds = 3; }); m.Work();
             Assert.AreEqual(FailureCode.CannotTargetSelf, m.Request(0, ActionVerb.TipManager, EntityIds.Desk(0)).Failure);
             Assert.AreEqual(FailureCode.InvalidTarget, m.Request(0, ActionVerb.TipManager, EntityIds.Desk(4)).Failure);
             Assert.AreEqual(FailureCode.InvalidTarget, m.Request(0, ActionVerb.TipManager, EntityIds.DeskComputer(1)).Failure);
@@ -225,8 +282,10 @@ namespace BirimizKovulacak.Core.Tests
             m.Do(0, ActionVerb.DeclineCall);
             var started = m.Request(0, ActionVerb.TipManager, EntityIds.Desk(2));
             Assert.IsTrue(started.Accepted, "phone tip needs no desk proximity");
-            Assert.AreEqual(PublicActivity.OnCall, m.Player(0).Activity);
+            Assert.AreEqual(PublicActivity.None, m.Player(0).Activity);
             Assert.AreEqual("", m.Player(0).ActivityTargetId);
+            Assert.AreEqual(0, m.Player(0).ActivityStart);
+            Assert.AreEqual(0, m.Player(0).ActivityEnd);
             Assert.AreEqual(EntityIds.Desk(2), m.View(0).Me.ActiveInteraction.TargetId);
             Assert.IsNull(m.View(1).Me.ActiveInteraction);
             Assert.AreEqual(FailureCode.Busy, m.Request(0, ActionVerb.TipManager, EntityIds.Desk(1)).Failure);
@@ -244,6 +303,31 @@ namespace BirimizKovulacak.Core.Tests
             foreach (int recipient in m.Engine.Players) Assert.IsFalse(ContainsBytes(WireCodec.EncodeView(m.View(recipient)), marker));
             m.Do(3, ActionVerb.PullCallLogs);
             Assert.AreEqual(2, m.View(3).Me.Notes.Single(n => n.Kind == NoteKind.CallLog).Calls.Single(c => c.Tip).TipDesk);
+        }
+
+        [Test]
+        public void DefaultInstantTipCompletesWithoutPublicPhoneActivityOrPendingInteraction()
+        {
+            var m = new TestMatch(); m.Work();
+            Assert.AreEqual(0, m.Config.Calls.TipSeconds);
+            double now = m.Now;
+            ActionResult result = m.Request(0, ActionVerb.TipManager, EntityIds.Desk(1));
+            Assert.IsTrue(result.Accepted);
+            Assert.AreEqual(now, result.CompletesAt);
+            Assert.AreEqual(0, m.View().Me.TipsLeft);
+            Assert.IsNull(m.View().Me.ActiveInteraction);
+            foreach (int recipient in m.Engine.Players)
+            {
+                PlayerPublicView caller = m.View(recipient).Players.Single(p => p.Id == 0);
+                Assert.AreEqual(PublicActivity.None, caller.Activity);
+                Assert.AreEqual(0, caller.ActivityStart); Assert.AreEqual(0, caller.ActivityEnd);
+                Assert.AreEqual("", caller.ActivityTargetId);
+                Assert.IsFalse(caller.Ringing);
+            }
+            CallRecordView tip = m.Engine.BuildHostDebugView().Calls.Single();
+            Assert.IsTrue(tip.Tip); Assert.AreEqual(now, tip.Start); Assert.AreEqual(now, tip.End);
+            Assert.AreEqual(1, m.Events.Count(e => e.Type == EventType.ManagerTipReceived));
+            Assert.IsFalse(m.Events.Any(e => e.Type == EventType.IncomingCall || e.Type == EventType.CallStarted));
         }
 
         [Test]
@@ -363,7 +447,7 @@ namespace BirimizKovulacak.Core.Tests
         [Test]
         public void TipRecordsStayInStartOrderWhenAnotherCallBeginsBeforeTipCompletes()
         {
-            var m = new TestMatch(); m.Work();
+            var m = new TestMatch(configure: c => c.Calls.TipSeconds = 3); m.Work();
             ActionResult tip = m.Request(0, ActionVerb.TipManager, EntityIds.Desk(1));
             Assert.IsTrue(tip.Accepted);
             m.Advance(0.5); m.Do(2, ActionVerb.CallPlayer, param: 3); m.Do(3, ActionVerb.AnswerCall);
@@ -383,6 +467,7 @@ namespace BirimizKovulacak.Core.Tests
             {
                 c.ManagerProfiles.Clear();
                 c.ManagerProfiles.Add(new ManagerProfileDef { Id = "surprise", SurpriseInspection = true });
+                c.Manager.SurpriseMinFraction = c.Manager.SurpriseMaxFraction = 0;
                 c.Manager.SurpriseAtFraction = 0.5f; c.Tasks.InitialDirtyDesks = 0;
             });
             m.Phase(MatchPhase.Work2);

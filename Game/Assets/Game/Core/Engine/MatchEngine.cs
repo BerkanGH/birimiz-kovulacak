@@ -95,12 +95,15 @@ namespace BirimizKovulacak.Core
                 foreach (int p in playerIds)
                 {
                     if (players[p].Interaction != null) next = Math.Min(next, Math.Max(clock, players[p].Interaction.End));
-                    if (!players[p].Public.Connected && !IsFinished) next = Math.Min(next, Math.Max(clock, players[p].Public.DisconnectDeadline));
+                    if (!players[p].Public.Connected && Phase < MatchPhase.MeetingDiscussion) next = Math.Min(next, Math.Max(clock, players[p].Public.DisconnectDeadline));
                 }
                 NextTaskTime(ref next); NextManagerTime(ref next); NextSabotageV2Time(ref next); NextCallTime(ref next); NextMailTime(ref next); NextFootageTime(ref next);
-                double previous = clock; clock = Math.Max(clock, next); CheckReconnectExpiry();
+                double previous = clock; clock = Math.Max(clock, next);
+                // At an exact deadline, drain even zero-length phases before deciding whether
+                // reconnect grace can abandon: reaching the meeting commits the verdict/results.
+                while (!IsFinished && clock >= phaseEnd) ChangePhase((MatchPhase)((int)Phase + 1), phaseEnd);
+                CheckReconnectExpiry();
                 if (Phase == MatchPhase.Abandoned) break;
-                if (!IsFinished && clock >= phaseEnd) ChangePhase((MatchPhase)((int)Phase + 1), phaseEnd);
                 AdvanceSabotageV2(); AdvanceCalls(); AdvanceTasks(); AdvanceMail();
                 foreach (int p in playerIds) { InteractionState a = players[p].Interaction; if (a != null && a.End <= clock) CompleteInteraction(p, a); }
                 AdvanceManager(previous); AdvanceFootage();
@@ -212,6 +215,7 @@ namespace BirimizKovulacak.Core
             if (verb == ActionVerb.TipManager) return Office;
             if (verb == ActionVerb.PullCallLogs) return Phase >= MatchPhase.Briefing && Phase <= MatchPhase.MeetingDefense2;
             if (verb == ActionVerb.RequestFootage) return FootageMeeting;
+            if (verb == ActionVerb.CutInternet || verb == ActionVerb.CutPower) return Office && Phase < MatchPhase.FinalInspection;
             if (verb >= ActionVerb.LockScreen && verb <= ActionVerb.ResetFuse) return Office;
             if (verb == ActionVerb.CancelInteraction) return true;
             if (verb <= ActionVerb.SetWorkPose || verb == ActionVerb.AuditScanItem || verb == ActionVerb.SealEvidence) return Office;

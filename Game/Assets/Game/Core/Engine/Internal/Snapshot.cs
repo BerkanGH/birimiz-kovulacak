@@ -341,6 +341,8 @@ namespace BirimizKovulacak.Core
                 DarkVisionRange = value.DarkVisionRange,
                 TipDwellBonus = value.TipDwellBonus,
                 SurpriseAtFraction = value.SurpriseAtFraction,
+                SurpriseMinFraction = value.SurpriseMinFraction,
+                SurpriseMaxFraction = value.SurpriseMaxFraction,
                 SurpriseSeconds = value.SurpriseSeconds,
             };
         }
@@ -1050,6 +1052,7 @@ namespace BirimizKovulacak.Core
                 RingSeconds = value.RingSeconds,
                 MaxCallSeconds = value.MaxCallSeconds,
                 CooldownSeconds = value.CooldownSeconds,
+                DeclineBlockSeconds = value.DeclineBlockSeconds,
                 TipLineEnabled = value.TipLineEnabled,
                 TipSeconds = value.TipSeconds,
                 TipsPerPlayer = value.TipsPerPlayer,
