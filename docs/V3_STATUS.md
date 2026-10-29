@@ -47,4 +47,9 @@ engine), `UiMotion` (tweens), `Loc` area files (`<lang>.<area>.json`) + `SetLang
   The 12th (v2 screens kept alive on language rebuild) goes away with the v2 cleanup (running, branch v3-cleanup).
 - **Network runs (bots + synthetic voice):** 4p Short (0.3) PASS, 5p Short (0.3) PASS, **6p Full Week (0.25) PASS** —
   same result hash on every process, all v3 phases, 0 errors, a recording played in every meeting.
-- After all merges: remove v2 gameplay code (engine v2, HUD, open-office map, third-person camera, v2 bots) from `v3`.
+- v2 cleanup merged (`097dd66`): −108 C# files, −28.6k lines (v2 engine/tests/contracts, HUD, third-person, map,
+  bots, BalanceSim, Office scene). 277 v3 + 109 voice tests green.
+- Final stamp placement fix on the final verdict (`69b68fe`).
+- **Final verification (clean v3 build, 171 MB player):** 4p Short with memory sampling PASS (avg working set
+  387–401 MB, peak 415–427 MB, peak private 849–882 MB); 6p Short with Paranoyak (2 recordings per meeting, queued
+  without cutting each other) PASS; earlier 6p Full Week PASS. Playtest ZIP 59.8 MB.

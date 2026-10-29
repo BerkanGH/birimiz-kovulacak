@@ -37,6 +37,20 @@ UI. The 6-player run of build 1 (still D3D12) also passed (`Builds/runs/int1_p6`
 Where the savings come from: the D3D12 device + split graphics jobs mapped ~300 MB per process for a scene this
 small; D3D11 is the primary API now (D3D12 kept as fallback). MSAA 2x halves the multisampled colour/depth targets.
 
+## v3 "Ofis Hattı" (first-person rooms; 4 bot processes, visible windows, `-DurationScale 0.35`)
+
+| Build | Peak working set | Avg working set | Peak private bytes |
+|---|---|---|---|
+| v3 final (`Builds/runs/mem_20261029_134838`, after the v2 code removal) | 415–427 MB | 387–401 MB | 849–882 MB |
+
+Versus the v1 RC (≈ 700 MB average working set) that is −43 % per process, with a far richer scene. What keeps it
+there: one office room built once and personalised for the local player (others never load), the meeting room
+loaded once, ~49k triangles for the whole room kit, sun-only shadows, no NavMesh, no networked avatars (seated first
+person: nothing moves over the network), views of ~1 KB per player (6 players mid-week: 1,060 B), the engine's idle
+tick allocation-free, voice 0 B per frame, call recordings in a pooled buffer (≤ 6.2 MB on the worst day at 6
+players, cleared every morning, never written to disk), and 28.6k lines of v2 code removed from the build.
+v3 engine: a 6-player Short Week simulates in ~0.34 s; Tick idle ~26 M/s.
+
 ### Engine and voice (measured in the .NET harnesses)
 
 | Item | Budget | Measured |
