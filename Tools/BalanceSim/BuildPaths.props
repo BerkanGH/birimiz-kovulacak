@@ -1,0 +1,11 @@
+<Project>
+  <!-- Also imported by the referenced Core project, so simulation builds never write into CoreTests. -->
+  <PropertyGroup>
+    <BaseIntermediateOutputPath>$(MSBuildThisFileDirectory)obj/$(MSBuildProjectName)/</BaseIntermediateOutputPath>
+    <BaseOutputPath>$(MSBuildThisFileDirectory)bin/$(MSBuildProjectName)/</BaseOutputPath>
+    <RestorePackagesPath>$(MSBuildThisFileDirectory)obj/packages/</RestorePackagesPath>
+    <NuGetAudit>false</NuGetAudit>
+    <!-- The shared compiler server cannot write into this sandbox's isolated output paths. -->
+    <UseSharedCompilation>false</UseSharedCompilation>
+  </PropertyGroup>
+</Project>

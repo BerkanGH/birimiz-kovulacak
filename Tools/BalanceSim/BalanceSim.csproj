@@ -1,0 +1,23 @@
+<Project>
+  <PropertyGroup>
+    <DirectoryBuildPropsPath>$(MSBuildThisFileDirectory)BuildPaths.props</DirectoryBuildPropsPath>
+  </PropertyGroup>
+  <Import Project="Sdk.props" Sdk="Microsoft.NET.Sdk" />
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net8.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <ServerGarbageCollection>true</ServerGarbageCollection>
+    <DefaultItemExcludes>$(DefaultItemExcludes);bin/**;obj/**</DefaultItemExcludes>
+  </PropertyGroup>
+  <ItemGroup>
+    <ProjectReference Include="../CoreTests/Core/Core.csproj"
+                      AdditionalProperties="DirectoryBuildPropsPath=$(MSBuildThisFileDirectory)BuildPaths.props" />
+  </ItemGroup>
+  <Import Project="Sdk.targets" Sdk="Microsoft.NET.Sdk" />
+  <PropertyGroup>
+    <!-- NuGet's recursive restore walk does not preserve ProjectReference.AdditionalProperties. -->
+    <_GenerateRestoreGraphProjectEntryInputProperties>$(_GenerateRestoreGraphProjectEntryInputProperties);DirectoryBuildPropsPath=$(MSBuildThisFileDirectory)BuildPaths.props</_GenerateRestoreGraphProjectEntryInputProperties>
+  </PropertyGroup>
+</Project>
