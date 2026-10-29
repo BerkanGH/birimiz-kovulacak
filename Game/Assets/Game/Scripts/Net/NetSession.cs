@@ -94,31 +94,31 @@ namespace BirimizKovulacak.Game
             LineResultRpc(LineCodec.EncodeResult(result), RpcTarget.Single(clientId, RpcTargetUse.Temp));
         }
 
-        [Rpc(SendTo.SpecifiedInParams)]
+        [Rpc(SendTo.SpecifiedInParams, InvokePermission = RpcInvokePermission.Server)]
         void LineWelcomeRpc(byte[] payload, string configJson, RpcParams rpcParams)
         {
             Safe(() => LineClient.I.ApplyWelcome(LineCodec.DecodeWelcome(payload), configJson), "welcome");
         }
 
-        [Rpc(SendTo.ClientsAndHost)]
+        [Rpc(SendTo.ClientsAndHost, InvokePermission = RpcInvokePermission.Server)]
         void LineLobbyRpc(byte[] payload)
         {
             Safe(() => LineClient.I.ApplyLobby(LineCodec.DecodeLobby(payload)), "lobby");
         }
 
-        [Rpc(SendTo.SpecifiedInParams)]
+        [Rpc(SendTo.SpecifiedInParams, InvokePermission = RpcInvokePermission.Server)]
         void LineViewRpc(byte[] payload, RpcParams rpcParams)
         {
             Safe(() => LineClient.I.ApplyView(LineCodec.DecodeView(payload)), "view");
         }
 
-        [Rpc(SendTo.SpecifiedInParams)]
+        [Rpc(SendTo.SpecifiedInParams, InvokePermission = RpcInvokePermission.Server)]
         void LineEventsRpc(byte[] payload, RpcParams rpcParams)
         {
             Safe(() => LineClient.I.ApplyEvents(LineCodec.DecodeEvents(payload)), "events");
         }
 
-        [Rpc(SendTo.SpecifiedInParams)]
+        [Rpc(SendTo.SpecifiedInParams, InvokePermission = RpcInvokePermission.Server)]
         void LineResultRpc(byte[] payload, RpcParams rpcParams)
         {
             Safe(() => LineClient.I.ApplyResult(LineCodec.DecodeResult(payload)), "result");
@@ -152,31 +152,31 @@ namespace BirimizKovulacak.Game
             ResultRpc(WireCodec.EncodeResult(result), RpcTarget.Single(clientId, RpcTargetUse.Temp));
         }
 
-        [Rpc(SendTo.SpecifiedInParams)]
+        [Rpc(SendTo.SpecifiedInParams, InvokePermission = RpcInvokePermission.Server)]
         void WelcomeRpc(byte[] payload, string configJson, RpcParams rpcParams)
         {
             Safe(() => ClientState.I.ApplyWelcome(WireCodec.DecodeWelcome(payload), configJson), "welcome");
         }
 
-        [Rpc(SendTo.ClientsAndHost)]
+        [Rpc(SendTo.ClientsAndHost, InvokePermission = RpcInvokePermission.Server)]
         void LobbyRpc(byte[] payload)
         {
             Safe(() => ClientState.I.ApplyLobby(WireCodec.DecodeLobby(payload)), "lobby");
         }
 
-        [Rpc(SendTo.SpecifiedInParams)]
+        [Rpc(SendTo.SpecifiedInParams, InvokePermission = RpcInvokePermission.Server)]
         void ViewRpc(byte[] payload, RpcParams rpcParams)
         {
             Safe(() => ClientState.I.ApplyView(WireCodec.DecodeView(payload)), "view");
         }
 
-        [Rpc(SendTo.SpecifiedInParams)]
+        [Rpc(SendTo.SpecifiedInParams, InvokePermission = RpcInvokePermission.Server)]
         void EventsRpc(byte[] payload, RpcParams rpcParams)
         {
             Safe(() => ClientState.I.ApplyEvents(WireCodec.DecodeEvents(payload)), "events");
         }
 
-        [Rpc(SendTo.SpecifiedInParams)]
+        [Rpc(SendTo.SpecifiedInParams, InvokePermission = RpcInvokePermission.Server)]
         void ResultRpc(byte[] payload, RpcParams rpcParams)
         {
             Safe(() => ClientState.I.ApplyResult(WireCodec.DecodeResult(payload)), "result");

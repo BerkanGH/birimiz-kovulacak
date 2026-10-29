@@ -272,7 +272,8 @@ namespace BirimizKovulacak.Game
 
             string reason = _nm.DisconnectReason;
             var view = LineClient.I.View;
-            bool midMatch = view != null && view.Phase != LinePhase.WeekResults && view.Phase != LinePhase.Abandoned;
+            // WeekResults counts as mid-week: the fired player must be able to come back and pick the next manager.
+            bool midMatch = view != null && view.Phase != LinePhase.Abandoned;
             bool rejected = !string.IsNullOrEmpty(reason) && reason.StartsWith("reject.");
             MatchLog.Write("disconnected reason='" + reason + "' midMatch=" + midMatch);
             if (rejected)

@@ -40,6 +40,7 @@ namespace BirimizKovulacak.Game
         public void SetReady(bool ready) { ReadyTransport?.Invoke(ready); }
 
         uint _nextRequestId;
+        float _nextRemember;
         readonly Dictionary<uint, LineAction> _pending = new Dictionary<uint, LineAction>();
 
         public LineConfig Config => HostConfig ?? LineConfig.CreateDefault();
@@ -92,6 +93,7 @@ namespace BirimizKovulacak.Game
         public void ApplyLobby(LineLobbyView lobby)
         {
             Lobby = lobby;
+            if (!lobby.WeekRunning && ConnectionManager.I != null && ConnectionManager.I.LineHost == null) ConnectionManager.ForgetSession();
             if (!lobby.WeekRunning && View != null)
             {
                 MatchLog.Write("lobby: week closed by host");
@@ -106,7 +108,13 @@ namespace BirimizKovulacak.Game
             var old = View;
             if (old != null && v.WeekId == old.WeekId && v.StateVersion < old.StateVersion) return; // out of order
             View = v;
-            if (v.Phase == LinePhase.WeekResults && ConnectionManager.I != null && ConnectionManager.I.LineHost == null) ConnectionManager.ForgetSession();
+            var cm = ConnectionManager.I;
+            if (cm != null && cm.LineHost == null && !string.IsNullOrEmpty(ReconnectToken) && Time.unscaledTime > _nextRemember)
+            {
+                // The saved rejoin credentials expire after a short time: refresh them while the week is alive.
+                _nextRemember = Time.unscaledTime + 5f;
+                ConnectionManager.RememberSession(ReconnectToken, cm.Address, cm.Port);
+            }
             if (v.Phase == LinePhase.WeekResults && v.Result != null && (old == null || old.Phase != LinePhase.WeekResults))
                 MatchLog.Write("results week=" + v.WeekId + " hash=" + v.Result.ResultHash + " fired=" + v.Result.Fired + " manager=" + v.Result.ManagerProfileId + " days=" + v.Result.Days);
             ViewChanged?.Invoke(old, v);

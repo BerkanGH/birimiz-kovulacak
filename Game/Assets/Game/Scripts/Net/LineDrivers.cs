@@ -82,12 +82,13 @@ namespace BirimizKovulacak.Game
     /// UI owns the camera focus modes (computer/phone, meeting screen view) and the meeting cues; this only resets the
     /// camera mode when the office day starts.
     /// </summary>
+    [DefaultExecutionOrder(-100)] // before UIRoot: EnterMeeting resets cues that MeetingUi re-applies the same frame
     public sealed class LineWorldDriver : MonoBehaviour
     {
         int _officeKey = -1, _meetingKey = -1;
         readonly List<MeetingSeatInfo> _seats = new List<MeetingSeatInfo>();
 
-        void LateUpdate()
+        void Update()
         {
             var rooms = Rooms.Presenter;
             var lc = LineClient.I;

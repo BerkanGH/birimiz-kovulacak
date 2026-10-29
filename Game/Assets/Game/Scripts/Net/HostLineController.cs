@@ -58,6 +58,7 @@ namespace BirimizKovulacak.Game
         bool _resultLogged;
         int _recordingsPhaseKey = -1;
         LinePhase _lastPhase = LinePhase.None;
+        IReadOnlyList<LineRecordingPick> _picks;
 
         public ILineEngine Engine => _engine;
         public bool WeekRunning => _engine != null;
@@ -122,7 +123,8 @@ namespace BirimizKovulacak.Game
             {
                 // Mid-week: only a disconnected player holding its reconnect token may come back.
                 for (int i = 0; i < SlotCount; i++)
-                    if (_slots[i].Occupied && !_slots[i].Virtual && !_slots[i].Connected && !string.IsNullOrEmpty(p.ReconnectToken) && _slots[i].Token == p.ReconnectToken)
+                    if (_slots[i].Occupied && !_slots[i].Virtual && !_slots[i].Connected && !string.IsNullOrEmpty(p.ReconnectToken) && _slots[i].Token == p.ReconnectToken
+                        && !_pendingApprovals.ContainsValue(i))
                         slot = i;
                 if (slot < 0) return new Approval { Reason = "reject.in_progress" };
             }
@@ -160,7 +162,14 @@ namespace BirimizKovulacak.Game
             if (!_pendingApprovals.TryGetValue(clientId, out slot)) return;
             _pendingApprovals.Remove(clientId);
             var s = _slots[slot];
-            bool reconnect = WeekRunning;
+            if (!s.Occupied)
+            {
+                // The seat was released while this connection was pending (week ended / lobby reset): refuse cleanly.
+                MatchLog.Write("host: client " + clientId + " lost its pending seat " + slot);
+                NetworkManager.Singleton?.DisconnectClient(clientId, "reject.in_progress");
+                return;
+            }
+            bool reconnect = WeekRunning && InWeek(slot);
             s.ClientId = clientId;
             s.Connected = true;
             _clientSlot[clientId] = slot;
@@ -169,15 +178,29 @@ namespace BirimizKovulacak.Game
                 _session.SendLineWelcome(clientId, new LineWelcome { Slot = slot, ReconnectToken = s.Token, Reconnected = reconnect, WeekId = _weekId }, ConfigJson);
             if (reconnect && _engine != null)
             {
-                _engine.SetConnected(slot, true, Now);
+                try { _engine.SetConnected(slot, true, Now); }
+                catch (Exception e) { Debug.LogException(e); }
                 SendViewTo(slot);
             }
             BroadcastLobby();
         }
 
+        bool InWeek(int slot)
+        {
+            if (_engine == null) return false;
+            foreach (var p in _engine.Setup.Players) if (p.Id == slot) return true;
+            return false;
+        }
+
         public void OnClientDisconnected(ulong clientId)
         {
-            _pendingApprovals.Remove(clientId);
+            int pending;
+            if (_pendingApprovals.TryGetValue(clientId, out pending))
+            {
+                _pendingApprovals.Remove(clientId);
+                var ps = _slots[pending];
+                if (!WeekRunning && ps.Occupied && !ps.Connected && !ps.Virtual) { ps.Occupied = false; ps.Ready = false; ps.Name = ""; ps.Token = ""; BroadcastLobby(); }
+            }
             int slot;
             if (!_clientSlot.TryGetValue(clientId, out slot)) return;
             _clientSlot.Remove(clientId);
@@ -185,7 +208,11 @@ namespace BirimizKovulacak.Game
             s.Connected = false;
             s.ClientId = ulong.MaxValue;
             MatchLog.Write("host: client " + clientId + " (slot " + slot + ") disconnected");
-            if (_engine != null) _engine.SetConnected(slot, false, Now);
+            if (_engine != null && InWeek(slot))
+            {
+                try { _engine.SetConnected(slot, false, Now); }
+                catch (Exception e) { Debug.LogException(e); }
+            }
             else { s.Occupied = false; s.Ready = false; s.Name = ""; }
             BroadcastLobby();
         }
@@ -329,8 +356,7 @@ namespace BirimizKovulacak.Game
             _lastSentVersion = -1;
             _abandonedAt = -1;
             _resultLogged = false;
-            _recordingsTriggered.Clear();
-            _recordingsPhaseKey = -1;
+            ResetRecordings();
             MatchLog.Write("host: week " + _weekId + " started seed=" + setup.Seed + " players=" + setup.Players.Count + " length=" + Length
                 + " recordings=" + RecordingsEnabled + " weeksPlayed=" + WeeksPlayed);
             BroadcastLobby();
@@ -349,12 +375,18 @@ namespace BirimizKovulacak.Game
         /// <summary>Stops the current week and returns everyone to the lobby.</summary>
         public void ReturnToLobby()
         {
+            if (_engine != null && _engine.Phase == LinePhase.WeekResults && !_engine.IsFinished)
+            {
+                try { _engine.HostContinue(Now); } // results are final: keep the session points / next manager
+                catch (Exception e) { Debug.LogException(e); }
+            }
             if (_engine != null && _engine.IsFinished) CaptureHistory();
             _engine = null;
+            ResetRecordings();
             for (int i = 0; i < SlotCount; i++)
             {
                 var s = _slots[i];
-                if (s.Occupied && !s.Virtual && !s.Connected) { s.Occupied = false; s.Name = ""; }
+                if (s.Occupied && !s.Virtual && !s.Connected && !_pendingApprovals.ContainsValue(i)) { s.Occupied = false; s.Name = ""; }
                 if (!s.Virtual && !s.IsHost) s.Ready = false;
                 s.Bot = null; s.BotView = null;
             }
@@ -457,17 +489,37 @@ namespace BirimizKovulacak.Game
             }
         }
 
-        /// <summary>At each pick's PlayAt: hand it to voice, report back which call was played.</summary>
+        /// <summary>Drops the day's audio, stops a running tape and forgets the scheduled picks (week start, lobby).</summary>
+        void ResetRecordings()
+        {
+            var vs = VoiceSystem.Instance;
+            if (vs != null) { vs.StopRecording(); vs.ClearRecordings(); }
+            _recordingsTriggered.Clear();
+            _recordingsPhaseKey = -1;
+            _picks = null;
+            _lastPhase = LinePhase.None;
+        }
+
+        /// <summary>At each pick's PlayAt: hand it to voice (one tape at a time), report back which call was played.</summary>
         void TriggerRecordings(double now)
         {
-            var picks = _engine.RecordingPicks;
-            int key = _engine.Day * 100 + (int)_engine.Phase;
-            if (key != _recordingsPhaseKey) { _recordingsPhaseKey = key; _recordingsTriggered.Clear(); }
-            if (picks == null || picks.Count == 0) return;
+            if (_engine.Phase != LinePhase.MeetingDossier) { _recordingsPhaseKey = -1; _picks = null; return; }
+            int key = _engine.Day;
+            if (key != _recordingsPhaseKey)
+            {
+                // RecordingPicks returns a detached copy: read it once per dossier, not every frame.
+                _recordingsPhaseKey = key;
+                _recordingsTriggered.Clear();
+                _picks = _engine.RecordingPicks;
+            }
+            var picks = _picks;
+            if (picks == null || picks.Count == 0 || _recordingsTriggered.Count >= picks.Count) return;
+            var voice = VoiceSystem.Instance;
+            if (voice != null && voice.HostRecordingPlaying) return; // never cut a tape short; the next one waits
             for (int i = 0; i < picks.Count; i++)
             {
                 var p = picks[i];
-                if (p.Played || _recordingsTriggered.Contains(p.Index) || now < p.PlayAt) continue;
+                if (_recordingsTriggered.Contains(p.Index) || now < p.PlayAt) continue;
                 _recordingsTriggered.Add(p.Index);
                 int chosen = LineIds.None;
                 try
@@ -478,6 +530,7 @@ namespace BirimizKovulacak.Game
                 catch (Exception e) { Debug.LogException(e); }
                 MatchLog.Write("host: recording pick=" + p.Index + " candidates=" + string.Join(",", p.CandidateCallIds) + " played=" + chosen);
                 _engine.ReportRecording(p.Index, chosen, now);
+                break; // one per frame; the next waits until this tape has finished
             }
         }
 
