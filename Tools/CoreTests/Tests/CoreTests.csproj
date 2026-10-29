@@ -9,6 +9,7 @@
   </PropertyGroup>
   <ItemGroup>
     <Compile Include="../../../Game/Assets/Game/Tests/Core/**/*.cs" />
+    <Compile Include="../../../Game/Assets/Game/Tests/Line/**/*.cs" />
   </ItemGroup>
   <ItemGroup>
     <PackageReference Include="Microsoft.NET.Test.Sdk" Version="17.11.1" />
