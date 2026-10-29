@@ -310,6 +310,9 @@ namespace BirimizKovulacak.Game
                 // ---- v2
                 case EventType.IncomingCall:
                     if (e.Actor == me) return null; // the call widget shows it
+                    // The ringtone is a 3D sound at the callee: only people who can see the callee get a toast,
+                    // otherwise an office-wide toast lets everyone pair callers and callees.
+                    if (AvatarVisibility.Alpha(e.Actor) < 0.5f) return null;
                     return Loc.F("feed.ringing", P(v, e.Actor));
                 case EventType.CallStarted: kind = Hud.ToastKind.Private; return Loc.F("feed.call_started", P(v, e.Actor));
                 case EventType.CallEnded: kind = Hud.ToastKind.Private; return e.IntArg == 1 ? Loc.F("feed.call_ended", P(v, e.Actor)) : Loc.F("feed.call_not_answered", P(v, e.Actor));
