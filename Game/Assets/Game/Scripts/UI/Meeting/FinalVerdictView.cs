@@ -7,13 +7,14 @@ using static BirimizKovulacak.Game.UiKit;
 namespace BirimizKovulacak.Game
 {
     /// <summary>
-    /// FinalVerdict: the fire-score breakdown (Blame + weight × votes, bars grow lowest first for suspense), then the
-    /// termination letter slides in and the FIRED stamp slams. "Save letter" writes a PNG (v2 <see cref="ScreenshotSaver"/>).
+    /// FinalVerdict (v3.1): the secret ballot is counted on the shortlisted personnel files. Anonymous vote tokens
+    /// drop one by one, the most-voted file gets the FIRED stamp (the others SURVIVED), then the termination letter
+    /// slides in and is stamped. "Save letter" writes a PNG (v2 <see cref="ScreenshotSaver"/>).
     /// </summary>
     public sealed class FinalVerdictView : MeetingPanel
     {
-        readonly VisualElement _board, _rows, _letterCol, _letter, _letterBody, _stamp, _actions;
-        readonly Label _formula, _saved;
+        readonly VisualElement _board, _cards, _letterCol, _letter, _letterBody, _stamp, _actions;
+        readonly Label _rule, _tie, _safe, _saved;
         readonly Button _save;
         bool _saving;
         int _fired = LineIds.None;
@@ -31,20 +32,12 @@ namespace BirimizKovulacak.Game
             _save = IconBtn("star", Loc.T("final.save_letter"), SaveLetter, "btn-small", "btn-secondary").AddTo(_actions);
             _saved = Text("", "letter-saved").NoPick().AddTo(_letterCol);
 
-            _board = Box("score-board").NoPick().AddTo(wrap);
-            Title(Loc.T("final.scores.title"), "score-title").NoPick().AddTo(_board);
-            _formula = Memo("", "score-formula").NoPick().AddTo(_board);
-            _rows = Box("score-rows").NoPick().AddTo(_board);
-            var legend = Box("score-legend").NoPick().AddTo(_board);
-            Legend(legend, "seg-blame", Loc.T("final.scores.blame"));
-            Legend(legend, "seg-votes", Loc.T("final.scores.votes"));
-        }
-
-        static void Legend(VisualElement parent, string cls, string text)
-        {
-            var i = Box("legend-item").NoPick().AddTo(parent);
-            Box("legend-swatch", cls).NoPick().AddTo(i);
-            Text(text, "legend-text").NoPick().AddTo(i);
+            _board = Box("count-board").NoPick().AddTo(wrap);
+            Title(Loc.T("final.count.title"), "score-title").NoPick().AddTo(_board);
+            _rule = Memo(Loc.T("final.count.rule"), "score-formula").NoPick().AddTo(_board);
+            _cards = Box("count-cards").NoPick().AddTo(_board);
+            _tie = Bold("", "count-tie").NoPick().AddTo(_board);
+            _safe = Text("", "count-safe").NoPick().AddTo(_board);
         }
 
         protected override void OnShow(LineView v)
@@ -54,17 +47,15 @@ namespace BirimizKovulacak.Game
             _firedName = MeetingText.Name(_fired);
             _saved.text = "";
             _save.Show(_fired >= 0);
-            var prof = MeetingText.Profile(v);
-            _formula.text = Loc.F("final.scores.formula", prof.FinalVoteWeight);
-            BuildScores(v, prof.FinalVoteWeight);
+            float end = BuildCount(v);
             BuildLetter(v);
 
-            // timeline: board first, letter at 2.8 s, stamp at 3.6 s
+            // timeline: files, tokens, file stamps (end), the letter (end + 0.7), the letter stamp (end + 1.5)
             UiMotion.SlideIn(_board, new Vector2(0f, 40f), 0.35f);
             _letterCol.style.opacity = 0f;
-            UiMotion.SlideIn(_letterCol, new Vector2(-80f, 260f), 0.55f, 2.8f, UiMotion.Ease.OutCubic);
+            UiMotion.SlideIn(_letterCol, new Vector2(-80f, 260f), 0.55f, end + 0.7f, UiMotion.Ease.OutCubic);
             var letter = _letter;
-            UiMotion.Stamp(_stamp, -12f, 0.24f, 3.7f, () =>
+            UiMotion.Stamp(_stamp, -12f, 0.24f, end + 1.5f, () =>
             {
                 Sfx.Play("evidence", 1f);
                 UiMotion.Shake(letter, 8f, 0.35f);
@@ -73,51 +64,133 @@ namespace BirimizKovulacak.Game
             });
         }
 
-        void BuildScores(LineView v, int weight)
+        sealed class Candidate
         {
-            _rows.Clear();
+            public LineFireScore Score;
+            public VisualElement Card, Tray, Stamp;
+            public Label Count;
+            public int Shown;
+        }
+
+        /// <summary>Builds the shortlisted files and schedules the token drops; returns the time the count ends.</summary>
+        float BuildCount(LineView v)
+        {
+            _cards.Clear();
+            _tie.text = "";
             var m = v.Meeting;
-            var scores = new List<LineFireScore>();
-            if (m != null) scores.AddRange(m.Scores);
-            if (scores.Count == 0)
-                foreach (var p in v.Players) scores.Add(new LineFireScore { Player = p.Id, Blame = p.Blame, Ihtars = p.Ihtars, Score = p.Blame });
-            scores.Sort((a, b) => b.Score != a.Score ? b.Score.CompareTo(a.Score) : b.Ihtars != a.Ihtars ? b.Ihtars.CompareTo(a.Ihtars) : b.Blame.CompareTo(a.Blame));
-            int max = 1;
-            foreach (var s in scores) if (s.Score > max) max = s.Score;
-            // the lowest row animates first; the fired one last
-            int count = scores.Count;
-            for (int i = 0; i < count; i++)
+            var list = new List<Candidate>();
+            var order = m != null && m.Shortlist.Count > 0 ? m.Shortlist : null;
+            if (m != null)
             {
-                var s = scores[i];
-                bool fired = m != null && s.Player == m.Fired;
-                var row = Box("score-row").NoPick().AddTo(_rows);
-                if (fired) row.AddToClassList("score-row-fired");
-                if (s.Player == v.Me) row.AddToClassList("score-row-me");
-                Badge(s.Player, "badge-m").AddTo(row);
-                var col = Box("col", "grow").NoPick().AddTo(row);
-                var top = Box("row").NoPick().AddTo(col);
-                Title(MeetingText.Name(s.Player), "score-name").NoPick().AddTo(top);
-                for (int k = 0; k < s.Ihtars; k++) DossierDeck.IhtarMark(top);
-                Box("spacer").NoPick().AddTo(top);
-                Memo(Loc.F("final.scores.sum", s.Blame, weight, s.Votes), "score-sum").NoPick().AddTo(top);
-                var bar = Box("score-bar").NoPick().AddTo(col);
-                var segB = Box("seg", "seg-blame").NoPick().AddTo(bar);
-                var segV = Box("seg", "seg-votes").NoPick().AddTo(bar);
-                float wb = s.Blame / (float)max * 100f, wv = (s.Score - s.Blame) / (float)max * 100f;
-                segB.style.width = 0; segV.style.width = 0;
-                var total = Title("0", "score-total").NoPick().AddTo(row);
-                float delay = 0.3f + (count - 1 - i) * 0.32f;
-                UiMotion.SlideIn(row, new Vector2(30f, 0f), 0.25f, delay * 0.4f);
-                UiMotion.Tween(segB, 0.5f, t => segB.style.width = Length.Percent(wb * t), UiMotion.Ease.OutCubic, null, delay, "grow");
-                UiMotion.Tween(segV, 0.45f, t => segV.style.width = Length.Percent(Mathf.Max(0f, wv) * t), UiMotion.Ease.OutCubic, null, delay + 0.4f, "grow");
-                UiMotion.CountUp(total, 0, s.Score, 0.8f, null, delay);
-                if (fired)
+                if (order != null)
+                    foreach (int id in order)
+                    {
+                        LineFireScore sc = null;
+                        foreach (var x in m.Scores) if (x.Player == id) sc = x;
+                        if (sc == null) sc = FromVotes(v, id);
+                        list.Add(new Candidate { Score = sc });
+                    }
+                else
+                    foreach (var x in m.Scores) list.Add(new Candidate { Score = x });
+            }
+            if (list.Count == 0 && m != null && m.Fired >= 0) list.Add(new Candidate { Score = FromVotes(v, m.Fired) });
+
+            // safe colleagues (not on the shortlist)
+            var safe = new System.Text.StringBuilder();
+            if (order != null)
+                foreach (var p in v.Players)
                 {
-                    var tag = Box("score-fired-tag").NoPick().AddTo(row);
-                    if (!MeetingText.ApplyStamp(tag, "stamps/stamp_kovuldu", "stamps_v3/stamp_fired")) TextStamp(tag, Loc.T("final.stamp.fired"));
-                    UiMotion.Stamp(tag, -10f, 0.2f, delay + 1.1f, () => UiMotion.Shake(row, 6f, 0.25f));
+                    if (order.Contains(p.Id)) continue;
+                    if (safe.Length > 0) safe.Append(", ");
+                    safe.Append(p.Name);
+                }
+            _safe.text = safe.Length > 0 ? Loc.F("final.count.safe", safe.ToString()) : "";
+
+            int n = 0;
+            foreach (var c in list)
+            {
+                var s = c.Score;
+                c.Card = Box("count-card").NoPick().AddTo(_cards);
+                if (s.Player == v.Me) c.Card.AddToClassList("count-card-me");
+                Badge(s.Player, "badge-xl").AddTo(c.Card);
+                Title(MeetingText.Name(s.Player), "count-name").NoPick().AddTo(c.Card);
+                var line = Box("row").NoPick().AddTo(c.Card);
+                Bold(Loc.F("meeting.blame_n", s.Blame), "count-blame").NoPick().AddTo(line);
+                for (int k = 0; k < s.Ihtars; k++) DossierDeck.IhtarMark(line);
+                c.Tray = Box("count-tray").NoPick().AddTo(c.Card);
+                c.Count = Title("0", "count-num").NoPick().AddTo(c.Card);
+                c.Stamp = Box("count-stamp").NoPick().AddTo(c.Card);
+                bool fired = m != null && s.Player == m.Fired;
+                bool ok = fired ? MeetingText.ApplyStamp(c.Stamp, "stamps/stamp_kovuldu", "stamps_v3/stamp_fired")
+                                : MeetingText.ApplyStamp(c.Stamp, "stamps/stamp_kurtuldu", "stamps_v3/stamp_survived");
+                if (!ok) TextStamp(c.Stamp, Loc.T(fired ? "final.stamp.fired" : "final.stamp.survived"), fired ? "" : "stamp-green");
+                c.Stamp.style.opacity = 0f;
+                UiMotion.PopIn(c.Card, 0.3f, 0.1f + n * 0.12f, 0.88f);
+                n++;
+            }
+
+            // anonymous tokens, round-robin so the piles grow side by side
+            float t = 0.7f;
+            const float step = 0.3f;
+            bool more = true;
+            for (int round = 0; more; round++)
+            {
+                more = false;
+                foreach (var c in list)
+                {
+                    if (round >= c.Score.Votes) continue;
+                    more = true;
+                    var cand = c;
+                    var token = Box("count-token").NoPick().AddTo(c.Tray);
+                    if (!UiArt.Apply(token, "meeting_v3/vote_token")) token.AddToClassList("count-token-fallback");
+                    token.style.opacity = 0f;
+                    UiMotion.Tween(token, 0.3f, k =>
+                    {
+                        token.style.translate = new Translate(0f, Mathf.LerpUnclamped(-70f, 0f, k));
+                        token.style.opacity = Mathf.Clamp01(k * 3f);
+                    }, UiMotion.Ease.OutBounce, () =>
+                    {
+                        cand.Shown++;
+                        cand.Count.text = cand.Shown.ToString();
+                        UiMotion.Pulse(cand.Count, 0.18f, 0.2f);
+                        Sfx.Play("vote", 0.5f);
+                    }, t, "drop");
+                    t += step;
                 }
             }
+            float end = t + 0.3f;
+
+            // tie note (most votes shared: the engine broke it by blame, then warnings)
+            int max = -1, atMax = 0;
+            foreach (var c in list) { if (c.Score.Votes > max) { max = c.Score.Votes; atMax = 1; } else if (c.Score.Votes == max) atMax++; }
+            if (atMax > 1 && _fired >= 0)
+            {
+                _tie.text = Loc.F("final.count.tie", _firedName);
+                UiMotion.FadeIn(_tie, 0.3f, end);
+            }
+
+            foreach (var c in list)
+            {
+                bool fired = m != null && c.Score.Player == m.Fired;
+                var card = c.Card;
+                UiMotion.Stamp(c.Stamp, fired ? -10f : -6f, 0.22f, end + (fired ? 0.25f : 0f), () =>
+                {
+                    if (!fired) return;
+                    card.AddToClassList("count-card-fired");
+                    UiMotion.Shake(card, 8f, 0.3f);
+                    Sfx.Play("evidence", 0.8f);
+                });
+            }
+            return end + 0.25f;
+        }
+
+        static LineFireScore FromVotes(LineView v, int id)
+        {
+            var sc = new LineFireScore { Player = id };
+            foreach (var p in v.Players) if (p.Id == id) { sc.Blame = p.Blame; sc.Ihtars = p.Ihtars; }
+            if (v.Meeting != null) foreach (var x in v.Meeting.Votes) if (x.Target == id) sc.Votes++;
+            sc.Score = sc.Votes;
+            return sc;
         }
 
         void BuildLetter(LineView v)
@@ -140,7 +213,7 @@ namespace BirimizKovulacak.Game
                 if (v.Meeting != null) foreach (var s in v.Meeting.Scores) if (s.Player == fired) score = s;
                 if (score != null)
                 {
-                    Memo(Loc.F("final.letter.score", score.Blame, score.Votes, score.Score), "letter-par").NoPick().AddTo(_letterBody);
+                    Memo(Loc.F("final.letter.score", score.Votes, score.Blame), "letter-par").NoPick().AddTo(_letterBody);
                     if (score.Ihtars > 0) Memo(Loc.F("final.letter.ihtars", score.Ihtars), "letter-par").NoPick().AddTo(_letterBody);
                 }
                 Memo(Loc.T("final.letter.closing." + (Mathf.Abs(v.WeekId * 7 + fired) % 3)), "letter-par").NoPick().AddTo(_letterBody);

@@ -78,6 +78,7 @@ namespace BirimizKovulacak.Game
             _title = StampText("", "ballot-title").NoPick().AddTo(head);
             Box("spacer").NoPick().AddTo(head);
             _count = Bold("", "ballot-count").NoPick().AddTo(head);
+            _count.Show(false); // the count is in the top bar
             _question = Title("", "ballot-question").NoPick().AddTo(_paper);
             _note = Text("", "ballot-note").NoPick().AddTo(_paper);
             _rows = Box("ballot-rows").AddTo(_paper);
@@ -97,18 +98,33 @@ namespace BirimizKovulacak.Game
             _shown = int.MinValue;
             _countKey = -1;
             int n = 0;
-            foreach (var p in v.Players)
+            var shortlist = final && v.Meeting != null && v.Meeting.Shortlist.Count > 0 ? v.Meeting.Shortlist : null;
+            if (shortlist != null)
             {
-                if (p.Id == v.Me) continue;
-                AddRow(p.Id, p, n++);
+                // v3.1 final: one name from the shortlist (in defense order), never yourself, no abstaining
+                foreach (int id in shortlist)
+                {
+                    if (id == v.Me) continue;
+                    AddRow(id, Player(v, id), n++, false);
+                }
+                if (shortlist.Contains(v.Me)) Text(Loc.T("final.ballot.you_listed"), "ballot-you").NoPick().AddTo(_rows);
             }
-            AddRow(LineIds.None, null, n);
+            else
+            {
+                int max = MeetingText.Config.MaxIhtarsPerPlayerPerWeek;
+                foreach (var p in v.Players)
+                {
+                    if (p.Id == v.Me) continue;
+                    AddRow(p.Id, p, n++, !final && max > 0 && p.Ihtars >= max);
+                }
+                AddRow(LineIds.None, null, n, false);
+            }
             Refresh(v);
             UiMotion.SlideIn(_paper, new Vector2(0f, 80f), 0.38f, 0f, UiMotion.Ease.OutBack);
             UiMotion.Tween(_paper, 0.5f, t => _paper.style.rotate = new Rotate(new Angle(Mathf.Lerp(-4f, -0.8f, t), AngleUnit.Degree)), UiMotion.Ease.OutCubic, null, 0f, "rot");
         }
 
-        void AddRow(int target, LinePlayerView p, int n)
+        void AddRow(int target, LinePlayerView p, int n, bool warned)
         {
             var r = new Row { Target = target };
             r.Root = Box("ballot-row").AddTo(_rows);
@@ -121,18 +137,21 @@ namespace BirimizKovulacak.Game
             if (p != null)
             {
                 Badge(p.Id, "badge-m").AddTo(r.Root);
-                var col = Box("col", "grow").NoPick().AddTo(r.Root);
-                Title(p.Name, "ballot-name").NoPick().AddTo(col);
-                var line = Box("row").NoPick().AddTo(col);
+                Title(p.Name, "ballot-name").NoPick().AddTo(r.Root);
+                var line = Box("row", "grow", "ballot-line").NoPick().AddTo(r.Root);
                 Text(Loc.F("meeting.blame_n", p.Blame), "ballot-sub").NoPick().AddTo(line);
                 for (int i = 0; i < p.Ihtars; i++) DossierDeck.IhtarMark(line);
+                if (warned)
+                {
+                    r.Root.AddToClassList("ballot-row-warned");
+                    Text(Loc.T("meeting.ballot.already_warned"), "ballot-warned").NoPick().AddTo(line);
+                }
                 if (!p.Connected) Tag(Loc.T("lobby.offline_tag"), "tag-grey").AddTo(r.Root);
             }
             else
             {
-                var col = Box("col", "grow").NoPick().AddTo(r.Root);
-                Title(Loc.T("meeting.ballot.abstain"), "ballot-name").NoPick().AddTo(col);
-                Text(Loc.T("meeting.ballot.abstain_sub"), "ballot-sub").NoPick().AddTo(col);
+                Title(Loc.T("meeting.ballot.abstain"), "ballot-name").NoPick().AddTo(r.Root);
+                Text(Loc.T("meeting.ballot.abstain_sub"), "ballot-sub", "ballot-line").NoPick().AddTo(r.Root);
             }
             int t = target;
             r.Root.RegisterCallback<ClickEvent>(_ => _vote(t));
@@ -231,7 +250,7 @@ namespace BirimizKovulacak.Game
                 var blame = Box("letter-blame").NoPick().AddTo(_letterBody);
                 Memo(Loc.T("meeting.letter.blame"), "letter-par").NoPick().AddTo(blame);
                 var num = Title("+0", "letter-blame-num").NoPick().AddTo(blame);
-                UiMotion.CountUp(num, 0, prof.IhtarBlame, 0.5f, n => "+" + n, 1.1f);
+                UiMotion.CountUp(num, 0, prof.IhtarBlame, 0.4f, n => "+" + n, 0.55f);
                 Memo(Loc.T("meeting.letter.closing"), "letter-par").NoPick().AddTo(_letterBody);
                 if (to == v.Me) Hand(Loc.T("meeting.letter.its_you"), "letter-you").NoPick().AddTo(_letterBody);
                 Box("spacer").NoPick().AddTo(_letterBody);
@@ -244,7 +263,7 @@ namespace BirimizKovulacak.Game
             {
                 Bold(Loc.T("meeting.letter.dept"), "letter-dept").NoPick().AddTo(_letterBody);
                 MemoBold(Loc.T("meeting.letter.none_subject"), "letter-subject").NoPick().AddTo(_letterBody);
-                Memo(Loc.T(m != null && m.Votes.Count > 0 ? "meeting.letter.none_tie" : "meeting.letter.none_votes"), "letter-par").NoPick().AddTo(_letterBody);
+                Memo(NoIhtarReason(v), "letter-par").NoPick().AddTo(_letterBody);
                 Memo(Loc.T("meeting.letter.none_closing"), "letter-par").NoPick().AddTo(_letterBody);
                 Box("spacer").NoPick().AddTo(_letterBody);
                 Hand(Loc.ManagerName(v.ManagerProfileId), "letter-sign").NoPick().AddTo(_letterBody);
@@ -262,6 +281,26 @@ namespace BirimizKovulacak.Game
                 UiMotion.Shake(letter, 7f, 0.3f);
                 if (to >= 0) FeelHooks.ResultsStamp(ScreenPoint(_stamp));
             });
+        }
+
+        /// <summary>v3.1: nobody gets the İhtar on a tie, or when the plurality names someone who already has one.</summary>
+        static string NoIhtarReason(LineView v)
+        {
+            var m = v.Meeting;
+            if (m == null) return Loc.T("meeting.letter.none_votes");
+            var counts = new Dictionary<int, int>();
+            foreach (var x in m.Votes) if (x.Target >= 0) { int c; counts.TryGetValue(x.Target, out c); counts[x.Target] = c + 1; }
+            if (counts.Count == 0) return Loc.T("meeting.letter.none_votes");
+            int max = 0, top = LineIds.None, tied = 0;
+            foreach (var kv in counts)
+            {
+                if (kv.Value > max) { max = kv.Value; top = kv.Key; tied = 1; }
+                else if (kv.Value == max) tied++;
+            }
+            if (tied > 1) return Loc.T("meeting.letter.none_tie");
+            var p = Player(v, top);
+            if (p != null && p.Ihtars >= MeetingText.Config.MaxIhtarsPerPlayerPerWeek) return Loc.F("meeting.letter.none_warned", MeetingText.Name(top));
+            return Loc.T("meeting.letter.none_tie");
         }
 
         void BuildTally(LineView v)

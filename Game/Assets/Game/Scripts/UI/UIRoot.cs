@@ -39,7 +39,8 @@ namespace BirimizKovulacak.Game
         // v3
         DeskUi _desk;
         MeetingUi _meetingV3;
-        bool _built;
+        bool _built, _rebuildPending;
+        readonly System.Collections.Generic.List<VisualElement> _screenElements = new System.Collections.Generic.List<VisualElement>();
 
         /// <summary>Root element of the UI document (v3 screens and the UI mock attach below it).</summary>
         public VisualElement RootElement => _root;
@@ -82,7 +83,38 @@ namespace BirimizKovulacak.Game
             _root.AddToClassList("root");
             if (UiArt.KitAvailable) _root.AddToClassList("art");
             _root.pickingMode = PickingMode.Ignore;
+            BuildScreens();
+            Loc.Changed += OnLanguageChanged;
+        }
 
+        void OnDestroy() { Loc.Changed -= OnLanguageChanged; }
+
+        /// <summary>Language switched (Settings, menu, first-launch picker): rebuild next frame, outside the click handler.</summary>
+        void OnLanguageChanged() { _rebuildPending = true; }
+
+        /// <summary>
+        /// Recreates every screen so all texts, logos and per-language stamps follow <see cref="Loc.Language"/>.
+        /// Overlays that were open (settings tab, how-to, pause, join page) are reopened.
+        /// </summary>
+        public void Rebuild()
+        {
+            if (!_built) return;
+            bool settings = _settings.Visible, howTo = _howTo.Visible, pause = _pause.Visible, join = _menu.JoinOpen;
+            int tab = (int)SettingsScreen.CurrentTab;
+            Modal.CloseAll();
+            foreach (var e in _screenElements) e.RemoveFromHierarchy();
+            _screenElements.Clear();
+            _built = false;
+            BuildScreens();
+            if (pause) _pause.Toggle();
+            if (howTo) HowToPlayScreen.Open();
+            if (settings) SettingsScreen.Open(tab);
+            _menu.OpenJoinOnShow = join;
+        }
+
+        void BuildScreens()
+        {
+            int before = _root.childCount;
             // Layers, bottom to top.
             var feedLayer = new VisualElement { pickingMode = PickingMode.Ignore };
             _hud = new Hud(_root, feedLayer);
@@ -103,11 +135,13 @@ namespace BirimizKovulacak.Game
             _email = new EmailPicker(_root);
             _confirm = new ConfirmDialog(_root);
             _status = new StatusOverlay(_root);
+            for (int i = before; i < _root.childCount; i++) _screenElements.Add(_root[i]);
             _built = true;
         }
 
         void Update()
         {
+            if (_rebuildPending) { _rebuildPending = false; Rebuild(); }
             if (!_built) return;
             var cs = ClientState.I;
             var conn = ConnectionManager.I;
@@ -118,6 +152,7 @@ namespace BirimizKovulacak.Game
             _desk.SetVisible(false);
             _meetingV3.SetVisible(false);
             bool online = conn != null && (conn.Current == ConnectionManager.State.Hosting || conn.Current == ConnectionManager.State.Connected || conn.Current == ConnectionManager.State.Reconnecting || conn.Current == ConnectionManager.State.Connecting);
+            online |= LineClient.I != null && LineClient.I.Lobby != null; // v3 lobby (also the UI mock)
             bool inMatch = view != null;
             MatchPhase phase = inMatch ? view.Phase : MatchPhase.None;
             bool office = inMatch && GameInfo.OfficePhase(phase);

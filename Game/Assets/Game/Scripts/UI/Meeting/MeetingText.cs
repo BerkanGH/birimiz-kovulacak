@@ -137,13 +137,29 @@ namespace BirimizKovulacak.Game
                     line.Who = e.Named ? e.Player : LineIds.None;
                     return true;
                 case DossierKind.TipResult:
+                {
                     line.Icon = "icons_v3/tip_off";
                     line.Title = Loc.F("dossier.tip", Name(e.Player));
                     bool ok = e.Arg == 1;
-                    line.Detail = ok ? Loc.F("dossier.tip_true", Name(e.Player), Signed(Config.ConfirmedTipBlame)) : Loc.F("dossier.tip_false", Signed(Config.FalseTipBlame));
-                    line.Tone = ok ? Tone.Bad : Tone.Secret;
-                    line.Who = e.Player;
+                    if (ok)
+                    {
+                        line.Detail = Loc.F("dossier.tip_true", Name(e.Player), Signed(Config.ConfirmedTipBlame));
+                        line.Who = e.Player;
+                    }
+                    else if (e.Victim >= 0)
+                    {
+                        // v3.1: a false tip names the tipper
+                        line.Detail = Loc.F("dossier.tip_false_named", Name(e.Victim), Signed(Config.FalseTipBlame));
+                        line.Who = e.Victim;
+                    }
+                    else
+                    {
+                        line.Detail = Loc.F("dossier.tip_false", Signed(Config.FalseTipBlame));
+                        line.Who = LineIds.None;
+                    }
+                    line.Tone = Tone.Bad;
                     return true;
+                }
                 case DossierKind.ComplaintLeak:
                     line.Icon = "icons_v3/complaint";
                     line.Title = Loc.T("dossier.leak");
@@ -289,13 +305,15 @@ namespace BirimizKovulacak.Game
         public static double DossierStart(LineView v)
         {
             if (v == null) return 0;
+            if (v.Phase == LinePhase.MeetingDossier) return v.PhaseStartTime;
+            var d = Config.Durations;
             var m = v.Meeting;
-            if (m != null && m.Recordings.Count > 0)
-            {
-                var p = m.Recordings[0];
-                return p.PlayAt - 4.0 - p.Index * Config.Durations.DossierPerRecording;
-            }
-            return v.Phase == LinePhase.MeetingDossier ? v.PhaseStartTime : v.PhaseStartTime;
+            int recs = m != null ? m.Recordings.Count : 0;
+            double dossier = d.Dossier + d.DossierPerRecording * recs;
+            if (v.Phase == LinePhase.MeetingDiscussion) return v.PhaseStartTime - dossier;
+            if (v.Phase == LinePhase.MeetingVote) return v.PhaseStartTime - dossier - d.Discussion;
+            if (m != null && recs > 0) return m.Recordings[0].PlayAt - 4.0;
+            return v.PhaseStartTime;
         }
 
         /// <summary>

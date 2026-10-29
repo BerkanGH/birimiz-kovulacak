@@ -58,9 +58,11 @@ namespace BirimizKovulacak.Game
             if (_go == null)
             {
                 _go = new GameObject("ProjectorUI");
+                _go.SetActive(false);
                 Object.DontDestroyOnLoad(_go);
                 _doc = _go.AddComponent<UIDocument>();
                 _doc.panelSettings = _ps;
+                _go.SetActive(true);
             }
             var root = _doc.rootVisualElement;
             root.Clear();
@@ -91,7 +93,7 @@ namespace BirimizKovulacak.Game
     /// </summary>
     public sealed class DossierDeck
     {
-        public enum Kind : byte { Cover, Recording, Rounds, Incidents, Board }
+        public enum Kind : byte { Cover, Recording, Rounds, Incidents, Board, Shortlist }
 
         struct Slide { public Kind Kind; public int Arg; }
 
@@ -125,7 +127,19 @@ namespace BirimizKovulacak.Game
 
         public Kind KindAt(int i) { return i >= 0 && i < _slides.Count ? _slides[i].Kind : Kind.Cover; }
 
-        public int BoardIndex => _slides.Count - 1;
+        int IndexOf(Kind k)
+        {
+            for (int i = 0; i < _slides.Count; i++) if (_slides[i].Kind == k) return i;
+            return -1;
+        }
+
+        public int BoardIndex => Mathf.Max(0, IndexOf(Kind.Board));
+
+        /// <summary>The slide shown after the dossier: the shortlist in the final, else the blame record.</summary>
+        public int RestIndex
+        {
+            get { int s = IndexOf(Kind.Shortlist); return s >= 0 ? s : BoardIndex; }
+        }
 
         public int RecordingIndex(int pick)
         {
@@ -133,23 +147,43 @@ namespace BirimizKovulacak.Game
             return -1;
         }
 
+        /// <summary>
+        /// True when the engine plays the tapes right at the start of the dossier (v3.0: PlayAt = start + 4 s); then the
+        /// tapes come straight after the cover. Otherwise they are the climax, after rounds and incidents.
+        /// </summary>
+        static bool RecordingsEarly(LineView v)
+        {
+            var m = v.Meeting;
+            if (m == null || m.Recordings.Count == 0) return false;
+            return m.Recordings[0].PlayAt - MeetingText.DossierStart(v) < 8.0;
+        }
+
         /// <summary>Recomputes the slide list for this meeting; returns true when it changed (the caller re-shows).</summary>
         public bool SetView(LineView v)
         {
             var m = v.Meeting;
-            int key = v.WeekId * 1000003 + v.Day * 101 + (m != null ? m.Dossier.Count * 7 + m.Recordings.Count : -1) + (m != null && m.IsFinal ? 50000 : 0);
+            int key = v.WeekId * 1000003 + v.Day * 101 + (m != null ? m.Dossier.Count * 7 + m.Recordings.Count * 3 + m.Shortlist.Count * 1009 : -1) + (m != null && m.IsFinal ? 50000 : 0);
             if (key == _listKey) return false;
             _listKey = key;
             _slides.Clear();
+            bool early = RecordingsEarly(v);
             _slides.Add(new Slide { Kind = Kind.Cover });
-            if (m != null) for (int i = 0; i < m.Recordings.Count; i++) _slides.Add(new Slide { Kind = Kind.Recording, Arg = m.Recordings[i].Index });
+            if (early) AddRecordings(m);
             if (v.TodayReveals.Count > 0) _slides.Add(new Slide { Kind = Kind.Rounds });
             if (HasIncidents(v)) _slides.Add(new Slide { Kind = Kind.Incidents });
+            if (!early) AddRecordings(m);
             _slides.Add(new Slide { Kind = Kind.Board });
+            if (m != null && m.IsFinal && m.Shortlist.Count > 0) _slides.Add(new Slide { Kind = Kind.Shortlist });
             _dots.Clear();
             for (int i = 0; i < _slides.Count; i++) Box("slide-dot").NoPick().AddTo(_dots);
             _shown = -1;
             return true;
+        }
+
+        void AddRecordings(LineMeetingView m)
+        {
+            if (m == null) return;
+            for (int i = 0; i < m.Recordings.Count; i++) _slides.Add(new Slide { Kind = Kind.Recording, Arg = m.Recordings[i].Index });
         }
 
         static bool HasIncidents(LineView v)
@@ -160,28 +194,49 @@ namespace BirimizKovulacak.Game
             return false;
         }
 
-        /// <summary>The slide the manager shows right now (dossier timeline: cover, each recording at its PlayAt, then the rest).</summary>
+        /// <summary>
+        /// The slide the manager shows right now: every tape exactly while it plays (from its PlayAt), the other slides
+        /// share the remaining dossier time in list order. Outside the dossier: the shortlist (final) or the record.
+        /// </summary>
         public int AutoIndex(LineView v, double now)
         {
             if (_slides.Count == 0) return 0;
-            if (v.Phase != LinePhase.MeetingDossier) return BoardIndex;
+            if (v.Phase != LinePhase.MeetingDossier) return RestIndex;
             var m = v.Meeting;
-            double start = MeetingText.DossierStart(v);
+            double start = MeetingText.DossierStart(v), end = v.PhaseEndTime;
             double per = MeetingText.Config.Durations.DossierPerRecording;
             int recs = m != null ? m.Recordings.Count : 0;
-            if (m != null)
-                for (int i = 0; i < recs; i++)
+            double recTime = 0, recBefore = 0;
+            for (int i = 0; i < recs; i++)
+            {
+                double a = m.Recordings[i].PlayAt - 1.0, b = a + per;
+                if (now >= a && now < b)
                 {
-                    var p = m.Recordings[i];
-                    if (now >= p.PlayAt - 1.0 && now < p.PlayAt + per - 1.0) return RecordingIndex(p.Index);
+                    int ri = RecordingIndex(m.Recordings[i].Index);
+                    if (ri >= 0) return ri;
                 }
-            double afterRecs = recs > 0 ? m.Recordings[recs - 1].PlayAt + per - 1.0 : start + 4.0;
-            if (now < (recs > 0 ? m.Recordings[0].PlayAt - 1.0 : afterRecs)) return 0;
-            int firstRest = 1 + recs, rest = _slides.Count - firstRest;
-            if (rest <= 0) return _slides.Count - 1;
-            double span = System.Math.Max(3.0, v.PhaseEndTime - afterRecs);
-            int k = (int)((now - afterRecs) / (span / rest));
-            return firstRest + Mathf.Clamp(k, 0, rest - 1);
+                recTime += per;
+                if (now >= b) recBefore += per; else if (now > a) recBefore += now - a;
+            }
+            // the non-tape slides, in order, share the free time
+            int others = _slides.Count - recs;
+            if (others <= 0) return 0;
+            double free = System.Math.Max(1.0, (end - start) - recTime);
+            double elapsed = System.Math.Max(0.0, (now - start) - recBefore);
+            bool early = RecordingsEarly(v);
+            double coverShare = early && recs > 0 ? System.Math.Max(1.0, m.Recordings[0].PlayAt - 1.0 - start) : free / others;
+            int k;
+            if (elapsed < coverShare) k = 0;
+            else k = 1 + (int)((elapsed - coverShare) / System.Math.Max(1.0, (free - coverShare) / System.Math.Max(1, others - 1)));
+            k = Mathf.Clamp(k, 0, others - 1);
+            // map the k-th non-tape slide back to its list index
+            for (int i = 0, n = 0; i < _slides.Count; i++)
+            {
+                if (_slides[i].Kind == Kind.Recording) continue;
+                if (n == k) return i;
+                n++;
+            }
+            return RestIndex;
         }
 
         public string TitleOf(int i)
@@ -193,6 +248,7 @@ namespace BirimizKovulacak.Game
                 case Kind.Recording: return Loc.T("dossier.slide.recording");
                 case Kind.Rounds: return Loc.T("dossier.slide.rounds");
                 case Kind.Incidents: return Loc.T("dossier.slide.incidents");
+                case Kind.Shortlist: return Loc.T("dossier.slide.shortlist");
                 default: return Loc.T("dossier.slide.board");
             }
         }
@@ -217,6 +273,7 @@ namespace BirimizKovulacak.Game
                 case Kind.Recording: BuildRecording(v, s.Arg); break;
                 case Kind.Rounds: BuildRounds(v); break;
                 case Kind.Incidents: BuildIncidents(v); break;
+                case Kind.Shortlist: BuildShortlist(v); break;
                 default: BuildBoard(v); break;
             }
             // slide transition: the new page slides in from the right like a clicker advance
@@ -234,7 +291,7 @@ namespace BirimizKovulacak.Game
                 _deckPick = p;
                 _deck.Set(p, v);
             }
-            else if (s.Kind == Kind.Board && BoardKey(v) != _boardKey) Show(_shown, v, true);
+            else if ((s.Kind == Kind.Board || s.Kind == Kind.Shortlist) && BoardKey(v) != _boardKey) Show(_shown, v, true);
         }
 
         public void Tick(double now, float dt)
@@ -288,8 +345,8 @@ namespace BirimizKovulacak.Game
         {
             var p = FindPick(v, pickIndex);
             int total = v.Meeting != null ? v.Meeting.Recordings.Count : 1;
-            var head = Box("slide-head").NoPick().AddTo(_page);
-            Title(total > 1 ? Loc.F("dossier.rec.title_n", pickIndex + 1, total) : Loc.T("dossier.rec.title"), "slide-title").NoPick().AddTo(head);
+            var head = Box("sl-head").NoPick().AddTo(_page);
+            Title(total > 1 ? Loc.F("dossier.rec.title_n", pickIndex + 1, total) : Loc.T("dossier.rec.title"), "sl-title").NoPick().AddTo(head);
             Box("spacer").NoPick().AddTo(head);
             Memo(Loc.T("rec.notice"), "rec-notice").NoPick().AddTo(head);
             _deck = new TapeDeck(_page);
@@ -299,7 +356,7 @@ namespace BirimizKovulacak.Game
 
         void BuildRounds(LineView v)
         {
-            Title(Loc.T("dossier.slide.rounds"), "slide-title").NoPick().AddTo(_page);
+            Title(Loc.T("dossier.slide.rounds"), "sl-title").NoPick().AddTo(_page);
             var row = Box("rounds-row").NoPick().AddTo(_page);
             for (int i = 0; i < v.TodayReveals.Count; i++)
             {
@@ -335,7 +392,7 @@ namespace BirimizKovulacak.Game
 
         void BuildIncidents(LineView v)
         {
-            Title(Loc.T("dossier.slide.incidents"), "slide-title").NoPick().AddTo(_page);
+            Title(Loc.T("dossier.slide.incidents"), "sl-title").NoPick().AddTo(_page);
             var list = Box("incident-list").NoPick().AddTo(_page);
             int n = 0;
             foreach (var e in v.Meeting.Dossier)
@@ -365,6 +422,7 @@ namespace BirimizKovulacak.Game
         {
             int k = 17;
             foreach (var p in v.Players) k = k * 31 + p.Blame * 7 + p.Ihtars + (p.Connected ? 1 : 0) * 3;
+            if (v.Meeting != null) k = k * 31 + v.Meeting.Defender + (v.Phase == LinePhase.FinalDefense ? 977 : 0);
             return k;
         }
 
@@ -372,11 +430,11 @@ namespace BirimizKovulacak.Game
         {
             _boardKey = BoardKey(v);
             bool final = v.Meeting != null && v.Meeting.IsFinal;
-            var head = Box("slide-head").NoPick().AddTo(_page);
-            Title(Loc.T("dossier.slide.board"), "slide-title").NoPick().AddTo(head);
+            var head = Box("sl-head").NoPick().AddTo(_page);
+            Title(Loc.T("dossier.slide.board"), "sl-title").NoPick().AddTo(head);
             Box("spacer").NoPick().AddTo(head);
             var prof = MeetingText.Profile(v);
-            Memo(final ? Loc.F("dossier.board.final_rule", prof.FinalVoteWeight) : Loc.F("dossier.board.daily_rule", prof.IhtarBlame), "rec-notice").NoPick().AddTo(head);
+            Memo(final ? Loc.F("dossier.board.final_rule", v.Meeting.Shortlist.Count > 0 ? v.Meeting.Shortlist.Count : ShortlistSize(v)) : Loc.F("dossier.board.daily_rule", prof.IhtarBlame), "rec-notice").NoPick().AddTo(head);
 
             var rows = new List<LinePlayerView>(v.Players);
             rows.Sort((a, b) => b.Blame != a.Blame ? b.Blame.CompareTo(a.Blame) : b.Ihtars != a.Ihtars ? b.Ihtars.CompareTo(a.Ihtars) : a.Id.CompareTo(b.Id));
@@ -393,8 +451,10 @@ namespace BirimizKovulacak.Game
                 var nc = Box("board-name-col").NoPick().AddTo(row);
                 Title(p.Name, "board-name").NoPick().AddTo(nc);
                 if (p.Id == v.Favourite) Bold(Loc.T("dossier.board.favourite"), "board-fav").NoPick().AddTo(nc);
+                if (final && v.Meeting.Shortlist.Contains(p.Id)) { row.AddToClassList("board-short"); Tag(Loc.T("dossier.shortlist.tag"), "tag-red", "board-short-tag").AddTo(nc); }
                 var barWrap = Box("board-bar").NoPick().AddTo(row);
                 var fill = Box("board-fill").NoPick().AddTo(barWrap);
+                if (n == 0 && p.Blame > 0) fill.AddToClassList("board-fill-top");
                 float frac = p.Blame / (float)max;
                 fill.style.width = Length.Percent(Mathf.Max(2f, frac * 100f));
                 Title(p.Blame.ToString(), "board-num").NoPick().AddTo(row);
@@ -405,6 +465,54 @@ namespace BirimizKovulacak.Game
                 UiMotion.Tween(fill, 0.6f, t => fill.style.width = Length.Percent(Mathf.Max(2f, frac * 100f * t)), UiMotion.Ease.OutCubic, null, delay + 0.1f, "grow");
                 n++;
             }
+        }
+
+        public static int ShortlistSize(LineView v)
+        {
+            var c = MeetingText.Config;
+            return v.Players.Count >= 5 ? c.FinalShortlistLarge : c.FinalShortlistSmall;
+        }
+
+        /// <summary>Final: the 2–3 personnel files the final vote chooses between, in defense order.</summary>
+        void BuildShortlist(LineView v)
+        {
+            var m = v.Meeting;
+            _boardKey = BoardKey(v);
+            var head = Box("sl-head").NoPick().AddTo(_page);
+            Title(Loc.T("dossier.slide.shortlist"), "sl-title").NoPick().AddTo(head);
+            Box("spacer").NoPick().AddTo(head);
+            Memo(Loc.F("dossier.shortlist.rule", m.Shortlist.Count), "rec-notice").NoPick().AddTo(head);
+            var row = Box("short-row").NoPick().AddTo(_page);
+            int n = 0;
+            foreach (int id in m.Shortlist)
+            {
+                var p = Player(v, id);
+                var card = Box("short-card").NoPick().AddTo(row);
+                if (id == m.Defender && v.Phase == LinePhase.FinalDefense) card.AddToClassList("short-card-now");
+                Memo(Loc.F("dossier.shortlist.order", n + 1), "short-order").NoPick().AddTo(card);
+                Badge(id, "badge-xl").AddTo(card);
+                Title(MeetingText.Name(id), "short-name").NoPick().AddTo(card);
+                var line = Box("row").NoPick().AddTo(card);
+                Bold(Loc.F("meeting.blame_n", p != null ? p.Blame : 0), "short-blame").NoPick().AddTo(line);
+                if (p != null) for (int k = 0; k < p.Ihtars; k++) IhtarMark(line);
+                var clip = Box("short-clip").NoPick().AddTo(card);
+                UiMotion.PopIn(card, 0.32f, 0.15f + n * 0.15f, 0.85f);
+                n++;
+            }
+            var safe = new System.Text.StringBuilder();
+            foreach (var p in v.Players)
+            {
+                if (m.Shortlist.Contains(p.Id)) continue;
+                if (safe.Length > 0) safe.Append(", ");
+                safe.Append(p.Name);
+            }
+            if (safe.Length > 0) Text(Loc.F("dossier.shortlist.safe", safe.ToString()), "short-safe").NoPick().AddTo(_page);
+        }
+
+        static LinePlayerView Player(LineView v, int id)
+        {
+            foreach (var p in v.Players) if (p.Id == id) return p;
+            return null;
         }
 
         /// <summary>Small red "İ"/"W" warning mark (one per İhtar).</summary>

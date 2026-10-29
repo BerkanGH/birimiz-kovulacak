@@ -13,10 +13,11 @@ namespace BirimizKovulacak.Game
     /// </summary>
     public sealed class WeekResultsView : MeetingPanel
     {
-        readonly VisualElement _sheet, _rows, _session, _actions;
+        readonly VisualElement _sheet, _rows, _side, _session, _next, _actions, _pickLayer, _pickCards;
         readonly Label _title, _sub, _timer, _waiting;
         int _lastSec = -1, _builtWeek = -1;
-        bool _host;
+        string _shownPick;
+        bool _host, _picked;
 
         public WeekResultsView(VisualElement parent) : base(parent, "mt-results")
         {
@@ -36,15 +37,28 @@ namespace BirimizKovulacak.Game
             Text(Loc.T("results.col.agenda"), "wr-c-agenda", "wr-h").NoPick().AddTo(hdr);
             Text(Loc.T("results.col.trick"), "wr-c-trick", "wr-h").NoPick().AddTo(hdr);
             Text(Loc.T("results.col.points"), "wr-c-pts", "wr-h").NoPick().AddTo(hdr);
+            Box("wr-c-total").NoPick().AddTo(hdr);
+            Box("wr-c-stamp").NoPick().AddTo(hdr);
             _rows = Box("col").NoPick().AddTo(left);
 
-            _session = Box("wr-session").NoPick().AddTo(cols);
+            _side = Box("wr-side").NoPick().AddTo(cols);
+            _session = Box("wr-session").NoPick().AddTo(_side);
+            _next = Box("wr-next").NoPick().AddTo(_side);
 
             var foot = Box("wr-foot").AddTo(_sheet);
             _timer = Bold("", "wr-timer").NoPick().AddTo(foot);
             Box("spacer").NoPick().AddTo(foot);
             _waiting = Bold(Loc.T("results.waiting_host"), "wr-waiting").NoPick().AddTo(foot);
             _actions = Box("row").AddTo(foot);
+
+            // v3.1: the fired player picks next week's manager (revenge overlay)
+            _pickLayer = Box("pick-layer").AddTo(Root);
+            var card = Box("pick-card").AddTo(_pickLayer);
+            StampText(Loc.T("results.pick.title"), "pick-title").NoPick().AddTo(card);
+            Bold(Loc.T("results.pick.sub"), "pick-sub").NoPick().AddTo(card);
+            _pickCards = Box("pick-cards").AddTo(card);
+            Text(Loc.T("results.pick.note"), "pick-note").NoPick().AddTo(card);
+            _pickLayer.Show(false);
         }
 
         protected override void OnShow(LineView v)
@@ -52,6 +66,8 @@ namespace BirimizKovulacak.Game
             UiArt.Apply(Root, "backgrounds/results_bg");
             _builtWeek = -1;
             _lastSec = -1;
+            _shownPick = null;
+            _picked = false;
             Build(v);
         }
 
@@ -63,7 +79,9 @@ namespace BirimizKovulacak.Game
 
         public override void Refresh(LineView v)
         {
-            if (Visible && v.Result != null && v.WeekId != _builtWeek) Build(v);
+            if (!Visible) return;
+            if (v.Result != null && v.WeekId != _builtWeek) Build(v);
+            else if (v.Result != null && (v.Result.NextManagerPick ?? "") != (_shownPick ?? "")) BuildNext(v, true);
         }
 
         void Build(LineView v)
@@ -115,7 +133,12 @@ namespace BirimizKovulacak.Game
                 MeetingText.ApplyIcon(Box("icon", "icon-s").NoPick().AddTo(agRow), "icons_v3/agenda_target");
                 if (p.AgendaTarget >= 0) Badge(p.AgendaTarget, "badge-xs").AddTo(agRow);
                 Bold(p.AgendaTarget >= 0 ? MeetingText.Name(p.AgendaTarget) : Loc.T("common.nobody"), "wr-agenda-name").NoPick().AddTo(agRow);
-                Tag(Loc.T(p.AgendaHit ? "results.agenda_hit" : "results.agenda_miss"), p.AgendaHit ? "tag-green" : "tag-grey").AddTo(ag);
+                bool targetFired = p.AgendaTarget >= 0 && p.AgendaTarget == r.Fired;
+                int agendaPts = cfg.AgendaPointsPerIhtar * p.AgendaIhtars + (targetFired ? cfg.AgendaPoints : 0);
+                var agTags = Box("row", "wr-agenda-tags").NoPick().AddTo(ag);
+                if (targetFired) Tag(Loc.T("results.agenda_fired"), "tag-green").AddTo(agTags);
+                if (p.AgendaIhtars > 0) Tag(Loc.F("results.agenda_ihtars", p.AgendaIhtars), "tag-green").AddTo(agTags);
+                if (!targetFired && p.AgendaIhtars == 0) Tag(Loc.T("results.agenda_miss"), "tag-grey").AddTo(agTags);
                 UiMotion.Flip(ag, null, 0.4f, delay + 0.1f);
 
                 // dirty trick
@@ -131,14 +154,15 @@ namespace BirimizKovulacak.Game
                 var chips = Box("wr-chips").NoPick().AddTo(pts);
                 if (p.Survived) PointChip(chips, Loc.T("results.pt.survived"), cfg.SurvivePoints, delay + 0.3f);
                 else PointChip(chips, Loc.T("results.pt.fired"), 0, delay + 0.3f, true);
-                if (p.AgendaHit) PointChip(chips, Loc.T("results.pt.agenda"), cfg.AgendaPoints, delay + 0.4f);
+                if (agendaPts > 0) PointChip(chips, Loc.T("results.pt.agenda"), agendaPts, delay + 0.4f);
                 if (p.EmployeeOfWeek) PointChip(chips, Loc.T("results.pt.eotw"), cfg.EmployeeOfWeekPoints, delay + 0.5f);
-                var total = Title("0", "wr-total").NoPick().AddTo(pts);
+                var total = Title("0", "wr-total", "wr-c-total").NoPick().AddTo(row);
+                var slot = Box("wr-c-stamp").NoPick().AddTo(row);
                 UiMotion.CountUp(total, 0, p.Points, 0.6f, x => "+" + x, delay + 0.5f);
 
                 if (p.EmployeeOfWeek || !p.Survived)
                 {
-                    var st = Box("wr-stamp").NoPick().AddTo(row);
+                    var st = Box("wr-stamp").NoPick().AddTo(slot);
                     bool ok = p.EmployeeOfWeek
                         ? MeetingText.ApplyStamp(st, "stamps_v3/stamp_haftanin_elemani", "stamps_v3/stamp_employee_week_en")
                         : MeetingText.ApplyStamp(st, "stamps/stamp_kovuldu", "stamps_v3/stamp_fired");
@@ -152,7 +176,7 @@ namespace BirimizKovulacak.Game
 
             // session board: totals including this week
             Title(Loc.T("results.session.title"), "wr-session-title").NoPick().AddTo(_session);
-            Memo(Loc.F("results.session.weeks", v.WeekId), "wr-session-sub").NoPick().AddTo(_session);
+            Memo(Loc.T("results.session.sub"), "wr-session-sub").NoPick().AddTo(_session);
             var board = new List<LineWeekPlayerResult>(r.Players);
             board.Sort((a, b) => b.SessionPoints != a.SessionPoints ? b.SessionPoints.CompareTo(a.SessionPoints) : a.Player.CompareTo(b.Player));
             int top = board.Count > 0 ? board[0].SessionPoints : 0;
@@ -169,8 +193,86 @@ namespace BirimizKovulacak.Game
                 i++;
             }
 
+            Text(Loc.F("results.session.start_blame", cfg.StartBlame, cfg.StartBlame + cfg.LeaderStartBonus), "wr-session-note").NoPick().AddTo(_session);
+
+            BuildNext(v, false);
             UiMotion.SlideIn(_sheet, new Vector2(0f, 60f), 0.4f);
-            UiMotion.SlideIn(_session, new Vector2(60f, 0f), 0.4f, 1.0f);
+            UiMotion.SlideIn(_side, new Vector2(60f, 0f), 0.4f, 1.0f);
+        }
+
+        // ------------------------------------------------------------------ next manager (v3.1)
+
+        void BuildNext(LineView v, bool animate)
+        {
+            var r = v.Result;
+            _next.Clear();
+            if (r == null || r.Fired < 0) { _next.Show(false); _pickLayer.Show(false); return; }
+            _next.Show(true);
+            string pick = r.NextManagerPick ?? "";
+            _shownPick = pick;
+            Bold(Loc.T("results.next.title"), "wr-next-title").NoPick().AddTo(_next);
+            if (pick.Length > 0)
+            {
+                var row = Box("row").NoPick().AddTo(_next);
+                ManagerPortrait(pick, true, "badge-l").AddTo(row);
+                var col = Box("col", "grow").NoPick().AddTo(row);
+                Title(Loc.ManagerName(pick), "wr-next-name").NoPick().AddTo(col);
+                Text(Loc.F("results.next.picked_by", MeetingText.Name(r.Fired)), "wr-small").NoPick().AddTo(col);
+                if (animate)
+                {
+                    UiMotion.Flip(_next, null, 0.4f);
+                    Sfx.Play("evidence", 0.6f);
+                }
+                if (_pickLayer.IsShown()) _pickLayer.schedule.Execute(() => UiMotion.FadeOut(_pickLayer, 0.25f)).StartingIn(900);
+                return;
+            }
+            var faces = Box("row", "wr-next-faces").NoPick().AddTo(_next);
+            foreach (var id in LineManagerIds.All)
+            {
+                if (id == r.ManagerProfileId) continue;
+                var b = ManagerPortrait(id, false, "badge-s").AddTo(faces);
+                b.AddToClassList("wr-next-face");
+            }
+            Text(r.Fired == v.Me ? Loc.T("results.next.you_pick") : Loc.F("results.next.picking", MeetingText.Name(r.Fired)), "wr-small").NoPick().AddTo(_next);
+            if (r.Fired == v.Me && !_picked) ShowPicker(v);
+        }
+
+        void ShowPicker(LineView v)
+        {
+            var r = v.Result;
+            _pickCards.Clear();
+            int n = 0;
+            for (int i = 0; i < LineManagerIds.All.Length; i++)
+            {
+                string id = LineManagerIds.All[i];
+                if (id == r.ManagerProfileId) continue;
+                int index = i;
+                var card = Box("pick-option").AddTo(_pickCards);
+                ManagerPortrait(id, true, "badge-xl").AddTo(card);
+                Title(Loc.ManagerName(id), "pick-name").NoPick().AddTo(card);
+                Bold(Loc.ManagerTitle(id), "pick-mtitle").NoPick().AddTo(card);
+                Text(Loc.T("results.pick.pitch." + id), "pick-pitch").NoPick().AddTo(card);
+                var stamp = Box("pick-stamp").NoPick().AddTo(card);
+                stamp.style.opacity = 0f;
+                card.RegisterCallback<ClickEvent>(_ => Pick(index, card, stamp));
+                UiMotion.PopIn(card, 0.32f, 0.25f + n * 0.12f, 0.8f);
+                n++;
+            }
+            _pickLayer.Show(true);
+            _pickLayer.BringToFront();
+            UiMotion.FadeIn(_pickLayer, 0.3f);
+        }
+
+        void Pick(int index, VisualElement card, VisualElement stamp)
+        {
+            if (_picked) return;
+            _picked = true;
+            LineClient.I?.Send(LineVerb.PickNextManager, LineIds.None, index);
+            foreach (var c in _pickCards.Children()) c.EnableInClassList("pick-option-dim", c != card);
+            card.AddToClassList("pick-option-on");
+            if (!MeetingText.ApplyStamp(stamp, "stamps/stamp_onaylandi", "stamps_v3/stamp_approved")) TextStamp(stamp, Loc.T("results.pick.stamp"), "stamp-green");
+            UiMotion.Stamp(stamp, -10f, 0.22f, 0f, () => Sfx.Play("evidence", 0.8f));
+            _pickLayer.schedule.Execute(() => { if (_pickLayer.IsShown()) UiMotion.FadeOut(_pickLayer, 0.3f); }).StartingIn(1600);
         }
 
         static void PointChip(VisualElement parent, string label, int pts, float delay, bool bad = false)

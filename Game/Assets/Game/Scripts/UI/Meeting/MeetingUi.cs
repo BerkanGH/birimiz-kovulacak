@@ -55,10 +55,10 @@ namespace BirimizKovulacak.Game
             var roller = Box("mt-proj-roller").NoPick().AddTo(_proj);
             _projTitle = Bold("", "mt-proj-title").NoPick().AddTo(roller);
             var body = Box("mt-proj-body").AddTo(_proj);
-            _prev = Btn("‹", () => Page(-1), "btn-ghost", "mt-proj-nav").AddTo(body);
+            _prev = Btn("‹", () => Page(-1), "btn-secondary", "mt-proj-nav").AddTo(body);
             _projScreen = Box("mt-proj-screen").NoPick().AddTo(body);
             _projImage = Box("mt-proj-image").NoPick().AddTo(_projScreen);
-            _next = Btn("›", () => Page(1), "btn-ghost", "mt-proj-nav").AddTo(body);
+            _next = Btn("›", () => Page(1), "btn-secondary", "mt-proj-nav").AddTo(body);
             var bottom = Box("mt-proj-bottom").AddTo(_proj);
             Box("mt-proj-handle").NoPick().AddTo(bottom);
             _follow = Btn(Loc.T("meeting.follow_manager"), () => { _manualSlide = -1; _manualUntil = 0; }, "btn-small", "btn-ghost", "mt-proj-follow").AddTo(bottom);
@@ -90,9 +90,16 @@ namespace BirimizKovulacak.Game
             _hoverText = Bold("", "mt-hover-text").NoPick().AddTo(_hover);
             _hover.Show(false);
 
+            Current = this;
             Rooms.SeatClicked += OnSeatClicked;
             Root.RegisterCallback<DetachFromPanelEvent>(_ => Rooms.SeatClicked -= OnSeatClicked);
         }
+
+        /// <summary>The live instance (UI mocks).</summary>
+        internal static MeetingUi Current;
+
+        /// <summary>What Tab does in the room: switch between looking around and the screen view.</summary>
+        internal void ToggleScreen() { if (_room) _screen = !_screen; }
 
         /// <summary>True when the UI needs a free cursor (screen view: projector, ballot, letter, results).</summary>
         public bool WantsCursor => Visible && (_phase == LinePhase.WeekResults || _phase == LinePhase.Abandoned || _phase == LinePhase.FinalVerdict || !_room || _screen);
@@ -205,7 +212,8 @@ namespace BirimizKovulacak.Game
                 }
                 bool listChanged = _deck.SetView(v);
                 if (listChanged || newMeeting) _deck.Show(_deck.AutoIndex(v, now), v, true);
-                else if (_phase != LinePhase.MeetingDossier) _deck.Show(_deck.BoardIndex, v);
+                else if (_phase != LinePhase.MeetingDossier) _deck.Show(_deck.RestIndex, v);
+                _deck.Refresh(v);
                 _projImage.style.backgroundImage = new StyleBackground(Background.FromRenderTexture(ProjectorSurface.Texture));
             }
             else ProjectorSurface.SetActive(false);
@@ -276,7 +284,8 @@ namespace BirimizKovulacak.Game
             bool screenView = !_room || _screen;
             bool vote = IsVote(p);
             bool talk = p == LinePhase.MeetingDossier || p == LinePhase.MeetingDiscussion;
-            _backdrop.Show(!_room && (meeting || p == LinePhase.Abandoned));
+            _backdrop.Show((!_room && (meeting || p == LinePhase.Abandoned)) || (_room && _screen && (talk || vote)));
+            _backdrop.EnableInClassList("mt-backdrop-dim", _room);
             _backdrop.EnableInClassList("mt-backdrop-dark", p == LinePhase.FinalDefense || p == LinePhase.MeetingVerdict || p == LinePhase.FinalVerdict);
             // The room view leaves the projector to the 3D screen; the screen view shows the readable copy.
             _proj.Show(talk && screenView);
@@ -328,7 +337,7 @@ namespace BirimizKovulacak.Game
         {
             if (_deck == null || !LineClient.IsMeetingPhase(v.Phase)) return;
             if (_manualSlide >= 0 && Time.unscaledTime > _manualUntil && v.Phase == LinePhase.MeetingDossier) _manualSlide = -1;
-            int want = _manualSlide >= 0 ? _manualSlide : (v.Phase == LinePhase.MeetingDossier ? _deck.AutoIndex(v, now) : (_deck.Current >= 0 ? _deck.Current : _deck.BoardIndex));
+            int want = _manualSlide >= 0 ? _manualSlide : (v.Phase == LinePhase.MeetingDossier ? _deck.AutoIndex(v, now) : (_deck.Current >= 0 ? _deck.Current : _deck.RestIndex));
             if (want != _deck.Current) _deck.Show(want, v);
             _deck.Tick(now, dt);
             string title = _deck.TitleOf(_deck.Current);
@@ -425,6 +434,9 @@ namespace BirimizKovulacak.Game
                 }
                 s.Root.EnableInClassList("seat-chosen", vote && myVote == s.Id);
                 s.Root.EnableInClassList("seat-defender", v.Phase == LinePhase.FinalDefense && v.Meeting != null && v.Meeting.Defender == s.Id);
+                bool shortlisted = v.Meeting != null && v.Meeting.IsFinal && v.Meeting.Shortlist.Contains(s.Id) && v.Phase != LinePhase.MeetingDossier;
+                s.Root.EnableInClassList("seat-short", shortlisted);
+                s.Root.EnableInClassList("seat-safe", v.Meeting != null && v.Meeting.IsFinal && v.Meeting.Shortlist.Count > 0 && !shortlisted && v.Phase != LinePhase.MeetingDossier);
             }
         }
 

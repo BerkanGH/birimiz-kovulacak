@@ -26,6 +26,9 @@ namespace BirimizKovulacak.Game
         bool _joinOpen;
 
         public bool JoinOpen => _joinOpen;
+        public static MainMenuScreen Instance => _i;
+        /// <summary>Set by <see cref="UIRoot.Rebuild"/> when the language changed on the join page.</summary>
+        public bool OpenJoinOnShow;
 
         public MainMenuScreen(VisualElement parent) : base(parent, "menu-bg")
         {
@@ -254,6 +257,7 @@ namespace BirimizKovulacak.Game
                 if (child is Button || child.ClassListContains("menu-row")) { UiMotion.SlideIn(child, new Vector2(-24f, 0f), 0.25f, d); d += 0.05f; }
             }
             if (NeedsLanguage()) ShowLanguagePicker();
+            if (OpenJoinOnShow) { OpenJoinOnShow = false; ShowJoin(true); }
         }
 
         // A hidden field must not keep keyboard focus (feel suppresses Y/N/T while a text field is focused).
@@ -319,6 +323,8 @@ namespace BirimizKovulacak.Game
             _short = SegButton(_lengthHost, Loc.T("lobby.short_week"), Loc.T("lobby.short_week_sub"), () => HostLineController.Current?.SetLength(WeekLength.Short));
             _full = SegButton(_lengthHost, Loc.T("lobby.full_week"), Loc.T("lobby.full_week_sub"), () => HostLineController.Current?.SetLength(WeekLength.Full));
             _lengthClient = Title("", "lobby-length-client").AddTo(_week);
+            var cfg = LineClient.I != null ? LineClient.I.Config : LineConfig.CreateDefault();
+            Text(Loc.F("lobby.start_blame", cfg.StartBlame, cfg.StartBlame + cfg.LeaderStartBonus), "lobby-note").AddTo(_week);
             Bold(Loc.T("lobby.recordings"), "lobby-label", "mt-m").AddTo(_week);
             _recHost = Box("row").AddTo(_week);
             _rec = new Toggle(Loc.T("lobby.recordings_toggle")).Cls("toggle", "lobby-rec-toggle").AddTo(_recHost);
@@ -404,6 +410,7 @@ namespace BirimizKovulacak.Game
                 _status.EnableInClassList("lobby-status-go", can);
                 var cm = ConnectionManager.I;
                 _addresses.SetText(isHost ? Loc.F("lobby.host_addresses", LocalAddresses(), cm != null ? cm.Port : (ushort)7777) : (cm != null && cm.Current == ConnectionManager.State.Connected ? Loc.F("lobby.connected_to", cm.Address) : ""));
+                _addresses.Show(!string.IsNullOrEmpty(_addresses.text));
                 if (isHost && LaunchArgs.Current.AutoStart && can) hc.StartWeek();
             }
         }
@@ -470,6 +477,7 @@ namespace BirimizKovulacak.Game
                 _name = Title("", "slot-name").AddTo(col);
                 _sub = Text("", "slot-sub").AddTo(col);
                 _tags = Box("slot-tags").AddTo(col);
+                Box("spacer").AddTo(_root);
                 var bottom = Box("slot-bottom").AddTo(_root);
                 _pts = Bold("", "slot-pts").AddTo(bottom);
                 Box("spacer").AddTo(bottom);
@@ -500,6 +508,8 @@ namespace BirimizKovulacak.Game
                 _sub.text = Loc.F("lobby.look", Loc.T("player.default." + _slot));
                 _tags.Clear();
                 _actions.Clear();
+                var oldRemove = _root.Q(className: "slot-remove");
+                oldRemove?.RemoveFromHierarchy();
                 _stamp.Clear();
                 _stamp.RemoveFromClassList("stamp-text");
                 _stamp.style.backgroundImage = StyleKeyword.Null;
@@ -532,7 +542,7 @@ namespace BirimizKovulacak.Game
                 if (isHost && s.IsBot && !lobby.WeekRunning)
                 {
                     int slot = s.Slot;
-                    Btn("×", () => HostLineController.Current?.RemoveBot(slot), "btn-small", "btn-ghost", "slot-remove").AddTo(_actions);
+                    Btn("×", () => HostLineController.Current?.RemoveBot(slot), "btn-small", "btn-ghost", "slot-remove").AddTo(_root);
                 }
             }
         }
@@ -597,6 +607,7 @@ namespace BirimizKovulacak.Game
 
         public PauseMenu(VisualElement parent) : base(parent, "dim", "center")
         {
+            _i = this;
             _card = Panel("panel", "pause").AddTo(Root);
             var head = Box("row").AddTo(_card);
             Title(Loc.T("pause.title"), "h1", "grow").AddTo(head);
@@ -609,8 +620,8 @@ namespace BirimizKovulacak.Game
             _returnLobby = Btn(Loc.T("pause.return_lobby"), () => ConfirmDialog.Show(Loc.T("pause.return_lobby"), Loc.T("pause.return_lobby_confirm"), Loc.T("pause.return_lobby"),
                 () => { HostLineController.Current?.ReturnToLobby(); Hide(); }, true), "btn-ghost", "menu-btn").AddTo(_card);
             var bottom = Box("menu-row").AddTo(_card);
-            Btn(Loc.T("pause.leave"), () => ConfirmDialog.Show(Loc.T("pause.leave"), Loc.T("pause.leave_confirm"), Loc.T("pause.leave"), () => { ConnectionManager.I?.Leave(); Hide(); }, true), "btn-danger", "menu-small").AddTo(bottom);
-            Btn(Loc.T("menu.quit"), () => ConfirmDialog.Show(Loc.T("menu.quit"), Loc.T("menu.quit_confirm"), Loc.T("menu.quit"), Application.Quit, true), "btn-danger", "menu-small").AddTo(bottom);
+            Btn(Loc.T("pause.leave"), () => ConfirmDialog.Show(Loc.T("pause.leave"), Loc.T("pause.leave_confirm"), Loc.T("pause.leave"), () => { ConnectionManager.I?.Leave(); Hide(); }, true), "btn-ghost", "menu-small").AddTo(bottom);
+            Btn(Loc.T("menu.quit"), () => ConfirmDialog.Show(Loc.T("menu.quit"), Loc.T("menu.quit_confirm"), Loc.T("menu.quit"), Application.Quit, true), "btn-ghost", "menu-small").AddTo(bottom);
         }
 
         /// <summary>v3 controls: mouse look, click, Tab phone, V talk, Esc.</summary>
@@ -633,6 +644,11 @@ namespace BirimizKovulacak.Game
 
         public void Toggle() { SetVisible(!Visible); }
         public void Hide() { SetVisible(false); }
+
+        static PauseMenu _i;
+        /// <summary>Mocks / tools: open the pause menu without Esc.</summary>
+        public static void Open() { if (_i != null) _i.SetVisible(true); }
+        public static void Close() { if (_i != null) _i.SetVisible(false); }
 
         protected override void OnShow()
         {

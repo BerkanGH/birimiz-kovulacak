@@ -24,8 +24,48 @@ namespace BirimizKovulacak.Game
 
     public static class RecordingPlayback
     {
-        /// <summary>Set by the voice track; null = the UI animates a plausible fake from the schedule.</summary>
-        public static IRecordingPlayback Source;
+        static IRecordingPlayback _source;
+        static readonly VoiceTapePlayback _voice = new VoiceTapePlayback();
+
+        /// <summary>
+        /// What drives the tape deck. Defaults to the voice system's meeting tape when it runs; set it to override
+        /// (tests). While nothing plays the UI animates a plausible fake from the schedule.
+        /// </summary>
+        public static IRecordingPlayback Source
+        {
+            get { return _source ?? (VoiceSystem.Instance != null ? _voice : null); }
+            set { _source = value; }
+        }
+    }
+
+    /// <summary>Adapter over <see cref="VoiceSystem"/>'s meeting tape (RecordingActive/Level/Speaker/Progress). Allocation-free.</summary>
+    public sealed class VoiceTapePlayback : IRecordingPlayback
+    {
+        public int PlayingPick
+        {
+            get
+            {
+                var vs = VoiceSystem.Instance;
+                var lc = LineClient.I;
+                if (vs == null || !vs.RecordingActive || lc == null || lc.View == null || lc.View.Meeting == null) return -1;
+                var recs = lc.View.Meeting.Recordings;
+                int call = vs.CurrentRecording.CallId;
+                for (int i = 0; i < recs.Count; i++)
+                {
+                    var p = recs[i];
+                    if (call >= 0 && (p.ChosenCallId == call || p.CandidateCallIds.Contains(call))) return p.Index;
+                }
+                // call id not known yet: the pick whose slot is now
+                double now = lc.Now;
+                for (int i = 0; i < recs.Count; i++)
+                    if (now >= recs[i].PlayAt - 0.5 && now < recs[i].PlayAt + recs[i].Seconds + 1.0) return recs[i].Index;
+                return -1;
+            }
+        }
+
+        public float Level { get { var vs = VoiceSystem.Instance; return vs != null ? vs.RecordingLevel : 0f; } }
+        public int Speaker { get { var vs = VoiceSystem.Instance; return vs != null ? vs.RecordingSpeaker : -1; } }
+        public float Progress { get { var vs = VoiceSystem.Instance; return vs != null ? vs.RecordingProgress : 0f; } }
     }
 
     /// <summary>
@@ -117,7 +157,7 @@ namespace BirimizKovulacak.Game
             _playhead = Box("tape-playhead").NoPick().AddTo(_wave);
             _status = Bold("", "tape-status").NoPick().AddTo(Root);
 
-            _stamp = Box("tape-stamp").NoPick().AddTo(Root);
+            _stamp = Box("tape-stamp").NoPick().AddTo(_deck);
             if (!MeetingText.ApplyStamp(_stamp, "stamps_v3/stamp_kayitta", "stamps_v3/stamp_on_record"))
             {
                 _stamp.AddToClassList("stamp-text");
