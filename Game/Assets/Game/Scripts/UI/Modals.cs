@@ -1,7 +1,5 @@
 using System;
 using System.Collections.Generic;
-using BirimizKovulacak.Core;
-using UnityEngine.InputSystem;
 using UnityEngine.UIElements;
 using static BirimizKovulacak.Game.UiKit;
 
@@ -56,103 +54,6 @@ namespace BirimizKovulacak.Game
         }
 
         public virtual void Tick() { }
-    }
-
-    /// <summary>Fake email template picker (card FakeEmail): opened for an affordance with IntParam -1.</summary>
-    public sealed class EmailPicker : Modal
-    {
-        static EmailPicker _i;
-        readonly Label _from;
-        readonly VisualElement _grid;
-        string _target = "";
-        int _matchId = -1;
-        Action<int> _onPicked;
-
-        public EmailPicker(VisualElement parent) : base(parent)
-        {
-            _i = this;
-            Panel.style.width = 1080;
-            var head = Box("modal-title-row").AddTo(Panel);
-            Icon("sab_fake_email", "icon-l").AddTo(head);
-            var hc = Box("col", "grow").AddTo(head);
-            Title(Loc.T("email.picker.title"), "h2").AddTo(hc);
-            _from = Text("", "t-muted").AddTo(hc);
-            _grid = Box("email-grid").AddTo(Panel);
-            var actions = Box("modal-actions").AddTo(Panel);
-            Text(Loc.T("email.picker.hint"), "t-small", "t-muted", "grow").AddTo(actions);
-            Btn(Loc.T("common.cancel"), Close, "btn-ghost").AddTo(actions);
-        }
-
-        /// <summary>Opens the picker; <paramref name="onPicked"/> gets the template index, or -1 when cancelled (exactly once).
-        /// Without a callback the picker sends the request itself.</summary>
-        public static void Open(string pcTargetId, Action<int> onPicked = null)
-        {
-            if (_i == null) { onPicked?.Invoke(-1); return; }
-            _i.Show(pcTargetId, onPicked);
-        }
-
-        void Show(string target, Action<int> onPicked)
-        {
-            if (Visible) Finish(-1);
-            _onPicked = onPicked;
-            var v = ClientState.I != null ? ClientState.I.View : null;
-            if (v == null) { Finish(-1); return; }
-            _target = target ?? "";
-            _matchId = v.MatchId;
-            int desk = EntityIds.DeskIndexOf(_target);
-            int owner = PlayerIds.None;
-            foreach (var d in v.Desks) if (d.Index == desk) owner = d.AssignedOwner;
-            _from.text = Loc.F("email.picker.from", Loc.PlayerName(v, owner), Loc.Desk(desk));
-            _grid.Clear();
-            int count = ClientState.I.Config != null && ClientState.I.Config.Email != null ? ClientState.I.Config.Email.TemplateCount : 10;
-            for (int i = 0; i < count; i++)
-            {
-                int index = i;
-                var b = Btn("", () => Pick(index), "email-option");
-                b.RemoveFromClassList("btn-secondary");
-                Bold(Loc.F("email.picker.num", (i + 1) % 10), "email-option-num").NoPick().AddTo(b);
-                Bold(Describe.EmailSubject(i, v, owner), "email-option-subject").NoPick().AddTo(b);
-                Text(Describe.EmailBody(i, v, owner), "email-option-body").NoPick().AddTo(b);
-                b.AddTo(_grid);
-            }
-            OpenModal();
-        }
-
-        void Pick(int index)
-        {
-            var v = ClientState.I.View;
-            bool valid = v != null && v.MatchId == _matchId && !string.IsNullOrEmpty(_target);
-            Finish(valid ? index : -1);
-            Close();
-        }
-
-        void Finish(int index)
-        {
-            var cb = _onPicked;
-            _onPicked = null;
-            if (cb != null) cb(index);
-            else if (index >= 0) ClientState.I.Send(ActionVerb.SendFakeEmail, _target, index);
-        }
-
-        public override void Close()
-        {
-            if (Visible && _onPicked != null) Finish(-1);
-            base.Close();
-        }
-
-        public override void Tick()
-        {
-            if (!Visible) return;
-            var v = ClientState.I != null ? ClientState.I.View : null;
-            if (v == null || v.MatchId != _matchId || !LocalPlayerController.OfficePhase(v.Phase)) { Close(); return; }
-            var kb = Keyboard.current;
-            if (kb == null) return;
-            for (int i = 0; i < 10; i++)
-            {
-                var key = i == 9 ? kb.digit0Key : kb[Key.Digit1 + i];
-                if (key != null && key.wasPressedThisFrame) { Pick(i); return; }
-            }
-        }
     }
 
     /// <summary>Yes/no confirmation (accusation, leaving, kicking a bot...).</summary>

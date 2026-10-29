@@ -1,5 +1,5 @@
 <Project Sdk="Microsoft.NET.Sdk">
-  <!-- Runs the same NUnit sources Unity runs as EditMode tests (Game/Assets/Game/Tests/Core). -->
+  <!-- Runs the same NUnit sources Unity runs as EditMode tests (v3 rules: Game/Assets/Game/Tests/Line). -->
   <PropertyGroup>
     <TargetFramework>net8.0</TargetFramework>
     <LangVersion>9.0</LangVersion>
@@ -8,7 +8,6 @@
     <EnableDefaultCompileItems>false</EnableDefaultCompileItems>
   </PropertyGroup>
   <ItemGroup>
-    <Compile Include="../../../Game/Assets/Game/Tests/Core/**/*.cs" />
     <Compile Include="../../../Game/Assets/Game/Tests/Line/**/*.cs" />
   </ItemGroup>
   <ItemGroup>

@@ -32,7 +32,7 @@ Requirements (as used for this prototype):
 | Tool | Version |
 |---|---|
 | Unity | 6000.6.3f1 (Windows Build Support (Mono) included) — see DECISIONS §1 about LTS |
-| Packages | URP 17.6.0, Netcode for GameObjects 2.13.2, Unity Transport 6.6.0 (built-in), Input System 1.20.0, uGUI/TextMeshPro 2.6.0, AI Navigation 2.0.14, Newtonsoft Json 3.2.2, Test Framework 1.8.0 |
+| Packages | URP 17.6.0, Netcode for GameObjects 2.13.2, Unity Transport 6.6.0 (built-in), Input System 1.20.0, uGUI/TextMeshPro 2.6.0, Newtonsoft Json 3.2.2, Test Framework 1.8.0 |
 | Blender | 5.2.2 LTS (only to regenerate art) |
 | .NET SDK | 8.0+ (only for the fast rules test harness) |
 | Python | 3.x with Pillow (only for tooling: package extraction, contact sheets, log verification) |
@@ -79,12 +79,11 @@ Gaming Services project); remote play uses direct IP (port forwarding or a VPN s
 Birimiz_Kovulacak_Oyun_Akisi.pdf   design concept (source of truth for rules)
 docs/                              DECISIONS, CONTRACTS, ARCHITECTURE, ASSETS, HOSTING (TR), VERIFICATION, PLAYTEST, CODEX_*
 Game/                              Unity project
-  Assets/Game/Core/Contracts       shared rule contracts (pure C#)
-  Assets/Game/Core/Engine          authoritative rules engine (Codex work package)
-  Assets/Game/Tests/Core           NUnit rules tests (Unity EditMode + dotnet)
-  Assets/Game/Scripts              networking adapter, world, player, UI, bots, audio
-  Assets/Game/Editor               ProjectBuilder (generates scene/prefabs/materials, builds player)
-  Assets/StreamingAssets           match_config.json (balance), Localization/tr.json
+  Assets/Game/Core/Line            v3 rule contracts + authoritative engine, codec, bot (pure C#)
+  Assets/Game/Tests/Line           NUnit rules tests (Unity EditMode + dotnet)
+  Assets/Game/Scripts              networking adapter, rooms (first person), desk/meeting UI, voice, audio
+  Assets/Game/Editor               ProjectBuilder (generates the Rooms scene/prefabs/materials, builds player)
+  Assets/StreamingAssets           line_config.json (rules), Localization/<lang>(.<area>).json
 Art/                               Blender generator scripts, .blend sources, FBX exports, palette, previews
 Tools/                             build/run/package scripts, .NET test harness, verification scripts
 Builds/                            (ignored) player builds, logs, test runs, ZIP

@@ -2,10 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using BirimizKovulacak.Core;
-using BirimizKovulacak.Game;
 using Newtonsoft.Json.Linq;
-using Unity.Netcode;
 using UnityEditor;
 using UnityEditor.Animations;
 using UnityEngine;
@@ -16,16 +13,15 @@ namespace BirimizKovulacak.EditorTools
 {
     /// <summary>
     /// Characters: imports Employee.fbx / Manager.fbx / FaceAtlas.png (Art/Scripts/build_characters.py), creates the
-    /// character materials (Art/palette_characters.json) and face-cell materials, the animator controllers, the
-    /// network PlayerAvatar prefab (6 looks), the Manager prefab (4 profile looks + classic) and visual-only look
-    /// prefabs under Prefabs/Characters. Look data (accessories, material swaps, silhouettes, faces, clip loop flags)
-    /// comes from Art/character_looks.json, written by the Blender script, so art and code cannot drift apart.
+    /// character materials (Art/palette_characters.json), the face-cell materials and the animator controllers. The
+    /// seated player looks and the managers of the meeting room are built from them in ProjectBuilder.Rooms.cs. Look
+    /// data (accessories, material swaps, silhouettes, faces, clip loop flags) comes from Art/character_looks.json,
+    /// written by the Blender script, so art and code cannot drift apart.
     /// </summary>
     public static partial class ProjectBuilder
     {
         const string CharModelDir = ModelDir + "/Characters";
         const string CharGenDir = GenDir + "/Characters";
-        const string CharPrefabDir = PrefabDir + "/Characters";
         const string CharLooksJson = "../Art/character_looks.json";
         const string CharPaletteJson = "../Art/palette_characters.json";
         const int FaceCells = 8;
@@ -37,25 +33,21 @@ namespace BirimizKovulacak.EditorTools
             get { return _charLooks ?? (_charLooks = JObject.Parse(File.ReadAllText(Path.GetFullPath(CharLooksJson)))); }
         }
 
-        /// <summary>Called from CreatePrefabs: fills set.Avatar and set.Manager.</summary>
-        static void CreateCharacterPrefabs(PrefabSet set, FontSet fonts)
+        /// <summary>Called from CreatePrefabs: materials, model imports and the two animator controllers.</summary>
+        static void CreateCharacterAssets()
         {
             _charLooks = null;
             Directory.CreateDirectory(CharGenDir);
-            Directory.CreateDirectory(CharPrefabDir);
             AssetDatabase.Refresh();
             CreateCharacterMaterials();
             ConfigureCharacterImports();
             var empModel = Model("Characters", "Employee");
             var mgrModel = Model("Characters", "Manager");
             if (empModel == null || mgrModel == null) throw new Exception("Character FBX missing: run Blender build_characters.py (Tools/build.ps1 -Art)");
-            var empCtrl = BuildEmployeeController(empModel);
-            var mgrCtrl = BuildManagerController(mgrModel);
-            set.Avatar = BuildPlayerAvatarPrefab(empModel, empCtrl, fonts);
-            set.Manager = BuildManagerPrefab(mgrModel, mgrCtrl, fonts);
-            BuildLookPrefabs(empModel, empCtrl, mgrModel, mgrCtrl);
+            BuildEmployeeController(empModel);
+            BuildManagerController(mgrModel);
             AssetDatabase.SaveAssets();
-            Log("Characters: avatar (" + ((JArray)CharLooks["players"]).Count + " looks), manager (" + ((JArray)CharLooks["managers"]).Count + " looks)");
+            Log("Characters: " + ((JArray)CharLooks["players"]).Count + " player looks, " + ((JArray)CharLooks["managers"]).Count + " manager looks");
         }
 
         // ================================================================== materials
@@ -203,7 +195,7 @@ namespace BirimizKovulacak.EditorTools
             ctrl.AddParameter("Speed", AnimatorControllerParameterType.Float);
             var clips = CharClips(model);
             var sm = ctrl.layers[0].stateMachine;
-            // Speed-driven locomotion families (m/s; PlayerAvatar.WalkSpeed 3.6, crouch ~1.7)
+            // Speed-driven locomotion families (m/s; walk 3.6, crouch ~1.7). The seated beans only play states by name.
             var loco = Blend1D(ctrl, "Locomotion", clips, new Vector3(260, 0), ("Idle", 0f), ("Walk", 1.4f), ("Run", 3.4f));
             Blend1D(ctrl, "CrouchLoco", clips, new Vector3(260, 70), ("CrouchIdle", 0f), ("Sneak", 1.7f));
             Blend1D(ctrl, "CarryLoco", clips, new Vector3(260, 140), ("CarryIdle", 0f), ("CarryWalk", 3.0f));
@@ -219,7 +211,7 @@ namespace BirimizKovulacak.EditorTools
             }
             if (loco != null) sm.defaultState = loco;
 
-            // Upper-body phone layer (right arm + head), weight driven by PlayerAvatar.
+            // Upper-body phone layer (right arm + head), weight 0 unless a script raises it.
             AnimationClip phoneArm;
             if (clips.TryGetValue("PhoneArm", out phoneArm))
             {
@@ -342,196 +334,6 @@ namespace BirimizKovulacak.EditorTools
                 r.shadowCastingMode = face ? ShadowCastingMode.Off : ShadowCastingMode.On;
             }
             return smrs;
-        }
-
-        static void WireFace(GameObject inst, FaceRig face)
-        {
-            var smrs = inst.GetComponentsInChildren<SkinnedMeshRenderer>(true);
-            face.Eyes = smrs.FirstOrDefault(r => r.name == "FaceEyes");
-            face.Mouth = smrs.FirstOrDefault(r => r.name == "FaceMouth");
-            face.EyeCells = Enumerable.Range(0, FaceCells).Select(i => Mat("M_FaceEyes_" + i)).ToArray();
-            face.MouthCells = Enumerable.Range(0, FaceCells).Select(i => Mat("M_FaceMouth_" + i)).ToArray();
-        }
-
-        static void WireAppearance(GameObject inst, CharacterAppearance app, JArray looks, JObject groups)
-        {
-            var smrs = inst.GetComponentsInChildren<SkinnedMeshRenderer>(true);
-            var byName = new Dictionary<string, GameObject>();
-            foreach (var r in smrs) byName[r.name] = r.gameObject;
-            var lookAcc = new HashSet<string>();
-            foreach (var l in looks) foreach (var a in (JArray)l["accessories"]) lookAcc.Add((string)a);
-            app.Renderers = smrs.Where(r => !r.name.StartsWith("Face")).Cast<Renderer>().ToArray();
-            app.AllAccessories = smrs.Where(r => r.name.StartsWith("Acc_") || lookAcc.Contains(r.name)).Select(r => r.gameObject).ToArray();
-            var groupNames = new List<string>();
-            var groupList = new List<MaterialGroup>();
-            foreach (var g in groups)
-            {
-                groupNames.Add(g.Key);
-                groupList.Add(new MaterialGroup { Name = g.Key, Members = ((JArray)g.Value).Select(n => Mat((string)n)).Where(m => m != null).ToArray() });
-            }
-            app.Groups = groupList.ToArray();
-            var result = new List<CharacterLook>();
-            foreach (var l in looks)
-            {
-                var look = new CharacterLook { Id = (string)l["id"] };
-                look.Accessories = ((JArray)l["accessories"]).Select(a => (string)a).Where(byName.ContainsKey).Select(a => byName[a]).ToArray();
-                var swaps = (JObject)l["swaps"];
-                look.Swaps = groupNames.Select(gn => swaps != null && swaps[gn] != null ? Mat((string)swaps[gn]) : null).ToArray();
-                var sc = (JArray)l["scale"];
-                look.Scale = sc != null && sc.Count == 3 ? new Vector3((float)sc[0], (float)sc[1], (float)sc[2]) : Vector3.one;
-                look.Tilt = (float?)l["tilt"] ?? 0f;
-                FaceExpression fe;
-                look.Face = Enum.TryParse((string)l["face"] ?? "Neutral", out fe) ? fe : FaceExpression.Neutral;
-                look.IdleState = (string)l["idle"] ?? "Idle";
-                result.Add(look);
-            }
-            app.Looks = result.ToArray();
-        }
-
-        static Transform Mount(Transform bone, string name, Vector3 worldPos, Quaternion worldRot)
-        {
-            var t = new GameObject(name).transform;
-            t.SetParent(bone, false);
-            t.SetPositionAndRotation(worldPos, worldRot);
-            return t;
-        }
-
-        static GameObject ChildByName(GameObject inst, string name)
-        {
-            var t = FindDeep(inst.transform, name);
-            return t != null ? t.gameObject : null;
-        }
-
-        // ================================================================== player avatar (network)
-
-        static GameObject BuildPlayerAvatarPrefab(GameObject model, AnimatorController ctrl, FontSet fonts)
-        {
-            var root = new GameObject("PlayerAvatar");
-            root.layer = Layers.Avatar;
-            root.AddComponent<NetworkObject>();
-            var nt = root.AddComponent<OwnerNetworkTransform>();
-            nt.SyncPositionX = nt.SyncPositionY = nt.SyncPositionZ = true;
-            nt.SyncRotAngleX = false; nt.SyncRotAngleY = true; nt.SyncRotAngleZ = false;
-            nt.SyncScaleX = nt.SyncScaleY = nt.SyncScaleZ = false;
-            nt.Interpolate = true;
-            var cc = root.AddComponent<CharacterController>();
-            cc.radius = 0.33f; cc.height = 1.2f; cc.center = new Vector3(0, 0.62f, 0); cc.stepOffset = 0.25f; cc.skinWidth = 0.03f;
-            var avatar = root.AddComponent<PlayerAvatar>();
-            var modelRoot = new GameObject("ModelRoot").transform;
-            modelRoot.SetParent(root.transform, false);
-            var inst = Inst(model, modelRoot, Vector3.zero, 0, "Employee");
-            avatar.Animator = SetupCharacterAnimator(inst, ctrl);
-            avatar.ModelRoot = modelRoot;
-            SetupCharacterRenderers(inst, 3.4f);
-            WireAppearance(inst, avatar.Appearance, (JArray)CharLooks["players"], (JObject)CharLooks["playerGroups"]);
-            WireFace(inst, avatar.Face);
-            avatar.PropHandset = ChildByName(inst, "Prop_Handset");
-            avatar.PropMobile = ChildByName(inst, "Prop_Mobile");
-            avatar.PropBox = ChildByName(inst, "Prop_Box");
-            foreach (var p in new[] { avatar.PropHandset, avatar.PropMobile, avatar.PropBox }) if (p != null) p.SetActive(false);
-
-            // Mounts on bones (model is in its rest pose here). Unity axes: x right, y up, z forward.
-            var body = FindDeep(inst.transform, "Body");
-            var handR = FindDeep(inst.transform, "Hand.R");
-            var chestPos = new Vector3(0f, 0.53f, 0.31f);
-            if (body != null) avatar.ChestMount = Mount(body, "ChestMount", chestPos, Quaternion.identity);
-            if (handR != null) avatar.HandSocket = Mount(handR, "HandMount", new Vector3(0.455f, 0.17f, 0.07f), Quaternion.identity);
-            var carry = new GameObject("CarrySocket").transform;
-            carry.SetParent(root.transform, false);
-            carry.localPosition = chestPos;
-            avatar.CarrySocket = carry;
-
-            var clips = CharClips(model);
-            var oneShots = Enum.GetNames(typeof(PlayerAvatar.OneShot));
-            avatar.OneShotSeconds = oneShots.Select(n => { AnimationClip c; return clips.TryGetValue(n, out c) ? c.length : 1.5f; }).ToArray();
-
-            var tag = Label3D(root.transform, "NameTag", new Vector3(0, 1.62f, 0), Vector3.zero, new Vector2(1.6f, 0.26f), fonts.Tmp, Color.white, "", 2.2f);
-            tag.outlineWidth = 0.25f;
-            tag.outlineColor = new Color32(30, 24, 60, 255);
-            avatar.NameTag = tag;
-            avatar.Appearance.Apply(0);
-            SetLayerRecursive(root, Layers.Avatar);
-            var prefab = PrefabUtility.SaveAsPrefabAsset(root, PrefabDir + "/PlayerAvatar.prefab");
-            Object.DestroyImmediate(root);
-            return prefab;
-        }
-
-        // ================================================================== manager
-
-        static GameObject BuildManagerPrefab(GameObject model, AnimatorController ctrl, FontSet fonts)
-        {
-            var root = new GameObject("Manager");
-            var mv = root.AddComponent<ManagerVisual>();
-            var modelRoot = new GameObject("ModelRoot").transform;
-            modelRoot.SetParent(root.transform, false);
-            var inst = Inst(model, modelRoot, Vector3.zero, 0, "ManagerModel");
-            mv.Animator = SetupCharacterAnimator(inst, ctrl);
-            mv.ModelRoot = modelRoot;
-            SetupCharacterRenderers(inst, 4.0f);
-            WireAppearance(inst, mv.Appearance, (JArray)CharLooks["managers"], (JObject)CharLooks["managerGroups"]);
-            WireFace(inst, mv.Face);
-            mv.PropClipboard = ChildByName(inst, "Prop_Clipboard");
-            mv.Appearance.Apply(Math.Max(0, mv.Appearance.IndexOf("default")));
-
-            var bubble = new GameObject("Bubble");
-            bubble.transform.SetParent(root.transform, false);
-            bubble.transform.localPosition = new Vector3(0, 2.05f, 0);
-            Quad(bubble.transform, "Bg", new Vector3(0, 0, 0.01f), Vector3.zero, new Vector3(2.3f, 0.5f, 1), Mat("M_BubbleBg"));
-            mv.Bubble = Label3D(bubble.transform, "Text", Vector3.zero, Vector3.zero, new Vector2(2.2f, 0.42f), fonts.Tmp, new Color(0.7f, 0.1f, 0.1f), "!", 2.5f);
-            mv.BubbleRoot = bubble;
-            var cone = new GameObject("VisionCone");
-            cone.transform.SetParent(root.transform, false);
-            cone.transform.localPosition = new Vector3(0, 0.03f, 0);
-            mv.ConeFilter = cone.AddComponent<MeshFilter>();
-            mv.ConeRenderer = cone.AddComponent<MeshRenderer>();
-            mv.ConeRenderer.sharedMaterial = Mat("M_VisionCone");
-            mv.ConeRenderer.shadowCastingMode = ShadowCastingMode.Off;
-            var prefab = PrefabUtility.SaveAsPrefabAsset(root, PrefabDir + "/Manager.prefab");
-            Object.DestroyImmediate(root);
-            return prefab;
-        }
-
-        // ================================================================== visual-only look prefabs (menus, lobby, results)
-
-        static void BuildLookPrefabs(GameObject empModel, AnimatorController empCtrl, GameObject mgrModel, AnimatorController mgrCtrl)
-        {
-            int n = 0;
-            foreach (var l in (JArray)CharLooks["players"])
-                n += LookPrefab(empModel, empCtrl, (JArray)CharLooks["players"], (JObject)CharLooks["playerGroups"], (string)l["id"], "Player_", 3.4f) ? 1 : 0;
-            foreach (var l in (JArray)CharLooks["managers"])
-                n += LookPrefab(mgrModel, mgrCtrl, (JArray)CharLooks["managers"], (JObject)CharLooks["managerGroups"], (string)l["id"], "Manager_", 4.0f) ? 1 : 0;
-            Log("Character look prefabs: " + n);
-        }
-
-        /// <summary>Unpacked model with only this look's meshes (unused accessories/props removed), resting face, animator.</summary>
-        static bool LookPrefab(GameObject model, AnimatorController ctrl, JArray looks, JObject groups, string id, string prefix, float bounds)
-        {
-            var root = new GameObject(prefix + id);
-            var modelRoot = new GameObject("ModelRoot").transform;
-            modelRoot.SetParent(root.transform, false);
-            var inst = Inst(model, modelRoot, Vector3.zero, 0, "Model");
-            if (PrefabUtility.IsPartOfPrefabInstance(inst)) PrefabUtility.UnpackPrefabInstance(inst, PrefabUnpackMode.Completely, InteractionMode.AutomatedAction);
-            SetupCharacterAnimator(inst, ctrl);
-            SetupCharacterRenderers(inst, bounds);
-            var app = new CharacterAppearance();
-            WireAppearance(inst, app, looks, groups);
-            int idx = app.IndexOf(id);
-            var look = app.Apply(idx);
-            if (look != null)
-            {
-                modelRoot.localScale = look.Scale;
-                modelRoot.localRotation = Quaternion.Euler(look.Tilt, 0, 0);
-                var face = new FaceRig();
-                WireFace(inst, face);
-                face.SetBase(look.Face);
-                face.Show(FaceExpression.Neutral, false, -1f);
-            }
-            foreach (var r in inst.GetComponentsInChildren<SkinnedMeshRenderer>(true))
-                if (!r.gameObject.activeSelf || (r.name.StartsWith("Prop_") && (look == null || Array.IndexOf(look.Accessories, r.gameObject) < 0)))
-                    Object.DestroyImmediate(r.gameObject);
-            PrefabUtility.SaveAsPrefabAsset(root, CharPrefabDir + "/" + prefix + id + ".prefab");
-            Object.DestroyImmediate(root);
-            return look != null;
         }
     }
 }

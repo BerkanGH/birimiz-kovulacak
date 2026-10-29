@@ -9,15 +9,13 @@ namespace BirimizKovulacak.Game
 {
     /// <summary>
     /// Create Lobby / Join Lobby, connection approval wiring, disconnect handling and the client-side
-    /// reconnect loop (30 s grace by default, mirrored by the host's MatchEngine).
+    /// reconnect loop (30 s grace, mirrored by the host's reconnect window).
     /// </summary>
     public sealed class ConnectionManager : MonoBehaviour
     {
         public static ConnectionManager I { get; private set; }
 
         public NetworkObject SessionPrefab;
-        /// <summary>v2 host (unused on the v3 branch; kept until v2 code is removed).</summary>
-        public HostMatchController HostController { get; private set; }
         /// <summary>v3 host session (null on clients and offline).</summary>
         public HostLineController LineHost { get; private set; }
 
@@ -88,7 +86,6 @@ namespace BirimizKovulacak.Game
             PlayerName = playerName;
             Port = port;
             LastErrorKey = "";
-            ClientState.I.ResetSession();
             LineClient.I.ResetSession();
             LineHost = new HostLineController();
             Transport.SetConnectionData("0.0.0.0", port, "0.0.0.0");
@@ -118,7 +115,6 @@ namespace BirimizKovulacak.Game
             Address = string.IsNullOrWhiteSpace(address) ? "127.0.0.1" : address.Trim();
             Port = port;
             LastErrorKey = "";
-            ClientState.I.ResetSession();
             LineClient.I.ResetSession();
             return Connect(reconnectToken ?? "");
         }
@@ -181,7 +177,6 @@ namespace BirimizKovulacak.Game
 
         bool Connect(string token)
         {
-            HostController = null;
             LineHost = null;
             Transport.SetConnectionData(Address, Port);
             _nm.NetworkConfig.ConnectionData = BuildPayload(token);
@@ -210,9 +205,7 @@ namespace BirimizKovulacak.Game
                 StartCoroutine(ShutdownAfter(0.4f));
             }
             else if (_nm.IsListening) _nm.Shutdown();
-            HostController = null;
             LineHost = null;
-            ClientState.I.ResetSession();
             LineClient.I.ResetSession();
             SetState(State.Offline, "");
             if (!hosting) _intentionalShutdown = false;
@@ -279,7 +272,6 @@ namespace BirimizKovulacak.Game
             if (rejected)
             {
                 SetState(State.Failed, reason);
-                ClientState.I.ResetSession();
                 LineClient.I.ResetSession();
                 return;
             }
@@ -290,7 +282,6 @@ namespace BirimizKovulacak.Game
                 return;
             }
             SetState(State.Failed, Current == State.Connecting ? "net.connect_failed" : "net.host_lost");
-            ClientState.I.ResetSession();
             LineClient.I.ResetSession();
         }
 
@@ -337,7 +328,6 @@ namespace BirimizKovulacak.Game
                 yield return new WaitForSecondsRealtime(0.5f);
             }
             _reconnect = null;
-            ClientState.I.ResetSession();
             LineClient.I.ResetSession();
             SetState(State.Failed, "net.reconnect_failed");
         }

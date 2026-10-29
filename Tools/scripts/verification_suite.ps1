@@ -14,6 +14,5 @@ function Run($name, [hashtable]$p) {
 }
 Run "reconnect" @{ DurationScale = 0.5; Matches = 1; Seed = 21; Port = 7781; Client2Extra = "-simulatedrop 50 -dropdowntime 6" }
 Run "grace_expiry" @{ DurationScale = 0.5; Matches = 1; Seed = 22; Port = 7782; Client3Extra = "-simulatedrop 50 -droprejoin 0"; ExtraAll = "-quitafterseconds 170" }
-Run "duck" @{ DurationScale = 0.6; Matches = 1; Seed = 23; Port = 7783; Scenario = "duck" }
 Run "full_rematch" @{ DurationScale = 1.0; Matches = 2; Seed = 24; Port = 7784 }
 "DONE " + (Get-Date) | Add-Content $summary

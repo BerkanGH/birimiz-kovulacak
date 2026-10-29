@@ -10,7 +10,6 @@ param(
     [double]$DurationScale = 1.0,
     [int]$Matches = 1,
     [int]$Seed = 0,
-    [string]$Scenario = "",
     [string]$Exe = "",
     [string]$LogDir = "",
     [int]$Port = 7777,
@@ -32,7 +31,6 @@ $common = @("-screen-fullscreen", "0", "-screen-width", "960", "-screen-height",
             "-logdir", $LogDir, "-screenshots", "-mute", "-port", $Port.ToString(), "-rematches", ($Matches - 1).ToString(), "-quitaftermatches", $Matches.ToString(), "-expectplayers", $Players.ToString())
 if ($Seed -ne 0) { $common += @("-seed", $Seed.ToString()) }
 if ($ExtraAll) { $common += $ExtraAll.Split(" ") }
-if ($Scenario) { $common += @("-scenario", $Scenario) }
 if ($VoiceTest) { $common += @("-voicetest", $VoiceTest) }
 $names = @("Mavi", "Sari", "Pembe", "Yesil", "Turuncu", "Mor")
 $procs = @()

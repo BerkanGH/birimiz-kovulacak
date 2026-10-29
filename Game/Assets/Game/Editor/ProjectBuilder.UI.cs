@@ -15,9 +15,9 @@ namespace BirimizKovulacak.EditorTools
     {
         public const string UiResourcesDir = Root + "/UI/Resources/ui";
 
-        /// <summary>Art/UI folders the runtime UI loads (others are world decals, store art, references).</summary>
-        static readonly string[] UiArtFolders = { "backgrounds", "bubbles", "buttons", "cards", "howto", "icons", "logo", "meeting", "phone", "portraits", "stamps", "titles", "week",
-            // v3
+        /// <summary>Art/UI folders the runtime UI loads (others are world decals, store art, references, and the v2 HUD /
+        /// phone / how-to / results art: bubbles, howto, phone, titles, week). Everything synced here ships in the build.</summary>
+        static readonly string[] UiArtFolders = { "backgrounds", "buttons", "cards", "icons", "logo", "meeting", "portraits", "stamps",
             "rounds", "tricks", "icons_v3", "computer", "deskphone", "meeting_v3", "onboarding", "stamps_v3", "logo_en", "week_v3" };
 
         /// <summary>Copies the UI art kit (repo Art/UI/&lt;folder&gt;/*.png) into Resources/ui/&lt;folder&gt;/ (changed files only).</summary>

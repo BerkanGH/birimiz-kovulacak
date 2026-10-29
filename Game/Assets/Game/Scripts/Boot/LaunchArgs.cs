@@ -18,21 +18,15 @@ namespace BirimizKovulacak.Game
         public bool AutoStart;
         public float DurationScale = 1f;
         public int Seed;
-        public int ForceInformant = -1;
-        public string Scenario;
         public int Rematches;
         public int QuitAfterMatches;
         public string LogDir;
         public bool Screenshots;
-        public bool DebugTruth;
         public bool Mute;
-        public float BotAggression = -1f;
         public float QuitAfterSeconds;
         public float SimulateDropAt;
-        public bool InputSim;
         public bool DropRejoin = true;
         public float DropDowntime = 5f;
-        // v2
         public bool WeekMode;
         public int ExpectPlayers = 4;
         public string ManagerProfile;
@@ -58,16 +52,12 @@ namespace BirimizKovulacak.Game
                     case "-autostart": a.AutoStart = true; break;
                     case "-durationscale": a.DurationScale = float.Parse(next, CultureInfo.InvariantCulture); i++; break;
                     case "-seed": a.Seed = int.Parse(next, CultureInfo.InvariantCulture); i++; break;
-                    case "-informant": a.ForceInformant = int.Parse(next, CultureInfo.InvariantCulture); i++; break;
-                    case "-scenario": a.Scenario = next; i++; break;
                     case "-rematches": a.Rematches = int.Parse(next, CultureInfo.InvariantCulture); i++; break;
                     case "-quitaftermatches": a.QuitAfterMatches = int.Parse(next, CultureInfo.InvariantCulture); i++; break;
                     case "-quitafterseconds": a.QuitAfterSeconds = float.Parse(next, CultureInfo.InvariantCulture); i++; break;
                     case "-logdir": a.LogDir = next; i++; break;
                     case "-screenshots": a.Screenshots = true; break;
-                    case "-debugtruth": a.DebugTruth = true; break;
                     case "-mute": a.Mute = true; break;
-                    case "-inputsim": a.InputSim = true; break;
                     case "-simulatedrop": a.SimulateDropAt = float.Parse(next, CultureInfo.InvariantCulture); i++; break;
                     case "-droprejoin": a.DropRejoin = next != "0"; i++; break;
                     case "-dropdowntime": a.DropDowntime = float.Parse(next, CultureInfo.InvariantCulture); i++; break;
@@ -78,7 +68,6 @@ namespace BirimizKovulacak.Game
                         if (next != null && !next.StartsWith("-")) { a.VoiceTest = next; i++; }
                         else a.VoiceTest = "sine";
                         break;
-                    case "-botaggression": a.BotAggression = float.Parse(next, CultureInfo.InvariantCulture); i++; break;
                 }
             }
             return a;

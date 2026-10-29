@@ -1,34 +1,18 @@
-using System.Collections.Generic;
-using System.Linq;
-using BirimizKovulacak.Core;
 using BirimizKovulacak.Game;
 using TMPro;
 using Unity.Netcode;
 using UnityEditor;
-using UnityEditor.Animations;
 using UnityEngine;
 
 namespace BirimizKovulacak.EditorTools
 {
+    /// <summary>Shared scene-building helpers (models, instances, 3D labels, primitives) and the network prefabs.</summary>
     public static partial class ProjectBuilder
     {
         public sealed class PrefabSet
         {
-            public GameObject Avatar;
             public GameObject Session;
-            public GameObject Manager;
-            public Dictionary<string, ItemVisual> Items = new Dictionary<string, ItemVisual>();
-            public Mesh RingMesh;
         }
-
-        static readonly Dictionary<string, string> ItemModels = new Dictionary<string, string>
-        {
-            { ItemVariants.Mug, "Mug" }, { ItemVariants.Report, "Report" }, { ItemVariants.Nameplate, "Nameplate" },
-            { ItemVariants.Spray, "Spray" }, { ItemVariants.ClutterPapers, "ClutterPapers" }, { ItemVariants.ClutterBox, "ClutterBox" },
-            { ItemVariants.Duck, "RubberDuck" }, { ItemVariants.Stapler, "Stapler" }, { ItemVariants.RivalCv, "RivalCv" },
-            { ItemVariants.BossMug, "BossMug" }, { ItemVariants.SalaryList, "SalaryList" },
-            { ItemVariants.Mail, "MailEnvelope" },
-        };
 
         public static GameObject Model(string category, string name)
         {
@@ -78,30 +62,6 @@ namespace BirimizKovulacak.EditorTools
             return tmp;
         }
 
-        static Mesh RingMesh()
-        {
-            string path = GenDir + "/RingMesh.asset";
-            var existing = AssetDatabase.LoadAssetAtPath<Mesh>(path);
-            if (existing != null) return existing;
-            var m = new Mesh { name = "Ring" };
-            int seg = 32;
-            var v = new List<Vector3>(); var t = new List<int>();
-            for (int i = 0; i <= seg; i++)
-            {
-                float a = i * Mathf.PI * 2f / seg;
-                v.Add(new Vector3(Mathf.Cos(a) * 0.17f, 0, Mathf.Sin(a) * 0.17f));
-                v.Add(new Vector3(Mathf.Cos(a) * 0.21f, 0, Mathf.Sin(a) * 0.21f));
-            }
-            for (int i = 0; i < seg; i++)
-            {
-                int a = i * 2;
-                t.AddRange(new[] { a, a + 2, a + 1, a + 1, a + 2, a + 3 });
-            }
-            m.SetVertices(v); m.SetTriangles(t, 0); m.RecalculateNormals();
-            AssetDatabase.CreateAsset(m, path);
-            return m;
-        }
-
         static GameObject Quad(Transform parent, string name, Vector3 pos, Vector3 euler, Vector3 scale, Material mat)
         {
             var go = GameObject.CreatePrimitive(PrimitiveType.Quad);
@@ -128,63 +88,12 @@ namespace BirimizKovulacak.EditorTools
             return go;
         }
 
-        static PrefabSet CreatePrefabs(FontSet fonts)
+        static PrefabSet CreatePrefabs()
         {
-            var set = new PrefabSet { RingMesh = RingMesh() };
+            var set = new PrefabSet();
 
-            // ---------------- items
-            foreach (var kv in ItemModels)
-            {
-                var model = Model("Props", kv.Value);
-                if (model == null) { Log("Missing item model " + kv.Value); continue; }
-                var root = new GameObject("Item_" + kv.Key);
-                var visual = root.AddComponent<ItemVisual>();
-                visual.Variant = kv.Key;
-                var inst = Inst(model, root.transform, Vector3.zero, 0, "Model");
-                foreach (var r in inst.GetComponentsInChildren<Renderer>()) r.shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.On;
-                var coffee = FindDeep(inst.transform, "Coffee");
-                if (coffee != null) visual.Coffee = coffee.gameObject;
-                if (kv.Key == ItemVariants.Nameplate)
-                {
-                    var stripe = FindDeep(inst.transform, "Stripe");
-                    if (stripe != null) visual.StripeRenderer = stripe.GetComponent<Renderer>();
-                    var front = Label3D(root.transform, "LabelFront", new Vector3(0, 0.064f, -0.028f), new Vector3(26.6f, 0, 0), new Vector2(0.3f, 0.075f), fonts.Tmp, Color.white, "İSİM");
-                    var back = Label3D(root.transform, "LabelBack", new Vector3(0, 0.064f, 0.028f), new Vector3(26.6f, 180, 0), new Vector2(0.3f, 0.075f), fonts.Tmp, Color.white, "İSİM");
-                    visual.Labels = new[] { front, back };
-                }
-                if (kv.Key == ItemVariants.Mail)
-                {
-                    // Envelope stripe + name in the addressee's colour (ItemVisual resolves the desk owner).
-                    var stripe = FindDeep(inst.transform, "Stripe");
-                    if (stripe != null) visual.StripeRenderer = stripe.GetComponent<Renderer>();
-                    var ml = Label3D(root.transform, "Label", new Vector3(-0.03f, 0.0185f, 0.02f), new Vector3(90, 0, 0), new Vector2(0.16f, 0.04f), fonts.Tmp, new Color(0.14f, 0.19f, 0.37f), "");
-                    visual.Labels = new[] { ml };
-                }
-                if (kv.Key == ItemVariants.Report)
-                {
-                    var l = Label3D(root.transform, "Label", new Vector3(0, 0.0235f, 0.06f), new Vector3(90, 0, 0), new Vector2(0.14f, 0.05f), fonts.Tmp, new Color(0.15f, 0.12f, 0.3f), "Rapor");
-                    visual.Labels = new[] { l };
-                }
-                var seal = Cube(root.transform, "SealTape", new Vector3(0, 0.06f, 0), new Vector3(0.32f, 0.02f, 0.05f), Mat("M_SealTape"));
-                seal.transform.localRotation = Quaternion.Euler(0, 35, 0);
-                seal.SetActive(false);
-                visual.SealTape = seal;
-                var ring = new GameObject("EvidenceRing");
-                ring.transform.SetParent(root.transform, false);
-                ring.transform.localPosition = new Vector3(0, 0.01f, 0);
-                ring.AddComponent<MeshFilter>().sharedMesh = set.RingMesh;
-                var rr = ring.AddComponent<MeshRenderer>();
-                rr.sharedMaterial = Mat("M_EvidenceRing");
-                rr.shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;
-                ring.SetActive(false);
-                visual.EvidenceRing = ring;
-                var prefab = PrefabUtility.SaveAsPrefabAsset(root, PrefabDir + "/Items/Item_" + kv.Key + ".prefab");
-                Object.DestroyImmediate(root);
-                set.Items[kv.Key] = prefab.GetComponent<ItemVisual>();
-            }
-
-            // ---------------- characters: player avatar + manager (ProjectBuilder.Characters.cs)
-            CreateCharacterPrefabs(set, fonts);
+            // ---------------- characters: materials, imports, animator controllers (ProjectBuilder.Characters.cs)
+            CreateCharacterAssets();
 
             // ---------------- net session
             {
@@ -196,14 +105,8 @@ namespace BirimizKovulacak.EditorTools
             }
 
             AssetDatabase.SaveAssets();
-            Log("Prefabs: " + set.Items.Count + " items + avatar, manager, session");
+            Log("Prefabs: session");
             return set;
-        }
-
-        static void SetLayerRecursive(GameObject go, int layer)
-        {
-            go.layer = layer;
-            foreach (Transform c in go.transform) SetLayerRecursive(c.gameObject, layer);
         }
     }
 }

@@ -1,3 +1,5 @@
+> **This document describes v2** (open office, third-person, `MatchEngine`), which lives on branch `main` (tag `v2.3-night`). The `v3` branch no longer contains the v2 code.
+
 # Birimiz Kovulacak v2 — "İş Haftası" plan
 
 Owner of this file: Claude (lead). Every agent reads this first. Started 2026-10-29 ~01:00 (overnight session).

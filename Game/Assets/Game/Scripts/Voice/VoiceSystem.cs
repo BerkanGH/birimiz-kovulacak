@@ -8,9 +8,8 @@ using UnityEngine;
 namespace BirimizKovulacak.Game
 {
     /// <summary>
-    /// In-game voice. v2: proximity voice in the office, private 1:1 calls, everyone-hears in the lobby / meeting /
-    /// results. v3: phone calls only during the day (<see cref="VoiceMode.Calls"/>) with wiretaps, everyone-hears
-    /// meetings, the defense floor via CanSpeak, in-memory call recordings replayed as a meeting tape.
+    /// In-game voice: phone calls only during the day (<see cref="VoiceMode.Calls"/>) with wiretaps, everyone-hears
+    /// lobby / meetings / results, the defense floor via CanSpeak, in-memory call recordings replayed as a meeting tape.
     /// One instance per process (GameBootstrap adds it).
     /// <para>Data flow: mic (or -voicetest source) → <see cref="VoiceCapturePipeline"/> (16 kHz, 20 ms Opus) →
     /// client: bundle → NGO named message "bk.voice.up" (Unreliable, own sequence numbers) → host:
@@ -22,8 +21,8 @@ namespace BirimizKovulacak.Game
     /// paths without the network.</para>
     /// <para>Session binding is pluggable (static hooks, see docs/VOICE.md "v3"): <see cref="LocalSlotSource"/>,
     /// <see cref="HostSessionActive"/>, <see cref="ExternalHostProviders"/> + <see cref="SetHostProviders"/>,
-    /// <see cref="SlotNameResolver"/>, <see cref="ServerTimeSource"/>. Defaults keep v2 working (ClientState,
-    /// ConnectionManager.HostController → <see cref="HostMatchVoiceBridge"/>) and read v3's LineClient first.</para>
+    /// <see cref="SlotNameResolver"/>, <see cref="ServerTimeSource"/>. The defaults read <see cref="LineClient"/>; the
+    /// host routes only through the providers given to <see cref="SetHostProviders"/> (HostLineVoiceBridge).</para>
     /// </summary>
     [DefaultExecutionOrder(-50)]
     public sealed class VoiceSystem : MonoBehaviour, IVoiceFrameSink, IVoiceRecordingSink
@@ -39,18 +38,16 @@ namespace BirimizKovulacak.Game
 
         // ------------------------------------------------------------------ session binding (static hooks)
 
-        /// <summary>Local player's slot (-1 = not in a session). Null = default: v3 LineClient.I.MySlot when ≥ 0,
-        /// else v2 ClientState.I.MySlot.</summary>
+        /// <summary>Local player's slot (-1 = not in a session). Null = default: LineClient.I.MySlot.</summary>
         public static Func<int> LocalSlotSource;
 
-        /// <summary>Host: true while voice should be routed (e.g. v3: HostLineController.Current != null). Null =
-        /// default: true while providers set with <see cref="SetHostProviders"/> exist, otherwise while the v2
-        /// HostMatchController exists.</summary>
+        /// <summary>Host: true while voice should be routed (HostLineController.Current != null). Null = default:
+        /// true while providers set with <see cref="SetHostProviders"/> exist.</summary>
         public static Func<bool> HostSessionActive;
 
-        /// <summary>Host: true = never build the v2 <see cref="HostMatchVoiceBridge"/>; routing uses only what
-        /// <see cref="SetHostProviders"/> passed (v3). The providers survive NGO re-registration / reconnects until
-        /// <c>SetHostProviders(null, ...)</c>.</summary>
+        /// <summary>Kept for callers of the v3 integration API: routing always uses only what
+        /// <see cref="SetHostProviders"/> passed (there is no automatic host bridge any more). The providers survive
+        /// NGO re-registration / reconnects until <c>SetHostProviders(null, ...)</c>.</summary>
         public static bool ExternalHostProviders;
 
         /// <summary>Server clock in seconds used for recording start times and progress. Null = default:
@@ -69,15 +66,8 @@ namespace BirimizKovulacak.Game
         /// <summary>(slot, speaking). Fires on change only, on the main thread. Includes the local player.</summary>
         public event Action<int, bool> OnSpeakingChanged;
 
-        /// <summary>Host, optional (v2 automatic bridge only): slot → connected call partner (or -1).
-        /// Default: MatchEngine.CallPartnerOf.</summary>
-        public Func<int, int> CallPartnerResolver;
-        /// <summary>Host (v2 automatic bridge only): optional per-speaker permission (e.g. meeting defense).</summary>
-        public Func<int, bool> SpeakerFilter;
-        /// <summary>Host (v2 automatic bridge only): forces a voice mode (null = from the match phase).</summary>
-        public VoiceMode? ModeOverride { get; set; }
-        /// <summary>Slot → player name, used to persist per-player volume. Null = default: v3 LineClient lobby,
-        /// else v2 ClientState lobby. Volumes re-read automatically when a slot's name changes.</summary>
+        /// <summary>Slot → player name, used to persist per-player volume. Null = default: the LineClient lobby.
+        /// Volumes re-read automatically when a slot's name changes.</summary>
         public Func<int, string> SlotNameResolver;
 
         /// <summary>Settings screen open: run the microphone (level meter) even outside a session.</summary>
@@ -126,7 +116,7 @@ namespace BirimizKovulacak.Game
         /// <summary>Microphone names for the settings dropdown (allocates; call when the screen opens).</summary>
         public static string[] InputDevices => Microphone.devices;
 
-        /// <summary>Makes the slot's voice come from this transform (default: the slot's PlayerAvatar).</summary>
+        /// <summary>Makes the slot's voice come from this transform (default: none, the voice plays in 2D).</summary>
         public void AttachEmitter(int slot, Transform target)
         {
             if (slot < 0 || slot >= Slots) return;
@@ -141,13 +131,12 @@ namespace BirimizKovulacak.Game
             if (_emitters[slot] != null) _emitters[slot].Target = null;
         }
 
-        /// <summary>Listener position for distance attenuation (default: the local PlayerAvatar).</summary>
+        /// <summary>Listener position for distance attenuation (default: the scene's AudioListener).</summary>
         public Transform ListenerOverride;
 
         /// <summary>
-        /// Host: use these providers instead of the automatic v2 <see cref="HostMatchVoiceBridge"/> (v3: call it when
-        /// the host session starts, with <see cref="ExternalHostProviders"/> = true). They stay in use across NGO
-        /// re-registration until called again with <paramref name="positions"/> = null (back to automatic).
+        /// Host: the routing providers (call it when the host session starts). They stay in use across NGO
+        /// re-registration until called again with <paramref name="positions"/> = null (no routing).
         /// </summary>
         public void SetHostProviders(IVoicePositions positions, IVoiceCallState calls, IVoiceModeProvider mode,
             IVoiceOcclusion occlusion, IVoiceClientMap clients)
@@ -155,12 +144,8 @@ namespace BirimizKovulacak.Game
             _customProviders = positions != null;
             _clients = _customProviders ? clients : null;
             _router = _customProviders ? new ProximityVoiceRouter(positions, calls, mode, occlusion, Routing) : null;
-            HostBridge = null;
             if (_customProviders) MatchLog.Write("voice: host routing uses external providers");
         }
-
-        /// <summary>The automatic v2 host bridge (null on clients, with external providers, and in v3).</summary>
-        public HostMatchVoiceBridge HostBridge { get; private set; }
 
         // ------------------------------------------------------------------ v3: call recordings (host)
 
@@ -494,15 +479,7 @@ namespace BirimizKovulacak.Game
             _hostRouting = false;
             if (_registered != null && _nm.IsServer)
             {
-                if (!_customProviders)
-                {
-                    if (ExternalHostProviders)
-                    {
-                        if (HostBridge != null) { HostBridge = null; _router = null; _clients = null; } // switched to v3 at runtime
-                    }
-                    else BindDefaultHost();
-                }
-                bool up = HostSessionActive != null ? HostSessionActive() : (_customProviders || HostBridge != null);
+                bool up = HostSessionActive != null ? HostSessionActive() : _customProviders;
                 _hostRouting = up && _router != null && _clients != null;
             }
         }
@@ -540,7 +517,7 @@ namespace BirimizKovulacak.Game
             _up.Reset();
             for (int i = 0; i < Slots; i++) _down[i].Reset();
             ResetPlayback();
-            if (!_customProviders) { HostBridge = null; _router = null; _clients = null; }
+            if (!_customProviders) { _router = null; _clients = null; }
             _hostRouting = false;
             _recorder.Trim(); // call audio never outlives the session
             _registered = null;
@@ -572,49 +549,24 @@ namespace BirimizKovulacak.Game
             _tapeEmitter?.StopNow();
         }
 
-        // ------------------------------------------------------------------ default binding (v3 LineClient, v2 ClientState / HostMatchController)
+        // ------------------------------------------------------------------ default binding (LineClient)
         // The only place that reads the session objects; every one of them can be replaced by a hook above.
 
         static int DefaultLocalSlot()
         {
             var line = LineClient.I;
-            if (line != null && line.MySlot >= 0) return line.MySlot;
-            return ClientState.I != null ? ClientState.I.MySlot : -1;
+            return line != null && line.MySlot >= 0 ? line.MySlot : -1;
         }
 
         static string DefaultSlotName(int slot)
         {
             var line = LineClient.I;
-            var lineLobby = line != null ? line.Lobby : null;
-            if (lineLobby != null)
-            {
-                var ls = lineLobby.Slots;
-                for (int i = 0; i < ls.Count; i++)
-                    if (ls[i].Slot == slot && ls[i].Occupied) return ls[i].Name;
-                return null;
-            }
-            var lobby = ClientState.I != null ? ClientState.I.Lobby : null;
+            var lobby = line != null ? line.Lobby : null;
             if (lobby == null) return null;
-            for (int i = 0; i < lobby.Slots.Count; i++)
-                if (lobby.Slots[i].Slot == slot && lobby.Slots[i].Occupied) return lobby.Slots[i].Name;
+            var ls = lobby.Slots;
+            for (int i = 0; i < ls.Count; i++)
+                if (ls[i].Slot == slot && ls[i].Occupied) return ls[i].Name;
             return null;
-        }
-
-        /// <summary>v2 automatic host providers from ConnectionManager.I.HostController.</summary>
-        void BindDefaultHost()
-        {
-            var hc = ConnectionManager.I != null ? ConnectionManager.I.HostController : null;
-            if (hc == null) { HostBridge = null; _router = null; _clients = null; return; }
-            if (HostBridge == null || HostBridge.Host != hc)
-            {
-                HostBridge = new HostMatchVoiceBridge(hc) { MouthHeight = Routing.MouthHeight };
-                _router = new ProximityVoiceRouter(HostBridge, HostBridge, HostBridge, HostBridge, Routing);
-                _clients = HostBridge;
-                MatchLog.Write("voice: host routing ready");
-            }
-            HostBridge.CallPartnerResolver = CallPartnerResolver;
-            HostBridge.SpeakerFilter = SpeakerFilter;
-            HostBridge.ModeOverride = ModeOverride;
         }
 
         double ServerTimeNow()
@@ -984,17 +936,8 @@ namespace BirimizKovulacak.Game
             if (Time.unscaledTime >= _nextTargetRefresh)
             {
                 _nextTargetRefresh = Time.unscaledTime + 0.5f;
-                for (int i = 0; i < Slots; i++)
-                {
-                    Transform t = _attached[i];
-                    if (t == null)
-                    {
-                        var avatar = PlayerAvatar.BySlot(i);
-                        t = avatar != null ? avatar.transform : null;
-                    }
-                    _emitters[i].Target = t;
-                }
-                if (PlayerAvatar.Local == null && ListenerOverride == null && _audioListener == null)
+                for (int i = 0; i < Slots; i++) _emitters[i].Target = _attached[i];
+                if (ListenerOverride == null && _audioListener == null)
                 {
                     var al = FindAnyObjectByType<AudioListener>();
                     _audioListener = al != null ? al.transform : null;
@@ -1003,8 +946,7 @@ namespace BirimizKovulacak.Game
             }
 
             Transform listener = ListenerOverride;
-            if (listener == null && PlayerAvatar.Local != null) listener = PlayerAvatar.Local.transform;
-            if (listener == null) listener = _audioListener; // spectating: feel keeps the AudioListener at the camera
+            if (listener == null) listener = _audioListener; // the first-person camera carries the AudioListener
 
             // Ring low-water mark: one audio DSP buffer + ~1.5 frames of main-thread jitter + 10 ms safety.
             int dspLength, dspCount;
@@ -1028,7 +970,7 @@ namespace BirimizKovulacak.Game
                     float d = Vector3.Distance(listener.position, em.Target.position);
                     ch.ProximityGain = VoiceAttenuation.Gain(d, Routing.FullVolumeDistance, Routing.MaxDistance);
                 }
-                else ch.ProximityGain = 0.6f; // no positions known (spectating / avatar not spawned): play softly in 2D
+                else ch.ProximityGain = 0.6f; // no positions (calls / meetings ignore it): play softly in 2D
                 ch.Pump(_nowMs, lowWater, critical);
                 em.Tick(_nowMs, dt);
             }
@@ -1046,7 +988,6 @@ namespace BirimizKovulacak.Game
                 _level[i] = VoiceLevel.Smooth(_level[i], target, dt, 0.03f, 0.12f);
                 if (s == _speaking[i]) continue;
                 _speaking[i] = s;
-                FeelHooks.SetTalking(i, s);   // v2 lip-flap on the avatar (change-only, allocation-free)
                 OnSpeakingChanged?.Invoke(i, s);
             }
         }

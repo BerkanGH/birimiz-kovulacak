@@ -9,7 +9,7 @@ namespace BirimizKovulacak.Game
     /// <summary>
     /// FinalVerdict (v3.1): the secret ballot is counted on the shortlisted personnel files. Anonymous vote tokens
     /// drop one by one, the most-voted file gets the FIRED stamp (the others SURVIVED), then the termination letter
-    /// slides in and is stamped. "Save letter" writes a PNG (v2 <see cref="ScreenshotSaver"/>).
+    /// slides in and is stamped. "Save letter" writes a PNG (<see cref="ScreenshotSaver"/>).
     /// </summary>
     public sealed class FinalVerdictView : MeetingPanel
     {

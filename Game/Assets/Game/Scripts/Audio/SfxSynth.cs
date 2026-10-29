@@ -1,14 +1,13 @@
 using System;
 using System.Collections.Generic;
-using BirimizKovulacak.Core;
 using UnityEngine;
 
 namespace BirimizKovulacak.Game
 {
     /// <summary>
     /// Procedural sound generators (mono, 22.05 kHz). Every clip is generated once at startup from a fixed seed, so
-    /// the build ships no audio assets for effects. Measured: 47 clips, 39.8 s ≈ 0.88 M samples ≈ 3.4 MB as float PCM, 114 ms to synthesise
-    /// (.NET 8 Release; expect 0.1–0.3 s under Mono at boot).
+    /// the build ships no audio assets for effects (<see cref="Sfx"/> builds the 25 clips the desk / meeting UI and
+    /// the ambience use).
     /// </summary>
     public static class SfxSynth
     {
@@ -147,7 +146,7 @@ namespace BirimizKovulacak.Game
             return d;
         }
 
-        // ------------------------------------------------------------------ v1 kit (kept, now 22.05 kHz)
+        // ------------------------------------------------------------------ UI blips, firing trombone
 
         public static float[] Trombone()
         {
@@ -172,73 +171,7 @@ namespace BirimizKovulacak.Game
             return list.ToArray();
         }
 
-        public static float[] PhoneRing()
-        {
-            int len = N(2.4f);
-            var d = new float[len];
-            for (int i = 0; i < len; i++)
-            {
-                float t = i / (float)Rate;
-                bool on = (t < 0.4f) || (t > 0.6f && t < 1.0f);
-                if (!on) continue;
-                float s = Mathf.Sin(2 * Mathf.PI * 440f * t) + Mathf.Sin(2 * Mathf.PI * 480f * t);
-                float trill = Mathf.Sin(2 * Mathf.PI * 20f * t) > 0 ? 1f : 0.4f;
-                d[i] = s * 0.18f * trill;
-            }
-            return d;
-        }
-
-        public static float[] Printer()
-        {
-            int len = N(1f);
-            var d = new float[len];
-            var rnd = new System.Random(3);
-            float lp = 0;
-            for (int i = 0; i < len; i++)
-            {
-                float t = i / (float)Rate;
-                float noise = (float)(rnd.NextDouble() * 2 - 1);
-                lp = Mathf.Lerp(lp, noise, 0.25f);
-                float hum = Mathf.Sin(2 * Mathf.PI * 110f * t) * 0.3f;
-                float click = (t * 8f) % 1f < 0.04f ? 0.6f : 0f;
-                d[i] = (lp * 0.5f + hum + click * noise) * 0.16f;
-            }
-            return d;
-        }
-
-        public static float[] Coffee()
-        {
-            int len = N(1.5f);
-            var d = new float[len];
-            var rnd = new System.Random(5);
-            float lp = 0;
-            for (int i = 0; i < len; i++)
-            {
-                float t = i / (float)Rate;
-                float noise = (float)(rnd.NextDouble() * 2 - 1);
-                lp = Mathf.Lerp(lp, noise, 0.11f);
-                float gurgle = 0.5f + 0.5f * Mathf.Sin(2 * Mathf.PI * 7f * t + Mathf.Sin(t * 13f) * 2f);
-                d[i] = lp * gurgle * 0.35f;
-            }
-            return d;
-        }
-
-        public static float[] Siren()
-        {
-            int len = N(1f);
-            var d = new float[len];
-            double ph = 0;
-            for (int i = 0; i < len; i++)
-            {
-                float t = i / (float)len;
-                float f = 620f + 320f * Mathf.Sin(t * 2f * Mathf.PI);
-                ph += f / Rate;
-                d[i] = (Osc(Wave.Triangle, ph) * 0.7f + Osc(Wave.Square, ph) * 0.3f) * 0.22f;
-            }
-            return d;
-        }
-
-        // ------------------------------------------------------------------ v2: phone & calls
+        // ------------------------------------------------------------------ desk phone & calls
 
         /// <summary>Cheesy mobile ringtone arpeggio (loops; 1.45 s).</summary>
         public static float[] Ringtone()
@@ -305,31 +238,7 @@ namespace BirimizKovulacak.Game
             return Normalize(d, 0.32f);
         }
 
-        // ------------------------------------------------------------------ v2: sabotage & outages
-
-        public static float[] Spark()
-        {
-            var rnd = new System.Random(11);
-            var d = new float[N(0.5f)];
-            AddTone(d, 0f, 0.06f, 2800f, 600f, 0.22f, Wave.Square);
-            for (int k = 0; k < 18; k++)
-            {
-                float r = (float)rnd.NextDouble();
-                float t = 0.4f * r * r;
-                AddNoise(d, t, 0.002f + 0.005f * (float)rnd.NextDouble(), 0.55f * (1f - t / 0.5f), rnd, 1f, true, 0.002f, 0.0005f);
-            }
-            return Normalize(d, 0.5f);
-        }
-
-        public static float[] PlugIn()
-        {
-            var rnd = new System.Random(12);
-            var d = new float[N(0.12f)];
-            AddNoise(d, 0f, 0.004f, 0.5f, rnd, 1f, true, 0.001f, 0.0003f);
-            AddTone(d, 0f, 0.03f, 1800f, 1700f, 0.18f, Wave.Sine, 0.008f);
-            AddNoise(d, 0.05f, 0.003f, 0.3f, rnd, 1f, true, 0.001f, 0.0003f);
-            return d;
-        }
+        // ------------------------------------------------------------------ tricks & outages
 
         public static float[] InternetDown()
         {
@@ -360,104 +269,6 @@ namespace BirimizKovulacak.Game
             return Normalize(d, 0.7f);
         }
 
-        public static float[] PowerUp()
-        {
-            var rnd = new System.Random(14);
-            var d = new float[N(1.2f)];
-            AddNoise(d, 0f, 0.04f, 0.5f, rnd, 0.1f, false, 0.015f);
-            AddTone(d, 0f, 0.14f, 140f, 70f, 0.5f, Wave.Sine, 0.05f);
-            int s = N(0.1f), len = N(1.05f);
-            double ph = 0;
-            for (int i = 0; i < len && s + i < d.Length; i++)
-            {
-                float u = i / (float)len;
-                ph += Mathf.Lerp(40f, 120f, Mathf.Min(1f, u * 1.6f)) / Rate;
-                float h = Osc(Wave.Sine, ph) + 0.4f * Osc(Wave.Sine, ph * 2);
-                d[s + i] += h * 0.1f * Mathf.Min(1f, u * 4f) * (1f - u);
-            }
-            float[] ticks = { 0.35f, 0.5f, 0.58f, 0.72f };
-            for (int i = 0; i < ticks.Length; i++)
-            {
-                AddNoise(d, ticks[i], 0.005f, 0.3f, rnd, 1f, true, 0.002f, 0.0003f);
-                AddTone(d, ticks[i], 0.02f, 2400f, 2400f, 0.08f, Wave.Sine, 0.006f);
-            }
-            return Normalize(d, 0.6f);
-        }
-
-        public static float[] RouterRestore()
-        {
-            var d = new float[N(0.85f)];
-            int s = N(0.35f);
-            double ph = 0;
-            for (int i = 0; i < s; i++)
-            {
-                float f = (i / N(0.015f)) % 2 == 0 ? 1200f : 2200f;
-                ph += f / Rate;
-                d[i] = Osc(Wave.Square, ph) * 0.06f * Mathf.Min(1f, (s - i) / (float)N(0.01f));
-            }
-            float[] notes = { 523.3f, 659.3f, 784f, 1046.5f };
-            for (int i = 0; i < 4; i++) AddTone(d, 0.38f + i * 0.09f, 0.25f, notes[i], notes[i], 0.26f, Wave.Triangle, 0.1f);
-            return d;
-        }
-
-        public static float[] SaltShake()
-        {
-            var rnd = new System.Random(15);
-            var d = new float[N(0.62f)];
-            for (int k = 0; k < 4; k++)
-            {
-                int s = N(k * 0.16f), len = N(0.09f);
-                float low = 0f;
-                for (int i = 0; i < len && s + i < d.Length; i++)
-                {
-                    float x = (float)(rnd.NextDouble() * 2 - 1);
-                    low += (x - low) * 0.2f;
-                    float grain = rnd.NextDouble() > 0.6 ? 1f : 0.3f;
-                    float u = i / (float)len;
-                    d[s + i] += (x - low) * grain * Mathf.Min(1f, u * 10f) * (1f - u) * 0.4f;
-                }
-            }
-            return Normalize(d, 0.45f);
-        }
-
-        public static float[] Slurp()
-        {
-            var rnd = new System.Random(16);
-            int len = N(0.75f);
-            var d = new float[len];
-            var bp = Biquad.BandPass(500f, 6f);
-            for (int i = 0; i < len; i++)
-            {
-                float u = i / (float)len, t = i / (float)Rate;
-                if ((i & 63) == 0) bp.SetBandPass(Mathf.Lerp(500f, 1600f, u), 6f);
-                float x = (float)(rnd.NextDouble() * 2 - 1);
-                float bubbles = 0.6f + 0.4f * Mathf.Sin(2f * Mathf.PI * 18f * t) * (float)rnd.NextDouble();
-                d[i] = bp.Process(x) * bubbles * Mathf.Min(1f, t / 0.05f) * Mathf.Min(1f, (1f - u) * 5f);
-            }
-            return Normalize(d, 0.5f);
-        }
-
-        /// <summary>"Bleh!" after tasting a salted coffee.</summary>
-        public static float[] Bleh()
-        {
-            var rnd = new System.Random(17);
-            int len = N(0.45f);
-            var d = new float[len];
-            AddNoise(d, 0f, 0.06f, 0.25f, rnd, 1f, true, 0.02f);
-            var f1 = Biquad.BandPass(900f, 2f);
-            var f2 = Biquad.BandPass(2400f, 4f);
-            double ph = 0;
-            int s = N(0.04f);
-            for (int i = s; i < len; i++)
-            {
-                float u = (i - s) / (float)(len - s);
-                ph += Mathf.Lerp(200f, 130f, u) / Rate;
-                float src = Osc(Wave.Saw, ph);
-                d[i] += (f1.Process(src) + 0.5f * f2.Process(src)) * Mathf.Min(1f, u * 12f) * (1f - u);
-            }
-            return Normalize(d, 0.4f);
-        }
-
         public static float[] MailDrop()
         {
             var rnd = new System.Random(18);
@@ -473,154 +284,7 @@ namespace BirimizKovulacak.Game
             return Normalize(d, 0.45f);
         }
 
-        // ------------------------------------------------------------------ v2: footsteps & manager voice
-
-        public static float[] Step(int variant)
-        {
-            var rnd = new System.Random(20 + variant);
-            var d = new float[N(0.11f)];
-            float[] lp = { 0.08f, 0.1f, 0.12f };
-            float[] f = { 95f, 105f, 85f };
-            AddNoise(d, 0f, 0.05f, 0.5f, rnd, lp[variant % 3], false, 0.015f, 0.002f);
-            AddTone(d, 0f, 0.08f, f[variant % 3], f[variant % 3] * 0.7f, 0.5f, Wave.Sine, 0.03f);
-            return Normalize(d, 0.5f);
-        }
-
-        /// <summary>The manager's dress shoes: a sharper heel clack.</summary>
-        public static float[] ManagerStep(int variant)
-        {
-            var rnd = new System.Random(30 + variant);
-            var d = new float[N(0.09f)];
-            var bp = Biquad.BandPass(variant == 0 ? 2600f : 2300f, 3f);
-            int len = N(0.025f);
-            for (int i = 0; i < len; i++) d[i] += bp.Process((float)(rnd.NextDouble() * 2 - 1)) * (1f - i / (float)len) * 0.8f;
-            AddTone(d, 0f, 0.06f, variant == 0 ? 480f : 430f, 300f, 0.3f, Wave.Sine, 0.015f);
-            AddTone(d, 0f, 0.07f, 110f, 80f, 0.3f, Wave.Sine, 0.025f);
-            return Normalize(d, 0.6f);
-        }
-
-        /// <summary>A closed-mouth "hmm": glottal saw through nasal formants, f0 from a contour (Hz over 0..1).</summary>
-        static void AddHum(float[] d, float start, float dur, Func<float, float> f0, float vol)
-        {
-            int s = N(start), len = N(dur);
-            var n1 = Biquad.BandPass(290f, 3f);
-            var n2 = Biquad.BandPass(1250f, 5f);
-            var n3 = Biquad.BandPass(2500f, 6f);
-            double ph = 0;
-            float lp = 0f;
-            for (int i = 0; i < len && s + i < d.Length; i++)
-            {
-                float u = i / (float)len, t = i / (float)Rate;
-                float vib = 1f + 0.015f * Mathf.Sin(2f * Mathf.PI * 5.5f * t);
-                ph += f0(u) * vib / Rate;
-                float src = Osc(Wave.Saw, ph);
-                lp += (src - lp) * 0.2f;
-                float y = n1.Process(lp) + 0.25f * n2.Process(lp) + 0.1f * n3.Process(lp);
-                float env = Mathf.Min(1f, t / 0.04f) * (u > 0.7f ? (1f - u) / 0.3f : 1f);
-                d[s + i] += y * env * vol;
-            }
-        }
-
-        public static float[] ManagerHum(string profile)
-        {
-            var rnd = new System.Random(40);
-            float[] d;
-            switch (profile)
-            {
-                case ManagerProfileIds.Paragoz: // grumpy, falling, long
-                    d = new float[N(0.6f)];
-                    AddHum(d, 0f, 0.58f, u => Mathf.Lerp(108f, 88f, u), 1f);
-                    break;
-                case ManagerProfileIds.Disiplinci: // "tsk" + short sharp hm
-                    d = new float[N(0.4f)];
-                    AddNoise(d, 0f, 0.006f, 0.6f, rnd, 1f, true, 0.002f, 0.0003f);
-                    AddHum(d, 0.09f, 0.28f, u => Mathf.Lerp(230f, 200f, u), 1f);
-                    break;
-                case ManagerProfileIds.Kayirmaci: // sing-song
-                    d = new float[N(0.62f)];
-                    AddHum(d, 0f, 0.6f, u => u < 0.4f ? Mathf.Lerp(190f, 255f, u / 0.4f) : Mathf.Lerp(255f, 175f, (u - 0.4f) / 0.6f), 1f);
-                    break;
-                case ManagerProfileIds.Paranoyak: // "hm? hm?"
-                    d = new float[N(0.55f)];
-                    AddHum(d, 0f, 0.2f, u => Mathf.Lerp(135f, 185f, u), 1f);
-                    AddHum(d, 0.3f, 0.22f, u => Mathf.Lerp(150f, 210f, u), 1f);
-                    break;
-                default:
-                    d = new float[N(0.48f)];
-                    AddHum(d, 0f, 0.45f, u => Mathf.Lerp(150f, 118f, u), 1f);
-                    break;
-            }
-            return Normalize(d, 0.55f);
-        }
-
-        // ------------------------------------------------------------------ v2: stings & meeting
-
-        public static float[] InspectionSting()
-        {
-            var rnd = new System.Random(50);
-            var d = new float[N(1.15f)];
-            AddNoise(d, 0f, 0.45f, 0.25f, rnd, 1f, true, 0.15f);
-            float[] a = { 146.8f, 174.6f, 207.7f, 293.7f };
-            float[] b = { 138.6f, 164.8f, 196f, 277.2f };
-            for (int i = 0; i < 4; i++) AddTone(d, 0f, 0.2f, a[i], a[i], 0.16f, Wave.Saw, 0f, 0.003f);
-            for (int i = 0; i < 4; i++) AddTone(d, 0.22f, 0.9f, b[i], b[i], 0.16f, Wave.Saw, 0.3f, 0.01f);
-            // soften the saws
-            float lp = 0f;
-            for (int i = 0; i < d.Length; i++) { lp += (d[i] - lp) * 0.3f; d[i] = lp; }
-            return Normalize(d, 0.6f);
-        }
-
-        /// <summary>"Dun-dun!" when the manager catches you.</summary>
-        public static float[] Caught()
-        {
-            var d = new float[N(0.85f)];
-            AddTone(d, 0f, 0.17f, 110f, 110f, 0.4f, Wave.Saw, 0f, 0.004f);
-            AddTone(d, 0f, 0.17f, 55f, 55f, 0.4f, Wave.Sine, 0f, 0.004f);
-            AddTone(d, 0.2f, 0.62f, 87.3f, 85f, 0.4f, Wave.Saw, 0.25f, 0.004f);
-            AddTone(d, 0.2f, 0.62f, 43.7f, 43f, 0.45f, Wave.Sine, 0.3f, 0.004f);
-            float lp = 0f;
-            for (int i = 0; i < d.Length; i++) { lp += (d[i] - lp) * 0.2f; d[i] = lp; }
-            return Normalize(d, 0.6f);
-        }
-
-        /// <summary>CCTV tape: clunk, hiss, mains hum and wow.</summary>
-        public static float[] Vhs()
-        {
-            var rnd = new System.Random(51);
-            int len = N(1.6f);
-            var d = new float[len];
-            AddTone(d, 0f, 0.15f, 120f, 60f, 0.5f, Wave.Sine, 0.05f);
-            AddNoise(d, 0f, 0.01f, 0.4f, rnd, 1f, true, 0.003f, 0.0005f);
-            float lp = 0f;
-            int s = N(0.08f);
-            for (int i = s; i < len; i++)
-            {
-                float t = i / (float)Rate, u = (i - s) / (float)(len - s);
-                float x = (float)(rnd.NextDouble() * 2 - 1);
-                lp += (x - lp) * 0.35f;
-                float wow = 0.8f + 0.2f * Mathf.Sin(2f * Mathf.PI * 0.7f * t);
-                float hum = Mathf.Sin(2f * Mathf.PI * 50f * t) * 0.08f + Mathf.Sin(2f * Mathf.PI * 100f * t) * 0.04f;
-                float whine = Mathf.Sin(2f * Mathf.PI * 7800f * t) * 0.008f;
-                d[i] += (lp * 0.14f + hum + whine) * wow * Mathf.Min(1f, u * 8f) * Mathf.Min(1f, (1f - u) * 4f);
-            }
-            return Normalize(d, 0.45f);
-        }
-
-        public static float[] Gavel()
-        {
-            var rnd = new System.Random(52);
-            var d = new float[N(0.5f)];
-            for (int k = 0; k < 2; k++)
-            {
-                float t = k * 0.2f;
-                AddTone(d, t, 0.15f, 210f, 150f, 0.6f, Wave.Sine, 0.04f, 0.001f);
-                AddTone(d, t, 0.2f, 80f, 60f, 0.35f, Wave.Sine, 0.06f, 0.001f);
-                int s = N(t), len = N(0.015f);
-                var bp = Biquad.BandPass(1200f, 1.2f);
-                for (int i = 0; i < len && s + i < d.Length; i++) d[s + i] += bp.Process((float)(rnd.NextDouble() * 2 - 1)) * (1f - i / (float)len) * 0.8f;
-            }
-            return Normalize(d, 0.7f);
-        }
+        // ------------------------------------------------------------------ stamps
 
         public static float[] Stamp()
         {
@@ -632,52 +296,7 @@ namespace BirimizKovulacak.Game
             return Normalize(d, 0.75f);
         }
 
-        // ------------------------------------------------------------------ v2: small UI-ish & VFX companions
-
-        public static float[] EmotePop()
-        {
-            var rnd = new System.Random(54);
-            var d = new float[N(0.1f)];
-            AddTone(d, 0f, 0.07f, 420f, 980f, 0.35f, Wave.Sine, 0.03f, 0.002f);
-            AddNoise(d, 0f, 0.01f, 0.1f, rnd, 1f, true, 0.003f);
-            return d;
-        }
-
-        public static float[] WheelTick()
-        {
-            var d = new float[N(0.02f)];
-            AddTone(d, 0f, 0.015f, 2200f, 2200f, 0.3f, Wave.Sine, 0.004f, 0.0005f);
-            return d;
-        }
-
-        public static float[] Rustle()
-        {
-            var rnd = new System.Random(55);
-            int len = N(0.16f);
-            var d = new float[len];
-            var bp = Biquad.BandPass(1400f, 0.7f);
-            for (int i = 0; i < len; i++)
-            {
-                float u = i / (float)len;
-                d[i] = bp.Process((float)(rnd.NextDouble() * 2 - 1)) * Mathf.Min(1f, u * 5f) * (1f - u);
-            }
-            return Normalize(d, 0.3f);
-        }
-
-        public static float[] Confetti()
-        {
-            var rnd = new System.Random(56);
-            var d = new float[N(0.7f)];
-            AddNoise(d, 0f, 0.025f, 0.7f, rnd, 0.4f, false, 0.008f, 0.0005f);
-            AddTone(d, 0f, 0.08f, 180f, 120f, 0.4f, Wave.Sine, 0.03f, 0.001f);
-            AddTone(d, 0.02f, 0.25f, 900f, 2600f, 0.1f, Wave.Sine, 0f, 0.01f);
-            for (int k = 0; k < 12; k++)
-            {
-                float t = 0.08f + 0.52f * (float)rnd.NextDouble();
-                AddNoise(d, t, 0.003f, 0.2f * (1f - t), rnd, 1f, true, 0.001f, 0.0003f);
-            }
-            return Normalize(d, 0.55f);
-        }
+        // ------------------------------------------------------------------ coffee spill
 
         public static float[] Splash()
         {
@@ -701,15 +320,7 @@ namespace BirimizKovulacak.Game
             return Normalize(d, 0.5f);
         }
 
-        public static float[] Dust()
-        {
-            var rnd = new System.Random(58);
-            var d = new float[N(0.35f)];
-            AddNoise(d, 0f, 0.33f, 0.45f, rnd, 0.06f, false, 0.09f, 0.06f);
-            return Normalize(d, 0.4f);
-        }
-
-        // ------------------------------------------------------------------ v2: ambience loops
+        // ------------------------------------------------------------------ ambience loops
 
         /// <summary>Distant office typing, 6 s loop (sparse clicks, nothing near the seam).</summary>
         public static float[] AmbienceKeys()
