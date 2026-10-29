@@ -79,7 +79,8 @@ namespace BirimizKovulacak.Game
     /// <summary>
     /// Client side: drives the 3D world (<see cref="Rooms.Presenter"/>) from the local <see cref="LineView"/> —
     /// which room, phone/monitor states, light of the day, meeting seats, talk animation, spotlight, firing.
-    /// UI owns the computer/phone focus modes; this only resets the camera mode when the place changes.
+    /// UI owns the camera focus modes (computer/phone, meeting screen view) and the meeting cues; this only resets the
+    /// camera mode when the office day starts.
     /// </summary>
     public sealed class LineWorldDriver : MonoBehaviour
     {
@@ -120,19 +121,11 @@ namespace BirimizKovulacak.Game
                 _seats.Clear();
                 foreach (var p in v.Players) _seats.Add(new MeetingSeatInfo { Slot = p.Id, ColorIndex = p.ColorIndex, Name = p.Name, Connected = p.Connected });
                 rooms.EnterMeeting(me, _seats, v.ManagerProfileId);
-                if (rooms.Mode != PovMode.MeetingProjector) rooms.SetPovMode(PovMode.Meeting);
-                rooms.SetSpotlight(-1);
-                rooms.SetFired(-1);
             }
+            // Camera mode, spotlight, firing pose and the manager's talk belong to MeetingUi; this only drives the talk animation and light.
             var voice = VoiceSystem.Instance;
             foreach (var p in v.Players)
-                rooms.SetSpeaking(p.Id, voice != null && voice.IsSpeaking(p.Id) ? 1f : 0f);
-            var m = v.Meeting;
-            rooms.SetSpotlight(v.Phase == LinePhase.FinalDefense && m != null ? m.Defender : -1);
-            bool firedKnown = m != null && (v.Phase == LinePhase.FinalVerdict || v.Phase == LinePhase.WeekResults);
-            int fired = firedKnown ? m.Fired : (v.Result != null ? v.Result.Fired : -1);
-            rooms.SetFired(fired);
-            rooms.SetManagerTalking(v.Phase == LinePhase.MeetingDossier || v.Phase == LinePhase.MeetingVerdict || v.Phase == LinePhase.FinalVerdict);
+                rooms.SetSpeaking(p.Id, voice != null ? voice.GetSpeechLevel(p.Id) : 0f);
             rooms.SetTimeOfDay(v.Features.IsLastDay ? 1f : 0.9f);
         }
 

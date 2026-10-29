@@ -145,7 +145,7 @@ namespace BirimizKovulacak.Core.Tests.Line
             m.Ok(0, LineVerb.UseTrick, 1); m.Ok(2, LineVerb.TipOff, 0);
             Assert.AreEqual(LineFailure.AlreadyUsed, m.Do(2, LineVerb.TipOff, 1).Failure);
             m.Until(LinePhase.MeetingDossier); var profile = m.Config.Profile(m.View().ManagerProfileId);
-            Assert.AreEqual(profile.TrickCaughtBlame + m.Config.ConfirmedTipBlame, m.Player(0).Blame);
+            Assert.AreEqual(m.Config.StartBlame + profile.TrickCaughtBlame + m.Config.ConfirmedTipBlame, m.Player(0).Blame);
             var trace = m.View().Meeting.Dossier.Single(d => d.Kind == DossierKind.TrickTrace);
             Assert.IsTrue(trace.Named); Assert.AreEqual(0, trace.Player);
             var tip = m.View().Meeting.Dossier.Single(d => d.Kind == DossierKind.TipResult);
@@ -153,12 +153,57 @@ namespace BirimizKovulacak.Core.Tests.Line
         }
 
         [Test]
-        public void FalseTipBlamesTipperAndExposesOnlyItsSubject()
+        public void FalseTipBlamesAndNamesTipper()
         {
             var m = LineTest.WithTrick(TrickType.KahveDok); m.Ok(2, LineVerb.TipOff, 0);
-            m.Until(LinePhase.MeetingDossier); Assert.AreEqual(m.Config.FalseTipBlame, m.Player(2).Blame);
+            m.Until(LinePhase.MeetingDossier); Assert.AreEqual(m.Config.StartBlame + m.Config.FalseTipBlame, m.Player(2).Blame);
             var tip = m.View().Meeting.Dossier.Single(d => d.Kind == DossierKind.TipResult);
-            Assert.AreEqual(0, tip.Player); Assert.AreEqual(0, tip.Arg); Assert.AreEqual(-1, tip.Victim);
+            Assert.AreEqual(0, tip.Player); Assert.AreEqual(0, tip.Arg); Assert.AreEqual(2, tip.Victim);
+        }
+
+        [TestCase(false)] [TestCase(true)]
+        public void BusyAndDeadCalleeGetsPrivateMissedCall(bool dead)
+        {
+            var m = LineTest.WithTrick(TrickType.FisCek);
+            if (dead) m.Ok(0, LineVerb.UseTrick, 1);
+            else { m.Ok(1, LineVerb.Call, 2); m.Ok(2, LineVerb.Answer); }
+            m.Engine.DrainEvents(); Assert.AreEqual(LineFailure.Busy, m.Do(3, LineVerb.Call, 1).Failure);
+            var notice = m.Engine.DrainEvents().Single(e => e.Type == LineEventType.MissedCall);
+            Assert.AreEqual(3, notice.Actor); Assert.IsTrue(notice.IsVisibleTo(1));
+            Assert.IsFalse(notice.IsVisibleTo(0)); Assert.IsFalse(notice.IsVisibleTo(3));
+        }
+
+        [TestCase(WeekLength.Short, 1)] [TestCase(WeekLength.Full, 2)]
+        public void WeeklyTrickAndTipAllowancesDoNotResetAtMorning(WeekLength length, int allowance)
+        {
+            var s = LineTest.MakeSetup(); s.Length = length;
+            s.History = new LineSessionHistory { WeeksPlayed = 1 };
+            s.ForceTricks = new List<TrickType> { TrickType.KahveDok };
+            var m = new LineTest(s);
+            for (int day = 0; day < allowance; day++)
+            {
+                m.Until(LinePhase.RoundPlay, day);
+                Assert.AreEqual(allowance - day, m.View().Mine.TricksLeftThisWeek);
+                m.Ok(0, LineVerb.UseTrick, 1);
+                Assert.AreEqual(LineFailure.AlreadyUsed, m.Do(0, LineVerb.UseTrick, 2).Failure);
+                if (day == 0) m.Ok(0, LineVerb.TipOff, 2);
+            }
+            m.Until(LinePhase.RoundPlay, allowance);
+            Assert.AreEqual(0, m.View().Mine.TricksLeftThisWeek);
+            Assert.AreEqual(0, m.View().Mine.TipsLeftThisWeek);
+            Assert.IsFalse(m.View().Mine.TrickUsedToday); Assert.IsFalse(m.View().Mine.TipUsedToday);
+            Assert.AreEqual(LineFailure.LimitReached, m.Do(0, LineVerb.UseTrick, 1).Failure);
+            Assert.AreEqual(LineFailure.LimitReached, m.Do(0, LineVerb.TipOff, 1).Failure);
+        }
+
+        [Test]
+        public void FirstWeekTipLineUnlocksOnThirdDayIndependentlyOfTricks()
+        {
+            var m = new LineTest(); m.Until(LinePhase.RoundPlay, 1);
+            Assert.IsTrue(m.View().Features.TricksUnlocked); Assert.IsFalse(m.View().Features.TipLineUnlocked);
+            Assert.AreEqual(LineFailure.NotUnlocked, m.Do(0, LineVerb.TipOff, 1).Failure);
+            m.Until(LinePhase.Morning, 2); Assert.IsTrue(m.View().Features.TipLineUnlocked);
+            m.Ok(0, LineVerb.TipOff, 1);
         }
     }
 }

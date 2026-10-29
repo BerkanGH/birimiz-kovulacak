@@ -7,44 +7,57 @@ using static BirimizKovulacak.Game.UiKit;
 namespace BirimizKovulacak.Game
 {
     /// <summary>
-    /// Settings: audio (master / sfx / voice / per-player), microphone (device, push-to-talk vs open mic, VAD
-    /// threshold with a live meter, mute), controls (sensitivity, key bindings incl. UI keys), display + language.
-    /// Values persist in PlayerPrefs (keys in <see cref="UiSettings"/>); voice/audio code reads them.
+    /// Settings: audio (master / sfx / ambience / voice / per-player), microphone (device, push-to-talk vs open mic,
+    /// VAD threshold with a live meter, mute), controls (first-person look: sensitivity, invert Y, field of view; the
+    /// v3 key bindings), display + language (switches live: the whole UI is rebuilt by <see cref="UIRoot"/>).
+    /// Values persist in PlayerPrefs (keys in <see cref="UiSettings"/> and <see cref="Rooms"/>).
     /// </summary>
     public sealed class SettingsScreen : UiKit.Screen
     {
-        enum Tab { Audio = 0, Mic = 1, Controls = 2, Display = 3 }
+        public enum Tab { Audio = 0, Mic = 1, Controls = 2, Display = 3 }
         static SettingsScreen _i;
 
-        readonly VisualElement _body;
+        /// <summary>First-person look defaults (the world reads the same PlayerPrefs keys).</summary>
+        public const float DefaultSensitivity = 1f, DefaultFov = 65f;
+
+        readonly VisualElement _card, _body;
         readonly UiKit.TabBar _tabs;
         Tab _tab = Tab.Audio;
-        VisualElement _levelFill, _vadMark;
-        Label _voiceState;
+        VisualElement _levelFill;
         float _nextMeter;
 
         public SettingsScreen(VisualElement parent) : base(parent, "dim", "center")
         {
             _i = this;
-            var card = Panel("panel", "settings", "col").AddTo(Root);
-            var head = Box("row").AddTo(card);
+            _card = Panel("panel", "settings", "col").AddTo(Root);
+            var head = Box("row").AddTo(_card);
             Icon("settings", "icon-l", "gap-m").AddTo(head);
             Title(Loc.T("menu.settings"), "h1", "grow").AddTo(head);
             Btn(Loc.T("common.close"), Hide, "btn-primary").AddTo(head);
-            _tabs = new UiKit.TabBar(card, id => { _tab = (Tab)id; Build(); });
+            _tabs = new UiKit.TabBar(_card, id => { _tab = (Tab)id; Build(); });
             _tabs.Add((int)Tab.Audio, Loc.T("settings.tab.audio"), "speaker");
             _tabs.Add((int)Tab.Mic, Loc.T("settings.tab.mic"), "mic_on");
             _tabs.Add((int)Tab.Controls, Loc.T("settings.tab.controls"), "info");
             _tabs.Add((int)Tab.Display, Loc.T("settings.tab.display"), "objective");
-            var scroll = new ScrollView().Cls("settings-body").AddTo(card);
+            var scroll = new ScrollView().Cls("settings-body").AddTo(_card);
             _body = scroll.contentContainer;
         }
 
-        public static void Open()
+        public static void Open() { Open(-1); }
+
+        /// <summary>Opens on a tab (-1 = the last one).</summary>
+        public static void Open(int tab)
         {
             if (_i == null) return;
+            bool wasOpen = _i.Visible;
+            if (tab >= 0) { _i._tab = (Tab)tab; _i._tabs.Select(tab, false); }
             _i.SetVisible(true);
+            if (wasOpen) _i.Build();
         }
+
+        public static Tab CurrentTab => _i != null ? _i._tab : Tab.Audio;
+
+        public static void Close() { if (_i != null && _i.Visible) _i.Hide(); }
 
         public void Hide()
         {
@@ -53,18 +66,21 @@ namespace BirimizKovulacak.Game
             SetMicTest(false);
             var vs = VoiceSystem.Instance;
             if (vs != null && vs.LoopbackTest) vs.LoopbackTest = false;
+            PlayerPrefs.Save();
             SetVisible(false);
             Hud.RefreshKeys();
         }
 
-        protected override void OnShow() { Build(); }
+        protected override void OnShow()
+        {
+            Build();
+            UiMotion.PopIn(_card, 0.26f, 0f, 0.94f);
+        }
 
         void Build()
         {
             _body.Clear();
             _levelFill = null;
-            _vadMark = null;
-            _voiceState = null;
             SetMicTest(false);
             switch (_tab)
             {
@@ -73,35 +89,38 @@ namespace BirimizKovulacak.Game
                 case Tab.Controls: BuildControls(); break;
                 case Tab.Display: BuildDisplay(); break;
             }
+            UiMotion.SlideIn(_body, new Vector2(0f, 14f), 0.2f);
         }
 
-        static Slider SliderRow(VisualElement parent, string labelKey, float min, float max, float value, System.Action<float> onChange, bool percent = true)
+        static Slider SliderRow(VisualElement parent, string labelKey, float min, float max, float value, System.Action<float> onChange, System.Func<float, string> format)
         {
             var row = Box("setting-row").AddTo(parent);
             var s = new Slider(Loc.T(labelKey), min, max) { value = value }.Cls("slider", "grow").AddTo(row);
-            var val = Text(percent ? Mathf.RoundToInt(value / max * 100f) + "%" : value.ToString("0.00"), "setting-value").AddTo(row);
+            var val = Text(format(value), "setting-value").AddTo(row);
             s.RegisterValueChangedCallback(e =>
             {
                 onChange(e.newValue);
-                val.text = percent ? Mathf.RoundToInt(e.newValue / max * 100f) + "%" : e.newValue.ToString("0.00");
+                val.text = format(e.newValue);
             });
             return s;
         }
 
+        static System.Func<float, string> Percent(float max) { return v => Mathf.RoundToInt(v / max * 100f) + "%"; }
+
         void BuildAudio()
         {
             Section(_body, Loc.T("settings.volumes"), "speaker");
-            SliderRow(_body, "settings.volume", 0f, 1f, Sfx.Volume, v => Sfx.Volume = v);
-            SliderRow(_body, "settings.sfx_volume", 0f, 1f, Sfx.EffectsVolume, v => Sfx.EffectsVolume = v);
-            SliderRow(_body, "settings.ambience_volume", 0f, 1f, Sfx.AmbienceVolume, v => Sfx.AmbienceVolume = v);
+            SliderRow(_body, "settings.volume", 0f, 1f, Sfx.Volume, v => Sfx.Volume = v, Percent(1f));
+            SliderRow(_body, "settings.sfx_volume", 0f, 1f, Sfx.EffectsVolume, v => Sfx.EffectsVolume = v, Percent(1f));
+            SliderRow(_body, "settings.ambience_volume", 0f, 1f, Sfx.AmbienceVolume, v => Sfx.AmbienceVolume = v, Percent(1f));
             var vset = VoiceSettingsNow();
-            SliderRow(_body, "settings.voice_volume", 0f, 2f, vset.MasterVolume, v => vset.MasterVolume = v);
+            SliderRow(_body, "settings.voice_volume", 0f, 2f, vset.MasterVolume, v => vset.MasterVolume = v, Percent(1f));
 
             Section(_body, Loc.T("settings.player_volumes"), "contacts");
             var names = new List<(int id, string name)>();
-            var cs = ClientState.I;
-            if (cs != null && cs.View != null) foreach (var p in cs.View.Players) { if (p.Id != cs.MySlot) names.Add((p.Id, p.Name)); }
-            else if (cs != null && cs.Lobby != null) foreach (var s in cs.Lobby.Slots) { if (s.Occupied && !s.IsBot && s.Slot != cs.MySlot) names.Add((s.Slot, s.Name)); }
+            var lc = LineClient.I;
+            if (lc != null && lc.View != null) { foreach (var p in lc.View.Players) if (p.Id != lc.MySlot && !p.IsBot) names.Add((p.Id, p.Name)); }
+            else if (lc != null && lc.Lobby != null) { foreach (var s in lc.Lobby.Slots) if (s.Occupied && !s.IsBot && s.Slot != lc.MySlot) names.Add((s.Slot, s.Name)); }
             if (names.Count == 0) Empty(_body, Loc.T("settings.player_volumes_empty"));
             foreach (var (id, name) in names)
             {
@@ -141,7 +160,7 @@ namespace BirimizKovulacak.Game
         {
             var vs = VoiceSystem.Instance;
             var set = VoiceSettingsNow();
-            _voiceState = Bold(vs != null ? Loc.T("settings.voice_ready") : Loc.T("settings.voice_missing"), vs != null ? "t-good" : "t-accent").AddTo(_body);
+            Bold(vs != null ? Loc.T("settings.voice_ready") : Loc.T("settings.voice_missing"), vs != null ? "t-good" : "t-accent").AddTo(_body);
             if (vs != null && !string.IsNullOrEmpty(vs.MicrophoneError)) Text(Loc.TOr("voice.error." + vs.MicrophoneError, "voice.error.generic"), "t-small", "t-bad").AddTo(_body);
 
             Section(_body, Loc.T("settings.mic_device"), "mic_on");
@@ -167,8 +186,8 @@ namespace BirimizKovulacak.Game
             var meter = Box("mic-test").AddTo(_body);
             Text(Loc.T("settings.mic_level"), "setting-label").AddTo(meter);
             Bar(0, out _levelFill, "bar-teal").AddTo(meter);
-            SliderRow(_body, "settings.vad_threshold", 0f, 1f, set.VadSensitivity, v => set.VadSensitivity = v);
-            SliderRow(_body, "settings.input_gain", 0f, 4f, set.InputGain, v => set.InputGain = v);
+            SliderRow(_body, "settings.vad_threshold", 0f, 1f, set.VadSensitivity, v => set.VadSensitivity = v, Percent(1f));
+            SliderRow(_body, "settings.input_gain", 0f, 4f, set.InputGain, v => set.InputGain = v, Percent(1f));
             if (vs != null)
             {
                 var loop = new Toggle(Loc.T("settings.loopback")) { value = vs.LoopbackTest }.Cls("toggle").AddTo(_body);
@@ -179,26 +198,39 @@ namespace BirimizKovulacak.Game
 
         void BuildControls()
         {
-            Section(_body, Loc.T("settings.mouse"), "settings");
-            SliderRow(_body, "settings.sensitivity", 0.03f, 0.4f, PlayerPrefs.GetFloat("settings.sensitivity", 0.12f), v =>
+            // first-person look (the world reads these keys every time it applies the camera settings)
+            Section(_body, Loc.T("settings.look"), "settings");
+            SliderRow(_body, "settings.look_sensitivity", 0.2f, 3f, PlayerPrefs.GetFloat(Rooms.PrefSensitivity, DefaultSensitivity), v =>
+UiSettings.SetFloat(Rooms.PrefSensitivity, v), v => v.ToString("0.00") + "×");
+            var inv = new Toggle(Loc.T("settings.invert_y")) { value = PlayerPrefs.GetInt(Rooms.PrefInvertY, 0) == 1 }.Cls("toggle").AddTo(_body);
+            inv.RegisterValueChangedCallback(e => UiSettings.SetInt(Rooms.PrefInvertY, e.newValue ? 1 : 0));
+            SliderRow(_body, "settings.fov", 50f, 90f, PlayerPrefs.GetFloat(Rooms.PrefFov, DefaultFov), v => UiSettings.SetFloat(Rooms.PrefFov, Mathf.Round(v)), v => Mathf.RoundToInt(v) + "°");
+            var resetRow = Box("row").AddTo(_body);
+            Btn(Loc.T("settings.look_reset"), () =>
             {
-                PlayerPrefs.SetFloat("settings.sensitivity", v);
-                if (CameraRig.I != null) CameraRig.I.Sensitivity = v;
-            }, false);
-            SliderRow(_body, "settings.camera_shake", 0f, 1f, PlayerPrefs.GetFloat(UiSettings.CameraShakeKey, 1f), v =>
-            {
-                PlayerPrefs.SetFloat(UiSettings.CameraShakeKey, v);
-                if (CameraRig.I != null) CameraRig.I.JuiceScale = v;
-            });
+                UiSettings.SetFloat(Rooms.PrefSensitivity, DefaultSensitivity);
+                UiSettings.SetInt(Rooms.PrefInvertY, 0);
+                UiSettings.SetFloat(Rooms.PrefFov, DefaultFov);
+                Build();
+            }, "btn-small", "btn-ghost").AddTo(resetRow);
+
             Section(_body, Loc.T("settings.bindings"), "info");
-            foreach (var (action, index, label) in GameInput.Rebindable) BindRow(action, index, label);
-            Text(Loc.T("settings.quick_emotes"), "t-small", "t-muted").AddTo(_body);
+            BindRow(GameInput.Phone, 0, "input.phone");
+            BindRow(GameInput.PushToTalk, 0, "input.push_to_talk");
+            BindRow(GameInput.AnswerCall, 0, "input.answer_call");
+            BindRow(GameInput.HangUp, 0, "input.hang_up");
+            var fixedRow = Box("bind-row").AddTo(_body);
+            Text(Loc.T("settings.bind_fixed"), "bind-label").AddTo(fixedRow);
+            KeyCap(Loc.T("ctl.mouse_key")).AddTo(fixedRow);
+            KeyCap(Loc.T("ctl.click_key")).AddTo(fixedRow);
+            KeyCap("Esc").AddTo(fixedRow);
             var row = Box("row", "mt-m").AddTo(_body);
             Btn(Loc.T("settings.reset_bindings"), () => { GameInput.ResetBindings(); Build(); }, "btn-small", "btn-ghost").AddTo(row);
         }
 
         void BindRow(UnityEngine.InputSystem.InputAction action, int index, string label)
         {
+            if (action == null) return;
             var r = Box("bind-row").AddTo(_body);
             Text(Loc.T(label), "bind-label").AddTo(r);
             Button b = null;
@@ -212,14 +244,24 @@ namespace BirimizKovulacak.Game
 
         void BuildDisplay()
         {
+            Section(_body, Loc.T("settings.language"), "info");
+            var langs = Box("lang-cards").AddTo(_body);
+            LangCard(langs, "tr", "Türkçe", "Birimiz Kovulacak");
+            LangCard(langs, "en", "English", "Someone Gets Fired");
+            Text(Loc.T("settings.language_note"), "t-small", "t-muted").AddTo(_body);
+
             Section(_body, Loc.T("settings.display"), "objective");
             var fs = new Toggle(Loc.T("settings.fullscreen")) { value = UnityEngine.Screen.fullScreen }.Cls("toggle").AddTo(_body);
             fs.RegisterValueChangedCallback(e => UnityEngine.Screen.fullScreen = e.newValue);
-            Section(_body, Loc.T("settings.language"), "info");
-            var langs = new List<string> { Loc.T("settings.lang_tr") };
-            var dd = new DropdownField(Loc.T("settings.language"), langs, 0).Cls("dropdown").AddTo(_body);
-            dd.SetEnabled(false);
-            Text(Loc.T("settings.language_soon"), "t-small", "t-muted").AddTo(_body);
+        }
+
+        static void LangCard(VisualElement parent, string lang, string name, string sub)
+        {
+            bool on = Loc.Language == lang;
+            var b = Btn("", () => { if (Loc.Language != lang) Loc.SetLanguage(lang); }, on ? "btn-selected" : "btn-secondary", "lang-card").AddTo(parent);
+            Title(name, "lang-card-name").NoPick().AddTo(b);
+            Text(sub, "lang-card-sub").NoPick().AddTo(b);
+            if (on) Tag(Loc.T("settings.language_current"), "tag-green", "lang-card-tag").AddTo(b);
         }
 
         public override void Tick()
@@ -233,56 +275,50 @@ namespace BirimizKovulacak.Game
         }
     }
 
-    /// <summary>"Nasıl Oynanır": six illustrated pages.</summary>
+    /// <summary>"Nasıl Oynanır" v3: seven illustrated pages (onboarding/ob_1..7), one short paragraph each.</summary>
     public sealed class HowToPlayScreen : UiKit.Screen
     {
         static HowToPlayScreen _i;
-        const int Pages = 6;
-        /// <summary>Page illustration (Art/UI/howto, 1280x720) and the fallback icons used when it is missing.</summary>
-        static readonly string[] PageArt = { "howto/howto_1_work", "howto/howto_2_sabotage", "howto/howto_3_manager", "howto/howto_4_calls", "howto/howto_5_meeting", "howto/howto_6_week" };
-        static readonly string[][] Art =
+        public const int Pages = 7;
+        static readonly string[] PageArt =
         {
-            new[] { "logo/logo_mark", "icons/quota", "icons/objective", "icons/hr_seal" },
-            new[] { "cards/card_fake_email", "cards/card_salt", "icons/sab_nameplate", "icons/sab_plant" },
-            new[] { "portraits/mgr_paragoz", "portraits/mgr_disiplinci", "portraits/mgr_kayirmaci", "portraits/mgr_paranoyak" },
-            new[] { "phone/app_contacts", "icons/ringing", "icons/email", "icons/mic_on" },
-            new[] { "icons/accuse", "icons/ballot", "icons/footage", "icons/notes" },
-            new[] { "icons/week_calendar", "week/week_trophy", "icons/star", "icons/crown" },
+            "onboarding/ob_1_rooms", "onboarding/ob_2_phone", "onboarding/ob_3_rounds", "onboarding/ob_4_blame",
+            "onboarding/ob_5_tricks", "onboarding/ob_6_recording", "onboarding/ob_7_friday",
         };
-        static readonly string[][] LineIcons =
+        /// <summary>Fallback when an illustration is missing: one big icon on a paper tile.</summary>
+        static readonly string[] PageIcon =
         {
-            new[] { "contacts", "quota", "objective", "hr_seal", "info" },
-            new[] { "sab_plant", "cards", "lock_screen", "warning" },
-            new[] { "manager", "warning", "suspicion_2", "ringing", "favor_heart" },
-            new[] { "call", "mic_on", "email", "emote_wave" },
-            new[] { "accuse", "notes", "footage", "ballot" },
-            new[] { "week_calendar", "cards", "star", "crown", "check" },
+            "icons_v3/meeting", "icons_v3/manager_line", "icons_v3/task_app", "icons_v3/blame",
+            "icons_v3/coffee_spill", "icons_v3/recording", "icons_v3/defense",
         };
 
-        readonly VisualElement _art, _lines, _dots;
-        readonly Label _title, _pageLabel;
+        readonly VisualElement _card, _pic, _text, _dots;
+        readonly Label _title, _body, _pageLabel, _kicker;
         readonly Button _prev, _next;
         int _page;
 
         public HowToPlayScreen(VisualElement parent) : base(parent, "dim", "center")
         {
             _i = this;
-            var card = Panel("panel-folder", "howto", "col").AddTo(Root);
-            var head = Box("row").AddTo(card);
-            _title = Title("", "h1", "grow").AddTo(head);
+            _card = Panel("panel", "howto", "col").AddTo(Root);
+            var head = Box("row").AddTo(_card);
+            Title(Loc.T("howto.title"), "h2", "grow").AddTo(head);
             _pageLabel = Bold("", "t-muted", "gap-m").AddTo(head);
             Btn(Loc.T("common.close"), Hide, "btn-ghost", "btn-small").AddTo(head);
-            var page = Box("howto-page").AddTo(card);
-            _art = Box("howto-art").AddTo(page);
-            _lines = Box("howto-text").AddTo(page);
-            _dots = Box("dots").AddTo(card);
+            var page = Box("howto-page").AddTo(_card);
+            _pic = Box("howto-pic").AddTo(page);
+            _text = Box("howto-text").AddTo(page);
+            _kicker = Bold("", "howto-kicker").AddTo(_text);
+            _title = Title("", "howto-title").AddTo(_text);
+            _body = Text("", "howto-body").AddTo(_text);
+            _dots = Box("dots").AddTo(_card);
             for (int i = 0; i < Pages; i++)
             {
                 int p = i;
                 var d = Box("dot").AddTo(_dots);
                 d.RegisterCallback<ClickEvent>(_ => Show(p));
             }
-            var nav = Box("row").AddTo(card);
+            var nav = Box("row").AddTo(_card);
             _prev = Btn(Loc.T("howto.prev"), () => Show(_page - 1), "btn-ghost").AddTo(nav);
             Box("spacer").AddTo(nav);
             _next = Btn(Loc.T("howto.next"), () => { if (_page < Pages - 1) Show(_page + 1); else Hide(); }, "btn-primary").AddTo(nav);
@@ -293,45 +329,51 @@ namespace BirimizKovulacak.Game
             if (_i == null) return;
             _i.SetVisible(true);
             _i.Show(0);
+            UiMotion.PopIn(_i._card, 0.28f, 0f, 0.94f);
+        }
+
+        /// <summary>Mocks: open on a page.</summary>
+        public static void OpenAt(int page)
+        {
+            if (_i == null) return;
+            _i.SetVisible(true);
+            _i.Show(page);
         }
 
         public void Hide() { SetVisible(false); }
 
+        public static void Close() { if (_i != null) _i.SetVisible(false); }
+
         protected override void OnHide()
         {
-            _art.Clear(); // drop references, then unload the 1280x720 pictures
+            _pic.style.backgroundImage = StyleKeyword.Null; // drop references, then unload the 1280x720 pictures
+            _pic.Clear();
             for (int i = 0; i < PageArt.Length; i++) UiArt.Release(PageArt[i]);
         }
 
         void Show(int page)
         {
+            int old = _page;
             _page = Mathf.Clamp(page, 0, Pages - 1);
+            _kicker.text = Loc.F("howto.kicker", _page + 1, Pages);
             _title.text = Loc.T("howto." + _page + ".title");
+            _body.text = Loc.T("howto." + _page + ".text");
             _pageLabel.text = (_page + 1) + " / " + Pages;
-            _art.Clear();
-            var pic = Box("howto-pic").AddTo(_art);
-            if (UiArt.Apply(pic, PageArt[_page])) { }
-            else foreach (var path in Art[_page])
+            _pic.Clear();
+            _pic.style.backgroundImage = StyleKeyword.Null;
+            bool art = UiArt.Apply(_pic, PageArt[_page]);
+            _pic.EnableInClassList("howto-pic-fallback", !art);
+            if (!art)
             {
-                pic.RemoveFromHierarchy();
-                var e = Box("icon", path.StartsWith("cards/") ? "icon-xxl" : path.StartsWith("logo/") ? "icon-xxl" : "icon-xl").AddTo(_art);
-                if (path.StartsWith("cards/")) e.style.height = 224;
-                if (!UiArt.Apply(e, path)) SetIcon(e, path.Substring(path.IndexOf('/') + 1));
-            }
-            _lines.Clear();
-            for (int i = 0; i < 8; i++)
-            {
-                string key = "howto." + _page + ".line." + i;
-                if (!Loc.Has(key)) break;
-                var r = Box("howto-line").AddTo(_lines);
-                string icon = i < LineIcons[_page].Length ? LineIcons[_page][i] : "info";
-                Icon(icon).AddTo(r);
-                Text(Loc.T(key), "howto-line-text").AddTo(r);
+                var icon = Box("icon", "icon-xxl").AddTo(_pic);
+                MeetingText.ApplyIcon(icon, PageIcon[_page]);
             }
             for (int i = 0; i < _dots.childCount; i++) _dots[i].EnableInClassList("dot-on", i == _page);
             _prev.SetEnabled(_page > 0);
             _next.text = _page < Pages - 1 ? Loc.T("howto.next") : Loc.T("howto.done");
-            Pop(_lines);
+            float dir = _page >= old ? 1f : -1f;
+            UiMotion.SlideIn(_pic, new Vector2(40f * dir, 0f), 0.3f);
+            UiMotion.SlideIn(_text, new Vector2(24f * dir, 0f), 0.3f, 0.06f);
         }
 
         public override void Tick()

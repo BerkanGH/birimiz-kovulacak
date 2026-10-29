@@ -93,7 +93,7 @@ namespace BirimizKovulacak.Game
         {
             if (e == null) return;
             e.style.opacity = 0f;
-            Tween(e, seconds, t => e.style.opacity = t, Ease.OutCubic, null, delay, "fade");
+            Tween(e, seconds, t => e.style.opacity = t, Ease.OutCubic, () => e.style.opacity = StyleKeyword.Null, delay, "fade");
         }
 
         public static void FadeOut(VisualElement e, float seconds = 0.18f, bool hideAfter = true, Action done = null)
@@ -117,7 +117,7 @@ namespace BirimizKovulacak.Game
             {
                 e.style.translate = new Translate(from.x * (1f - t), from.y * (1f - t));
                 e.style.opacity = Mathf.Clamp01(t * 2.5f);
-            }, ease, () => e.style.translate = StyleKeyword.Null, delay, "move");
+            }, ease, () => { e.style.translate = StyleKeyword.Null; e.style.opacity = StyleKeyword.Null; }, delay, "move");
         }
 
         /// <summary>Scale pop (0.85 → 1 with overshoot) + fade.</summary>
@@ -130,7 +130,7 @@ namespace BirimizKovulacak.Game
                 float s = Mathf.LerpUnclamped(fromScale, 1f, t);
                 e.style.scale = new Scale(new Vector3(s, s, 1f));
                 e.style.opacity = Mathf.Clamp01(t * 3f);
-            }, Ease.OutBack, () => e.style.scale = StyleKeyword.Null, delay, "scale");
+            }, Ease.OutBack, () => { e.style.scale = StyleKeyword.Null; e.style.opacity = StyleKeyword.Null; }, delay, "scale");
         }
 
         /// <summary>Rubber stamp: big, tilted and transparent → slams to rest with a small bounce. <paramref name="onImpact"/> fires at contact (play a thud).</summary>

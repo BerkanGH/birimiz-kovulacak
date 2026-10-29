@@ -24,6 +24,38 @@ namespace BirimizKovulacak.Core.Tests.Line
             Assert.Greater(longPicked, 70); Assert.Less(longPicked, 100);
         }
 
+        [TestCase(false)] [TestCase(true)]
+        public void RecordingFocusFavorsTrioPartnersAndTodaysHiddenPlayer(bool hidden)
+        {
+            int focused = 0;
+            for (int seed = 0; seed < 160; seed++)
+            {
+                var setup = LineTest.MakeSetup(5, seed);
+                setup.ForceRounds = new System.Collections.Generic.List<RoundType> {
+                    hidden ? RoundType.TerfiListesi : RoundType.PrimHavuzu,
+                    hidden ? RoundType.FarkliEposta : RoundType.TerfiListesi };
+                setup.ForceHidden = new System.Collections.Generic.List<int> { -1, 4 };
+                var m = new LineTest(setup); m.Until(LinePhase.RoundPlay);
+                int caller, partner, outsider;
+                if (hidden) { caller = 0; partner = 4; outsider = 1; }
+                else
+                {
+                    int trio = m.View().Players.First(p => m.View(p.Id).Round.Partners.Count == 2).Id;
+                    // Both other members of the trio are partners too.
+                    var partners = m.View(trio).Round.Partners;
+                    caller = partners[0]; partner = partners[1];
+                    outsider = m.View().Players.First(p => p.Id != trio && !partners.Contains(p.Id)).Id;
+                }
+                m.Ok(caller, LineVerb.Call, partner); m.Ok(partner, LineVerb.Answer);
+                int focusCall = m.Engine.ConnectedCallId(caller); m.Advance(8); m.Ok(caller, LineVerb.HangUp);
+                m.Ok(caller, LineVerb.Call, outsider); m.Ok(outsider, LineVerb.Answer);
+                m.Advance(8); m.Ok(caller, LineVerb.HangUp);
+                m.Until(LinePhase.MeetingDossier);
+                if (m.Engine.RecordingPicks[0].CandidateCallIds[0] == focusCall) focused++;
+            }
+            Assert.Greater(focused, 95); Assert.Less(focused, 145);
+        }
+
         [Test]
         public void RecordingNoSpeechReportIsPrivateAndIdempotent()
         {
@@ -44,20 +76,16 @@ namespace BirimizKovulacak.Core.Tests.Line
         }
 
         [Test]
-        public void RecordingEligibilityErasureAndReport()
+        public void RecordingMinimumDurationAndReport()
         {
-            var m = LineTest.WithTrick(TrickType.KayitSil);
-            m.Ok(0, LineVerb.Call, 1); m.Ok(1, LineVerb.Answer); int erased = m.Engine.ConnectedCallId(0);
-            m.Advance(9); m.Ok(0, LineVerb.HangUp); m.Ok(0, LineVerb.UseTrick, 1);
-            m.Ok(0, LineVerb.Call, 1); m.Ok(1, LineVerb.Answer); int laterErased = m.Engine.ConnectedCallId(0);
-            m.Advance(9); m.Ok(1, LineVerb.HangUp);
+            var m = LineTest.WithTrick(TrickType.KahveDok);
             m.Ok(2, LineVerb.Call, 3); m.Ok(3, LineVerb.Answer); int shortCall = m.Engine.ConnectedCallId(2);
             m.Advance(5); m.Ok(2, LineVerb.HangUp);
             m.Ok(2, LineVerb.Call, 3); m.Ok(3, LineVerb.Answer); int eligible = m.Engine.ConnectedCallId(2); double start = m.Now;
             m.Advance(15); m.Ok(3, LineVerb.HangUp); m.Until(LinePhase.MeetingDossier);
             var picks = m.Engine.RecordingPicks; Assert.AreEqual(1, picks.Count);
             CollectionAssert.AreEqual(new[] { eligible }, picks[0].CandidateCallIds);
-            foreach (int forbidden in new[] { erased, laterErased, shortCall }) CollectionAssert.DoesNotContain(picks[0].CandidateCallIds, forbidden);
+            CollectionAssert.DoesNotContain(picks[0].CandidateCallIds, shortCall);
             Assert.AreEqual(m.Now + 4, picks[0].PlayAt); Assert.AreEqual(m.Config.RecordingSnippetSeconds, picks[0].Seconds);
             Assert.AreEqual(m.Config.Durations.Dossier + m.Config.Durations.DossierPerRecording, m.Engine.PhaseEndTime - m.Now);
             Assert.AreEqual(-1, m.View().Meeting.Recordings[0].Caller); Assert.AreEqual(-1, m.View().Meeting.Recordings[0].Callee);

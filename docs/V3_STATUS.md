@@ -23,6 +23,17 @@ engine), `UiMotion` (tweens), `Loc` area files (`<lang>.<area>.json`) + `SetLang
 - `cc99dca` menu moved off the busy art (tagline unreadable), toasts as paper slips without the side stripe.
 - `19dd45f` V3_DESIGN.md. `e0c5c46` contract + seams. `1c07efe` host/client plumbing (HostLineController,
   NetSession Line RPCs, ConnectionManager on protocol 3, LineBotDriver, LineWorldDriver, v3 screenshots, verify_logs).
+- Codex art (103 PNGs, validator green) merged + synced into UI Resources (`f3a7083`).
+- Independent design review (12 findings) → v3.1 rules (V3_DESIGN §0): start blame 5, one İhtar/week, final
+  shortlist vote, head-count round lengths, deal+vote day pairing, roles without repeats, trio Bonus Pool, fair Lost
+  Report slips, Shared Password single-code entry, topic categories, weekly trick/tip allowances, false tips named,
+  agenda +1 per İhtar, next manager picked by the fired player. Contract additions only (`ece35b4`).
+- Codex engine v3.0 merged (`9346cdd`): 230 v3 tests, 6-player view 1,060 B, Short Week sim 0.34 s. 26 tests red until
+  Codex v3.1 (running) encodes the new fields.
+- Voice merged (`0020547`): Calls mode, wiretap, recorder (≤ 6.2 MB worst day at 6p, 0 B/frame), tape playback;
+  109 voice tests. Lead wiring `9bc0e80` (HostLineVoiceBridge).
+- **First v3 network week (4 processes, bots, synthetic voice, scale 0.15): completed, all 4 agree on the result hash.**
+  Host clock jitter threw in LineEngine.Tick → monotonic clock (`5bfdfa3`). Calls too short at 0.15 for recordings.
 - Waiting for: engine (runtime needs `LineCodec`/`LineEngineFactory`), voice API (bridge v3 + recordings hook
   `HostLineController.PlayRecording`), world presenter, UI screens, art sync into `UI/Resources/ui/**`.
 - After all merges: remove v2 gameplay code (engine v2, HUD, open-office map, third-person camera, v2 bots) from `v3`.
