@@ -1,0 +1,209 @@
+[
+  {
+    "path": "icons_v3\\coffee_spill.png",
+    "w": 256,
+    "h": 256,
+    "bytes": 58294,
+    "alphaExtrema": [
+      0,
+      255
+    ],
+    "cornerAlpha": [
+      0,
+      0,
+      0,
+      0
+    ],
+    "alphaBounds": [
+      18,
+      32,
+      238,
+      224
+    ],
+    "sha256": "8655025ba45b2ac38b08e126ae01bd3340f7131884c7faebe3926f9317dec4f4"
+  },
+  {
+    "path": "icons_v3\\phone_dead.png",
+    "w": 256,
+    "h": 256,
+    "bytes": 46485,
+    "alphaExtrema": [
+      0,
+      255
+    ],
+    "cornerAlpha": [
+      0,
+      0,
+      0,
+      0
+    ],
+    "alphaBounds": [
+      27,
+      18,
+      228,
+      238
+    ],
+    "sha256": "2d9296877ffca9ea2f5d89050bef945c0a728428d971a254cce6b4dd309ac631"
+  },
+  {
+    "path": "icons_v3\\wifi_off.png",
+    "w": 256,
+    "h": 256,
+    "bytes": 51764,
+    "alphaExtrema": [
+      0,
+      255
+    ],
+    "cornerAlpha": [
+      0,
+      0,
+      0,
+      0
+    ],
+    "alphaBounds": [
+      18,
+      21,
+      238,
+      234
+    ],
+    "sha256": "a4138c0d4b9088346468dd5ba2b15ba520f37f904609b517ff835d8d909a90cd"
+  },
+  {
+    "path": "icons_v3\\manager_line.png",
+    "w": 256,
+    "h": 256,
+    "bytes": 53092,
+    "alphaExtrema": [
+      0,
+      255
+    ],
+    "cornerAlpha": [
+      0,
+      0,
+      0,
+      0
+    ],
+    "alphaBounds": [
+      18,
+      45,
+      238,
+      210
+    ],
+    "sha256": "b3c4a553dbbbaa92e4330bb08a871b1353266fcea086dd0361efefb754965ba8"
+  },
+  {
+    "path": "icons_v3\\tip_off.png",
+    "w": 256,
+    "h": 256,
+    "bytes": 57281,
+    "alphaExtrema": [
+      0,
+      255
+    ],
+    "cornerAlpha": [
+      0,
+      0,
+      0,
+      0
+    ],
+    "alphaBounds": [
+      42,
+      18,
+      214,
+      238
+    ],
+    "sha256": "bb1a6630bc8a64eaee36427d744f65ab618cf05286b97b3bbcee0aba89dc4366"
+  },
+  {
+    "path": "icons_v3\\intern.png",
+    "w": 256,
+    "h": 256,
+    "bytes": 50195,
+    "alphaExtrema": [
+      0,
+      255
+    ],
+    "cornerAlpha": [
+      0,
+      0,
+      0,
+      0
+    ],
+    "alphaBounds": [
+      37,
+      18,
+      218,
+      238
+    ],
+    "sha256": "08a1b72b346dc1c3e6464f1ae63fcdf4e8e996adfc4c3128cbffe54a7162cf6f"
+  },
+  {
+    "path": "icons_v3\\defense.png",
+    "w": 256,
+    "h": 256,
+    "bytes": 41552,
+    "alphaExtrema": [
+      0,
+      255
+    ],
+    "cornerAlpha": [
+      0,
+      0,
+      0,
+      0
+    ],
+    "alphaBounds": [
+      50,
+      18,
+      206,
+      238
+    ],
+    "sha256": "0dd563ff05eeafd27f4dc0c8a4a994ee59416e06a298d9b826f6fa61689526e7"
+  },
+  {
+    "path": "icons_v3\\meeting.png",
+    "w": 256,
+    "h": 256,
+    "bytes": 54282,
+    "alphaExtrema": [
+      0,
+      255
+    ],
+    "cornerAlpha": [
+      0,
+      0,
+      0,
+      0
+    ],
+    "alphaBounds": [
+      18,
+      34,
+      238,
+      221
+    ],
+    "sha256": "2b1979e3b92fbb3e470b877235808b594ac61744a4cb498cfe5b9312510070a5"
+  },
+  {
+    "path": "icons_v3\\morning.png",
+    "w": 256,
+    "h": 256,
+    "bytes": 46737,
+    "alphaExtrema": [
+      0,
+      255
+    ],
+    "cornerAlpha": [
+      0,
+      0,
+      0,
+      0
+    ],
+    "alphaBounds": [
+      44,
+      18,
+      212,
+      238
+    ],
+    "sha256": "c6e959a2fea6779fa19d74b85409b9ceaf44fc16f56296f9b94e20bd9a3cf60f"
+  }
+]

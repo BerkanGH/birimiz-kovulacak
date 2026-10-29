@@ -1,0 +1,81 @@
+{
+  "method": "built-in imagegen; deterministic card frame and Shared Password digits",
+  "references": [
+    "C:/Users/agdem/Desktop/Projects/LeonidasStudio/SomeoneGetsFired/.worktrees/art3/Art/UI/style/style_sheet.png",
+    "C:/Users/agdem/Desktop/Projects/LeonidasStudio/SomeoneGetsFired/.worktrees/art3/Art/UI/cards/card_fake_email.png"
+  ],
+  "records": [
+    {
+      "id": "round_prim_havuzu",
+      "category": "rounds",
+      "prompt": "See initial tool prompt: two beans, bonus envelope, greedy orange bean grabbing all.",
+      "source": "C:\\Users\\agdem\\.codex\\generated_images\\01a18692-6c43-7ca0-a995-8aec634c8cfe\\exec-2401b3dc-cd66-4fee-92b5-6e9db664702a.png",
+      "archivedSource": "_tools/v3_cards_sources/round_prim_havuzu.png",
+      "sourceSha256": "0f5acc9729b0f54ff8b17e5f1c3e452b76a4bc76dfbf2c231f01e68c1b46c1a2"
+    },
+    {
+      "id": "round_farkli_eposta",
+      "category": "rounds",
+      "prompt": "Use case: illustration-story. Single text-free office board-game illustration with genuine transparent background. Near-square composition to fit a 410x448 card illustration window. Reference 1 is locked palette, medium navy line work and bean construction; reference 2 is locked character illustration style. Generate ONLY the isolated illustration, NO card frame. Warm office satire, rounded flat vector silhouettes, subtle printed paper grain, two flat color tones per material, medium navy outlines, cream #F4EFE3, manila #E8C98A, green #2F6B4F, red #D2382F, navy #1F2A44, yellow #FFE066, teal #3BB9B0. Readable at 180px-tall card size. Avoid glossy gradients, reflective highlights, 3D rendering, neon, sparkles, emoji look, meaningless decorative stripes. No labels, letters, numbers, words, symbols resembling writing. Clean true-alpha background and complete uncropped silhouette. Scene: Exactly six prominent closed envelopes laid out in two orderly columns of three on a small warm office mail-sorting tray: FIVE identical cream envelopes and ONE RED envelope. Every envelope has identical navy outline, size and folded triangular flap geometry, only the sixth envelope is red. No characters. All six envelopes fully visible, clearly separated and countable. No numbers, labels, seals, stamps or text. Six pieces of physical office stationery, intentional visual puzzle.",
+      "source": "C:\\Users\\agdem\\.codex\\generated_images\\01a18692-6c43-7ca0-a995-8aec634c8cfe\\exec-cccfee23-0821-4d31-9766-b57335a94bb0.png",
+      "archivedSource": "_tools/v3_cards_sources/round_farkli_eposta.png",
+      "sourceSha256": "ae4dcdf0d87a74ecf994eda6c33164503a8534c8250b82422d9d40c3e02f154a"
+    },
+    {
+      "id": "round_kayip_rapor",
+      "category": "rounds",
+      "prompt": "Use case: illustration-story. Single text-free office board-game illustration with genuine transparent background. Near-square composition to fit a 410x448 card illustration window. Reference 1 is locked palette, medium navy line work and bean construction; reference 2 is locked character illustration style. Generate ONLY the isolated illustration, NO card frame. Warm office satire, rounded flat vector silhouettes, subtle printed paper grain, two flat color tones per material, medium navy outlines, cream #F4EFE3, manila #E8C98A, green #2F6B4F, red #D2382F, navy #1F2A44, yellow #FFE066, teal #3BB9B0. Readable at 180px-tall card size. Avoid glossy gradients, reflective highlights, 3D rendering, neon, sparkles, emoji look, meaningless decorative stripes. No labels, letters, numbers, words, symbols resembling writing. Clean true-alpha background and complete uncropped silhouette. Scene: A large open completely EMPTY manila report folder dominates the lower center. Three colored bean employees stand behind the desk, pointing accusingly at one another across the empty folder: a yellow bean with round glasses, a pink bean with hair bun, a short green bean wearing headset. The folder contains no papers. Clear pointing hands, sideways accusatory eyes and nervous expressions. No text or question marks. Composition focused on empty folder and mutual blame.",
+      "source": "C:\\Users\\agdem\\.codex\\generated_images\\01a18692-6c43-7ca0-a995-8aec634c8cfe\\exec-b730cf98-4ae5-4be5-9d53-271c0327dfc6.png",
+      "archivedSource": "_tools/v3_cards_sources/round_kayip_rapor.png",
+      "sourceSha256": "ac86c4f75e08e9e983db7bdfa21ef0a58b946c03b38c5d019f2799c8779e2837"
+    },
+    {
+      "id": "round_ihbar_kutusu",
+      "category": "rounds",
+      "prompt": "Use case: illustration-story. Single text-free office board-game illustration with genuine transparent background. Near-square composition to fit a 410x448 card illustration window. Reference 1 is locked palette, medium navy line work and bean construction; reference 2 is locked character illustration style. Generate ONLY the isolated illustration, NO card frame. Warm office satire, rounded flat vector silhouettes, subtle printed paper grain, two flat color tones per material, medium navy outlines, cream #F4EFE3, manila #E8C98A, green #2F6B4F, red #D2382F, navy #1F2A44, yellow #FFE066, teal #3BB9B0. Readable at 180px-tall card size. Avoid glossy gradients, reflective highlights, 3D rendering, neon, sparkles, emoji look, meaningless decorative stripes. No labels, letters, numbers, words, symbols resembling writing. Clean true-alpha background and complete uncropped silhouette. Scene: One chunky manila office complaint box with a narrow DARK SLOT on its lid. A pink bean employee with hair bun leans toward the box, cautiously inserting ONE folded cream paper slip through that slot with one hand. Eyes glance sideways conspiratorially. Box remains broad and prominent; paper visibly partly inside slot. Simple side-on three-quarter office desk scene. No letters or labels anywhere.",
+      "source": "C:\\Users\\agdem\\.codex\\generated_images\\01a18692-6c43-7ca0-a995-8aec634c8cfe\\exec-5f0c7434-8f8c-4665-affe-8c30dd3fd029.png",
+      "archivedSource": "_tools/v3_cards_sources/round_ihbar_kutusu.png",
+      "sourceSha256": "47b6e02196f920d790ceef3074f73b53a2cbe3d09c996111a93ec6c3bce7b889"
+    },
+    {
+      "id": "round_terfi_listesi",
+      "category": "rounds",
+      "prompt": "Use case: illustration-story. Single text-free office board-game illustration with genuine transparent background. Near-square composition to fit a 410x448 card illustration window. Reference 1 is locked palette, medium navy line work and bean construction; reference 2 is locked character illustration style. Generate ONLY the isolated illustration, NO card frame. Warm office satire, rounded flat vector silhouettes, subtle printed paper grain, two flat color tones per material, medium navy outlines, cream #F4EFE3, manila #E8C98A, green #2F6B4F, red #D2382F, navy #1F2A44, yellow #FFE066, teal #3BB9B0. Readable at 180px-tall card size. Avoid glossy gradients, reflective highlights, 3D rendering, neon, sparkles, emoji look, meaningless decorative stripes. No labels, letters, numbers, words, symbols resembling writing. Clean true-alpha background and complete uncropped silhouette. Scene: A short three-rung office ladder/podium with a GREEN NECKTIE displayed prominently on its top rung as the promotion prize. Blue bean employee with green tie is being pushed/supportively lifted up the ladder by two smaller colleagues: purple bean with curly hair and teal scarf and yellow bean with round glasses. Clear hands pushing colleague upward, blue bean reaching to the tie at top. Ladder and tie are unmistakable. Three beans only; no trophy, stars, medals, text or number marks.",
+      "source": "C:\\Users\\agdem\\.codex\\generated_images\\01a18692-6c43-7ca0-a995-8aec634c8cfe\\exec-987c9ecf-aadc-4422-9e81-2ad2d2c3e777.png",
+      "archivedSource": "_tools/v3_cards_sources/round_terfi_listesi.png",
+      "sourceSha256": "6e705f766a9792d75be9295337cc21cf76eb4fb6a04505ed1de2d0105d922c85"
+    },
+    {
+      "id": "round_ortak_sifre",
+      "category": "rounds",
+      "prompt": "Use case: illustration-story. Single text-free office board-game illustration with genuine transparent background. Near-square composition to fit a 410x448 card illustration window. Reference 1 is locked palette, medium navy line work and bean construction; reference 2 is locked character illustration style. Generate ONLY the isolated illustration, NO card frame. Warm office satire, rounded flat vector silhouettes, subtle printed paper grain, two flat color tones per material, medium navy outlines, cream #F4EFE3, manila #E8C98A, green #2F6B4F, red #D2382F, navy #1F2A44, yellow #FFE066, teal #3BB9B0. Readable at 180px-tall card size. Avoid glossy gradients, reflective highlights, 3D rendering, neon, sparkles, emoji look, meaningless decorative stripes. No labels, letters, numbers, words, symbols resembling writing. Clean true-alpha background and complete uncropped silhouette. Scene: Six familiar office bean employees arranged in a gently curved compact line in front of one tall navy server rack with a prominent large BLANK 3x4 keypad. Each of the six beans holds exactly one EMPTY CREAM RECTANGULAR DIGIT CARD in front of their body; leave all six cards TOTALLY BLANK for deterministic lettering later. Beans left-to-right: blue with green necktie, yellow with glasses, pink with hair bun, green with headset, orange with navy beanie, purple with curly hair and teal scarf. The orange bean holds its card with one hand and visibly hides CROSSED FINGERS of the other hand behind its back, shown just to its right. Six cream cards must be unobscured, horizontal face-on surfaces with navy borders, enough room for a single large future digit each. Server rack is behind and to the side, dark blank keys unlabelled. No text, no digits.",
+      "source": "C:\\Users\\agdem\\.codex\\generated_images\\01a18692-6c43-7ca0-a995-8aec634c8cfe\\exec-45a22c55-51ae-4ecb-a9fb-65caeb8a1aae.png",
+      "archivedSource": "_tools/v3_cards_sources/round_ortak_sifre.png",
+      "sourceSha256": "0724991ce6d5753af51707512dc453b5908d94ad459e162f770e1b27ca7cad7a"
+    },
+    {
+      "id": "trick_coffee_spill",
+      "category": "tricks",
+      "prompt": "Use case: illustration-story. Single text-free office board-game illustration with genuine transparent background. Near-square composition to fit a 410x448 card illustration window. Reference 1 is locked palette, medium navy line work and bean construction; reference 2 is locked character illustration style. Generate ONLY the isolated illustration, NO card frame. Warm office satire, rounded flat vector silhouettes, subtle printed paper grain, two flat color tones per material, medium navy outlines, cream #F4EFE3, manila #E8C98A, green #2F6B4F, red #D2382F, navy #1F2A44, yellow #FFE066, teal #3BB9B0. Readable at 180px-tall card size. Avoid glossy gradients, reflective highlights, 3D rendering, neon, sparkles, emoji look, meaningless decorative stripes. No labels, letters, numbers, words, symbols resembling writing. Clean true-alpha background and complete uncropped silhouette. Scene: A large green office coffee mug tips sideways over an off-white/navy computer KEYBOARD. Coffee pours from mug mouth in one coherent brown arc and splashes broadly between the clear rows of blank keyboard keys, making a puddle. One sneaky orange bean with navy beanie hand is visible tilting the mug from left, but no full character needed. Tight object-centered composition. No text, letters or symbols on keyboard keys. No sparkles or generic motion rays; fluid spill tells the action.",
+      "source": "C:\\Users\\agdem\\.codex\\generated_images\\01a18692-6c43-7ca0-a995-8aec634c8cfe\\exec-4bb7a87d-b293-4052-85f0-4b0207c54db9.png",
+      "archivedSource": "_tools/v3_cards_sources/trick_coffee_spill.png",
+      "sourceSha256": "8f8c42b028bd600eb495c43d9337899a4d95d9312874a58e5ca316918084e486"
+    },
+    {
+      "id": "trick_wiretap",
+      "category": "tricks",
+      "prompt": "Use case: illustration-story. Single text-free office board-game illustration with genuine transparent background. Near-square composition to fit a 410x448 card illustration window. Reference 1 is locked palette, medium navy line work and bean construction; reference 2 is locked character illustration style. Generate ONLY the isolated illustration, NO card frame. Warm office satire, rounded flat vector silhouettes, subtle printed paper grain, two flat color tones per material, medium navy outlines, cream #F4EFE3, manila #E8C98A, green #2F6B4F, red #D2382F, navy #1F2A44, yellow #FFE066, teal #3BB9B0. Readable at 180px-tall card size. Avoid glossy gradients, reflective highlights, 3D rendering, neon, sparkles, emoji look, meaningless decorative stripes. No labels, letters, numbers, words, symbols resembling writing. Clean true-alpha background and complete uncropped silhouette. Scene: Close-up of one pair of old padded NAVY HEADPHONES secretly connected by a little ALLIGATOR CLIP to the coiled cord of an office desk telephone. The green desk phone sits at lower right, its handset resting on base. A distinct spring coil cord runs across foreground; a red alligator clip visibly bites into this phone cord, and the headphone lead connects directly to the clip. Headphones sit at upper left, broad recognizable headband and two earcups. Simple restrained physical setup, readable connection at small size. No characters. No text or decorative marks.",
+      "source": "C:\\Users\\agdem\\.codex\\generated_images\\01a18692-6c43-7ca0-a995-8aec634c8cfe\\exec-51017cd5-3f3d-4261-846f-b760ae996100.png",
+      "archivedSource": "_tools/v3_cards_sources/trick_wiretap.png",
+      "sourceSha256": "e84f254803d9e3115598e529853f3baeaec0818d4f29f5c8181c77120f1da9e9"
+    },
+    {
+      "id": "trick_erase_tape",
+      "category": "tricks",
+      "prompt": "Use case: illustration-story. Single text-free office board-game illustration with genuine transparent background. Near-square composition to fit a 410x448 card illustration window. Reference 1 is locked palette, medium navy line work and bean construction; reference 2 is locked character illustration style. Generate ONLY the isolated illustration, NO card frame. Warm office satire, rounded flat vector silhouettes, subtle printed paper grain, two flat color tones per material, medium navy outlines, cream #F4EFE3, manila #E8C98A, green #2F6B4F, red #D2382F, navy #1F2A44, yellow #FFE066, teal #3BB9B0. Readable at 180px-tall card size. Avoid glossy gradients, reflective highlights, 3D rendering, neon, sparkles, emoji look, meaningless decorative stripes. No labels, letters, numbers, words, symbols resembling writing. Clean true-alpha background and complete uncropped silhouette. Scene: One large red-and-cream AUDIO CASSETTE with two clear circular reel windows, laid slightly diagonally. A big cream-and-green rectangular rubber ERASER scrubs across the cassette's blank paper label, with a few tiny rubber crumbs beside it. Cassette remains recognizable and dominates the scene. No characters or hands, no magnetic tape writing, no letters, digits, labels, plus signs, stars, decorative stripes or icons. Warm stationery gag, readable at thumbnail size.",
+      "source": "C:\\Users\\agdem\\.codex\\generated_images\\01a18692-6c43-7ca0-a995-8aec634c8cfe\\exec-0240c557-f57b-4ff3-ab3b-01aceb4477e4.png",
+      "archivedSource": "_tools/v3_cards_sources/trick_erase_tape.png",
+      "sourceSha256": "2b2e5f5b95c6dd2ed6fac9e42e33d89ccd053c3e891e3e66563d5d8a9c1e4ebd"
+    }
+  ]
+}

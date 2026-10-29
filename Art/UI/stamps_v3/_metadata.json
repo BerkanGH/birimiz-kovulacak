@@ -1,0 +1,123 @@
+[
+  {
+    "id": "stamp_ihtar",
+    "path": "Art/UI/stamps_v3/stamp_ihtar.png",
+    "w": 960,
+    "h": 320,
+    "category": "stamps_v3",
+    "nineSlice": null,
+    "screenRect": null,
+    "hasText": true,
+    "description": "İHTAR. Distressed rubber stamp; locked original stamp geometry and deterministic Arial Bold Unicode."
+  },
+  {
+    "id": "stamp_warning",
+    "path": "Art/UI/stamps_v3/stamp_warning.png",
+    "w": 960,
+    "h": 320,
+    "category": "stamps_v3",
+    "nineSlice": null,
+    "screenRect": null,
+    "hasText": true,
+    "description": "WARNING. Distressed rubber stamp; locked original stamp geometry and deterministic Arial Bold Unicode."
+  },
+  {
+    "id": "stamp_fired",
+    "path": "Art/UI/stamps_v3/stamp_fired.png",
+    "w": 960,
+    "h": 320,
+    "category": "stamps_v3",
+    "nineSlice": null,
+    "screenRect": null,
+    "hasText": true,
+    "description": "FIRED. Distressed rubber stamp; locked original stamp geometry and deterministic Arial Bold Unicode."
+  },
+  {
+    "id": "stamp_survived",
+    "path": "Art/UI/stamps_v3/stamp_survived.png",
+    "w": 960,
+    "h": 320,
+    "category": "stamps_v3",
+    "nineSlice": null,
+    "screenRect": null,
+    "hasText": true,
+    "description": "SURVIVED. Distressed rubber stamp; locked original stamp geometry and deterministic Arial Bold Unicode."
+  },
+  {
+    "id": "stamp_approved",
+    "path": "Art/UI/stamps_v3/stamp_approved.png",
+    "w": 960,
+    "h": 320,
+    "category": "stamps_v3",
+    "nineSlice": null,
+    "screenRect": null,
+    "hasText": true,
+    "description": "APPROVED. Distressed rubber stamp; locked original stamp geometry and deterministic Arial Bold Unicode."
+  },
+  {
+    "id": "stamp_rejected",
+    "path": "Art/UI/stamps_v3/stamp_rejected.png",
+    "w": 960,
+    "h": 320,
+    "category": "stamps_v3",
+    "nineSlice": null,
+    "screenRect": null,
+    "hasText": true,
+    "description": "REJECTED. Distressed rubber stamp; locked original stamp geometry and deterministic Arial Bold Unicode."
+  },
+  {
+    "id": "stamp_confidential",
+    "path": "Art/UI/stamps_v3/stamp_confidential.png",
+    "w": 960,
+    "h": 320,
+    "category": "stamps_v3",
+    "nineSlice": null,
+    "screenRect": null,
+    "hasText": true,
+    "description": "CONFIDENTIAL. Distressed rubber stamp; locked original stamp geometry and deterministic Arial Bold Unicode."
+  },
+  {
+    "id": "stamp_employee_week_en",
+    "path": "Art/UI/stamps_v3/stamp_employee_week_en.png",
+    "w": 960,
+    "h": 320,
+    "category": "stamps_v3",
+    "nineSlice": null,
+    "screenRect": null,
+    "hasText": true,
+    "description": "EMPLOYEE OF THE WEEK. Distressed rubber stamp; locked original stamp geometry and deterministic Arial Bold Unicode."
+  },
+  {
+    "id": "stamp_haftanin_elemani",
+    "path": "Art/UI/stamps_v3/stamp_haftanin_elemani.png",
+    "w": 960,
+    "h": 320,
+    "category": "stamps_v3",
+    "nineSlice": null,
+    "screenRect": null,
+    "hasText": true,
+    "description": "HAFTANIN ELEMANI. Distressed rubber stamp; locked original stamp geometry and deterministic Arial Bold Unicode."
+  },
+  {
+    "id": "stamp_kayitta",
+    "path": "Art/UI/stamps_v3/stamp_kayitta.png",
+    "w": 960,
+    "h": 320,
+    "category": "stamps_v3",
+    "nineSlice": null,
+    "screenRect": null,
+    "hasText": true,
+    "description": "KAYITTA. Distressed rubber stamp; locked original stamp geometry and deterministic Arial Bold Unicode."
+  },
+  {
+    "id": "stamp_on_record",
+    "path": "Art/UI/stamps_v3/stamp_on_record.png",
+    "w": 960,
+    "h": 320,
+    "category": "stamps_v3",
+    "nineSlice": null,
+    "screenRect": null,
+    "hasText": true,
+    "description": "ON RECORD. Distressed rubber stamp; locked original stamp geometry and deterministic Arial Bold Unicode."
+  }
+]

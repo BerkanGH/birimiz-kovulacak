@@ -1,0 +1,121 @@
+[
+  {
+    "id": "boot_logo",
+    "path": "Art/UI/computer/boot_logo.png",
+    "w": 512,
+    "h": 512,
+    "category": "computer",
+    "nineSlice": null,
+    "screenRect": null,
+    "hasText": false,
+    "description": "Text-free KOVA bucket and sunrise company mark, extracted from the original reception plaque. Centered transparent 512px canvas."
+  },
+  {
+    "id": "os_wallpaper",
+    "path": "Art/UI/computer/os_wallpaper.png",
+    "w": 1920,
+    "h": 1080,
+    "category": "computer",
+    "nineSlice": null,
+    "screenRect": null,
+    "hasText": false,
+    "description": "Opaque warm-paper company desktop wallpaper with a quiet repeating KOVA bucket silhouette. No readable text; subtle deterministic paper grain."
+  },
+  {
+    "id": "window_frame",
+    "path": "Art/UI/computer/window_frame.png",
+    "w": 640,
+    "h": 480,
+    "category": "computer",
+    "nineSlice": [
+      40,
+      104,
+      40,
+      40
+    ],
+    "screenRect": null,
+    "hasText": false,
+    "description": "Paper OS window with manila title bar, navy perimeter and quiet body. Top border protects title bar and inner rule corners. Body content inset [40,108,560,324]. No baked controls or text."
+  },
+  {
+    "id": "taskbar",
+    "path": "Art/UI/computer/taskbar.png",
+    "w": 640,
+    "h": 80,
+    "category": "computer",
+    "nineSlice": [
+      26,
+      28,
+      26,
+      30
+    ],
+    "screenRect": null,
+    "hasText": false,
+    "description": "Stationery taskbar strip with quiet paper center and manila rim; runtime app buttons and status sit above it."
+  },
+  {
+    "id": "notification_card",
+    "path": "Art/UI/computer/notification_card.png",
+    "w": 384,
+    "h": 192,
+    "category": "computer",
+    "nineSlice": [
+      36,
+      36,
+      36,
+      36
+    ],
+    "screenRect": null,
+    "hasText": false,
+    "description": "Quiet cream paper notification with navy outline and inset stationery rule. No colored side stripe. Runtime icon and localized message supplied separately."
+  },
+  {
+    "id": "app_tile",
+    "path": "Art/UI/computer/app_tile.png",
+    "w": 192,
+    "h": 192,
+    "category": "computer",
+    "nineSlice": [
+      40,
+      40,
+      40,
+      40
+    ],
+    "screenRect": null,
+    "hasText": false,
+    "description": "Blank desktop app tile in the original manila-and-paper control style. The icon and localized name are runtime overlays."
+  },
+  {
+    "id": "cursor_hand",
+    "path": "Art/UI/computer/cursor_hand.png",
+    "w": 64,
+    "h": 64,
+    "category": "computer",
+    "nineSlice": null,
+    "screenRect": null,
+    "hasText": false,
+    "description": "Paper-colored office-bean pointing cursor with green cuff. Hotspot [27,7], source pixels; full hand remains inside the 64px canvas."
+  },
+  {
+    "id": "offline_overlay",
+    "path": "Art/UI/computer/offline_overlay.png",
+    "w": 1920,
+    "h": 1080,
+    "category": "computer",
+    "nineSlice": null,
+    "screenRect": null,
+    "hasText": false,
+    "description": "Transparent screen fault: irregular navy static with an unplugged cable and empty socket motif. No text, glow or decorative stripe. Full-screen 1920x1080 overlay."
+  },
+  {
+    "id": "coffee_overlay",
+    "path": "Art/UI/computer/coffee_overlay.png",
+    "w": 1920,
+    "h": 1080,
+    "category": "computer",
+    "nineSlice": null,
+    "screenRect": null,
+    "hasText": false,
+    "description": "Transparent coffee damage overlay: large dark pooled spill obscures the central screen, irregular splash droplets and dry cup-ring stain. Restrained flat brown tones; real alpha outside and within the spill."
+  }
+]

@@ -1,0 +1,89 @@
+{
+  "phone": {
+    "canvas": [
+      800,
+      600
+    ],
+    "base": {
+      "position": [
+        61,
+        140
+      ],
+      "size": [
+        678,
+        430
+      ]
+    },
+    "handset": {
+      "position": [
+        229,
+        52
+      ],
+      "size": [
+        456,
+        150
+      ]
+    },
+    "handsetPivot": [
+      458,
+      136
+    ],
+    "origin": "top-left; stack both at [0,0]",
+    "sourceBaseBounds": [
+      0,
+      140,
+      1432,
+      1048
+    ]
+  },
+  "tape": {
+    "canvas": [
+      1024,
+      512
+    ],
+    "sourceBounds": [
+      36,
+      33,
+      1740,
+      849
+    ],
+    "placement": {
+      "position": [
+        44,
+        32
+      ],
+      "size": [
+        936,
+        448
+      ]
+    },
+    "sourceReelCenters": [
+      [
+        432,
+        365
+      ],
+      [
+        860,
+        365
+      ]
+    ],
+    "reelCenters": [
+      [
+        262,
+        214
+      ],
+      [
+        497,
+        214
+      ]
+    ],
+    "reelPivot": [
+      128,
+      128
+    ],
+    "reelRenderSize": [
+      100,
+      100
+    ]
+  }
+}

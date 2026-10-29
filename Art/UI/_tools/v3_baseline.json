@@ -1,0 +1,822 @@
+[
+  {
+    "path": "Art/UI/style/style_sheet.png",
+    "sha256": "27c08849342cf673035db4d232ab7574828d26e7d5f4f4d076937dd9387e8f33"
+  },
+  {
+    "path": "Art/UI/logo/logo.png",
+    "sha256": "eeb7464e3cce595df5df6796eb098cd35626ebd951a82da806de1fc35af81a94"
+  },
+  {
+    "path": "Art/UI/logo/logo_mark.png",
+    "sha256": "44302f1ff1d847d2b8fc8116193692adab73c32fcedc12f3243cf12d7507012f"
+  },
+  {
+    "path": "Art/UI/backgrounds/menu_bg.png",
+    "sha256": "8d9c518963e7c37ca9d1de019bee7e89339d152939f6244501d1ff4b971568ea"
+  },
+  {
+    "path": "Art/UI/backgrounds/lobby_bg.png",
+    "sha256": "c5273c07120ef6dc54117785b404a471d07846fb9252437087587b080388cc62"
+  },
+  {
+    "path": "Art/UI/backgrounds/results_bg.png",
+    "sha256": "82de4be66cd0bfcdfa7defa1312ab089be64e015a113bd7055843223e358c947"
+  },
+  {
+    "path": "Art/UI/backgrounds/paper_tile.png",
+    "sha256": "ece6768c89721a90af2319df0540bb852f763b31ceeec5bfd16125133d57661b"
+  },
+  {
+    "path": "Art/UI/buttons/primary_normal.png",
+    "sha256": "19d7ea5575f4433e0c342b3835d08f95128bf2839d831f41a60883fca815fba6"
+  },
+  {
+    "path": "Art/UI/buttons/primary_hover.png",
+    "sha256": "5ffa6581ff58986c9c376eacad1740fe19020aca1a7f5c61df3069278ea346ef"
+  },
+  {
+    "path": "Art/UI/buttons/primary_pressed.png",
+    "sha256": "5cdfddc395c31e5af12b7938d07897dc1a593e292e1fd9bdb2fe6f88de94a7c6"
+  },
+  {
+    "path": "Art/UI/buttons/primary_disabled.png",
+    "sha256": "09bed9f4ff6fb8f751d438f8e02a481e1132fc67ef8195d7fff4c15d2ccf6eda"
+  },
+  {
+    "path": "Art/UI/buttons/secondary_normal.png",
+    "sha256": "eef22b7b3c45a0c7b550a5aa96501b431d16f10b485c899a316fd7fb060c76bd"
+  },
+  {
+    "path": "Art/UI/buttons/secondary_hover.png",
+    "sha256": "9e58a08a92b17959d22eeb903dbcf76410452383d1446f3d285ec725df08cf1f"
+  },
+  {
+    "path": "Art/UI/buttons/secondary_pressed.png",
+    "sha256": "51d7a81c1bc6791cdda73b1514692e690c83d53098385f3a09efeb9abff5780a"
+  },
+  {
+    "path": "Art/UI/buttons/secondary_disabled.png",
+    "sha256": "09bed9f4ff6fb8f751d438f8e02a481e1132fc67ef8195d7fff4c15d2ccf6eda"
+  },
+  {
+    "path": "Art/UI/buttons/danger_normal.png",
+    "sha256": "4c292ca61f57ce2e2409b2ac82345144b55613b812b1966418ab2cfcaff4f11b"
+  },
+  {
+    "path": "Art/UI/buttons/danger_hover.png",
+    "sha256": "7f323238b6471485371fc62fb6d70e8a3eabb16fc431b6aef7fbecb4e3a227bb"
+  },
+  {
+    "path": "Art/UI/buttons/danger_pressed.png",
+    "sha256": "70b874fd07e1f9bfb8e15b4e21043ad521f8f567218d70b91d81b80223b97994"
+  },
+  {
+    "path": "Art/UI/buttons/danger_disabled.png",
+    "sha256": "09bed9f4ff6fb8f751d438f8e02a481e1132fc67ef8195d7fff4c15d2ccf6eda"
+  },
+  {
+    "path": "Art/UI/buttons/ghost_normal.png",
+    "sha256": "bf5c84a71c323a3f8a18a2be95848b560491c26b7660b68239848f733a0595c1"
+  },
+  {
+    "path": "Art/UI/buttons/ghost_hover.png",
+    "sha256": "f7ec2fedb388eafd8b317704306bab8744c308a142c9b783038fe4ef346fcec0"
+  },
+  {
+    "path": "Art/UI/buttons/ghost_pressed.png",
+    "sha256": "325f333ad5bfa4e1afb48367107ef864968a43d0307acd67edfbbde82387e79d"
+  },
+  {
+    "path": "Art/UI/buttons/ghost_disabled.png",
+    "sha256": "3365af3142d91e75ecfe3e0d619adb8a620fbdb1961a7c64b02debeb44f586bf"
+  },
+  {
+    "path": "Art/UI/buttons/panel_paper.png",
+    "sha256": "2288e1b8005cff3387abd51f76301ec4425ceb3d4c18aa65455d60874e7ab881"
+  },
+  {
+    "path": "Art/UI/buttons/panel_folder.png",
+    "sha256": "eb5f339bfbf83e8fe0d2aa5a04565ca5666d916b02ae97bd6a699b037a0ba3e1"
+  },
+  {
+    "path": "Art/UI/buttons/panel_sticky.png",
+    "sha256": "de4f798925f4ebadaff06242335283eff55f2ad50890aa4bc5e14f989b656488"
+  },
+  {
+    "path": "Art/UI/buttons/tooltip.png",
+    "sha256": "ffeb7c443aa9e6ea5ba9813d041d7c1a68b144f9e9a243ea9ae321537563dae3"
+  },
+  {
+    "path": "Art/UI/buttons/progress_bar_bg.png",
+    "sha256": "5fc871ffaec4bb825e65dcb649142dac8532c96e0d8efd2e746a46c25ca40abd"
+  },
+  {
+    "path": "Art/UI/buttons/progress_bar_fill_green.png",
+    "sha256": "297a476f32291527bc00e52eacdd1ffdb13e433e6400475fc1144c2deaf7c57c"
+  },
+  {
+    "path": "Art/UI/buttons/progress_bar_fill_red.png",
+    "sha256": "2fba363aaf89af7620252ad942ec53e2efa7727138b67bd6c45389a39aa8f14d"
+  },
+  {
+    "path": "Art/UI/buttons/toggle_on.png",
+    "sha256": "c4d81ab5f92a5310b8e241bace55b8df8677e4a7a9bc180725d15d5e74d5ef47"
+  },
+  {
+    "path": "Art/UI/buttons/toggle_off.png",
+    "sha256": "0ab3fcc301d93b5be887625fa979cbf7ec746fa282074922cc631c369bf269fa"
+  },
+  {
+    "path": "Art/UI/buttons/slider_track.png",
+    "sha256": "d431c01b4a2a7c65b5dc9d0f8d922ba60abdb16b9e553267d3c9878f981993b5"
+  },
+  {
+    "path": "Art/UI/buttons/slider_knob.png",
+    "sha256": "a5200fe0ffe470418d6990a7221f0599a108fb325217405061f71ef424a761ca"
+  },
+  {
+    "path": "Art/UI/buttons/tab_active.png",
+    "sha256": "a0811438e4302bfde2a4fc47987fb6619c05e16fa57470b73f515e5d61b524a9"
+  },
+  {
+    "path": "Art/UI/buttons/tab_inactive.png",
+    "sha256": "c8383f763eceb4cf053feca31f8d82c305693fe608c005b39fffd89c33ed0dc9"
+  },
+  {
+    "path": "Art/UI/icons/task_coffee.png",
+    "sha256": "2d0f46b66bccb335b446661ddbb7b6a5148c818ac3682d6e0ccd0fd001a72cc5"
+  },
+  {
+    "path": "Art/UI/icons/task_report.png",
+    "sha256": "7a7e1cbe0dba7be2f7dbee3f592c99ab44a819f3de3ffb42c1992ff1041a85b8"
+  },
+  {
+    "path": "Art/UI/icons/task_phone.png",
+    "sha256": "ef76ffb508add9d8d37ab8129fa62eca048e6f381e5935fae6d27500eb5759b8"
+  },
+  {
+    "path": "Art/UI/icons/task_clean.png",
+    "sha256": "52b14fb325376aea1081b127470f31eba40a78554359f9f7cd49fb0fea708454"
+  },
+  {
+    "path": "Art/UI/icons/task_mail.png",
+    "sha256": "de37b4dcc5846742891e6e558e321bfbce250f3c24a9585a744dbcd7c3a97e87"
+  },
+  {
+    "path": "Art/UI/icons/sab_nameplate.png",
+    "sha256": "f6d2e4f9994b5aa77f58c5d4f8a7d200f7092da2d8ef3f3fa12a11e2ee8e3861"
+  },
+  {
+    "path": "Art/UI/icons/sab_plant.png",
+    "sha256": "bc25bc86c0c11fd7691d0e2be8ec5f0d68319a9e15df528c10b76d505dc56c6f"
+  },
+  {
+    "path": "Art/UI/icons/sab_hide_report.png",
+    "sha256": "3946f7cf924fa210be00a805467f00e9571a1c925abef6b34db48570ffbfbd40"
+  },
+  {
+    "path": "Art/UI/icons/sab_spill.png",
+    "sha256": "27b4f8dabf6455cc4ce10b0c6081696ed4780d370cc16722931aa33ea62bab67"
+  },
+  {
+    "path": "Art/UI/icons/sab_clutter.png",
+    "sha256": "466e96bab21ed8ca75991115b01e62f1b36cf1203f3a0c779cb82c88219621ed"
+  },
+  {
+    "path": "Art/UI/icons/sab_password.png",
+    "sha256": "14c82cf41d9517fb7c26c3fbeaa97fbaf4266efa0bec19a48f31bf302f48a5e2"
+  },
+  {
+    "path": "Art/UI/icons/sab_fake_email.png",
+    "sha256": "9bd81788886f3aeceda463890b5b6413fd689290fcbf9a8110a359d5402c974d"
+  },
+  {
+    "path": "Art/UI/icons/sab_pull_plug.png",
+    "sha256": "b90380dba67b7578252fbe28cc6f7bc2af611f5856651f4a14f67e9d8f49a8c9"
+  },
+  {
+    "path": "Art/UI/icons/sab_salt.png",
+    "sha256": "147fdfe1d7820de15e9e20ba89ec43e332d21f3692bab0b835908402ac48f490"
+  },
+  {
+    "path": "Art/UI/icons/sab_internet.png",
+    "sha256": "d14faa73ef390efb9eff576018c0e56b033b9a96749ec40353dc30a75acd1841"
+  },
+  {
+    "path": "Art/UI/icons/sab_power.png",
+    "sha256": "0015c01b9a74699fce2c6ef16a0ad2678369675f494112dafd00e858702c9d3d"
+  },
+  {
+    "path": "Art/UI/icons/hr_scan.png",
+    "sha256": "b048a0e4fb54393678162e15b78d6949a74677bf9db5bde58697dfb67c8d4481"
+  },
+  {
+    "path": "Art/UI/icons/hr_seal.png",
+    "sha256": "2edb94611b3d5e67185ff5e6fee87d3bacd4af3dc09767d6f95760df6119d5ce"
+  },
+  {
+    "path": "Art/UI/icons/hr_call_logs.png",
+    "sha256": "a2297e9a9895d9941f7a209631555b11c44a1a17642197d697a9c34fd582f50e"
+  },
+  {
+    "path": "Art/UI/icons/hr_footage.png",
+    "sha256": "c1470504488f6b530e6685b0e49e692903da75dfdeea0ffa9839b3fb8fdba874"
+  },
+  {
+    "path": "Art/UI/icons/quota.png",
+    "sha256": "3da71cfe8b6f872b33004b73b8fc5d0874359078a211fd68349c6b96a6aef026"
+  },
+  {
+    "path": "Art/UI/icons/timer.png",
+    "sha256": "99a3f474a2ae8142598810a94b46a171a017719faa1fc1de058c4a7c93d8602f"
+  },
+  {
+    "path": "Art/UI/icons/manager.png",
+    "sha256": "368fca1d71ded17aedd298d0526108f9df7fce4f58bf93858f8b7beccac604e6"
+  },
+  {
+    "path": "Art/UI/icons/suspicion_0.png",
+    "sha256": "0da72251e7b86bc51204c6505b796c5b1f0cfd08168b5048ff8a1cbc4dc9516e"
+  },
+  {
+    "path": "Art/UI/icons/suspicion_1.png",
+    "sha256": "1e20c8bef8338c373981605b554b3d62cd17125bdea0be90c0dd699e3262c953"
+  },
+  {
+    "path": "Art/UI/icons/suspicion_2.png",
+    "sha256": "59dd62d63568598c60c16ea71f6a1e8f8782ed08280d330965a0bf1b5b156350"
+  },
+  {
+    "path": "Art/UI/icons/suspicion_3.png",
+    "sha256": "f66bc5b5875b83c4c06ee6500dab550e70515202a71228de379493653454a4ab"
+  },
+  {
+    "path": "Art/UI/icons/suspicion_4.png",
+    "sha256": "21ea21072f842982d4d6a08bd8a5a5fc5b9ba9452fd68070516d276dc4d1d16c"
+  },
+  {
+    "path": "Art/UI/icons/mic_on.png",
+    "sha256": "ad5883db3c4780faebfbb6333cc475c11bfd08b72f7937dd1b67fb52987059f7"
+  },
+  {
+    "path": "Art/UI/icons/mic_off.png",
+    "sha256": "db5147430277609af4e173110929e306de25e1f4af9e90d7eb46b5844cba2f77"
+  },
+  {
+    "path": "Art/UI/icons/speaker.png",
+    "sha256": "24645161f9e1a4ceaa722d0a1ff4d474d4a94d5d13c768c7d97e8dcd3a3a59f3"
+  },
+  {
+    "path": "Art/UI/icons/deafen.png",
+    "sha256": "eeb660de35c5f4670e9f1f8c7b1e66bf512359ebfa407eedfb254e3d995103de"
+  },
+  {
+    "path": "Art/UI/icons/call.png",
+    "sha256": "8c7f42c823e2c1971e3379af7b666c114bf195dd794bee16924c636b09fd539d"
+  },
+  {
+    "path": "Art/UI/icons/hang_up.png",
+    "sha256": "cb2d7be45ba639dc98b74e7897ace3fc2a106b1871a439dc159f664d4503c645"
+  },
+  {
+    "path": "Art/UI/icons/ringing.png",
+    "sha256": "4a156dcdb22369af1df4fce7bc93a148e1072cc8e17b43ce9d653a996f141cae"
+  },
+  {
+    "path": "Art/UI/icons/accuse.png",
+    "sha256": "62829f9ce81ce02702a1738031363e6ba57c232f414ae4c2c8e7fa8ade6f26c8"
+  },
+  {
+    "path": "Art/UI/icons/ballot.png",
+    "sha256": "05174bafe4aa1e48ef2fe7e4aa8d8638d0fbe725f511ee30ad1cbed3e3e0be37"
+  },
+  {
+    "path": "Art/UI/icons/footage.png",
+    "sha256": "01d19e8b6db6c61a94afc30ef972e4566f04546f7987de0be5e1d68844365052"
+  },
+  {
+    "path": "Art/UI/icons/settings.png",
+    "sha256": "ae30845dd5fb7ab72fc55faa41ef4c0cee0992dd4cc06a6a6bbb345434c8bde9"
+  },
+  {
+    "path": "Art/UI/icons/bot.png",
+    "sha256": "cb7bfac87c9aa4ac30d76da224cc59a9ab97db41e6d777b7ede3245ebf5acd00"
+  },
+  {
+    "path": "Art/UI/icons/ready.png",
+    "sha256": "a3b362a43b93118c059e0b0dfdaa1c744b5f2ba112838c7230dc31b7ad3a48ef"
+  },
+  {
+    "path": "Art/UI/icons/not_ready.png",
+    "sha256": "00ac83f52a6ef5b715f9248064c7a54177d23a6ed1efc2ea48f88624bb696b36"
+  },
+  {
+    "path": "Art/UI/icons/crown.png",
+    "sha256": "dd6ad0137fa37a14aaa22d19ebd68c6e9f56c4427fc627de30fd00792b7a3649"
+  },
+  {
+    "path": "Art/UI/icons/star.png",
+    "sha256": "e4ee5bd3f40f9948fba2eed8af8ee012352e7795e683e3ec780d5cae6e25e164"
+  },
+  {
+    "path": "Art/UI/icons/favor_heart.png",
+    "sha256": "042a683a8c67065d7cf18c457125fe171ebc5291e02655a27db38aabd04abeb1"
+  },
+  {
+    "path": "Art/UI/icons/lock_screen.png",
+    "sha256": "a5779b17b3c3cf0b3c145360d07e7fb6efa44bcdbb5426ff0a66ba09154a08e8"
+  },
+  {
+    "path": "Art/UI/icons/email.png",
+    "sha256": "047596e35f41dd3b3bda242591d1c856183b42487748d1be324414a8b0a6df01"
+  },
+  {
+    "path": "Art/UI/icons/notes.png",
+    "sha256": "6f0a14cb76aad949dee11e712051ed006e0189fb21092785c1618f222439c6b8"
+  },
+  {
+    "path": "Art/UI/icons/objective.png",
+    "sha256": "ec82f0399d25ed1aa98cd3b84252521447eeaad2ad4fb1f2b876e95836d1fdfe"
+  },
+  {
+    "path": "Art/UI/icons/cards.png",
+    "sha256": "773ea527a41134671ec3f4c315eb946a172e8574c8db6c90baec254f84faf095"
+  },
+  {
+    "path": "Art/UI/icons/contacts.png",
+    "sha256": "c6d1d216870aeb53c2605edadc75f859c1a050cb3f3186de5aacd108206af3be"
+  },
+  {
+    "path": "Art/UI/icons/warning.png",
+    "sha256": "01651e2d73993f72d5cb9c086e0c8f431cd9c28f0113071b862016cd8bb8c590"
+  },
+  {
+    "path": "Art/UI/icons/check.png",
+    "sha256": "81bb749553a542d53da71e372d292eb798e9170b787a61e4094f3403e5aebf40"
+  },
+  {
+    "path": "Art/UI/icons/cross.png",
+    "sha256": "39ba17a33bce63d0ec3e6dc9437db6a8fe830176449d8f7fcfb5e4f021138a7b"
+  },
+  {
+    "path": "Art/UI/icons/info.png",
+    "sha256": "eaa78eb1480f73b3938a4d7334508569c8548173d5bd4a05630c4366f36e315a"
+  },
+  {
+    "path": "Art/UI/icons/kick.png",
+    "sha256": "02997bd541778d59274c8769eab5c63d3f079736ff019981b69578260a972ab5"
+  },
+  {
+    "path": "Art/UI/icons/host.png",
+    "sha256": "bd4b844b70240e37315e42d9f70d1e1e721c8d50347726b5cba977299c3bb740"
+  },
+  {
+    "path": "Art/UI/icons/week_calendar.png",
+    "sha256": "00c732c5cf368171c6968d045e1d7352cf45b0d0d87c707e9d89200db33e17d0"
+  },
+  {
+    "path": "Art/UI/icons/emote_wave.png",
+    "sha256": "b219f1e4b61558f3bcca204e6297b33a803c1d7edaa64269ec0bb210dc882ad4"
+  },
+  {
+    "path": "Art/UI/icons/emote_point.png",
+    "sha256": "c2bd305e7b9c720ff30cedb4a451905fdd9776dabebd321523eb87786e3abe42"
+  },
+  {
+    "path": "Art/UI/icons/emote_facepalm.png",
+    "sha256": "1be51b00fc25a0ca66aa9da507af79efa3bede89184827a76d02423818c2fa9a"
+  },
+  {
+    "path": "Art/UI/icons/emote_shrug.png",
+    "sha256": "e8319c85c29d569d2da00950ee8045ee6ac7cc4bac23e8cdc3a7fedb3bfed48e"
+  },
+  {
+    "path": "Art/UI/icons/emote_laugh.png",
+    "sha256": "df792ed3e5d1471549e9c178edab5f2603f20adfde92bc8e293b0ca15888eb3e"
+  },
+  {
+    "path": "Art/UI/cards/card_password.png",
+    "sha256": "5ece06a0cabf597f3092a9bd6abc86da49bf1afcc6c6566288a9d9da85f45005"
+  },
+  {
+    "path": "Art/UI/cards/card_fake_email.png",
+    "sha256": "3b9fa66a3df093bfebc83a703e1036b4fd60a783aaf59638a9cf50cb16d9ca13"
+  },
+  {
+    "path": "Art/UI/cards/card_pull_plug.png",
+    "sha256": "bb01b946ae0bbd769c5fee5796704dcc487bea971924933ff026fbedc9bcbed6"
+  },
+  {
+    "path": "Art/UI/cards/card_salt.png",
+    "sha256": "5f4ef96a610792688935a10c1f727c4e58fb714743ed2e869adc37874bf341d4"
+  },
+  {
+    "path": "Art/UI/cards/card_internet.png",
+    "sha256": "becaf88e81b0fab4f81d43516ad6980f7e02eb9dfbbcdfbe00b5fc2ed713243e"
+  },
+  {
+    "path": "Art/UI/cards/card_power.png",
+    "sha256": "c413e2d64bc1423a84bc7aca422ed8195b96e22426b80b7aae421522bacfb3f7"
+  },
+  {
+    "path": "Art/UI/cards/card_back.png",
+    "sha256": "8d283032d8fc4298c96875914dbfbe66fbb23eef0170f43ffc747556a472d465"
+  },
+  {
+    "path": "Art/UI/cards/card_frame_empty.png",
+    "sha256": "069b65254b2f391e51b9967aa27154cdb55b2639e832b44aa3ac162ae216ce58"
+  },
+  {
+    "path": "Art/UI/portraits/mgr_paragoz.png",
+    "sha256": "1b96ac1169bd753170e89fc7cad8e9e5a2485b691cd8dc81b407262bfb47da86"
+  },
+  {
+    "path": "Art/UI/portraits/mgr_paragoz_angry.png",
+    "sha256": "2cc26e912dc5f92f9ff81b35f9f53a9fe560f80694fa65744ae3a43ce46700a4"
+  },
+  {
+    "path": "Art/UI/portraits/mgr_disiplinci.png",
+    "sha256": "910ae4fdf364b72bf7b9f460e4f9b9dd9bddcba06b0d79e0cb82025f6f69e449"
+  },
+  {
+    "path": "Art/UI/portraits/mgr_disiplinci_angry.png",
+    "sha256": "a596532885f01ef76d607501cd2bd517839d971c2fc025cfeea65640f73f6692"
+  },
+  {
+    "path": "Art/UI/portraits/mgr_kayirmaci.png",
+    "sha256": "dd3cb22b2c9a416283d0e0672f9dec52616b952a1a2a8f60aaea8d112a5b6057"
+  },
+  {
+    "path": "Art/UI/portraits/mgr_kayirmaci_angry.png",
+    "sha256": "f24abd5883974335782ca29e3248120d17e6d609715e4a5e033d2320e7bf908a"
+  },
+  {
+    "path": "Art/UI/portraits/mgr_paranoyak.png",
+    "sha256": "0f8221ff23e06f9eebc22b44f14f934a24206586f8a959251928e345cf45f6c2"
+  },
+  {
+    "path": "Art/UI/portraits/mgr_paranoyak_angry.png",
+    "sha256": "14d9477507cc9243409c3e772ad03bf6a0f5d5309c411f8b3e26732598c0a2cc"
+  },
+  {
+    "path": "Art/UI/portraits/player_0.png",
+    "sha256": "05ebca8b01fd54392ce94b7f6f8c402bd19d068516ec4768f41e3cac05adc1e7"
+  },
+  {
+    "path": "Art/UI/portraits/player_1.png",
+    "sha256": "f2d78d3929d5c17d3fc5c4273d10edb629775fdd03f8f53549244a343ac39d79"
+  },
+  {
+    "path": "Art/UI/portraits/player_2.png",
+    "sha256": "c00168654ebc84c68b831c156f7fcfa64a00454e165efee30be07e78953b0fbf"
+  },
+  {
+    "path": "Art/UI/portraits/player_3.png",
+    "sha256": "712fb095c6edea9916b046426c8333c91c80ee35487159c660233b7d119241d4"
+  },
+  {
+    "path": "Art/UI/portraits/player_4.png",
+    "sha256": "09a8c7eae019d728db6d208d097804df4ae9bfa4dfba407001a0e3c3fdec87d5"
+  },
+  {
+    "path": "Art/UI/portraits/player_5.png",
+    "sha256": "9a8b8d01e07e3d2a1bbf2d4f6ef46e1e84f6473f92ff6a17010cc6ecba26bfa2"
+  },
+  {
+    "path": "Art/UI/portraits/player_unknown.png",
+    "sha256": "1e58e74f5701078bf72a330a23444c1bc25d40eb2a8f80b989757ef4a257a2aa"
+  },
+  {
+    "path": "Art/UI/stamps/stamp_kovuldu.png",
+    "sha256": "ba42201c71a9bb160f275b778383ac76c1ac9a0ba0ba371745509d835cd7555b"
+  },
+  {
+    "path": "Art/UI/stamps/stamp_kurtuldu.png",
+    "sha256": "38f807f0291be9f74bffe27f4995e35e96363a8b84714b70a83bd7b045216e46"
+  },
+  {
+    "path": "Art/UI/stamps/stamp_onaylandi.png",
+    "sha256": "3b2c89ab96eb44d0fdd31617db95e9b02b4e22ba209998e3477309b7ba93b10f"
+  },
+  {
+    "path": "Art/UI/stamps/stamp_reddedildi.png",
+    "sha256": "4b62d32d524c0816b6321f3347797c4d20a7f7e5a1ee89e66096fb41b4488f00"
+  },
+  {
+    "path": "Art/UI/stamps/stamp_gizli.png",
+    "sha256": "63bbcc21e219450ac19d90d4c52ec7587d67612634e24ee847a37e25c3cb1c5e"
+  },
+  {
+    "path": "Art/UI/stamps/stamp_ayin_elemani.png",
+    "sha256": "c0a8c59601d69b52820483f84289934ad0293e39a1e019578d6841faac75273a"
+  },
+  {
+    "path": "Art/UI/phone/phone_frame.png",
+    "sha256": "c770028e3652ddc046c0c4e4689efc32963e9d6d903d4aa21368ad75afc6a61c"
+  },
+  {
+    "path": "Art/UI/phone/app_tasks.png",
+    "sha256": "d247a5df0d2d24ca1250641e345a79615829240afcb80ba18fe3769bb1c1e05a"
+  },
+  {
+    "path": "Art/UI/phone/app_cards.png",
+    "sha256": "ee9699b0489b9228dc5e061859cccdeeb8635460e35f4c3b0c793c4e8a83d98c"
+  },
+  {
+    "path": "Art/UI/phone/app_contacts.png",
+    "sha256": "7802b47dc512184ac71702559861bd150b571c1efa47f641346bb607741aa495"
+  },
+  {
+    "path": "Art/UI/phone/app_inbox.png",
+    "sha256": "2b2dfad6466e1f3817431119c26624910420e061553fcf5e1b9fe46974ae27c4"
+  },
+  {
+    "path": "Art/UI/phone/app_notes.png",
+    "sha256": "7b818bbb1fd9139fa4efc963def279eff201ac8b4a21560008cd83a71a0dcb99"
+  },
+  {
+    "path": "Art/UI/phone/app_hr.png",
+    "sha256": "157e76221a773988969e054500b2d1f009b00a3fd78c268f68b58eb67200ad55"
+  },
+  {
+    "path": "Art/UI/phone/call_screen_bg.png",
+    "sha256": "69ab505d83fabd667d9307ccec3fa7abc89ef235b20c346d5de731192619991b"
+  },
+  {
+    "path": "Art/UI/meeting/projector_frame.png",
+    "sha256": "ac9270a77d515d140383bb98368e74ae768b0723593e02b82671565b8beef2ed"
+  },
+  {
+    "path": "Art/UI/meeting/week_board.png",
+    "sha256": "800cd4cb09290b8e26bd13b2b6f534a509ac9c0f981702d4271bd0d378c5c787"
+  },
+  {
+    "path": "Art/UI/meeting/evidence_folder.png",
+    "sha256": "45604943b11406cffc94f48d35f052f7b3d3f3e09884e0596003728d5f0ce926"
+  },
+  {
+    "path": "Art/UI/meeting/cctv_overlay.png",
+    "sha256": "bcdf386a49e138b2e1bd5b855951bb834b73bc80f30bf4bdaf90648bb3a579b3"
+  },
+  {
+    "path": "Art/UI/meeting/termination_letter.png",
+    "sha256": "ac4a3c0066def2f0f3f30520e4c0cf328fb1514a7d4b49c6a717e6d4ae875408"
+  },
+  {
+    "path": "Art/UI/decals/poster_takim_ruhu.png",
+    "sha256": "c082ea379c206f7da71907b8882056224804401767e34e176f0df7afa57ef4c2"
+  },
+  {
+    "path": "Art/UI/decals/poster_verimlilik.png",
+    "sha256": "2ef3eacdb5a6c48f0ae4e0f7cd60f716d4ee61afce1f14996de5c4c91decde91"
+  },
+  {
+    "path": "Art/UI/decals/poster_sadakat.png",
+    "sha256": "d46107e4b44d69d616cb2ad8a85eb28c25416aa0a80291854f3ceeb9de24c5e9"
+  },
+  {
+    "path": "Art/UI/decals/poster_kahve.png",
+    "sha256": "4b5714e4ff633f2f8d5482ac8153110f0f223f62bce34e2fd596b84ad50c2b86"
+  },
+  {
+    "path": "Art/UI/decals/wet_floor.png",
+    "sha256": "391260b91e32b7636ae9120c71a9da5fd602a7d7954073368d410bb01e5d235c"
+  },
+  {
+    "path": "Art/UI/decals/whiteboard_doodles.png",
+    "sha256": "5e1174c1f9952b048ba1794d452d66711f057873c9c9d22293541ce52224ecb4"
+  },
+  {
+    "path": "Art/UI/decals/corkboard_notes.png",
+    "sha256": "c2931b2d3997fbb36b1c4717296edeb9f6aad1015f707402e46dc4500c806e1d"
+  },
+  {
+    "path": "Art/UI/decals/exit_sign.png",
+    "sha256": "3fda6f1e5dde4373199dd16a342ed14ebc65818a723aaab7ae516496650467f3"
+  },
+  {
+    "path": "Art/UI/decals/poster_teamwork.png",
+    "sha256": "1b32a9fb91ffc7f3557ed8721d8275d5d9527f6e7eb24e1d0fd78f90e921a5bc"
+  },
+  {
+    "path": "Art/UI/decals/poster_motivation.png",
+    "sha256": "5116c291a5719bb2bede529336d59299d098f93b94eb68d9c4609cbd13bf3a6d"
+  },
+  {
+    "path": "Art/UI/decals/poster_safety.png",
+    "sha256": "c17725dc04fd683cc926f306a60e8e65393b40c1813e2cb53f03e3867b0a23e9"
+  },
+  {
+    "path": "Art/UI/decals/memo_board.png",
+    "sha256": "828de99957b6b8995b859cc4561533f52915ce5d6b04d62907df2f2787e48a11"
+  },
+  {
+    "path": "Art/UI/decals/poster_quota.png",
+    "sha256": "50d84303a3d17664813826b910c01697abccc44c5f0e546d0db397d9da82a0a7"
+  },
+  {
+    "path": "Art/UI/decals/portrait_manager.png",
+    "sha256": "8fb34b910607d8ddfe9e6d6f6e2b16eb5cc4c64154242b2d9312a76096659fc4"
+  },
+  {
+    "path": "Art/UI/decals/diploma.png",
+    "sha256": "e98355a17edf09b999044b546b6e3e7d036b30aee6bdd9a6cb8600f31e554b32"
+  },
+  {
+    "path": "Art/UI/decals/poster_kpi.png",
+    "sha256": "81826084ddf82fa421e3d3c4bdfe8bff9b555b99fece89436e25ebd0d717f5d2"
+  },
+  {
+    "path": "Art/UI/decals/poster_mission.png",
+    "sha256": "97c5ee143cefbafe8593273adcea06e2d25cd22600953d0c144bd7e5bece4bfb"
+  },
+  {
+    "path": "Art/UI/decals/poster_coffee.png",
+    "sha256": "dfd843adaa4b79d0739685068080df91ef0ec9c5ecaad9af8b0f88db0906e2b8"
+  },
+  {
+    "path": "Art/UI/decals/sign_salt.png",
+    "sha256": "0669d81f74bc30a5957dad756f89657f6f74d9f503a33504c19033f89a14b7f0"
+  },
+  {
+    "path": "Art/UI/decals/poster_fridge_rules.png",
+    "sha256": "9ac815edf058241ee175086a820458f9d4c7d51abe6936423ea3b517b0ef2378"
+  },
+  {
+    "path": "Art/UI/decals/poster_printer.png",
+    "sha256": "5206759f6b3f85ad7f8bb28c24bdf996c4618b7faa931b41516e6099a1648e8f"
+  },
+  {
+    "path": "Art/UI/decals/sign_out_of_order.png",
+    "sha256": "f9a7b05c67ed74b7aeec85be7bc205ce9759934b57876fb0a3b0154063f334a1"
+  },
+  {
+    "path": "Art/UI/decals/logo_company.png",
+    "sha256": "47f76c38298f688059522a9a7b0a6c721dd7cde04a558d6287fc32436223a4e4"
+  },
+  {
+    "path": "Art/UI/decals/poster_welcome.png",
+    "sha256": "2b4248071559fab9f00c78a4224f8d86a96a43fcc0e2039a4920e7aedd4c81e5"
+  },
+  {
+    "path": "Art/UI/decals/sign_fusebox.png",
+    "sha256": "5454bfac40eda0fd837432675dbf8444ade744f9ff4ce9f19c7ade5190a114dc"
+  },
+  {
+    "path": "Art/UI/decals/sign_wash_hands.png",
+    "sha256": "3278962a957de96de8cac26b7b169b3121575cc89cc5c8a2da7b2b3d91b5504b"
+  },
+  {
+    "path": "Art/UI/decals/sign_server_danger.png",
+    "sha256": "549743166de27ed95a538655f197c65a1d21a0702b2d8d17389f698b3ecaa95b"
+  },
+  {
+    "path": "Art/UI/decals/poster_relax.png",
+    "sha256": "6c915da3216eb88b354dd159c4c1009bdaab7f95dfe84f5eb88fbf01fc8bb243"
+  },
+  {
+    "path": "Art/UI/decals/poster_vending.png",
+    "sha256": "f4d1b8670a94ef2eda1db1cf4f33f493584ff6f2db65bc9dc92659887d367bd9"
+  },
+  {
+    "path": "Art/UI/howto/howto_1_work.png",
+    "sha256": "58fa9e25c77605b7af1e263c2ecc00aa5d8e26ae30f8c6a5169703474ca0df8f"
+  },
+  {
+    "path": "Art/UI/howto/howto_2_sabotage.png",
+    "sha256": "619c9c95108c267eee86767ee6bff26c2441f866eb3f5fc88eb9bf1567739d85"
+  },
+  {
+    "path": "Art/UI/howto/howto_3_manager.png",
+    "sha256": "04de6fbcc01aaf429ae0e24b3efad5f58531f02ff975a884c784c28011f5d83d"
+  },
+  {
+    "path": "Art/UI/howto/howto_4_calls.png",
+    "sha256": "50cf1eea1876fb8dac8466cc1bdf81883f803f1a87b51af10ef5aab11609b425"
+  },
+  {
+    "path": "Art/UI/howto/howto_5_meeting.png",
+    "sha256": "d0b6f2b68891e56f0051fe1f27022939df2f4709e79a507181127be975d74325"
+  },
+  {
+    "path": "Art/UI/howto/howto_6_week.png",
+    "sha256": "f228cc2a0547aa3a0999200805a60ebef992cbe233d2e2b346040e74c8507cff"
+  },
+  {
+    "path": "Art/UI/week/week_pazartesi.png",
+    "sha256": "0045058c2d184bff8d043f1fd122429b8e730a04a8ea9cf1cfb9fd005c62edb8"
+  },
+  {
+    "path": "Art/UI/week/week_sali.png",
+    "sha256": "06343bda741eb96bfa1f3e47c8adb5e7d02c837843bf144cf644bbd0d6d2d878"
+  },
+  {
+    "path": "Art/UI/week/week_carsamba.png",
+    "sha256": "46e8c16ca96e7fd200c921fa62cfb6784883b818d2d763968a3daaabf761a78f"
+  },
+  {
+    "path": "Art/UI/week/week_persembe.png",
+    "sha256": "7ba5c0e45115e0c5de7ef8585bd5a673a8dec27b3545b2b117a018d77c21a0be"
+  },
+  {
+    "path": "Art/UI/week/week_cuma.png",
+    "sha256": "60c8a474ad53c5e40e6d400386f549f8596a3f4770c6bc2d1faf53a8cad0219a"
+  },
+  {
+    "path": "Art/UI/week/week_trophy.png",
+    "sha256": "c472e47bab6d49cbd2dfb2f746e70dd542d4f38d8e90703c9284ada190ae1b4d"
+  },
+  {
+    "path": "Art/UI/titles/title_chaos_agent.png",
+    "sha256": "5cb60a1022bb1fa7fcf0c789bcb0e52da8862837bf7d0df9e75adc975e44aeaf"
+  },
+  {
+    "path": "Art/UI/titles/title_cleanest_desk.png",
+    "sha256": "70e9b41ebae059437b054b39226488f0efd21de98423c870956a34e289ed4d49"
+  },
+  {
+    "path": "Art/UI/titles/title_coffee_master.png",
+    "sha256": "287b997f2efa6cdfc8565c5b4cc1df4a39c78de229d84654571ea043334e6cc8"
+  },
+  {
+    "path": "Art/UI/titles/title_favourite.png",
+    "sha256": "9acdb91d35852ee3d73c239357add135f6e2492b3c3495cab893f464fe0a6b58"
+  },
+  {
+    "path": "Art/UI/titles/title_informant_of_month.png",
+    "sha256": "832dce9bca183e2ed779c50f72d9661a9340f25ceed4a3428cb6047994dfc506"
+  },
+  {
+    "path": "Art/UI/titles/title_it_hero.png",
+    "sha256": "fc2525361297fe9ff26f6018e3d5b2144a2620595ec26af068ed33e49cec4613"
+  },
+  {
+    "path": "Art/UI/titles/title_printer_enemy.png",
+    "sha256": "39f479b585d75e94f9d0c59b371719041194e5f3d234b65ccd4e991f101e6992"
+  },
+  {
+    "path": "Art/UI/titles/title_pro_scapegoat.png",
+    "sha256": "e48c932e9e6d93d12f75999eb4a88c6ec9cd665f7e59177a8805c44c47fb333c"
+  },
+  {
+    "path": "Art/UI/titles/title_salt_bae.png",
+    "sha256": "a978dbb7709b2a10e50a7f38d5bc5d36496b294c645cda16a1d50ac790e184e3"
+  },
+  {
+    "path": "Art/UI/titles/title_scam_artist.png",
+    "sha256": "c5351ba9c28df083480d3a1b1882bf459fbf2b5a6a7f15ee96d4ee8b24a14651"
+  },
+  {
+    "path": "Art/UI/bubbles/bubble_ringing.png",
+    "sha256": "f72dcbec4bed04ea0b3e145270a52caa19cb515a743c0c343e4b640af0329bed"
+  },
+  {
+    "path": "Art/UI/bubbles/bubble_on_call.png",
+    "sha256": "9d106c6a92139aca4a631803442a22895bca7417669aa0bf3cbcd822944281fc"
+  },
+  {
+    "path": "Art/UI/bubbles/bubble_exclaim.png",
+    "sha256": "7bd4bff73299415fd881236da13eef0c7291efc6b3cb50b463efcbf0009ed8a8"
+  },
+  {
+    "path": "Art/UI/bubbles/bubble_question.png",
+    "sha256": "433b5e157d72c5e80539721051232dff8b52e112c12a3b30eab3e97a211bac48"
+  },
+  {
+    "path": "Art/UI/bubbles/bubble_angry.png",
+    "sha256": "90eeb654aabe230e33ce120048cc41abbbea005e5f11100cc55cda89896fb5e5"
+  },
+  {
+    "path": "Art/UI/bubbles/bubble_heart.png",
+    "sha256": "a1a313694a4fcc34d283e38744fd957181d079c03ce1f412188f940102ecd2db"
+  },
+  {
+    "path": "Art/UI/bubbles/bubble_zzz.png",
+    "sha256": "8f6403d60f7db315b22311ac4d75dbbf7979682bd76feb55aae55e3e3282958b"
+  },
+  {
+    "path": "Art/UI/bubbles/bubble_sweat.png",
+    "sha256": "8ef299c1e749de0586381f45107a7c3f5cca14f6f60ec7376ecd72fb365c2c11"
+  },
+  {
+    "path": "Art/UI/app/app_icon_1024.png",
+    "sha256": "86f7cf0be3ec29e3218b376d29c436f7298adf01339196926e6dd38416323a7b"
+  },
+  {
+    "path": "Art/UI/app/app_icon.ico",
+    "sha256": "749e255a443899981ec134eaecd26f8939d5a781c636dce00d55a3fb720b4a96"
+  },
+  {
+    "path": "Art/UI/store/capsule_header_920x430.png",
+    "sha256": "8a79d68da3fad648ca83abd1051a5b6ea6ed223e598eec2124e58e7df54fb950"
+  },
+  {
+    "path": "Art/UI/store/capsule_main_1232x706.png",
+    "sha256": "c13f446db66c937cbcf297f8d1f7a626d8075f2f9cb23ade512d415c33074c6e"
+  },
+  {
+    "path": "Art/UI/store/key_art_1920x1080.png",
+    "sha256": "b32cf8a90693d9ae90a535892e273747d6f6a6976548ed489990ccf6a8af9e71"
+  }
+]

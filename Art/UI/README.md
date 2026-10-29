@@ -1,6 +1,61 @@
 # Birimiz Kovulacak — 2D UI art kit
 
-The kit contains **204 final PNG assets plus one multi-resolution ICO** for the warm office satire direction, plus review sheets, source records and finishing scripts. The third run adds **21 wall decal PNGs**; all 184 previous PNG/ICO assets are preserved byte-for-byte. The second run added **34 PNGs + 1 ICO**. [manifest.json](manifest.json) is the asset inventory; it excludes `_sources`, `_sheets`, `_tools` and category metadata. [validation.json](validation.json) records the final file audit. Start with the [third-run wall decals](_sheets/decals_v2.png), [second-run overview](_sheets/second_run.png), [original overview](_sheets/index.png), or [icons at their actual 48px display size](_sheets/icons_48.png).
+The kit contains **307 final PNG assets plus one multi-resolution ICO**. The **v3 Office Line run adds 103 PNGs** for private offices, desk-phone conversations, computer rounds and the daily meeting. All 205 previous PNG/ICO assets are preserved byte-for-byte. [manifest.json](manifest.json) retains the original nine-field schema; [validation.json](validation.json) records the current file audit. Review sheets, source records and finishing scripts are excluded from the final asset count.
+
+## V3 delivery — 103 new PNGs
+
+The full [v3 design](../../docs/V3_DESIGN.md) governs these assets. Illustrations follow the locked style sheet and existing bean identities. Controls use the kit's native stationery construction: quiet paper centers, manila edges, navy outlines and restrained grain. Notifications and sticky notes have no colored side stripes. Required lettering uses deterministic Arial Bold; `İHTAR` preserves U+0130 and `A/Ö` preserves U+00D6. The requested Shared Password digit cards contain `4 1 7 2 9 6`; their digits are the sole lettering exception among otherwise text-free round/trick cards. All card title/body regions remain blank for runtime localization.
+
+| New category | PNG count | Review sheet |
+| --- | ---: | --- |
+| `rounds` | 7 | [Cards at 180px](_sheets/v3_rounds.png) |
+| `tricks` | 3 | [Cards at 180px](_sheets/v3_tricks.png) |
+| `icons_v3` | 31 | [Full sheet](_sheets/v3_icons_v3.png), [actual 48px](_sheets/v3_icons_48.png) |
+| `computer` | 9 | [Sheet](_sheets/v3_computer.png), [screen effects](_sheets/v3_computer_effects.png) |
+| `deskphone` | 9 | [Sheet](_sheets/v3_deskphone.png) |
+| `meeting_v3` | 8 | [Sheet](_sheets/v3_meeting_v3.png) |
+| `onboarding` | 9 | [Sheet](_sheets/v3_onboarding.png) |
+| `stamps_v3` | 11 | [Sheet](_sheets/v3_stamps_v3.png) |
+| `logo_en` | 1 | [Sheet](_sheets/v3_logo_en.png) |
+| `week_v3` | 5 | [Sheet](_sheets/v3_week_v3.png) |
+| `decals_en` | 10 | [Sheet](_sheets/v3_decals_en.png) |
+
+The remaining three dirty tricks reuse `cards/card_fake_email.png`, `cards/card_pull_plug.png` and `cards/card_internet.png`. New icon manifest IDs are `v3_<filename>`; localized decal IDs are `en_<filename>` to preserve globally unique IDs. Always resolve by manifest path/ID, rather than assuming every ID equals the filename.
+
+### V3 slicing and layout
+
+All borders below use **source pixels, `[left, top, right, bottom]`**. Unity expects `[left, bottom, right, top]`. Width must exceed left+right and height must exceed top+bottom. Leave more space for runtime text and hit targets.
+
+| Asset | Canvas | Nine-slice borders |
+| --- | --- | --- |
+| `computer/window_frame` | 640×480 | `[40,104,40,40]` |
+| `computer/taskbar` | 640×80 | `[26,28,26,30]` |
+| `computer/notification_card` | 384×192 | `[36,36,36,36]` |
+| `computer/app_tile` | 192×192 | `[40,40,40,40]` |
+| `deskphone/lcd_frame` | 480×192 | `[44,44,44,44]` |
+| `deskphone/key`, `key_pressed` | 128×96 | `[28,28,28,28]` |
+| `meeting_v3/waveform_bar` | 384×96 | `[30,30,30,30]` |
+| `meeting_v3/nameplate` | 512×160 | `[60,32,60,32]` |
+| `meeting_v3/dossier_tab` | 384×144 | `[42,42,42,42]` |
+| `onboarding/sticky_note_9slice` | 384×256 | `[32,32,40,40]` |
+
+The title bar is protected by the window's 104px top border. Panels and LCDs contain opaque paper/display surfaces; they do not have transparent content apertures. Draw their content above the skin. Render the animated waveform over its empty tray. [Computer stretch review](_sheets/v3_computer_slice.png) and [prop stretch review](_sheets/v3_props_nineslice.png) show wide and compact examples.
+
+Phone base, handset and ringing arcs share **800×600** canvases: stack all at **[0,0]**, with no independent trimming. Rotate/shake the handset around **[458,136]**, using a top-left origin. The left cord extends the base's silhouette, so the handset is centered on the cradle hardware rather than the canvas. Two cradle contacts were measured. The cassette deck is **1024×512**; render two copies of `tape_reel` at **100×100**, centered at **[262,214]** and **[497,214]**. Each 256×256 reel rotates around source pivot **[128,128]**. The deck has clear reel apertures, and measured aperture centers are within one pixel of those pivots. See the [layer composite](_sheets/v3_layers.png), [alignment data](_tools/v3_props_alignment.json) and [measured checks](_tools/v3_props_layer_checks.json).
+
+The 64px cursor hotspot is **[27,7]**. Full-screen coffee/offline overlays use **1920×1080**, top-left origin [0,0]. The defense spotlight intentionally uses soft alpha **0–82**, with clear corners. Its translucency is an explicit exception to cutout alpha 0–255. Weekday label safe rectangle is **[209,49,675,76]**; card title/body safe rectangle is **[52,552,408,104]**. Rectangles use `[x,y,width,height]`.
+
+### V3 checks and reproducibility
+
+Run `python -B Art/UI/_tools/validate_kit.py --strict` (or the Blender interpreter shown below). The extended audit validates 308 final assets, including all 103 requested v3 paths and dimensions, real alpha, size budgets, exact metadata and eleven slice specifications, deterministic glyph records, source archives, layer checks and final review hashes. All 205 original file hashes are verified against [_tools/v3_baseline.json](_tools/v3_baseline.json).
+
+The worktree does not include the ignored historical `_sources` archives or old contact sheets. Their previous successful audit is retained in [_tools/v3_prior_validation.json](_tools/v3_prior_validation.json), and their final assets are rechecked directly. `--legacy` runs the original archive audit only in a checkout containing those historical files. The current audit reports this archive limitation explicitly.
+
+Rebuild scripts are `_tools/v3_cards_finish.py`, `v3_icons_finish.py`, `v3_icons_extra_finish.py`, `v3_props_finish.py`, `v3_localizations.py`, and `v3_computer.py`. New generated sources and prompt ledgers remain inside `_tools/v3_*`; all final project references use the category folders. [_tools/v3_review.json](_tools/v3_review.json) binds the visual review to final SHA-256 hashes. Rebuilding changed art requires a renewed visual review before refreshing that record.
+
+No assets are missing. At 180px card height, Shared Password's crossed fingers are subtle; its six digit cards and keypad remain clear. Display the long `EMPLOYEE OF THE WEEK` stamp at roughly 400px wide or more for comfortable reading. Unity import, compression, animation and in-game camera checks remain for integration. No existing PNGs, Unity files, `.meta` files or git state were modified.
+
+## Prior-run inventory (preserved)
 
 | Category | PNG count | Primary sizes |
 | --- | ---: | --- |
@@ -184,7 +239,7 @@ On the production workstation, the Windows `python` alias could not launch; the 
 & 'C:/Program Files/Blender Foundation/Blender 5.2/5.2/python/bin/python.exe' -B Art/UI/_tools/validate_kit.py --strict
 ```
 
-`kit.py` locates the workstation's existing Pillow installation. The validator rebuilds `manifest.json` and `validation.json`, checks all 205 expected entries and dimensions, verifies real alpha/corners for cutouts and full opacity for designated surfaces, checks screen apertures, ghost centers, paper-tile seams, file-size budgets and all seven ICO entries. It verifies the original 149 hashes and all 184 pre-third-run asset hashes, audits every archived second/third-run generation, checks exact world aspect ratios and Turkish typography records, and requires current reviewed decal hashes and review sheets. The `-B` flag prevents Python bytecode writes outside the art workspace. No Unity or repository-state commands are needed.
+`kit.py` locates the workstation's existing Pillow installation. The current validator rebuilds `manifest.json` and `validation.json` for all **308** final entries, using the v3 checks documented above. Its optional `--legacy` mode retains the historical 205-asset audit, including original 149 and pre-third-run 184 hashes, old source archives, paper-tile seams, ghost centers, decal physical ratios and historical review sheets; those ignored archives must be present to run that mode. The `-B` flag prevents Python bytecode writes outside the art workspace. No Unity or repository-state commands are needed.
 
 ## Review sheets
 

@@ -1,0 +1,57 @@
+[
+  {
+    "id": "week_blank_0",
+    "path": "Art/UI/week_v3/week_blank_0.png",
+    "w": 960,
+    "h": 200,
+    "category": "week_v3",
+    "nineSlice": null,
+    "screenRect": null,
+    "hasText": false,
+    "description": "Monday blank banner. Original pictogram, frame, progress dots and decorative art preserved pixel-for-pixel; label safe area [209,49,675,76]."
+  },
+  {
+    "id": "week_blank_1",
+    "path": "Art/UI/week_v3/week_blank_1.png",
+    "w": 960,
+    "h": 200,
+    "category": "week_v3",
+    "nineSlice": null,
+    "screenRect": null,
+    "hasText": false,
+    "description": "Tuesday blank banner. Original pictogram, frame, progress dots and decorative art preserved pixel-for-pixel; label safe area [209,49,675,76]."
+  },
+  {
+    "id": "week_blank_2",
+    "path": "Art/UI/week_v3/week_blank_2.png",
+    "w": 960,
+    "h": 200,
+    "category": "week_v3",
+    "nineSlice": null,
+    "screenRect": null,
+    "hasText": false,
+    "description": "Wednesday blank banner. Original pictogram, frame, progress dots and decorative art preserved pixel-for-pixel; label safe area [209,49,675,76]."
+  },
+  {
+    "id": "week_blank_3",
+    "path": "Art/UI/week_v3/week_blank_3.png",
+    "w": 960,
+    "h": 200,
+    "category": "week_v3",
+    "nineSlice": null,
+    "screenRect": null,
+    "hasText": false,
+    "description": "Thursday blank banner. Original pictogram, frame, progress dots and decorative art preserved pixel-for-pixel; label safe area [209,49,675,76]."
+  },
+  {
+    "id": "week_blank_4",
+    "path": "Art/UI/week_v3/week_blank_4.png",
+    "w": 960,
+    "h": 200,
+    "category": "week_v3",
+    "nineSlice": null,
+    "screenRect": null,
+    "hasText": false,
+    "description": "Friday blank banner. Original pictogram, frame, progress dots and decorative art preserved pixel-for-pixel; label safe area [209,49,675,76]."
+  }
+]

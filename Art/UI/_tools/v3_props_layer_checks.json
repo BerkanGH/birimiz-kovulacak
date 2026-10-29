@@ -1,0 +1,71 @@
+{
+  "phoneContacts": [
+    {
+      "pixels": 2566,
+      "bounds": [
+        571,
+        142,
+        681,
+        182
+      ],
+      "center": [
+        627.96,
+        163.07
+      ]
+    },
+    {
+      "pixels": 2335,
+      "bounds": [
+        237,
+        142,
+        340,
+        182
+      ],
+      "center": [
+        294.18,
+        163.78
+      ]
+    }
+  ],
+  "tapeApertures": [
+    {
+      "expectedCenter": [
+        262,
+        214
+      ],
+      "alpha": 0,
+      "centroidOffset": [
+        -0.85,
+        -0.13
+      ],
+      "holeBoundsRelativeToCenter": [
+        -25,
+        -25,
+        25,
+        26
+      ]
+    },
+    {
+      "expectedCenter": [
+        497,
+        214
+      ],
+      "alpha": 0,
+      "centroidOffset": [
+        -0.76,
+        -0.16
+      ],
+      "holeBoundsRelativeToCenter": [
+        -25,
+        -25,
+        26,
+        26
+      ]
+    }
+  ],
+  "spotlightAlphaExtrema": [
+    0,
+    82
+  ],
+  "comment": "Phone hardware is centered about x458; coil cord extends only left. Handset overlaps the body at two separate cradle contact regions. Tape reel pivots are within 2px of aperture centroids."
+}

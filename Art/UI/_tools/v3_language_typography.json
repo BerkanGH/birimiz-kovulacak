@@ -1,0 +1,45 @@
+{
+  "text": "A/Ö",
+  "codepoints": [
+    "U+0041",
+    "U+002F",
+    "U+00D6"
+  ],
+  "font": "Arial Bold",
+  "glyphsVerified": true,
+  "glyphs": [
+    {
+      "character": "A",
+      "codepoint": "U+0041",
+      "fontGlyph": "A",
+      "bounds": [
+        68.0,
+        116.0,
+        114.33333333333333,
+        162.0
+      ]
+    },
+    {
+      "character": "/",
+      "codepoint": "U+002F",
+      "fontGlyph": "slash",
+      "bounds": [
+        137.0,
+        121.33333333333333,
+        149.33333333333334,
+        152.33333333333334
+      ]
+    },
+    {
+      "character": "Ö",
+      "codepoint": "U+00D6",
+      "fontGlyph": "Odieresis",
+      "bounds": [
+        167.33333333333334,
+        69.66666666666667,
+        212.33333333333334,
+        122.66666666666667
+      ]
+    }
+  ]
+}

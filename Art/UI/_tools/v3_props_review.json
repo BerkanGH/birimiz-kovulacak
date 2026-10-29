@@ -1,0 +1,146 @@
+{
+  "assets": [
+    {
+      "path": "Art/UI/onboarding/ob_1_rooms.png",
+      "sha256": "a651e20d9955e3e32ef3a7afd930eb253a763c8ba459030f3a4a7a7254ec79e4",
+      "alphaVerified": true
+    },
+    {
+      "path": "Art/UI/onboarding/ob_2_phone.png",
+      "sha256": "2c020d1298dffadec3c8e5f59ccbfa133c894599817e93016747c81085501ba7",
+      "alphaVerified": true
+    },
+    {
+      "path": "Art/UI/onboarding/ob_3_rounds.png",
+      "sha256": "9e6222d3cb6b128ebcbad65114580c1b6ae559bbe36a0a48ef827894eb8d58fe",
+      "alphaVerified": true
+    },
+    {
+      "path": "Art/UI/onboarding/ob_4_blame.png",
+      "sha256": "f02ef2c1c5d50af6dd5de1f28c84d4bc63ddc1aa131272ddc73d8e2ff22c9337",
+      "alphaVerified": true
+    },
+    {
+      "path": "Art/UI/onboarding/ob_5_tricks.png",
+      "sha256": "fdcd72386d24079b7c4357095ab947eea22af062f174191d06088d823afea2d4",
+      "alphaVerified": true
+    },
+    {
+      "path": "Art/UI/onboarding/ob_6_recording.png",
+      "sha256": "37faf9f3ba4c3b9b5a425974f3c73ed46ad0a4dd0d84e9d7c44aa2c902fde21a",
+      "alphaVerified": true
+    },
+    {
+      "path": "Art/UI/onboarding/ob_7_friday.png",
+      "sha256": "f321d52912e45a911311d0fe2bac0003c010787e76dbe3c78144db9f43f66570",
+      "alphaVerified": true
+    },
+    {
+      "path": "Art/UI/onboarding/sticky_note_9slice.png",
+      "sha256": "4db17641cddbde138621fcdcf4bf85412a8f718cabe50691b51ebae921934246",
+      "alphaVerified": true
+    },
+    {
+      "path": "Art/UI/onboarding/coach_arrow.png",
+      "sha256": "ebdec962cee00709653609e0029aa4511ed7f88aebcc56b0466d0c17ba371ae7",
+      "alphaVerified": true
+    },
+    {
+      "path": "Art/UI/deskphone/lcd_frame.png",
+      "sha256": "8ef9e425df8a7f2e9b152de2f352565460efbaeff780de084a8b1f7f4c40c9ff",
+      "alphaVerified": true
+    },
+    {
+      "path": "Art/UI/deskphone/key.png",
+      "sha256": "1962279b1eeba06d78a12b4997ad298661d80a4866de658610232320b8b0b782",
+      "alphaVerified": true
+    },
+    {
+      "path": "Art/UI/deskphone/key_pressed.png",
+      "sha256": "f7e96c33acc69fefe35d6b049e912f69e11f2bbf15df4156b9065a34e582967e",
+      "alphaVerified": true
+    },
+    {
+      "path": "Art/UI/deskphone/phone_base.png",
+      "sha256": "a8e1b112df18c5409539de4dd54c9346a3eaf4a91da729ab91f591d814e78dd4",
+      "alphaVerified": true
+    },
+    {
+      "path": "Art/UI/deskphone/handset.png",
+      "sha256": "9022ed923ab5f86362ed51a8035ffd0252a6d839d2defe0bd0cab82a676e0c4e",
+      "alphaVerified": true
+    },
+    {
+      "path": "Art/UI/deskphone/ring_waves.png",
+      "sha256": "e09f3b3914f45923ea7b9e026b4cadfa9cd6d5461a6dbec68f1896a9c5234966",
+      "alphaVerified": true
+    },
+    {
+      "path": "Art/UI/deskphone/rec_badge.png",
+      "sha256": "4a6460a31493cd310f3c2c91c4e443ad5b538c073dd7ba77a68f40efe38b271a",
+      "alphaVerified": true
+    },
+    {
+      "path": "Art/UI/deskphone/busy.png",
+      "sha256": "c311b61f458f83512a0f0b351e827678c3bf9df16115f71fe613e9d4d95be94d",
+      "alphaVerified": true
+    },
+    {
+      "path": "Art/UI/deskphone/line_dead.png",
+      "sha256": "8ad34cb5eff0e34009f0301d48d01c38be889985341b64e84025f0306fd61310",
+      "alphaVerified": true
+    },
+    {
+      "path": "Art/UI/meeting_v3/tape_player.png",
+      "sha256": "dca2c295e529f143a804038f8285e0c5e5f202ab7ea7519c3b91373a26562fe1",
+      "alphaVerified": true
+    },
+    {
+      "path": "Art/UI/meeting_v3/tape_reel.png",
+      "sha256": "655e7329e97d11a08f2d43610ec5e674d0a9befc24342e847e8e5d64c64732ec",
+      "alphaVerified": true
+    },
+    {
+      "path": "Art/UI/meeting_v3/waveform_bar.png",
+      "sha256": "991465ee9ac8fa8e4480379b5193794b10a8e5be34a1602442b7622b2752f9bf",
+      "alphaVerified": true
+    },
+    {
+      "path": "Art/UI/meeting_v3/spotlight.png",
+      "sha256": "9bc853119c2f6b59827e418905d7ecab2907b68f66733c13ad14aeaddd53bc1a",
+      "alphaVerified": true
+    },
+    {
+      "path": "Art/UI/meeting_v3/warning_letter.png",
+      "sha256": "f2677c2943580f4deb6cec12542d1e2e4ad012959afb919b96db59b5244273af",
+      "alphaVerified": true
+    },
+    {
+      "path": "Art/UI/meeting_v3/nameplate.png",
+      "sha256": "1159486d197162c1d8bb4ed90d69b3340fab60df068d6c279d7c60f2f0cbb1c7",
+      "alphaVerified": true
+    },
+    {
+      "path": "Art/UI/meeting_v3/vote_token.png",
+      "sha256": "45671d4528cd4ab0674c38a2d2ccd571077db6d65bde7b791015e4e3b72223d4",
+      "alphaVerified": true
+    },
+    {
+      "path": "Art/UI/meeting_v3/dossier_tab.png",
+      "sha256": "acd485e751e014ea764a5443519d7fd7b7ef553539cb768d8e86552116074693",
+      "alphaVerified": true
+    }
+  ],
+  "reviewSheets": [
+    "Art/UI/_sheets/v3_onboarding.png",
+    "Art/UI/_sheets/v3_deskphone.png",
+    "Art/UI/_sheets/v3_meeting_v3.png",
+    "Art/UI/_sheets/v3_props_layers_48.png",
+    "Art/UI/_sheets/v3_props_nineslice.png"
+  ],
+  "notes": [
+    "Two illustrations revised after initial sheet review: restored large cream eyes in rooms and added missing green headset employee to meeting.",
+    "Actual 48px badge, busy, dead-line, vote-token and reel review.",
+    "All transparent requested outputs have real zero alpha and transparent corners; scenes are fully opaque."
+  ]
+}

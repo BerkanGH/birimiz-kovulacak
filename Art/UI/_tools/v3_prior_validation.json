@@ -1,0 +1,6794 @@
+{
+  "generatedAtUtc": "2026-10-28T23:48:19.737385+00:00",
+  "passed": true,
+  "expectedAssetCount": 205,
+  "presentAssetCount": 205,
+  "expectedCountsByCategory": {
+    "style": 1,
+    "logo": 2,
+    "backgrounds": 4,
+    "buttons": 29,
+    "icons": 63,
+    "cards": 8,
+    "portraits": 15,
+    "stamps": 6,
+    "phone": 8,
+    "meeting": 5,
+    "decals": 29,
+    "howto": 6,
+    "week": 6,
+    "titles": 10,
+    "bubbles": 8,
+    "app": 2,
+    "store": 3
+  },
+  "presentCountsByCategory": {
+    "style": 1,
+    "logo": 2,
+    "backgrounds": 4,
+    "buttons": 29,
+    "icons": 63,
+    "cards": 8,
+    "portraits": 15,
+    "stamps": 6,
+    "phone": 8,
+    "meeting": 5,
+    "decals": 29,
+    "howto": 6,
+    "week": 6,
+    "titles": 10,
+    "bubbles": 8,
+    "app": 2,
+    "store": 3
+  },
+  "totalFinalPngBytes": 34539073,
+  "totalFinalBytes": 34683850,
+  "formatCounts": {
+    "png": 204,
+    "ico": 1
+  },
+  "secondRun": {
+    "addedAssetCount": 35,
+    "addedPngCount": 34,
+    "addedIcoCount": 1,
+    "categories": [
+      "howto",
+      "week",
+      "titles",
+      "bubbles",
+      "app",
+      "store"
+    ],
+    "originalAssetsPreserved": true,
+    "originalAssetHashCheckCount": 149,
+    "archivedGenerationCount": 27
+  },
+  "thirdRun": {
+    "addedAssetCount": 21,
+    "addedPngCount": 21,
+    "addedIcoCount": 0,
+    "priorAssetsPreserved": true,
+    "priorAssetHashCheckCount": 184,
+    "archivedGenerationCount": 21,
+    "exactPhysicalAspectChecks": [
+      {
+        "id": "poster_teamwork",
+        "sizePx": [
+          360,
+          510
+        ],
+        "sizeCm": [
+          60,
+          85
+        ],
+        "exact": true
+      },
+      {
+        "id": "poster_motivation",
+        "sizePx": [
+          360,
+          510
+        ],
+        "sizeCm": [
+          60,
+          85
+        ],
+        "exact": true
+      },
+      {
+        "id": "poster_safety",
+        "sizePx": [
+          360,
+          510
+        ],
+        "sizeCm": [
+          60,
+          85
+        ],
+        "exact": true
+      },
+      {
+        "id": "memo_board",
+        "sizePx": [
+          756,
+          468
+        ],
+        "sizeCm": [
+          105,
+          65
+        ],
+        "exact": true
+      },
+      {
+        "id": "poster_quota",
+        "sizePx": [
+          504,
+          360
+        ],
+        "sizeCm": [
+          70,
+          50
+        ],
+        "exact": true
+      },
+      {
+        "id": "portrait_manager",
+        "sizePx": [
+          392,
+          504
+        ],
+        "sizeCm": [
+          70,
+          90
+        ],
+        "exact": true
+      },
+      {
+        "id": "diploma",
+        "sizePx": [
+          495,
+          374
+        ],
+        "sizeCm": [
+          45,
+          34
+        ],
+        "exact": true
+      },
+      {
+        "id": "poster_kpi",
+        "sizePx": [
+          512,
+          384
+        ],
+        "sizeCm": [
+          80,
+          60
+        ],
+        "exact": true
+      },
+      {
+        "id": "poster_mission",
+        "sizePx": [
+          504,
+          364
+        ],
+        "sizeCm": [
+          90,
+          65
+        ],
+        "exact": true
+      },
+      {
+        "id": "poster_coffee",
+        "sizePx": [
+          360,
+          510
+        ],
+        "sizeCm": [
+          60,
+          85
+        ],
+        "exact": true
+      },
+      {
+        "id": "sign_salt",
+        "sizePx": [
+          512,
+          352
+        ],
+        "sizeCm": [
+          32,
+          22
+        ],
+        "exact": true
+      },
+      {
+        "id": "poster_fridge_rules",
+        "sizePx": [
+          384,
+          504
+        ],
+        "sizeCm": [
+          32,
+          42
+        ],
+        "exact": true
+      },
+      {
+        "id": "poster_printer",
+        "sizePx": [
+          384,
+          512
+        ],
+        "sizeCm": [
+          60,
+          80
+        ],
+        "exact": true
+      },
+      {
+        "id": "sign_out_of_order",
+        "sizePx": [
+          504,
+          308
+        ],
+        "sizeCm": [
+          36,
+          22
+        ],
+        "exact": true
+      },
+      {
+        "id": "logo_company",
+        "sizePx": [
+          768,
+          384
+        ],
+        "sizeCm": [
+          130,
+          65
+        ],
+        "exact": true
+      },
+      {
+        "id": "poster_welcome",
+        "sizePx": [
+          504,
+          360
+        ],
+        "sizeCm": [
+          70,
+          50
+        ],
+        "exact": true
+      },
+      {
+        "id": "sign_fusebox",
+        "sizePx": [
+          512,
+          512
+        ],
+        "sizeCm": [
+          30,
+          30
+        ],
+        "exact": true
+      },
+      {
+        "id": "sign_wash_hands",
+        "sizePx": [
+          384,
+          512
+        ],
+        "sizeCm": [
+          30,
+          40
+        ],
+        "exact": true
+      },
+      {
+        "id": "sign_server_danger",
+        "sizePx": [
+          512,
+          512
+        ],
+        "sizeCm": [
+          35,
+          35
+        ],
+        "exact": true
+      },
+      {
+        "id": "poster_relax",
+        "sizePx": [
+          504,
+          360
+        ],
+        "sizeCm": [
+          70,
+          50
+        ],
+        "exact": true
+      },
+      {
+        "id": "poster_vending",
+        "sizePx": [
+          384,
+          512
+        ],
+        "sizeCm": [
+          45,
+          60
+        ],
+        "exact": true
+      }
+    ],
+    "typographyChecks": [
+      {
+        "id": "poster_teamwork",
+        "text": "TAKIM RUHU",
+        "unicodeExact": true,
+        "glyphBoundsInsideTexture": true,
+        "fontSizePx": 57.667
+      },
+      {
+        "id": "poster_motivation",
+        "text": "BAŞARI = MESAİ",
+        "unicodeExact": true,
+        "glyphBoundsInsideTexture": true,
+        "fontSizePx": 46.667
+      },
+      {
+        "id": "poster_safety",
+        "text": "DİKKAT",
+        "unicodeExact": true,
+        "glyphBoundsInsideTexture": true,
+        "fontSizePx": 48.0
+      },
+      {
+        "id": "poster_quota",
+        "text": "KOTA",
+        "unicodeExact": true,
+        "glyphBoundsInsideTexture": true,
+        "fontSizePx": 59.667
+      },
+      {
+        "id": "diploma",
+        "text": "DİPLOMA",
+        "unicodeExact": true,
+        "glyphBoundsInsideTexture": true,
+        "fontSizePx": 52.0
+      },
+      {
+        "id": "poster_kpi",
+        "text": "KPI",
+        "unicodeExact": true,
+        "glyphBoundsInsideTexture": true,
+        "fontSizePx": 61.333
+      },
+      {
+        "id": "poster_mission",
+        "text": "VİZYONUMUZ",
+        "unicodeExact": true,
+        "glyphBoundsInsideTexture": true,
+        "fontSizePx": 56.0
+      },
+      {
+        "id": "poster_coffee",
+        "text": "KAHVE KURALLARI",
+        "unicodeExact": true,
+        "glyphBoundsInsideTexture": true,
+        "fontSizePx": 51.333
+      },
+      {
+        "id": "sign_salt",
+        "text": "TUZ ≠ ŞEKER",
+        "unicodeExact": true,
+        "glyphBoundsInsideTexture": true,
+        "fontSizePx": 48.0
+      },
+      {
+        "id": "poster_fridge_rules",
+        "text": "YOĞURDUMU YİYEN?",
+        "unicodeExact": true,
+        "glyphBoundsInsideTexture": true,
+        "fontSizePx": 46.667
+      },
+      {
+        "id": "poster_printer",
+        "text": "YAZICI: SABIR",
+        "unicodeExact": true,
+        "glyphBoundsInsideTexture": true,
+        "fontSizePx": 56.667
+      },
+      {
+        "id": "sign_out_of_order",
+        "text": "ARIZALI",
+        "unicodeExact": true,
+        "glyphBoundsInsideTexture": true,
+        "fontSizePx": 64.0
+      },
+      {
+        "id": "logo_company",
+        "text": "KOVA HOLDİNG",
+        "unicodeExact": true,
+        "glyphBoundsInsideTexture": true,
+        "fontSizePx": 87.667
+      },
+      {
+        "id": "poster_welcome",
+        "text": "HOŞ GELDİNİZ",
+        "unicodeExact": true,
+        "glyphBoundsInsideTexture": true,
+        "fontSizePx": 40.0
+      },
+      {
+        "id": "sign_fusebox",
+        "text": "YÜKSEK GERİLİM",
+        "unicodeExact": true,
+        "glyphBoundsInsideTexture": true,
+        "fontSizePx": 55.667
+      },
+      {
+        "id": "sign_wash_hands",
+        "text": "ELLERİNİZİ YIKAYIN",
+        "unicodeExact": true,
+        "glyphBoundsInsideTexture": true,
+        "fontSizePx": 52.0
+      },
+      {
+        "id": "sign_server_danger",
+        "text": "YETKİSİZ GİRİLMEZ",
+        "unicodeExact": true,
+        "glyphBoundsInsideTexture": true,
+        "fontSizePx": 55.0
+      },
+      {
+        "id": "poster_relax",
+        "text": "MOLA",
+        "unicodeExact": true,
+        "glyphBoundsInsideTexture": true,
+        "fontSizePx": 59.667
+      },
+      {
+        "id": "poster_vending",
+        "text": "ATIŞTIR!",
+        "unicodeExact": true,
+        "glyphBoundsInsideTexture": true,
+        "fontSizePx": 48.0
+      }
+    ],
+    "visualReview": {
+      "allFinalsVisuallyReviewed": true,
+      "allTurkishGlyphsVisuallyReviewed": true,
+      "reviewMethod": "Primary agent inspected the complete contact sheet and selected individual finals at native size. An independent agent inspected 20 final decals, the small foreshortened preview and selected enlarged labels; primary agent subsequently inspected the completed vending decal. A separate agent checked all 19 specification strings character-for-character against the requested wording. This is visual and deterministic Unicode review, not OCR.",
+      "reviewSheets": [
+        "Art/UI/_sheets/decals_v2.png",
+        "Art/UI/_sheets/decals_v2_distance.png"
+      ],
+      "reviewedFinalCount": 21,
+      "reviewedLabelCount": 19,
+      "blockingVisualDefects": [],
+      "weaknesses": [
+        "At the smallest physical sign sizes, multiword labels are difficult to read in the reduced foreshortened preview, especially sign_salt, sign_fusebox, sign_wash_hands, sign_server_danger and poster_fridge_rules. Large pictograms retain their meaning.",
+        "Actual 5–7 m readability from the 3/4 top-down Unity game camera is not tested. The preview uses an explicitly documented approximation, not the game's projection or material pipeline."
+      ],
+      "styleNotes": [
+        "Cream paper, manila frames, navy contours, office green, red warnings and simple large shapes match the existing stationery kit.",
+        "The manager portrait uses oil-painting texture intentionally, as requested.",
+        "The beach scene is richer than the warning signs, while retaining a clear two-bean silhouette."
+      ],
+      "textNotes": [
+        "All required strings match exactly, including Turkish dotted capital İ, dotless uppercase I, Ş, Ğ and Ü; no unrequested lowercase substitutions or additional words.",
+        "TUZ ≠ ŞEKER uses a clear true not-equal glyph; the fallback was unnecessary.",
+        "ATIŞTIR!, YAZICI: SABIR, ARIZALI, TAKIM RUHU and BAŞARI correctly retain their dotless-uppercase I characters.",
+        "KPI retains the exact requested Latin acronym. Memo board and manager portrait contain no text."
+      ],
+      "unityIntegrationTested": false,
+      "finalSha256": {
+        "Art/UI/decals/poster_teamwork.png": "1b32a9fb91ffc7f3557ed8721d8275d5d9527f6e7eb24e1d0fd78f90e921a5bc",
+        "Art/UI/decals/poster_motivation.png": "5116c291a5719bb2bede529336d59299d098f93b94eb68d9c4609cbd13bf3a6d",
+        "Art/UI/decals/poster_safety.png": "c17725dc04fd683cc926f306a60e8e65393b40c1813e2cb53f03e3867b0a23e9",
+        "Art/UI/decals/memo_board.png": "828de99957b6b8995b859cc4561533f52915ce5d6b04d62907df2f2787e48a11",
+        "Art/UI/decals/poster_quota.png": "50d84303a3d17664813826b910c01697abccc44c5f0e546d0db397d9da82a0a7",
+        "Art/UI/decals/portrait_manager.png": "8fb34b910607d8ddfe9e6d6f6e2b16eb5cc4c64154242b2d9312a76096659fc4",
+        "Art/UI/decals/diploma.png": "e98355a17edf09b999044b546b6e3e7d036b30aee6bdd9a6cb8600f31e554b32",
+        "Art/UI/decals/poster_kpi.png": "81826084ddf82fa421e3d3c4bdfe8bff9b555b99fece89436e25ebd0d717f5d2",
+        "Art/UI/decals/poster_mission.png": "97c5ee143cefbafe8593273adcea06e2d25cd22600953d0c144bd7e5bece4bfb",
+        "Art/UI/decals/poster_coffee.png": "dfd843adaa4b79d0739685068080df91ef0ec9c5ecaad9af8b0f88db0906e2b8",
+        "Art/UI/decals/sign_salt.png": "0669d81f74bc30a5957dad756f89657f6f74d9f503a33504c19033f89a14b7f0",
+        "Art/UI/decals/poster_fridge_rules.png": "9ac815edf058241ee175086a820458f9d4c7d51abe6936423ea3b517b0ef2378",
+        "Art/UI/decals/poster_printer.png": "5206759f6b3f85ad7f8bb28c24bdf996c4618b7faa931b41516e6099a1648e8f",
+        "Art/UI/decals/sign_out_of_order.png": "f9a7b05c67ed74b7aeec85be7bc205ce9759934b57876fb0a3b0154063f334a1",
+        "Art/UI/decals/logo_company.png": "47f76c38298f688059522a9a7b0a6c721dd7cde04a558d6287fc32436223a4e4",
+        "Art/UI/decals/poster_welcome.png": "2b4248071559fab9f00c78a4224f8d86a96a43fcc0e2039a4920e7aedd4c81e5",
+        "Art/UI/decals/sign_fusebox.png": "5454bfac40eda0fd837432675dbf8444ade744f9ff4ce9f19c7ade5190a114dc",
+        "Art/UI/decals/sign_wash_hands.png": "3278962a957de96de8cac26b7b169b3121575cc89cc5c8a2da7b2b3d91b5504b",
+        "Art/UI/decals/sign_server_danger.png": "549743166de27ed95a538655f197c65a1d21a0702b2d8d17389f698b3ecaa95b",
+        "Art/UI/decals/poster_relax.png": "6c915da3216eb88b354dd159c4c1009bdaab7f95dfe84f5eb88fbf01fc8bb243",
+        "Art/UI/decals/poster_vending.png": "f4d1b8670a94ef2eda1db1cf4f33f493584ff6f2db65bc9dc92659887d367bd9"
+      }
+    }
+  },
+  "errorCount": 0,
+  "errors": [],
+  "warnings": [],
+  "checks": [
+    "Exact requested inventory and PNG/ICO dimensions",
+    "True alpha including clear pixels within silhouette bounds",
+    "Transparent corners for cutouts",
+    "Icons below 80000 bytes; backgrounds below 1500000 bytes",
+    "Phone/projector screen rectangles fully transparent",
+    "Ghost centers fully transparent",
+    "Paper-tile opposite edges byte-identical",
+    "Manifest schema and metadata consistency",
+    "Category review sheets present",
+    "Smoke folder absent",
+    "ICO contains 16, 24, 32, 48, 64, 128, 256 resolutions with real alpha",
+    "Original 149 asset SHA-256 hashes preserved",
+    "Second-run raw generations and prompts retained under Art/UI/_sources",
+    "All 184 pre-third-run assets preserved byte-for-byte",
+    "21 opaque wall decals with exact world-space aspect ratios and resolution caps",
+    "21 third-run raw generations and full prompts archived locally",
+    "19 exact NFC Turkish labels, codepoints and glyph bounds checked",
+    "Third-run visual review hashes match final PNGs"
+  ],
+  "textReview": {
+    "method": "Deterministic Unicode Turkish font rendering; visual review of final lettering and generated bubble symbols; not OCR.",
+    "requiredStrings": {
+      "logo": "BİRİMİZ KOVULACAK",
+      "stamp_kovuldu": "KOVULDU",
+      "stamp_kurtuldu": "KURTULDU",
+      "stamp_onaylandi": "ONAYLANDI",
+      "stamp_reddedildi": "REDDEDİLDİ",
+      "stamp_gizli": "GİZLİ",
+      "stamp_ayin_elemani": "AYIN ELEMANI",
+      "poster_takim_ruhu": "TAKIM RUHU",
+      "poster_verimlilik": "VERİMLİLİK",
+      "poster_sadakat": "SADAKAT",
+      "poster_kahve": "KAHVE",
+      "exit_sign": "ÇIKIŞ",
+      "week_pazartesi": "PAZARTESİ",
+      "week_sali": "SALI",
+      "week_carsamba": "ÇARŞAMBA",
+      "week_persembe": "PERŞEMBE",
+      "week_cuma": "CUMA",
+      "capsule_header_920x430": "BİRİMİZ KOVULACAK",
+      "capsule_main_1232x706": "BİRİMİZ KOVULACAK",
+      "bubble_exclaim": "!",
+      "bubble_question": "?",
+      "bubble_zzz": "ZZZ",
+      "poster_teamwork": "TAKIM RUHU",
+      "poster_motivation": "BAŞARI = MESAİ",
+      "poster_safety": "DİKKAT",
+      "poster_quota": "KOTA",
+      "diploma": "DİPLOMA",
+      "poster_kpi": "KPI",
+      "poster_mission": "VİZYONUMUZ",
+      "poster_coffee": "KAHVE KURALLARI",
+      "sign_salt": "TUZ ≠ ŞEKER",
+      "poster_fridge_rules": "YOĞURDUMU YİYEN?",
+      "poster_printer": "YAZICI: SABIR",
+      "sign_out_of_order": "ARIZALI",
+      "logo_company": "KOVA HOLDİNG",
+      "poster_welcome": "HOŞ GELDİNİZ",
+      "sign_fusebox": "YÜKSEK GERİLİM",
+      "sign_wash_hands": "ELLERİNİZİ YIKAYIN",
+      "sign_server_danger": "YETKİSİZ GİRİLMEZ",
+      "poster_relax": "MOLA",
+      "poster_vending": "ATIŞTIR!"
+    },
+    "reviewSheets": [
+      "_sheets/logo.png",
+      "_sheets/stamps.png",
+      "_sheets/decals.png",
+      "_sheets/week.png",
+      "_sheets/store.png",
+      "_sheets/bubbles.png",
+      "_sheets/decals_v2.png"
+    ]
+  },
+  "unityIntegrationTested": false,
+  "requiredContactSheets": [
+    "_sheets/style.png",
+    "_sheets/logo.png",
+    "_sheets/backgrounds.png",
+    "_sheets/buttons.png",
+    "_sheets/icons.png",
+    "_sheets/cards.png",
+    "_sheets/portraits.png",
+    "_sheets/stamps.png",
+    "_sheets/phone.png",
+    "_sheets/meeting.png",
+    "_sheets/decals.png",
+    "_sheets/howto.png",
+    "_sheets/week.png",
+    "_sheets/titles.png",
+    "_sheets/bubbles.png",
+    "_sheets/app.png",
+    "_sheets/store.png",
+    "_sheets/decals_v2.png",
+    "_sheets/decals_v2_distance.png"
+  ],
+  "assets": [
+    {
+      "path": "Art/UI/style/style_sheet.png",
+      "exists": true,
+      "w": 1600,
+      "h": 1000,
+      "bytes": 1940353,
+      "mode": "RGB",
+      "hasAlpha": false,
+      "alphaExtrema": [
+        255,
+        255
+      ],
+      "cornerAlpha": [
+        255,
+        255,
+        255,
+        255
+      ],
+      "transparentFraction": 0.0,
+      "clearFractionInsideSilhouetteBounds": 0.0,
+      "screenRectClear": null,
+      "tileEdgesMatch": null,
+      "metadataSource": "style/_metadata.json",
+      "sha256": "27c08849342cf673035db4d232ab7574828d26e7d5f4f4d076937dd9387e8f33",
+      "format": "PNG",
+      "icoResolutions": null,
+      "icoFrames": null
+    },
+    {
+      "path": "Art/UI/logo/logo.png",
+      "exists": true,
+      "w": 1600,
+      "h": 700,
+      "bytes": 273904,
+      "mode": "RGBA",
+      "hasAlpha": true,
+      "alphaExtrema": [
+        0,
+        255
+      ],
+      "cornerAlpha": [
+        0,
+        0,
+        0,
+        0
+      ],
+      "transparentFraction": 0.292038,
+      "clearFractionInsideSilhouetteBounds": 0.100156,
+      "screenRectClear": null,
+      "tileEdgesMatch": null,
+      "metadataSource": "logo/_metadata.json",
+      "sha256": "eeb7464e3cce595df5df6796eb098cd35626ebd951a82da806de1fc35af81a94",
+      "format": "PNG",
+      "icoResolutions": null,
+      "icoFrames": null
+    },
+    {
+      "path": "Art/UI/logo/logo_mark.png",
+      "exists": true,
+      "w": 512,
+      "h": 512,
+      "bytes": 182741,
+      "mode": "RGBA",
+      "hasAlpha": true,
+      "alphaExtrema": [
+        0,
+        255
+      ],
+      "cornerAlpha": [
+        0,
+        0,
+        0,
+        0
+      ],
+      "transparentFraction": 0.607742,
+      "clearFractionInsideSilhouetteBounds": 0.325443,
+      "screenRectClear": null,
+      "tileEdgesMatch": null,
+      "metadataSource": "logo/_metadata.json",
+      "sha256": "44302f1ff1d847d2b8fc8116193692adab73c32fcedc12f3243cf12d7507012f",
+      "format": "PNG",
+      "icoResolutions": null,
+      "icoFrames": null
+    },
+    {
+      "path": "Art/UI/backgrounds/menu_bg.png",
+      "exists": true,
+      "w": 1920,
+      "h": 1080,
+      "bytes": 970309,
+      "mode": "RGBA",
+      "hasAlpha": true,
+      "alphaExtrema": [
+        255,
+        255
+      ],
+      "cornerAlpha": [
+        255,
+        255,
+        255,
+        255
+      ],
+      "transparentFraction": 0.0,
+      "clearFractionInsideSilhouetteBounds": 0.0,
+      "screenRectClear": null,
+      "tileEdgesMatch": null,
+      "metadataSource": "backgrounds/_metadata.json",
+      "sha256": "8d9c518963e7c37ca9d1de019bee7e89339d152939f6244501d1ff4b971568ea",
+      "format": "PNG",
+      "icoResolutions": null,
+      "icoFrames": null
+    },
+    {
+      "path": "Art/UI/backgrounds/lobby_bg.png",
+      "exists": true,
+      "w": 1920,
+      "h": 1080,
+      "bytes": 784855,
+      "mode": "RGBA",
+      "hasAlpha": true,
+      "alphaExtrema": [
+        255,
+        255
+      ],
+      "cornerAlpha": [
+        255,
+        255,
+        255,
+        255
+      ],
+      "transparentFraction": 0.0,
+      "clearFractionInsideSilhouetteBounds": 0.0,
+      "screenRectClear": null,
+      "tileEdgesMatch": null,
+      "metadataSource": "backgrounds/_metadata.json",
+      "sha256": "c5273c07120ef6dc54117785b404a471d07846fb9252437087587b080388cc62",
+      "format": "PNG",
+      "icoResolutions": null,
+      "icoFrames": null
+    },
+    {
+      "path": "Art/UI/backgrounds/results_bg.png",
+      "exists": true,
+      "w": 1920,
+      "h": 1080,
+      "bytes": 534904,
+      "mode": "RGBA",
+      "hasAlpha": true,
+      "alphaExtrema": [
+        255,
+        255
+      ],
+      "cornerAlpha": [
+        255,
+        255,
+        255,
+        255
+      ],
+      "transparentFraction": 0.0,
+      "clearFractionInsideSilhouetteBounds": 0.0,
+      "screenRectClear": null,
+      "tileEdgesMatch": null,
+      "metadataSource": "backgrounds/_metadata.json",
+      "sha256": "82de4be66cd0bfcdfa7defa1312ab089be64e015a113bd7055843223e358c947",
+      "format": "PNG",
+      "icoResolutions": null,
+      "icoFrames": null
+    },
+    {
+      "path": "Art/UI/backgrounds/paper_tile.png",
+      "exists": true,
+      "w": 512,
+      "h": 512,
+      "bytes": 121449,
+      "mode": "RGBA",
+      "hasAlpha": true,
+      "alphaExtrema": [
+        255,
+        255
+      ],
+      "cornerAlpha": [
+        255,
+        255,
+        255,
+        255
+      ],
+      "transparentFraction": 0.0,
+      "clearFractionInsideSilhouetteBounds": 0.0,
+      "screenRectClear": null,
+      "tileEdgesMatch": true,
+      "metadataSource": "backgrounds/_metadata.json",
+      "sha256": "ece6768c89721a90af2319df0540bb852f763b31ceeec5bfd16125133d57661b",
+      "format": "PNG",
+      "icoResolutions": null,
+      "icoFrames": null
+    },
+    {
+      "path": "Art/UI/buttons/primary_normal.png",
+      "exists": true,
+      "w": 192,
+      "h": 96,
+      "bytes": 2611,
+      "mode": "RGBA",
+      "hasAlpha": true,
+      "alphaExtrema": [
+        0,
+        255
+      ],
+      "cornerAlpha": [
+        0,
+        0,
+        0,
+        0
+      ],
+      "transparentFraction": 0.21327,
+      "clearFractionInsideSilhouetteBounds": 0.029384,
+      "screenRectClear": null,
+      "tileEdgesMatch": null,
+      "metadataSource": "buttons/_metadata.json",
+      "sha256": "19d7ea5575f4433e0c342b3835d08f95128bf2839d831f41a60883fca815fba6",
+      "format": "PNG",
+      "icoResolutions": null,
+      "icoFrames": null
+    },
+    {
+      "path": "Art/UI/buttons/primary_hover.png",
+      "exists": true,
+      "w": 192,
+      "h": 96,
+      "bytes": 2786,
+      "mode": "RGBA",
+      "hasAlpha": true,
+      "alphaExtrema": [
+        0,
+        255
+      ],
+      "cornerAlpha": [
+        0,
+        0,
+        0,
+        0
+      ],
+      "transparentFraction": 0.19401,
+      "clearFractionInsideSilhouetteBounds": 0.02902,
+      "screenRectClear": null,
+      "tileEdgesMatch": null,
+      "metadataSource": "buttons/_metadata.json",
+      "sha256": "5ffa6581ff58986c9c376eacad1740fe19020aca1a7f5c61df3069278ea346ef",
+      "format": "PNG",
+      "icoResolutions": null,
+      "icoFrames": null
+    },
+    {
+      "path": "Art/UI/buttons/primary_pressed.png",
+      "exists": true,
+      "w": 192,
+      "h": 96,
+      "bytes": 2382,
+      "mode": "RGBA",
+      "hasAlpha": true,
+      "alphaExtrema": [
+        0,
+        255
+      ],
+      "cornerAlpha": [
+        0,
+        0,
+        0,
+        0
+      ],
+      "transparentFraction": 0.250705,
+      "clearFractionInsideSilhouetteBounds": 0.028762,
+      "screenRectClear": null,
+      "tileEdgesMatch": null,
+      "metadataSource": "buttons/_metadata.json",
+      "sha256": "5cdfddc395c31e5af12b7938d07897dc1a593e292e1fd9bdb2fe6f88de94a7c6",
+      "format": "PNG",
+      "icoResolutions": null,
+      "icoFrames": null
+    },
+    {
+      "path": "Art/UI/buttons/primary_disabled.png",
+      "exists": true,
+      "w": 192,
+      "h": 96,
+      "bytes": 2597,
+      "mode": "RGBA",
+      "hasAlpha": true,
+      "alphaExtrema": [
+        0,
+        255
+      ],
+      "cornerAlpha": [
+        0,
+        0,
+        0,
+        0
+      ],
+      "transparentFraction": 0.258409,
+      "clearFractionInsideSilhouetteBounds": 0.026425,
+      "screenRectClear": null,
+      "tileEdgesMatch": null,
+      "metadataSource": "buttons/_metadata.json",
+      "sha256": "09bed9f4ff6fb8f751d438f8e02a481e1132fc67ef8195d7fff4c15d2ccf6eda",
+      "format": "PNG",
+      "icoResolutions": null,
+      "icoFrames": null
+    },
+    {
+      "path": "Art/UI/buttons/secondary_normal.png",
+      "exists": true,
+      "w": 192,
+      "h": 96,
+      "bytes": 3095,
+      "mode": "RGBA",
+      "hasAlpha": true,
+      "alphaExtrema": [
+        0,
+        255
+      ],
+      "cornerAlpha": [
+        0,
+        0,
+        0,
+        0
+      ],
+      "transparentFraction": 0.21327,
+      "clearFractionInsideSilhouetteBounds": 0.029384,
+      "screenRectClear": null,
+      "tileEdgesMatch": null,
+      "metadataSource": "buttons/_metadata.json",
+      "sha256": "eef22b7b3c45a0c7b550a5aa96501b431d16f10b485c899a316fd7fb060c76bd",
+      "format": "PNG",
+      "icoResolutions": null,
+      "icoFrames": null
+    },
+    {
+      "path": "Art/UI/buttons/secondary_hover.png",
+      "exists": true,
+      "w": 192,
+      "h": 96,
+      "bytes": 3134,
+      "mode": "RGBA",
+      "hasAlpha": true,
+      "alphaExtrema": [
+        0,
+        255
+      ],
+      "cornerAlpha": [
+        0,
+        0,
+        0,
+        0
+      ],
+      "transparentFraction": 0.19401,
+      "clearFractionInsideSilhouetteBounds": 0.02902,
+      "screenRectClear": null,
+      "tileEdgesMatch": null,
+      "metadataSource": "buttons/_metadata.json",
+      "sha256": "9e58a08a92b17959d22eeb903dbcf76410452383d1446f3d285ec725df08cf1f",
+      "format": "PNG",
+      "icoResolutions": null,
+      "icoFrames": null
+    },
+    {
+      "path": "Art/UI/buttons/secondary_pressed.png",
+      "exists": true,
+      "w": 192,
+      "h": 96,
+      "bytes": 2970,
+      "mode": "RGBA",
+      "hasAlpha": true,
+      "alphaExtrema": [
+        0,
+        255
+      ],
+      "cornerAlpha": [
+        0,
+        0,
+        0,
+        0
+      ],
+      "transparentFraction": 0.250705,
+      "clearFractionInsideSilhouetteBounds": 0.028762,
+      "screenRectClear": null,
+      "tileEdgesMatch": null,
+      "metadataSource": "buttons/_metadata.json",
+      "sha256": "51d7a81c1bc6791cdda73b1514692e690c83d53098385f3a09efeb9abff5780a",
+      "format": "PNG",
+      "icoResolutions": null,
+      "icoFrames": null
+    },
+    {
+      "path": "Art/UI/buttons/secondary_disabled.png",
+      "exists": true,
+      "w": 192,
+      "h": 96,
+      "bytes": 2597,
+      "mode": "RGBA",
+      "hasAlpha": true,
+      "alphaExtrema": [
+        0,
+        255
+      ],
+      "cornerAlpha": [
+        0,
+        0,
+        0,
+        0
+      ],
+      "transparentFraction": 0.258409,
+      "clearFractionInsideSilhouetteBounds": 0.026425,
+      "screenRectClear": null,
+      "tileEdgesMatch": null,
+      "metadataSource": "buttons/_metadata.json",
+      "sha256": "09bed9f4ff6fb8f751d438f8e02a481e1132fc67ef8195d7fff4c15d2ccf6eda",
+      "format": "PNG",
+      "icoResolutions": null,
+      "icoFrames": null
+    },
+    {
+      "path": "Art/UI/buttons/danger_normal.png",
+      "exists": true,
+      "w": 192,
+      "h": 96,
+      "bytes": 2861,
+      "mode": "RGBA",
+      "hasAlpha": true,
+      "alphaExtrema": [
+        0,
+        255
+      ],
+      "cornerAlpha": [
+        0,
+        0,
+        0,
+        0
+      ],
+      "transparentFraction": 0.21327,
+      "clearFractionInsideSilhouetteBounds": 0.029384,
+      "screenRectClear": null,
+      "tileEdgesMatch": null,
+      "metadataSource": "buttons/_metadata.json",
+      "sha256": "4c292ca61f57ce2e2409b2ac82345144b55613b812b1966418ab2cfcaff4f11b",
+      "format": "PNG",
+      "icoResolutions": null,
+      "icoFrames": null
+    },
+    {
+      "path": "Art/UI/buttons/danger_hover.png",
+      "exists": true,
+      "w": 192,
+      "h": 96,
+      "bytes": 2878,
+      "mode": "RGBA",
+      "hasAlpha": true,
+      "alphaExtrema": [
+        0,
+        255
+      ],
+      "cornerAlpha": [
+        0,
+        0,
+        0,
+        0
+      ],
+      "transparentFraction": 0.19401,
+      "clearFractionInsideSilhouetteBounds": 0.02902,
+      "screenRectClear": null,
+      "tileEdgesMatch": null,
+      "metadataSource": "buttons/_metadata.json",
+      "sha256": "7f323238b6471485371fc62fb6d70e8a3eabb16fc431b6aef7fbecb4e3a227bb",
+      "format": "PNG",
+      "icoResolutions": null,
+      "icoFrames": null
+    },
+    {
+      "path": "Art/UI/buttons/danger_pressed.png",
+      "exists": true,
+      "w": 192,
+      "h": 96,
+      "bytes": 2736,
+      "mode": "RGBA",
+      "hasAlpha": true,
+      "alphaExtrema": [
+        0,
+        255
+      ],
+      "cornerAlpha": [
+        0,
+        0,
+        0,
+        0
+      ],
+      "transparentFraction": 0.250705,
+      "clearFractionInsideSilhouetteBounds": 0.028762,
+      "screenRectClear": null,
+      "tileEdgesMatch": null,
+      "metadataSource": "buttons/_metadata.json",
+      "sha256": "70b874fd07e1f9bfb8e15b4e21043ad521f8f567218d70b91d81b80223b97994",
+      "format": "PNG",
+      "icoResolutions": null,
+      "icoFrames": null
+    },
+    {
+      "path": "Art/UI/buttons/danger_disabled.png",
+      "exists": true,
+      "w": 192,
+      "h": 96,
+      "bytes": 2597,
+      "mode": "RGBA",
+      "hasAlpha": true,
+      "alphaExtrema": [
+        0,
+        255
+      ],
+      "cornerAlpha": [
+        0,
+        0,
+        0,
+        0
+      ],
+      "transparentFraction": 0.258409,
+      "clearFractionInsideSilhouetteBounds": 0.026425,
+      "screenRectClear": null,
+      "tileEdgesMatch": null,
+      "metadataSource": "buttons/_metadata.json",
+      "sha256": "09bed9f4ff6fb8f751d438f8e02a481e1132fc67ef8195d7fff4c15d2ccf6eda",
+      "format": "PNG",
+      "icoResolutions": null,
+      "icoFrames": null
+    },
+    {
+      "path": "Art/UI/buttons/ghost_normal.png",
+      "exists": true,
+      "w": 192,
+      "h": 96,
+      "bytes": 2295,
+      "mode": "RGBA",
+      "hasAlpha": true,
+      "alphaExtrema": [
+        0,
+        255
+      ],
+      "cornerAlpha": [
+        0,
+        0,
+        0,
+        0
+      ],
+      "transparentFraction": 0.893934,
+      "clearFractionInsideSilhouetteBounds": 0.860755,
+      "screenRectClear": null,
+      "tileEdgesMatch": null,
+      "metadataSource": "buttons/_metadata.json",
+      "sha256": "bf5c84a71c323a3f8a18a2be95848b560491c26b7660b68239848f733a0595c1",
+      "format": "PNG",
+      "icoResolutions": null,
+      "icoFrames": null
+    },
+    {
+      "path": "Art/UI/buttons/ghost_hover.png",
+      "exists": true,
+      "w": 192,
+      "h": 96,
+      "bytes": 3487,
+      "mode": "RGBA",
+      "hasAlpha": true,
+      "alphaExtrema": [
+        0,
+        255
+      ],
+      "cornerAlpha": [
+        0,
+        0,
+        0,
+        0
+      ],
+      "transparentFraction": 0.844672,
+      "clearFractionInsideSilhouetteBounds": 0.796083,
+      "screenRectClear": null,
+      "tileEdgesMatch": null,
+      "metadataSource": "buttons/_metadata.json",
+      "sha256": "f7ec2fedb388eafd8b317704306bab8744c308a142c9b783038fe4ef346fcec0",
+      "format": "PNG",
+      "icoResolutions": null,
+      "icoFrames": null
+    },
+    {
+      "path": "Art/UI/buttons/ghost_pressed.png",
+      "exists": true,
+      "w": 192,
+      "h": 96,
+      "bytes": 2415,
+      "mode": "RGBA",
+      "hasAlpha": true,
+      "alphaExtrema": [
+        0,
+        255
+      ],
+      "cornerAlpha": [
+        0,
+        0,
+        0,
+        0
+      ],
+      "transparentFraction": 0.893934,
+      "clearFractionInsideSilhouetteBounds": 0.860755,
+      "screenRectClear": null,
+      "tileEdgesMatch": null,
+      "metadataSource": "buttons/_metadata.json",
+      "sha256": "325f333ad5bfa4e1afb48367107ef864968a43d0307acd67edfbbde82387e79d",
+      "format": "PNG",
+      "icoResolutions": null,
+      "icoFrames": null
+    },
+    {
+      "path": "Art/UI/buttons/ghost_disabled.png",
+      "exists": true,
+      "w": 192,
+      "h": 96,
+      "bytes": 2467,
+      "mode": "RGBA",
+      "hasAlpha": true,
+      "alphaExtrema": [
+        0,
+        255
+      ],
+      "cornerAlpha": [
+        0,
+        0,
+        0,
+        0
+      ],
+      "transparentFraction": 0.893934,
+      "clearFractionInsideSilhouetteBounds": 0.860755,
+      "screenRectClear": null,
+      "tileEdgesMatch": null,
+      "metadataSource": "buttons/_metadata.json",
+      "sha256": "3365af3142d91e75ecfe3e0d619adb8a620fbdb1961a7c64b02debeb44f586bf",
+      "format": "PNG",
+      "icoResolutions": null,
+      "icoFrames": null
+    },
+    {
+      "path": "Art/UI/buttons/panel_paper.png",
+      "exists": true,
+      "w": 512,
+      "h": 512,
+      "bytes": 16254,
+      "mode": "RGBA",
+      "hasAlpha": true,
+      "alphaExtrema": [
+        0,
+        255
+      ],
+      "cornerAlpha": [
+        0,
+        0,
+        0,
+        0
+      ],
+      "transparentFraction": 0.084515,
+      "clearFractionInsideSilhouetteBounds": 0.001798,
+      "screenRectClear": null,
+      "tileEdgesMatch": null,
+      "metadataSource": "buttons/_metadata.json",
+      "sha256": "2288e1b8005cff3387abd51f76301ec4425ceb3d4c18aa65455d60874e7ab881",
+      "format": "PNG",
+      "icoResolutions": null,
+      "icoFrames": null
+    },
+    {
+      "path": "Art/UI/buttons/panel_folder.png",
+      "exists": true,
+      "w": 640,
+      "h": 480,
+      "bytes": 16153,
+      "mode": "RGBA",
+      "hasAlpha": true,
+      "alphaExtrema": [
+        0,
+        255
+      ],
+      "cornerAlpha": [
+        0,
+        0,
+        0,
+        0
+      ],
+      "transparentFraction": 0.16859,
+      "clearFractionInsideSilhouetteBounds": 0.061241,
+      "screenRectClear": null,
+      "tileEdgesMatch": null,
+      "metadataSource": "buttons/_metadata.json",
+      "sha256": "eb5f339bfbf83e8fe0d2aa5a04565ca5666d916b02ae97bd6a699b037a0ba3e1",
+      "format": "PNG",
+      "icoResolutions": null,
+      "icoFrames": null
+    },
+    {
+      "path": "Art/UI/buttons/panel_sticky.png",
+      "exists": true,
+      "w": 384,
+      "h": 384,
+      "bytes": 8435,
+      "mode": "RGBA",
+      "hasAlpha": true,
+      "alphaExtrema": [
+        0,
+        255
+      ],
+      "cornerAlpha": [
+        0,
+        0,
+        0,
+        0
+      ],
+      "transparentFraction": 0.150784,
+      "clearFractionInsideSilhouetteBounds": 0.014667,
+      "screenRectClear": null,
+      "tileEdgesMatch": null,
+      "metadataSource": "buttons/_metadata.json",
+      "sha256": "de4f798925f4ebadaff06242335283eff55f2ad50890aa4bc5e14f989b656488",
+      "format": "PNG",
+      "icoResolutions": null,
+      "icoFrames": null
+    },
+    {
+      "path": "Art/UI/buttons/tooltip.png",
+      "exists": true,
+      "w": 320,
+      "h": 160,
+      "bytes": 3778,
+      "mode": "RGBA",
+      "hasAlpha": true,
+      "alphaExtrema": [
+        0,
+        255
+      ],
+      "cornerAlpha": [
+        0,
+        0,
+        0,
+        0
+      ],
+      "transparentFraction": 0.145176,
+      "clearFractionInsideSilhouetteBounds": 0.005411,
+      "screenRectClear": null,
+      "tileEdgesMatch": null,
+      "metadataSource": "buttons/_metadata.json",
+      "sha256": "ffeb7c443aa9e6ea5ba9813d041d7c1a68b144f9e9a243ea9ae321537563dae3",
+      "format": "PNG",
+      "icoResolutions": null,
+      "icoFrames": null
+    },
+    {
+      "path": "Art/UI/buttons/progress_bar_bg.png",
+      "exists": true,
+      "w": 320,
+      "h": 32,
+      "bytes": 1884,
+      "mode": "RGBA",
+      "hasAlpha": true,
+      "alphaExtrema": [
+        0,
+        255
+      ],
+      "cornerAlpha": [
+        0,
+        0,
+        0,
+        0
+      ],
+      "transparentFraction": 0.02041,
+      "clearFractionInsideSilhouetteBounds": 0.02041,
+      "screenRectClear": null,
+      "tileEdgesMatch": null,
+      "metadataSource": "buttons/_metadata.json",
+      "sha256": "5fc871ffaec4bb825e65dcb649142dac8532c96e0d8efd2e746a46c25ca40abd",
+      "format": "PNG",
+      "icoResolutions": null,
+      "icoFrames": null
+    },
+    {
+      "path": "Art/UI/buttons/progress_bar_fill_green.png",
+      "exists": true,
+      "w": 320,
+      "h": 32,
+      "bytes": 1498,
+      "mode": "RGBA",
+      "hasAlpha": true,
+      "alphaExtrema": [
+        0,
+        255
+      ],
+      "cornerAlpha": [
+        0,
+        0,
+        0,
+        0
+      ],
+      "transparentFraction": 0.090332,
+      "clearFractionInsideSilhouetteBounds": 0.018927,
+      "screenRectClear": null,
+      "tileEdgesMatch": null,
+      "metadataSource": "buttons/_metadata.json",
+      "sha256": "297a476f32291527bc00e52eacdd1ffdb13e433e6400475fc1144c2deaf7c57c",
+      "format": "PNG",
+      "icoResolutions": null,
+      "icoFrames": null
+    },
+    {
+      "path": "Art/UI/buttons/progress_bar_fill_red.png",
+      "exists": true,
+      "w": 320,
+      "h": 32,
+      "bytes": 1627,
+      "mode": "RGBA",
+      "hasAlpha": true,
+      "alphaExtrema": [
+        0,
+        255
+      ],
+      "cornerAlpha": [
+        0,
+        0,
+        0,
+        0
+      ],
+      "transparentFraction": 0.090332,
+      "clearFractionInsideSilhouetteBounds": 0.018927,
+      "screenRectClear": null,
+      "tileEdgesMatch": null,
+      "metadataSource": "buttons/_metadata.json",
+      "sha256": "2fba363aaf89af7620252ad942ec53e2efa7727138b67bd6c45389a39aa8f14d",
+      "format": "PNG",
+      "icoResolutions": null,
+      "icoFrames": null
+    },
+    {
+      "path": "Art/UI/buttons/toggle_on.png",
+      "exists": true,
+      "w": 112,
+      "h": 64,
+      "bytes": 5025,
+      "mode": "RGBA",
+      "hasAlpha": true,
+      "alphaExtrema": [
+        0,
+        255
+      ],
+      "cornerAlpha": [
+        0,
+        0,
+        0,
+        0
+      ],
+      "transparentFraction": 0.271066,
+      "clearFractionInsideSilhouetteBounds": 0.104081,
+      "screenRectClear": null,
+      "tileEdgesMatch": null,
+      "metadataSource": "buttons/_metadata.json",
+      "sha256": "c4d81ab5f92a5310b8e241bace55b8df8677e4a7a9bc180725d15d5e74d5ef47",
+      "format": "PNG",
+      "icoResolutions": null,
+      "icoFrames": null
+    },
+    {
+      "path": "Art/UI/buttons/toggle_off.png",
+      "exists": true,
+      "w": 112,
+      "h": 64,
+      "bytes": 5127,
+      "mode": "RGBA",
+      "hasAlpha": true,
+      "alphaExtrema": [
+        0,
+        255
+      ],
+      "cornerAlpha": [
+        0,
+        0,
+        0,
+        0
+      ],
+      "transparentFraction": 0.271066,
+      "clearFractionInsideSilhouetteBounds": 0.104081,
+      "screenRectClear": null,
+      "tileEdgesMatch": null,
+      "metadataSource": "buttons/_metadata.json",
+      "sha256": "0ab3fcc301d93b5be887625fa979cbf7ec746fa282074922cc631c369bf269fa",
+      "format": "PNG",
+      "icoResolutions": null,
+      "icoFrames": null
+    },
+    {
+      "path": "Art/UI/buttons/slider_track.png",
+      "exists": true,
+      "w": 320,
+      "h": 24,
+      "bytes": 1085,
+      "mode": "RGBA",
+      "hasAlpha": true,
+      "alphaExtrema": [
+        0,
+        255
+      ],
+      "cornerAlpha": [
+        0,
+        0,
+        0,
+        0
+      ],
+      "transparentFraction": 0.259115,
+      "clearFractionInsideSilhouetteBounds": 0.012153,
+      "screenRectClear": null,
+      "tileEdgesMatch": null,
+      "metadataSource": "buttons/_metadata.json",
+      "sha256": "d431c01b4a2a7c65b5dc9d0f8d922ba60abdb16b9e553267d3c9878f981993b5",
+      "format": "PNG",
+      "icoResolutions": null,
+      "icoFrames": null
+    },
+    {
+      "path": "Art/UI/buttons/slider_knob.png",
+      "exists": true,
+      "w": 64,
+      "h": 64,
+      "bytes": 3159,
+      "mode": "RGBA",
+      "hasAlpha": true,
+      "alphaExtrema": [
+        0,
+        255
+      ],
+      "cornerAlpha": [
+        0,
+        0,
+        0,
+        0
+      ],
+      "transparentFraction": 0.454346,
+      "clearFractionInsideSilhouetteBounds": 0.206197,
+      "screenRectClear": null,
+      "tileEdgesMatch": null,
+      "metadataSource": "buttons/_metadata.json",
+      "sha256": "a5200fe0ffe470418d6990a7221f0599a108fb325217405061f71ef424a761ca",
+      "format": "PNG",
+      "icoResolutions": null,
+      "icoFrames": null
+    },
+    {
+      "path": "Art/UI/buttons/tab_active.png",
+      "exists": true,
+      "w": 192,
+      "h": 72,
+      "bytes": 2337,
+      "mode": "RGBA",
+      "hasAlpha": true,
+      "alphaExtrema": [
+        0,
+        255
+      ],
+      "cornerAlpha": [
+        0,
+        0,
+        0,
+        0
+      ],
+      "transparentFraction": 0.172526,
+      "clearFractionInsideSilhouetteBounds": 0.017943,
+      "screenRectClear": null,
+      "tileEdgesMatch": null,
+      "metadataSource": "buttons/_metadata.json",
+      "sha256": "a0811438e4302bfde2a4fc47987fb6619c05e16fa57470b73f515e5d61b524a9",
+      "format": "PNG",
+      "icoResolutions": null,
+      "icoFrames": null
+    },
+    {
+      "path": "Art/UI/buttons/tab_inactive.png",
+      "exists": true,
+      "w": 192,
+      "h": 72,
+      "bytes": 2196,
+      "mode": "RGBA",
+      "hasAlpha": true,
+      "alphaExtrema": [
+        0,
+        255
+      ],
+      "cornerAlpha": [
+        0,
+        0,
+        0,
+        0
+      ],
+      "transparentFraction": 0.172526,
+      "clearFractionInsideSilhouetteBounds": 0.017943,
+      "screenRectClear": null,
+      "tileEdgesMatch": null,
+      "metadataSource": "buttons/_metadata.json",
+      "sha256": "c8383f763eceb4cf053feca31f8d82c305693fe608c005b39fffd89c33ed0dc9",
+      "format": "PNG",
+      "icoResolutions": null,
+      "icoFrames": null
+    },
+    {
+      "path": "Art/UI/icons/task_coffee.png",
+      "exists": true,
+      "w": 256,
+      "h": 256,
+      "bytes": 42779,
+      "mode": "RGBA",
+      "hasAlpha": true,
+      "alphaExtrema": [
+        0,
+        255
+      ],
+      "cornerAlpha": [
+        0,
+        0,
+        0,
+        0
+      ],
+      "transparentFraction": 0.61673,
+      "clearFractionInsideSilhouetteBounds": 0.354956,
+      "screenRectClear": null,
+      "tileEdgesMatch": null,
+      "metadataSource": "icons/_metadata.json",
+      "sha256": "2d0f46b66bccb335b446661ddbb7b6a5148c818ac3682d6e0ccd0fd001a72cc5",
+      "format": "PNG",
+      "icoResolutions": null,
+      "icoFrames": null
+    },
+    {
+      "path": "Art/UI/icons/task_report.png",
+      "exists": true,
+      "w": 256,
+      "h": 256,
+      "bytes": 47082,
+      "mode": "RGBA",
+      "hasAlpha": true,
+      "alphaExtrema": [
+        0,
+        255
+      ],
+      "cornerAlpha": [
+        0,
+        0,
+        0,
+        0
+      ],
+      "transparentFraction": 0.435974,
+      "clearFractionInsideSilhouetteBounds": 0.039896,
+      "screenRectClear": null,
+      "tileEdgesMatch": null,
+      "metadataSource": "icons/_metadata.json",
+      "sha256": "7a7e1cbe0dba7be2f7dbee3f592c99ab44a819f3de3ffb42c1992ff1041a85b8",
+      "format": "PNG",
+      "icoResolutions": null,
+      "icoFrames": null
+    },
+    {
+      "path": "Art/UI/icons/task_phone.png",
+      "exists": true,
+      "w": 256,
+      "h": 256,
+      "bytes": 57081,
+      "mode": "RGBA",
+      "hasAlpha": true,
+      "alphaExtrema": [
+        0,
+        255
+      ],
+      "cornerAlpha": [
+        0,
+        0,
+        0,
+        0
+      ],
+      "transparentFraction": 0.556976,
+      "clearFractionInsideSilhouetteBounds": 0.282757,
+      "screenRectClear": null,
+      "tileEdgesMatch": null,
+      "metadataSource": "icons/_metadata.json",
+      "sha256": "ef76ffb508add9d8d37ab8129fa62eca048e6f381e5935fae6d27500eb5759b8",
+      "format": "PNG",
+      "icoResolutions": null,
+      "icoFrames": null
+    },
+    {
+      "path": "Art/UI/icons/task_clean.png",
+      "exists": true,
+      "w": 256,
+      "h": 256,
+      "bytes": 53681,
+      "mode": "RGBA",
+      "hasAlpha": true,
+      "alphaExtrema": [
+        0,
+        255
+      ],
+      "cornerAlpha": [
+        0,
+        0,
+        0,
+        0
+      ],
+      "transparentFraction": 0.582031,
+      "clearFractionInsideSilhouetteBounds": 0.312104,
+      "screenRectClear": null,
+      "tileEdgesMatch": null,
+      "metadataSource": "icons/_metadata.json",
+      "sha256": "52b14fb325376aea1081b127470f31eba40a78554359f9f7cd49fb0fea708454",
+      "format": "PNG",
+      "icoResolutions": null,
+      "icoFrames": null
+    },
+    {
+      "path": "Art/UI/icons/task_mail.png",
+      "exists": true,
+      "w": 256,
+      "h": 256,
+      "bytes": 49734,
+      "mode": "RGBA",
+      "hasAlpha": true,
+      "alphaExtrema": [
+        0,
+        255
+      ],
+      "cornerAlpha": [
+        0,
+        0,
+        0,
+        0
+      ],
+      "transparentFraction": 0.52565,
+      "clearFractionInsideSilhouetteBounds": 0.138387,
+      "screenRectClear": null,
+      "tileEdgesMatch": null,
+      "metadataSource": "icons/_metadata.json",
+      "sha256": "de37b4dcc5846742891e6e558e321bfbce250f3c24a9585a744dbcd7c3a97e87",
+      "format": "PNG",
+      "icoResolutions": null,
+      "icoFrames": null
+    },
+    {
+      "path": "Art/UI/icons/sab_nameplate.png",
+      "exists": true,
+      "w": 256,
+      "h": 256,
+      "bytes": 46286,
+      "mode": "RGBA",
+      "hasAlpha": true,
+      "alphaExtrema": [
+        0,
+        255
+      ],
+      "cornerAlpha": [
+        0,
+        0,
+        0,
+        0
+      ],
+      "transparentFraction": 0.634506,
+      "clearFractionInsideSilhouetteBounds": 0.391747,
+      "screenRectClear": null,
+      "tileEdgesMatch": null,
+      "metadataSource": "icons/_metadata.json",
+      "sha256": "f6d2e4f9994b5aa77f58c5d4f8a7d200f7092da2d8ef3f3fa12a11e2ee8e3861",
+      "format": "PNG",
+      "icoResolutions": null,
+      "icoFrames": null
+    },
+    {
+      "path": "Art/UI/icons/sab_plant.png",
+      "exists": true,
+      "w": 256,
+      "h": 256,
+      "bytes": 67349,
+      "mode": "RGBA",
+      "hasAlpha": true,
+      "alphaExtrema": [
+        0,
+        255
+      ],
+      "cornerAlpha": [
+        0,
+        0,
+        0,
+        0
+      ],
+      "transparentFraction": 0.4991,
+      "clearFractionInsideSilhouetteBounds": 0.318659,
+      "screenRectClear": null,
+      "tileEdgesMatch": null,
+      "metadataSource": "icons/_metadata.json",
+      "sha256": "bc25bc86c0c11fd7691d0e2be8ec5f0d68319a9e15df528c10b76d505dc56c6f",
+      "format": "PNG",
+      "icoResolutions": null,
+      "icoFrames": null
+    },
+    {
+      "path": "Art/UI/icons/sab_hide_report.png",
+      "exists": true,
+      "w": 256,
+      "h": 256,
+      "bytes": 57060,
+      "mode": "RGBA",
+      "hasAlpha": true,
+      "alphaExtrema": [
+        0,
+        255
+      ],
+      "cornerAlpha": [
+        0,
+        0,
+        0,
+        0
+      ],
+      "transparentFraction": 0.370071,
+      "clearFractionInsideSilhouetteBounds": 0.110664,
+      "screenRectClear": null,
+      "tileEdgesMatch": null,
+      "metadataSource": "icons/_metadata.json",
+      "sha256": "3946f7cf924fa210be00a805467f00e9571a1c925abef6b34db48570ffbfbd40",
+      "format": "PNG",
+      "icoResolutions": null,
+      "icoFrames": null
+    },
+    {
+      "path": "Art/UI/icons/sab_spill.png",
+      "exists": true,
+      "w": 256,
+      "h": 256,
+      "bytes": 42524,
+      "mode": "RGBA",
+      "hasAlpha": true,
+      "alphaExtrema": [
+        0,
+        255
+      ],
+      "cornerAlpha": [
+        0,
+        0,
+        0,
+        0
+      ],
+      "transparentFraction": 0.641617,
+      "clearFractionInsideSilhouetteBounds": 0.386442,
+      "screenRectClear": null,
+      "tileEdgesMatch": null,
+      "metadataSource": "icons/_metadata.json",
+      "sha256": "27b4f8dabf6455cc4ce10b0c6081696ed4780d370cc16722931aa33ea62bab67",
+      "format": "PNG",
+      "icoResolutions": null,
+      "icoFrames": null
+    },
+    {
+      "path": "Art/UI/icons/sab_clutter.png",
+      "exists": true,
+      "w": 256,
+      "h": 256,
+      "bytes": 57264,
+      "mode": "RGBA",
+      "hasAlpha": true,
+      "alphaExtrema": [
+        0,
+        255
+      ],
+      "cornerAlpha": [
+        0,
+        0,
+        0,
+        0
+      ],
+      "transparentFraction": 0.588181,
+      "clearFractionInsideSilhouetteBounds": 0.282589,
+      "screenRectClear": null,
+      "tileEdgesMatch": null,
+      "metadataSource": "icons/_metadata.json",
+      "sha256": "466e96bab21ed8ca75991115b01e62f1b36cf1203f3a0c779cb82c88219621ed",
+      "format": "PNG",
+      "icoResolutions": null,
+      "icoFrames": null
+    },
+    {
+      "path": "Art/UI/icons/sab_password.png",
+      "exists": true,
+      "w": 256,
+      "h": 256,
+      "bytes": 58109,
+      "mode": "RGBA",
+      "hasAlpha": true,
+      "alphaExtrema": [
+        0,
+        255
+      ],
+      "cornerAlpha": [
+        0,
+        0,
+        0,
+        0
+      ],
+      "transparentFraction": 0.370499,
+      "clearFractionInsideSilhouetteBounds": 0.115459,
+      "screenRectClear": null,
+      "tileEdgesMatch": null,
+      "metadataSource": "icons/_metadata.json",
+      "sha256": "14c82cf41d9517fb7c26c3fbeaa97fbaf4266efa0bec19a48f31bf302f48a5e2",
+      "format": "PNG",
+      "icoResolutions": null,
+      "icoFrames": null
+    },
+    {
+      "path": "Art/UI/icons/sab_fake_email.png",
+      "exists": true,
+      "w": 256,
+      "h": 256,
+      "bytes": 64838,
+      "mode": "RGBA",
+      "hasAlpha": true,
+      "alphaExtrema": [
+        0,
+        255
+      ],
+      "cornerAlpha": [
+        0,
+        0,
+        0,
+        0
+      ],
+      "transparentFraction": 0.420425,
+      "clearFractionInsideSilhouetteBounds": 0.061685,
+      "screenRectClear": null,
+      "tileEdgesMatch": null,
+      "metadataSource": "icons/_metadata.json",
+      "sha256": "9bd81788886f3aeceda463890b5b6413fd689290fcbf9a8110a359d5402c974d",
+      "format": "PNG",
+      "icoResolutions": null,
+      "icoFrames": null
+    },
+    {
+      "path": "Art/UI/icons/sab_pull_plug.png",
+      "exists": true,
+      "w": 256,
+      "h": 256,
+      "bytes": 44446,
+      "mode": "RGBA",
+      "hasAlpha": true,
+      "alphaExtrema": [
+        0,
+        255
+      ],
+      "cornerAlpha": [
+        0,
+        0,
+        0,
+        0
+      ],
+      "transparentFraction": 0.678513,
+      "clearFractionInsideSilhouetteBounds": 0.439952,
+      "screenRectClear": null,
+      "tileEdgesMatch": null,
+      "metadataSource": "icons/_metadata.json",
+      "sha256": "b90380dba67b7578252fbe28cc6f7bc2af611f5856651f4a14f67e9d8f49a8c9",
+      "format": "PNG",
+      "icoResolutions": null,
+      "icoFrames": null
+    },
+    {
+      "path": "Art/UI/icons/sab_salt.png",
+      "exists": true,
+      "w": 256,
+      "h": 256,
+      "bytes": 41558,
+      "mode": "RGBA",
+      "hasAlpha": true,
+      "alphaExtrema": [
+        0,
+        255
+      ],
+      "cornerAlpha": [
+        0,
+        0,
+        0,
+        0
+      ],
+      "transparentFraction": 0.687515,
+      "clearFractionInsideSilhouetteBounds": 0.520173,
+      "screenRectClear": null,
+      "tileEdgesMatch": null,
+      "metadataSource": "icons/_metadata.json",
+      "sha256": "147fdfe1d7820de15e9e20ba89ec43e332d21f3692bab0b835908402ac48f490",
+      "format": "PNG",
+      "icoResolutions": null,
+      "icoFrames": null
+    },
+    {
+      "path": "Art/UI/icons/sab_internet.png",
+      "exists": true,
+      "w": 256,
+      "h": 256,
+      "bytes": 60606,
+      "mode": "RGBA",
+      "hasAlpha": true,
+      "alphaExtrema": [
+        0,
+        255
+      ],
+      "cornerAlpha": [
+        0,
+        0,
+        0,
+        0
+      ],
+      "transparentFraction": 0.510086,
+      "clearFractionInsideSilhouetteBounds": 0.324348,
+      "screenRectClear": null,
+      "tileEdgesMatch": null,
+      "metadataSource": "icons/_metadata.json",
+      "sha256": "d14faa73ef390efb9eff576018c0e56b033b9a96749ec40353dc30a75acd1841",
+      "format": "PNG",
+      "icoResolutions": null,
+      "icoFrames": null
+    },
+    {
+      "path": "Art/UI/icons/sab_power.png",
+      "exists": true,
+      "w": 256,
+      "h": 256,
+      "bytes": 66741,
+      "mode": "RGBA",
+      "hasAlpha": true,
+      "alphaExtrema": [
+        0,
+        255
+      ],
+      "cornerAlpha": [
+        0,
+        0,
+        0,
+        0
+      ],
+      "transparentFraction": 0.375244,
+      "clearFractionInsideSilhouetteBounds": 0.060055,
+      "screenRectClear": null,
+      "tileEdgesMatch": null,
+      "metadataSource": "icons/_metadata.json",
+      "sha256": "0015c01b9a74699fce2c6ef16a0ad2678369675f494112dafd00e858702c9d3d",
+      "format": "PNG",
+      "icoResolutions": null,
+      "icoFrames": null
+    },
+    {
+      "path": "Art/UI/icons/hr_scan.png",
+      "exists": true,
+      "w": 256,
+      "h": 256,
+      "bytes": 73598,
+      "mode": "RGBA",
+      "hasAlpha": true,
+      "alphaExtrema": [
+        0,
+        255
+      ],
+      "cornerAlpha": [
+        0,
+        0,
+        0,
+        0
+      ],
+      "transparentFraction": 0.469772,
+      "clearFractionInsideSilhouetteBounds": 0.278767,
+      "screenRectClear": null,
+      "tileEdgesMatch": null,
+      "metadataSource": "icons/_metadata.json",
+      "sha256": "b048a0e4fb54393678162e15b78d6949a74677bf9db5bde58697dfb67c8d4481",
+      "format": "PNG",
+      "icoResolutions": null,
+      "icoFrames": null
+    },
+    {
+      "path": "Art/UI/icons/hr_seal.png",
+      "exists": true,
+      "w": 256,
+      "h": 256,
+      "bytes": 50857,
+      "mode": "RGBA",
+      "hasAlpha": true,
+      "alphaExtrema": [
+        0,
+        255
+      ],
+      "cornerAlpha": [
+        0,
+        0,
+        0,
+        0
+      ],
+      "transparentFraction": 0.668076,
+      "clearFractionInsideSilhouetteBounds": 0.462624,
+      "screenRectClear": null,
+      "tileEdgesMatch": null,
+      "metadataSource": "icons/_metadata.json",
+      "sha256": "2edb94611b3d5e67185ff5e6fee87d3bacd4af3dc09767d6f95760df6119d5ce",
+      "format": "PNG",
+      "icoResolutions": null,
+      "icoFrames": null
+    },
+    {
+      "path": "Art/UI/icons/hr_call_logs.png",
+      "exists": true,
+      "w": 256,
+      "h": 256,
+      "bytes": 54136,
+      "mode": "RGBA",
+      "hasAlpha": true,
+      "alphaExtrema": [
+        0,
+        255
+      ],
+      "cornerAlpha": [
+        0,
+        0,
+        0,
+        0
+      ],
+      "transparentFraction": 0.493759,
+      "clearFractionInsideSilhouetteBounds": 0.086033,
+      "screenRectClear": null,
+      "tileEdgesMatch": null,
+      "metadataSource": "icons/_metadata.json",
+      "sha256": "a2297e9a9895d9941f7a209631555b11c44a1a17642197d697a9c34fd582f50e",
+      "format": "PNG",
+      "icoResolutions": null,
+      "icoFrames": null
+    },
+    {
+      "path": "Art/UI/icons/hr_footage.png",
+      "exists": true,
+      "w": 256,
+      "h": 256,
+      "bytes": 55359,
+      "mode": "RGBA",
+      "hasAlpha": true,
+      "alphaExtrema": [
+        0,
+        255
+      ],
+      "cornerAlpha": [
+        0,
+        0,
+        0,
+        0
+      ],
+      "transparentFraction": 0.552216,
+      "clearFractionInsideSilhouetteBounds": 0.282845,
+      "screenRectClear": null,
+      "tileEdgesMatch": null,
+      "metadataSource": "icons/_metadata.json",
+      "sha256": "c1470504488f6b530e6685b0e49e692903da75dfdeea0ffa9839b3fb8fdba874",
+      "format": "PNG",
+      "icoResolutions": null,
+      "icoFrames": null
+    },
+    {
+      "path": "Art/UI/icons/quota.png",
+      "exists": true,
+      "w": 256,
+      "h": 256,
+      "bytes": 60663,
+      "mode": "RGBA",
+      "hasAlpha": true,
+      "alphaExtrema": [
+        0,
+        255
+      ],
+      "cornerAlpha": [
+        0,
+        0,
+        0,
+        0
+      ],
+      "transparentFraction": 0.516785,
+      "clearFractionInsideSilhouetteBounds": 0.186749,
+      "screenRectClear": null,
+      "tileEdgesMatch": null,
+      "metadataSource": "icons/_metadata.json",
+      "sha256": "3da71cfe8b6f872b33004b73b8fc5d0874359078a211fd68349c6b96a6aef026",
+      "format": "PNG",
+      "icoResolutions": null,
+      "icoFrames": null
+    },
+    {
+      "path": "Art/UI/icons/timer.png",
+      "exists": true,
+      "w": 256,
+      "h": 256,
+      "bytes": 57964,
+      "mode": "RGBA",
+      "hasAlpha": true,
+      "alphaExtrema": [
+        0,
+        255
+      ],
+      "cornerAlpha": [
+        0,
+        0,
+        0,
+        0
+      ],
+      "transparentFraction": 0.514725,
+      "clearFractionInsideSilhouetteBounds": 0.239163,
+      "screenRectClear": null,
+      "tileEdgesMatch": null,
+      "metadataSource": "icons/_metadata.json",
+      "sha256": "99a3f474a2ae8142598810a94b46a171a017719faa1fc1de058c4a7c93d8602f",
+      "format": "PNG",
+      "icoResolutions": null,
+      "icoFrames": null
+    },
+    {
+      "path": "Art/UI/icons/manager.png",
+      "exists": true,
+      "w": 256,
+      "h": 256,
+      "bytes": 57745,
+      "mode": "RGBA",
+      "hasAlpha": true,
+      "alphaExtrema": [
+        0,
+        255
+      ],
+      "cornerAlpha": [
+        0,
+        0,
+        0,
+        0
+      ],
+      "transparentFraction": 0.513199,
+      "clearFractionInsideSilhouetteBounds": 0.26389,
+      "screenRectClear": null,
+      "tileEdgesMatch": null,
+      "metadataSource": "icons/_metadata.json",
+      "sha256": "368fca1d71ded17aedd298d0526108f9df7fce4f58bf93858f8b7beccac604e6",
+      "format": "PNG",
+      "icoResolutions": null,
+      "icoFrames": null
+    },
+    {
+      "path": "Art/UI/icons/suspicion_0.png",
+      "exists": true,
+      "w": 256,
+      "h": 256,
+      "bytes": 42888,
+      "mode": "RGBA",
+      "hasAlpha": true,
+      "alphaExtrema": [
+        0,
+        255
+      ],
+      "cornerAlpha": [
+        0,
+        0,
+        0,
+        0
+      ],
+      "transparentFraction": 0.633209,
+      "clearFractionInsideSilhouetteBounds": 0.35347,
+      "screenRectClear": null,
+      "tileEdgesMatch": null,
+      "metadataSource": "icons/_metadata.json",
+      "sha256": "0da72251e7b86bc51204c6505b796c5b1f0cfd08168b5048ff8a1cbc4dc9516e",
+      "format": "PNG",
+      "icoResolutions": null,
+      "icoFrames": null
+    },
+    {
+      "path": "Art/UI/icons/suspicion_1.png",
+      "exists": true,
+      "w": 256,
+      "h": 256,
+      "bytes": 41921,
+      "mode": "RGBA",
+      "hasAlpha": true,
+      "alphaExtrema": [
+        0,
+        255
+      ],
+      "cornerAlpha": [
+        0,
+        0,
+        0,
+        0
+      ],
+      "transparentFraction": 0.639191,
+      "clearFractionInsideSilhouetteBounds": 0.382288,
+      "screenRectClear": null,
+      "tileEdgesMatch": null,
+      "metadataSource": "icons/_metadata.json",
+      "sha256": "1e20c8bef8338c373981605b554b3d62cd17125bdea0be90c0dd699e3262c953",
+      "format": "PNG",
+      "icoResolutions": null,
+      "icoFrames": null
+    },
+    {
+      "path": "Art/UI/icons/suspicion_2.png",
+      "exists": true,
+      "w": 256,
+      "h": 256,
+      "bytes": 42178,
+      "mode": "RGBA",
+      "hasAlpha": true,
+      "alphaExtrema": [
+        0,
+        255
+      ],
+      "cornerAlpha": [
+        0,
+        0,
+        0,
+        0
+      ],
+      "transparentFraction": 0.632446,
+      "clearFractionInsideSilhouetteBounds": 0.32413,
+      "screenRectClear": null,
+      "tileEdgesMatch": null,
+      "metadataSource": "icons/_metadata.json",
+      "sha256": "59dd62d63568598c60c16ea71f6a1e8f8782ed08280d330965a0bf1b5b156350",
+      "format": "PNG",
+      "icoResolutions": null,
+      "icoFrames": null
+    },
+    {
+      "path": "Art/UI/icons/suspicion_3.png",
+      "exists": true,
+      "w": 256,
+      "h": 256,
+      "bytes": 34426,
+      "mode": "RGBA",
+      "hasAlpha": true,
+      "alphaExtrema": [
+        0,
+        255
+      ],
+      "cornerAlpha": [
+        0,
+        0,
+        0,
+        0
+      ],
+      "transparentFraction": 0.737213,
+      "clearFractionInsideSilhouetteBounds": 0.397832,
+      "screenRectClear": null,
+      "tileEdgesMatch": null,
+      "metadataSource": "icons/_metadata.json",
+      "sha256": "f66bc5b5875b83c4c06ee6500dab550e70515202a71228de379493653454a4ab",
+      "format": "PNG",
+      "icoResolutions": null,
+      "icoFrames": null
+    },
+    {
+      "path": "Art/UI/icons/suspicion_4.png",
+      "exists": true,
+      "w": 256,
+      "h": 256,
+      "bytes": 52442,
+      "mode": "RGBA",
+      "hasAlpha": true,
+      "alphaExtrema": [
+        0,
+        255
+      ],
+      "cornerAlpha": [
+        0,
+        0,
+        0,
+        0
+      ],
+      "transparentFraction": 0.564224,
+      "clearFractionInsideSilhouetteBounds": 0.409938,
+      "screenRectClear": null,
+      "tileEdgesMatch": null,
+      "metadataSource": "icons/_metadata.json",
+      "sha256": "21ea21072f842982d4d6a08bd8a5a5fc5b9ba9452fd68070516d276dc4d1d16c",
+      "format": "PNG",
+      "icoResolutions": null,
+      "icoFrames": null
+    },
+    {
+      "path": "Art/UI/icons/mic_on.png",
+      "exists": true,
+      "w": 256,
+      "h": 256,
+      "bytes": 39980,
+      "mode": "RGBA",
+      "hasAlpha": true,
+      "alphaExtrema": [
+        0,
+        255
+      ],
+      "cornerAlpha": [
+        0,
+        0,
+        0,
+        0
+      ],
+      "transparentFraction": 0.667053,
+      "clearFractionInsideSilhouetteBounds": 0.395233,
+      "screenRectClear": null,
+      "tileEdgesMatch": null,
+      "metadataSource": "icons/_metadata.json",
+      "sha256": "ad5883db3c4780faebfbb6333cc475c11bfd08b72f7937dd1b67fb52987059f7",
+      "format": "PNG",
+      "icoResolutions": null,
+      "icoFrames": null
+    },
+    {
+      "path": "Art/UI/icons/mic_off.png",
+      "exists": true,
+      "w": 256,
+      "h": 256,
+      "bytes": 42986,
+      "mode": "RGBA",
+      "hasAlpha": true,
+      "alphaExtrema": [
+        0,
+        255
+      ],
+      "cornerAlpha": [
+        0,
+        0,
+        0,
+        0
+      ],
+      "transparentFraction": 0.637833,
+      "clearFractionInsideSilhouetteBounds": 0.308421,
+      "screenRectClear": null,
+      "tileEdgesMatch": null,
+      "metadataSource": "icons/_metadata.json",
+      "sha256": "db5147430277609af4e173110929e306de25e1f4af9e90d7eb46b5844cba2f77",
+      "format": "PNG",
+      "icoResolutions": null,
+      "icoFrames": null
+    },
+    {
+      "path": "Art/UI/icons/speaker.png",
+      "exists": true,
+      "w": 256,
+      "h": 256,
+      "bytes": 38193,
+      "mode": "RGBA",
+      "hasAlpha": true,
+      "alphaExtrema": [
+        0,
+        255
+      ],
+      "cornerAlpha": [
+        0,
+        0,
+        0,
+        0
+      ],
+      "transparentFraction": 0.672546,
+      "clearFractionInsideSilhouetteBounds": 0.394128,
+      "screenRectClear": null,
+      "tileEdgesMatch": null,
+      "metadataSource": "icons/_metadata.json",
+      "sha256": "24645161f9e1a4ceaa722d0a1ff4d474d4a94d5d13c768c7d97e8dcd3a3a59f3",
+      "format": "PNG",
+      "icoResolutions": null,
+      "icoFrames": null
+    },
+    {
+      "path": "Art/UI/icons/deafen.png",
+      "exists": true,
+      "w": 256,
+      "h": 256,
+      "bytes": 56785,
+      "mode": "RGBA",
+      "hasAlpha": true,
+      "alphaExtrema": [
+        0,
+        255
+      ],
+      "cornerAlpha": [
+        0,
+        0,
+        0,
+        0
+      ],
+      "transparentFraction": 0.530884,
+      "clearFractionInsideSilhouetteBounds": 0.356012,
+      "screenRectClear": null,
+      "tileEdgesMatch": null,
+      "metadataSource": "icons/_metadata.json",
+      "sha256": "eeb660de35c5f4670e9f1f8c7b1e66bf512359ebfa407eedfb254e3d995103de",
+      "format": "PNG",
+      "icoResolutions": null,
+      "icoFrames": null
+    },
+    {
+      "path": "Art/UI/icons/call.png",
+      "exists": true,
+      "w": 256,
+      "h": 256,
+      "bytes": 33929,
+      "mode": "RGBA",
+      "hasAlpha": true,
+      "alphaExtrema": [
+        0,
+        255
+      ],
+      "cornerAlpha": [
+        0,
+        0,
+        0,
+        0
+      ],
+      "transparentFraction": 0.720169,
+      "clearFractionInsideSilhouetteBounds": 0.529045,
+      "screenRectClear": null,
+      "tileEdgesMatch": null,
+      "metadataSource": "icons/_metadata.json",
+      "sha256": "8c7f42c823e2c1971e3379af7b666c114bf195dd794bee16924c636b09fd539d",
+      "format": "PNG",
+      "icoResolutions": null,
+      "icoFrames": null
+    },
+    {
+      "path": "Art/UI/icons/hang_up.png",
+      "exists": true,
+      "w": 256,
+      "h": 256,
+      "bytes": 32532,
+      "mode": "RGBA",
+      "hasAlpha": true,
+      "alphaExtrema": [
+        0,
+        255
+      ],
+      "cornerAlpha": [
+        0,
+        0,
+        0,
+        0
+      ],
+      "transparentFraction": 0.736328,
+      "clearFractionInsideSilhouetteBounds": 0.298701,
+      "screenRectClear": null,
+      "tileEdgesMatch": null,
+      "metadataSource": "icons/_metadata.json",
+      "sha256": "cb2d7be45ba639dc98b74e7897ace3fc2a106b1871a439dc159f664d4503c645",
+      "format": "PNG",
+      "icoResolutions": null,
+      "icoFrames": null
+    },
+    {
+      "path": "Art/UI/icons/ringing.png",
+      "exists": true,
+      "w": 256,
+      "h": 256,
+      "bytes": 56867,
+      "mode": "RGBA",
+      "hasAlpha": true,
+      "alphaExtrema": [
+        0,
+        255
+      ],
+      "cornerAlpha": [
+        0,
+        0,
+        0,
+        0
+      ],
+      "transparentFraction": 0.580933,
+      "clearFractionInsideSilhouetteBounds": 0.366313,
+      "screenRectClear": null,
+      "tileEdgesMatch": null,
+      "metadataSource": "icons/_metadata.json",
+      "sha256": "4a156dcdb22369af1df4fce7bc93a148e1072cc8e17b43ce9d653a996f141cae",
+      "format": "PNG",
+      "icoResolutions": null,
+      "icoFrames": null
+    },
+    {
+      "path": "Art/UI/icons/accuse.png",
+      "exists": true,
+      "w": 256,
+      "h": 256,
+      "bytes": 32665,
+      "mode": "RGBA",
+      "hasAlpha": true,
+      "alphaExtrema": [
+        0,
+        255
+      ],
+      "cornerAlpha": [
+        0,
+        0,
+        0,
+        0
+      ],
+      "transparentFraction": 0.740982,
+      "clearFractionInsideSilhouetteBounds": 0.467868,
+      "screenRectClear": null,
+      "tileEdgesMatch": null,
+      "metadataSource": "icons/_metadata_hud_a.json",
+      "sha256": "62829f9ce81ce02702a1738031363e6ba57c232f414ae4c2c8e7fa8ade6f26c8",
+      "format": "PNG",
+      "icoResolutions": null,
+      "icoFrames": null
+    },
+    {
+      "path": "Art/UI/icons/ballot.png",
+      "exists": true,
+      "w": 256,
+      "h": 256,
+      "bytes": 52716,
+      "mode": "RGBA",
+      "hasAlpha": true,
+      "alphaExtrema": [
+        0,
+        255
+      ],
+      "cornerAlpha": [
+        0,
+        0,
+        0,
+        0
+      ],
+      "transparentFraction": 0.528748,
+      "clearFractionInsideSilhouetteBounds": 0.283766,
+      "screenRectClear": null,
+      "tileEdgesMatch": null,
+      "metadataSource": "icons/_metadata_hud_a.json",
+      "sha256": "05174bafe4aa1e48ef2fe7e4aa8d8638d0fbe725f511ee30ad1cbed3e3e0be37",
+      "format": "PNG",
+      "icoResolutions": null,
+      "icoFrames": null
+    },
+    {
+      "path": "Art/UI/icons/footage.png",
+      "exists": true,
+      "w": 256,
+      "h": 256,
+      "bytes": 48293,
+      "mode": "RGBA",
+      "hasAlpha": true,
+      "alphaExtrema": [
+        0,
+        255
+      ],
+      "cornerAlpha": [
+        0,
+        0,
+        0,
+        0
+      ],
+      "transparentFraction": 0.634384,
+      "clearFractionInsideSilhouetteBounds": 0.359332,
+      "screenRectClear": null,
+      "tileEdgesMatch": null,
+      "metadataSource": "icons/_metadata_hud_a.json",
+      "sha256": "01d19e8b6db6c61a94afc30ef972e4566f04546f7987de0be5e1d68844365052",
+      "format": "PNG",
+      "icoResolutions": null,
+      "icoFrames": null
+    },
+    {
+      "path": "Art/UI/icons/settings.png",
+      "exists": true,
+      "w": 256,
+      "h": 256,
+      "bytes": 52798,
+      "mode": "RGBA",
+      "hasAlpha": true,
+      "alphaExtrema": [
+        0,
+        255
+      ],
+      "cornerAlpha": [
+        0,
+        0,
+        0,
+        0
+      ],
+      "transparentFraction": 0.538528,
+      "clearFractionInsideSilhouetteBounds": 0.354609,
+      "screenRectClear": null,
+      "tileEdgesMatch": null,
+      "metadataSource": "icons/_metadata_hud_a.json",
+      "sha256": "ae30845dd5fb7ab72fc55faa41ef4c0cee0992dd4cc06a6a6bbb345434c8bde9",
+      "format": "PNG",
+      "icoResolutions": null,
+      "icoFrames": null
+    },
+    {
+      "path": "Art/UI/icons/bot.png",
+      "exists": true,
+      "w": 256,
+      "h": 256,
+      "bytes": 50582,
+      "mode": "RGBA",
+      "hasAlpha": true,
+      "alphaExtrema": [
+        0,
+        255
+      ],
+      "cornerAlpha": [
+        0,
+        0,
+        0,
+        0
+      ],
+      "transparentFraction": 0.600403,
+      "clearFractionInsideSilhouetteBounds": 0.424945,
+      "screenRectClear": null,
+      "tileEdgesMatch": null,
+      "metadataSource": "icons/_metadata_hud_a.json",
+      "sha256": "cb7bfac87c9aa4ac30d76da224cc59a9ab97db41e6d777b7ede3245ebf5acd00",
+      "format": "PNG",
+      "icoResolutions": null,
+      "icoFrames": null
+    },
+    {
+      "path": "Art/UI/icons/ready.png",
+      "exists": true,
+      "w": 256,
+      "h": 256,
+      "bytes": 44477,
+      "mode": "RGBA",
+      "hasAlpha": true,
+      "alphaExtrema": [
+        0,
+        255
+      ],
+      "cornerAlpha": [
+        0,
+        0,
+        0,
+        0
+      ],
+      "transparentFraction": 0.537048,
+      "clearFractionInsideSilhouetteBounds": 0.098633,
+      "screenRectClear": null,
+      "tileEdgesMatch": null,
+      "metadataSource": "icons/_metadata_hud_a.json",
+      "sha256": "a3b362a43b93118c059e0b0dfdaa1c744b5f2ba112838c7230dc31b7ad3a48ef",
+      "format": "PNG",
+      "icoResolutions": null,
+      "icoFrames": null
+    },
+    {
+      "path": "Art/UI/icons/not_ready.png",
+      "exists": true,
+      "w": 256,
+      "h": 256,
+      "bytes": 47905,
+      "mode": "RGBA",
+      "hasAlpha": true,
+      "alphaExtrema": [
+        0,
+        255
+      ],
+      "cornerAlpha": [
+        0,
+        0,
+        0,
+        0
+      ],
+      "transparentFraction": 0.532837,
+      "clearFractionInsideSilhouetteBounds": 0.08445,
+      "screenRectClear": null,
+      "tileEdgesMatch": null,
+      "metadataSource": "icons/_metadata_hud_a.json",
+      "sha256": "00ac83f52a6ef5b715f9248064c7a54177d23a6ed1efc2ea48f88624bb696b36",
+      "format": "PNG",
+      "icoResolutions": null,
+      "icoFrames": null
+    },
+    {
+      "path": "Art/UI/icons/crown.png",
+      "exists": true,
+      "w": 256,
+      "h": 256,
+      "bytes": 51939,
+      "mode": "RGBA",
+      "hasAlpha": true,
+      "alphaExtrema": [
+        0,
+        255
+      ],
+      "cornerAlpha": [
+        0,
+        0,
+        0,
+        0
+      ],
+      "transparentFraction": 0.58783,
+      "clearFractionInsideSilhouetteBounds": 0.37035,
+      "screenRectClear": null,
+      "tileEdgesMatch": null,
+      "metadataSource": "icons/_metadata_hud_a.json",
+      "sha256": "dd6ad0137fa37a14aaa22d19ebd68c6e9f56c4427fc627de30fd00792b7a3649",
+      "format": "PNG",
+      "icoResolutions": null,
+      "icoFrames": null
+    },
+    {
+      "path": "Art/UI/icons/star.png",
+      "exists": true,
+      "w": 256,
+      "h": 256,
+      "bytes": 45184,
+      "mode": "RGBA",
+      "hasAlpha": true,
+      "alphaExtrema": [
+        0,
+        255
+      ],
+      "cornerAlpha": [
+        0,
+        0,
+        0,
+        0
+      ],
+      "transparentFraction": 0.57489,
+      "clearFractionInsideSilhouetteBounds": 0.410994,
+      "screenRectClear": null,
+      "tileEdgesMatch": null,
+      "metadataSource": "icons/_metadata_hud_a.json",
+      "sha256": "e4ee5bd3f40f9948fba2eed8af8ee012352e7795e683e3ec780d5cae6e25e164",
+      "format": "PNG",
+      "icoResolutions": null,
+      "icoFrames": null
+    },
+    {
+      "path": "Art/UI/icons/favor_heart.png",
+      "exists": true,
+      "w": 256,
+      "h": 256,
+      "bytes": 42901,
+      "mode": "RGBA",
+      "hasAlpha": true,
+      "alphaExtrema": [
+        0,
+        255
+      ],
+      "cornerAlpha": [
+        0,
+        0,
+        0,
+        0
+      ],
+      "transparentFraction": 0.552185,
+      "clearFractionInsideSilhouetteBounds": 0.242045,
+      "screenRectClear": null,
+      "tileEdgesMatch": null,
+      "metadataSource": "icons/_metadata_hud_a.json",
+      "sha256": "042a683a8c67065d7cf18c457125fe171ebc5291e02655a27db38aabd04abeb1",
+      "format": "PNG",
+      "icoResolutions": null,
+      "icoFrames": null
+    },
+    {
+      "path": "Art/UI/icons/lock_screen.png",
+      "exists": true,
+      "w": 256,
+      "h": 256,
+      "bytes": 55790,
+      "mode": "RGBA",
+      "hasAlpha": true,
+      "alphaExtrema": [
+        0,
+        255
+      ],
+      "cornerAlpha": [
+        0,
+        0,
+        0,
+        0
+      ],
+      "transparentFraction": 0.366409,
+      "clearFractionInsideSilhouetteBounds": 0.092592,
+      "screenRectClear": null,
+      "tileEdgesMatch": null,
+      "metadataSource": "icons/_metadata_hud_a.json",
+      "sha256": "a5779b17b3c3cf0b3c145360d07e7fb6efa44bcdbb5426ff0a66ba09154a08e8",
+      "format": "PNG",
+      "icoResolutions": null,
+      "icoFrames": null
+    },
+    {
+      "path": "Art/UI/icons/email.png",
+      "exists": true,
+      "w": 256,
+      "h": 256,
+      "bytes": 53207,
+      "mode": "RGBA",
+      "hasAlpha": true,
+      "alphaExtrema": [
+        0,
+        255
+      ],
+      "cornerAlpha": [
+        0,
+        0,
+        0,
+        0
+      ],
+      "transparentFraction": 0.513046,
+      "clearFractionInsideSilhouetteBounds": 0.141662,
+      "screenRectClear": null,
+      "tileEdgesMatch": null,
+      "metadataSource": "icons/_metadata_hud_a.json",
+      "sha256": "047596e35f41dd3b3bda242591d1c856183b42487748d1be324414a8b0a6df01",
+      "format": "PNG",
+      "icoResolutions": null,
+      "icoFrames": null
+    },
+    {
+      "path": "Art/UI/icons/notes.png",
+      "exists": true,
+      "w": 256,
+      "h": 256,
+      "bytes": 63509,
+      "mode": "RGBA",
+      "hasAlpha": true,
+      "alphaExtrema": [
+        0,
+        255
+      ],
+      "cornerAlpha": [
+        0,
+        0,
+        0,
+        0
+      ],
+      "transparentFraction": 0.470001,
+      "clearFractionInsideSilhouetteBounds": 0.237286,
+      "screenRectClear": null,
+      "tileEdgesMatch": null,
+      "metadataSource": "icons/_metadata_root.json",
+      "sha256": "6f0a14cb76aad949dee11e712051ed006e0189fb21092785c1618f222439c6b8",
+      "format": "PNG",
+      "icoResolutions": null,
+      "icoFrames": null
+    },
+    {
+      "path": "Art/UI/icons/objective.png",
+      "exists": true,
+      "w": 256,
+      "h": 256,
+      "bytes": 63751,
+      "mode": "RGBA",
+      "hasAlpha": true,
+      "alphaExtrema": [
+        0,
+        255
+      ],
+      "cornerAlpha": [
+        0,
+        0,
+        0,
+        0
+      ],
+      "transparentFraction": 0.515793,
+      "clearFractionInsideSilhouetteBounds": 0.329112,
+      "screenRectClear": null,
+      "tileEdgesMatch": null,
+      "metadataSource": "icons/_metadata_root.json",
+      "sha256": "ec82f0399d25ed1aa98cd3b84252521447eeaad2ad4fb1f2b876e95836d1fdfe",
+      "format": "PNG",
+      "icoResolutions": null,
+      "icoFrames": null
+    },
+    {
+      "path": "Art/UI/icons/cards.png",
+      "exists": true,
+      "w": 256,
+      "h": 256,
+      "bytes": 62472,
+      "mode": "RGBA",
+      "hasAlpha": true,
+      "alphaExtrema": [
+        0,
+        255
+      ],
+      "cornerAlpha": [
+        0,
+        0,
+        0,
+        0
+      ],
+      "transparentFraction": 0.44838,
+      "clearFractionInsideSilhouetteBounds": 0.213767,
+      "screenRectClear": null,
+      "tileEdgesMatch": null,
+      "metadataSource": "icons/_metadata_root.json",
+      "sha256": "773ea527a41134671ec3f4c315eb946a172e8574c8db6c90baec254f84faf095",
+      "format": "PNG",
+      "icoResolutions": null,
+      "icoFrames": null
+    },
+    {
+      "path": "Art/UI/icons/contacts.png",
+      "exists": true,
+      "w": 256,
+      "h": 256,
+      "bytes": 52559,
+      "mode": "RGBA",
+      "hasAlpha": true,
+      "alphaExtrema": [
+        0,
+        255
+      ],
+      "cornerAlpha": [
+        0,
+        0,
+        0,
+        0
+      ],
+      "transparentFraction": 0.460876,
+      "clearFractionInsideSilhouetteBounds": 0.131892,
+      "screenRectClear": null,
+      "tileEdgesMatch": null,
+      "metadataSource": "icons/_metadata_root.json",
+      "sha256": "c6d1d216870aeb53c2605edadc75f859c1a050cb3f3186de5aacd108206af3be",
+      "format": "PNG",
+      "icoResolutions": null,
+      "icoFrames": null
+    },
+    {
+      "path": "Art/UI/icons/warning.png",
+      "exists": true,
+      "w": 256,
+      "h": 256,
+      "bytes": 42253,
+      "mode": "RGBA",
+      "hasAlpha": true,
+      "alphaExtrema": [
+        0,
+        255
+      ],
+      "cornerAlpha": [
+        0,
+        0,
+        0,
+        0
+      ],
+      "transparentFraction": 0.548309,
+      "clearFractionInsideSilhouetteBounds": 0.313497,
+      "screenRectClear": null,
+      "tileEdgesMatch": null,
+      "metadataSource": "icons/_metadata_root.json",
+      "sha256": "01651e2d73993f72d5cb9c086e0c8f431cd9c28f0113071b862016cd8bb8c590",
+      "format": "PNG",
+      "icoResolutions": null,
+      "icoFrames": null
+    },
+    {
+      "path": "Art/UI/icons/check.png",
+      "exists": true,
+      "w": 256,
+      "h": 256,
+      "bytes": 33757,
+      "mode": "RGBA",
+      "hasAlpha": true,
+      "alphaExtrema": [
+        0,
+        255
+      ],
+      "cornerAlpha": [
+        0,
+        0,
+        0,
+        0
+      ],
+      "transparentFraction": 0.703674,
+      "clearFractionInsideSilhouetteBounds": 0.483785,
+      "screenRectClear": null,
+      "tileEdgesMatch": null,
+      "metadataSource": "icons/_metadata_root.json",
+      "sha256": "81bb749553a542d53da71e372d292eb798e9170b787a61e4094f3403e5aebf40",
+      "format": "PNG",
+      "icoResolutions": null,
+      "icoFrames": null
+    },
+    {
+      "path": "Art/UI/icons/cross.png",
+      "exists": true,
+      "w": 256,
+      "h": 256,
+      "bytes": 52293,
+      "mode": "RGBA",
+      "hasAlpha": true,
+      "alphaExtrema": [
+        0,
+        255
+      ],
+      "cornerAlpha": [
+        0,
+        0,
+        0,
+        0
+      ],
+      "transparentFraction": 0.449112,
+      "clearFractionInsideSilhouetteBounds": 0.233156,
+      "screenRectClear": null,
+      "tileEdgesMatch": null,
+      "metadataSource": "icons/_metadata_root.json",
+      "sha256": "39ba17a33bce63d0ec3e6dc9437db6a8fe830176449d8f7fcfb5e4f021138a7b",
+      "format": "PNG",
+      "icoResolutions": null,
+      "icoFrames": null
+    },
+    {
+      "path": "Art/UI/icons/info.png",
+      "exists": true,
+      "w": 256,
+      "h": 256,
+      "bytes": 61550,
+      "mode": "RGBA",
+      "hasAlpha": true,
+      "alphaExtrema": [
+        0,
+        255
+      ],
+      "cornerAlpha": [
+        0,
+        0,
+        0,
+        0
+      ],
+      "transparentFraction": 0.411774,
+      "clearFractionInsideSilhouetteBounds": 0.199875,
+      "screenRectClear": null,
+      "tileEdgesMatch": null,
+      "metadataSource": "icons/_metadata_root.json",
+      "sha256": "eaa78eb1480f73b3938a4d7334508569c8548173d5bd4a05630c4366f36e315a",
+      "format": "PNG",
+      "icoResolutions": null,
+      "icoFrames": null
+    },
+    {
+      "path": "Art/UI/icons/kick.png",
+      "exists": true,
+      "w": 256,
+      "h": 256,
+      "bytes": 39796,
+      "mode": "RGBA",
+      "hasAlpha": true,
+      "alphaExtrema": [
+        0,
+        255
+      ],
+      "cornerAlpha": [
+        0,
+        0,
+        0,
+        0
+      ],
+      "transparentFraction": 0.693939,
+      "clearFractionInsideSilhouetteBounds": 0.4041,
+      "screenRectClear": null,
+      "tileEdgesMatch": null,
+      "metadataSource": "icons/_metadata_root.json",
+      "sha256": "02997bd541778d59274c8769eab5c63d3f079736ff019981b69578260a972ab5",
+      "format": "PNG",
+      "icoResolutions": null,
+      "icoFrames": null
+    },
+    {
+      "path": "Art/UI/icons/host.png",
+      "exists": true,
+      "w": 256,
+      "h": 256,
+      "bytes": 51501,
+      "mode": "RGBA",
+      "hasAlpha": true,
+      "alphaExtrema": [
+        0,
+        255
+      ],
+      "cornerAlpha": [
+        0,
+        0,
+        0,
+        0
+      ],
+      "transparentFraction": 0.491333,
+      "clearFractionInsideSilhouetteBounds": 0.194004,
+      "screenRectClear": null,
+      "tileEdgesMatch": null,
+      "metadataSource": "icons/_metadata_root.json",
+      "sha256": "bd4b844b70240e37315e42d9f70d1e1e721c8d50347726b5cba977299c3bb740",
+      "format": "PNG",
+      "icoResolutions": null,
+      "icoFrames": null
+    },
+    {
+      "path": "Art/UI/icons/week_calendar.png",
+      "exists": true,
+      "w": 256,
+      "h": 256,
+      "bytes": 46690,
+      "mode": "RGBA",
+      "hasAlpha": true,
+      "alphaExtrema": [
+        0,
+        255
+      ],
+      "cornerAlpha": [
+        0,
+        0,
+        0,
+        0
+      ],
+      "transparentFraction": 0.55835,
+      "clearFractionInsideSilhouetteBounds": 0.151202,
+      "screenRectClear": null,
+      "tileEdgesMatch": null,
+      "metadataSource": "icons/_metadata_root.json",
+      "sha256": "00c732c5cf368171c6968d045e1d7352cf45b0d0d87c707e9d89200db33e17d0",
+      "format": "PNG",
+      "icoResolutions": null,
+      "icoFrames": null
+    },
+    {
+      "path": "Art/UI/icons/emote_wave.png",
+      "exists": true,
+      "w": 256,
+      "h": 256,
+      "bytes": 57679,
+      "mode": "RGBA",
+      "hasAlpha": true,
+      "alphaExtrema": [
+        0,
+        255
+      ],
+      "cornerAlpha": [
+        0,
+        0,
+        0,
+        0
+      ],
+      "transparentFraction": 0.57135,
+      "clearFractionInsideSilhouetteBounds": 0.313964,
+      "screenRectClear": null,
+      "tileEdgesMatch": null,
+      "metadataSource": "icons/_metadata_emotes.json",
+      "sha256": "b219f1e4b61558f3bcca204e6297b33a803c1d7edaa64269ec0bb210dc882ad4",
+      "format": "PNG",
+      "icoResolutions": null,
+      "icoFrames": null
+    },
+    {
+      "path": "Art/UI/icons/emote_point.png",
+      "exists": true,
+      "w": 256,
+      "h": 256,
+      "bytes": 49973,
+      "mode": "RGBA",
+      "hasAlpha": true,
+      "alphaExtrema": [
+        0,
+        255
+      ],
+      "cornerAlpha": [
+        0,
+        0,
+        0,
+        0
+      ],
+      "transparentFraction": 0.62706,
+      "clearFractionInsideSilhouetteBounds": 0.397275,
+      "screenRectClear": null,
+      "tileEdgesMatch": null,
+      "metadataSource": "icons/_metadata_emotes.json",
+      "sha256": "c2bd305e7b9c720ff30cedb4a451905fdd9776dabebd321523eb87786e3abe42",
+      "format": "PNG",
+      "icoResolutions": null,
+      "icoFrames": null
+    },
+    {
+      "path": "Art/UI/icons/emote_facepalm.png",
+      "exists": true,
+      "w": 256,
+      "h": 256,
+      "bytes": 51426,
+      "mode": "RGBA",
+      "hasAlpha": true,
+      "alphaExtrema": [
+        0,
+        255
+      ],
+      "cornerAlpha": [
+        0,
+        0,
+        0,
+        0
+      ],
+      "transparentFraction": 0.589828,
+      "clearFractionInsideSilhouetteBounds": 0.274015,
+      "screenRectClear": null,
+      "tileEdgesMatch": null,
+      "metadataSource": "icons/_metadata_emotes.json",
+      "sha256": "1be51b00fc25a0ca66aa9da507af79efa3bede89184827a76d02423818c2fa9a",
+      "format": "PNG",
+      "icoResolutions": null,
+      "icoFrames": null
+    },
+    {
+      "path": "Art/UI/icons/emote_shrug.png",
+      "exists": true,
+      "w": 256,
+      "h": 256,
+      "bytes": 50046,
+      "mode": "RGBA",
+      "hasAlpha": true,
+      "alphaExtrema": [
+        0,
+        255
+      ],
+      "cornerAlpha": [
+        0,
+        0,
+        0,
+        0
+      ],
+      "transparentFraction": 0.636551,
+      "clearFractionInsideSilhouetteBounds": 0.438712,
+      "screenRectClear": null,
+      "tileEdgesMatch": null,
+      "metadataSource": "icons/_metadata_emotes.json",
+      "sha256": "e8319c85c29d569d2da00950ee8045ee6ac7cc4bac23e8cdc3a7fedb3bfed48e",
+      "format": "PNG",
+      "icoResolutions": null,
+      "icoFrames": null
+    },
+    {
+      "path": "Art/UI/icons/emote_laugh.png",
+      "exists": true,
+      "w": 256,
+      "h": 256,
+      "bytes": 55418,
+      "mode": "RGBA",
+      "hasAlpha": true,
+      "alphaExtrema": [
+        0,
+        255
+      ],
+      "cornerAlpha": [
+        0,
+        0,
+        0,
+        0
+      ],
+      "transparentFraction": 0.575302,
+      "clearFractionInsideSilhouetteBounds": 0.232973,
+      "screenRectClear": null,
+      "tileEdgesMatch": null,
+      "metadataSource": "icons/_metadata_emotes.json",
+      "sha256": "df792ed3e5d1471549e9c178edab5f2603f20adfde92bc8e293b0ca15888eb3e",
+      "format": "PNG",
+      "icoResolutions": null,
+      "icoFrames": null
+    },
+    {
+      "path": "Art/UI/cards/card_password.png",
+      "exists": true,
+      "w": 512,
+      "h": 716,
+      "bytes": 220043,
+      "mode": "RGBA",
+      "hasAlpha": true,
+      "alphaExtrema": [
+        0,
+        255
+      ],
+      "cornerAlpha": [
+        0,
+        0,
+        0,
+        0
+      ],
+      "transparentFraction": 0.076153,
+      "clearFractionInsideSilhouetteBounds": 0.002173,
+      "screenRectClear": null,
+      "tileEdgesMatch": null,
+      "metadataSource": "cards/_metadata.json",
+      "sha256": "5ece06a0cabf597f3092a9bd6abc86da49bf1afcc6c6566288a9d9da85f45005",
+      "format": "PNG",
+      "icoResolutions": null,
+      "icoFrames": null
+    },
+    {
+      "path": "Art/UI/cards/card_fake_email.png",
+      "exists": true,
+      "w": 512,
+      "h": 716,
+      "bytes": 208735,
+      "mode": "RGBA",
+      "hasAlpha": true,
+      "alphaExtrema": [
+        0,
+        255
+      ],
+      "cornerAlpha": [
+        0,
+        0,
+        0,
+        0
+      ],
+      "transparentFraction": 0.076153,
+      "clearFractionInsideSilhouetteBounds": 0.002173,
+      "screenRectClear": null,
+      "tileEdgesMatch": null,
+      "metadataSource": "cards/_metadata.json",
+      "sha256": "3b9fa66a3df093bfebc83a703e1036b4fd60a783aaf59638a9cf50cb16d9ca13",
+      "format": "PNG",
+      "icoResolutions": null,
+      "icoFrames": null
+    },
+    {
+      "path": "Art/UI/cards/card_pull_plug.png",
+      "exists": true,
+      "w": 512,
+      "h": 716,
+      "bytes": 188488,
+      "mode": "RGBA",
+      "hasAlpha": true,
+      "alphaExtrema": [
+        0,
+        255
+      ],
+      "cornerAlpha": [
+        0,
+        0,
+        0,
+        0
+      ],
+      "transparentFraction": 0.076153,
+      "clearFractionInsideSilhouetteBounds": 0.002173,
+      "screenRectClear": null,
+      "tileEdgesMatch": null,
+      "metadataSource": "cards/_metadata.json",
+      "sha256": "bb01b946ae0bbd769c5fee5796704dcc487bea971924933ff026fbedc9bcbed6",
+      "format": "PNG",
+      "icoResolutions": null,
+      "icoFrames": null
+    },
+    {
+      "path": "Art/UI/cards/card_salt.png",
+      "exists": true,
+      "w": 512,
+      "h": 716,
+      "bytes": 185792,
+      "mode": "RGBA",
+      "hasAlpha": true,
+      "alphaExtrema": [
+        0,
+        255
+      ],
+      "cornerAlpha": [
+        0,
+        0,
+        0,
+        0
+      ],
+      "transparentFraction": 0.076153,
+      "clearFractionInsideSilhouetteBounds": 0.002173,
+      "screenRectClear": null,
+      "tileEdgesMatch": null,
+      "metadataSource": "cards/_metadata.json",
+      "sha256": "5f4ef96a610792688935a10c1f727c4e58fb714743ed2e869adc37874bf341d4",
+      "format": "PNG",
+      "icoResolutions": null,
+      "icoFrames": null
+    },
+    {
+      "path": "Art/UI/cards/card_internet.png",
+      "exists": true,
+      "w": 512,
+      "h": 716,
+      "bytes": 187964,
+      "mode": "RGBA",
+      "hasAlpha": true,
+      "alphaExtrema": [
+        0,
+        255
+      ],
+      "cornerAlpha": [
+        0,
+        0,
+        0,
+        0
+      ],
+      "transparentFraction": 0.076153,
+      "clearFractionInsideSilhouetteBounds": 0.002173,
+      "screenRectClear": null,
+      "tileEdgesMatch": null,
+      "metadataSource": "cards/_metadata.json",
+      "sha256": "becaf88e81b0fab4f81d43516ad6980f7e02eb9dfbbcdfbe00b5fc2ed713243e",
+      "format": "PNG",
+      "icoResolutions": null,
+      "icoFrames": null
+    },
+    {
+      "path": "Art/UI/cards/card_power.png",
+      "exists": true,
+      "w": 512,
+      "h": 716,
+      "bytes": 172187,
+      "mode": "RGBA",
+      "hasAlpha": true,
+      "alphaExtrema": [
+        0,
+        255
+      ],
+      "cornerAlpha": [
+        0,
+        0,
+        0,
+        0
+      ],
+      "transparentFraction": 0.076153,
+      "clearFractionInsideSilhouetteBounds": 0.002173,
+      "screenRectClear": null,
+      "tileEdgesMatch": null,
+      "metadataSource": "cards/_metadata.json",
+      "sha256": "c413e2d64bc1423a84bc7aca422ed8195b96e22426b80b7aae421522bacfb3f7",
+      "format": "PNG",
+      "icoResolutions": null,
+      "icoFrames": null
+    },
+    {
+      "path": "Art/UI/cards/card_back.png",
+      "exists": true,
+      "w": 512,
+      "h": 716,
+      "bytes": 88687,
+      "mode": "RGBA",
+      "hasAlpha": true,
+      "alphaExtrema": [
+        0,
+        255
+      ],
+      "cornerAlpha": [
+        0,
+        0,
+        0,
+        0
+      ],
+      "transparentFraction": 0.076153,
+      "clearFractionInsideSilhouetteBounds": 0.002173,
+      "screenRectClear": null,
+      "tileEdgesMatch": null,
+      "metadataSource": "cards/_metadata.json",
+      "sha256": "8d283032d8fc4298c96875914dbfbe66fbb23eef0170f43ffc747556a472d465",
+      "format": "PNG",
+      "icoResolutions": null,
+      "icoFrames": null
+    },
+    {
+      "path": "Art/UI/cards/card_frame_empty.png",
+      "exists": true,
+      "w": 512,
+      "h": 716,
+      "bytes": 14630,
+      "mode": "RGBA",
+      "hasAlpha": true,
+      "alphaExtrema": [
+        0,
+        255
+      ],
+      "cornerAlpha": [
+        0,
+        0,
+        0,
+        0
+      ],
+      "transparentFraction": 0.621945,
+      "clearFractionInsideSilhouetteBounds": 0.596248,
+      "screenRectClear": null,
+      "tileEdgesMatch": null,
+      "metadataSource": "cards/_metadata.json",
+      "sha256": "069b65254b2f391e51b9967aa27154cdb55b2639e832b44aa3ac162ae216ce58",
+      "format": "PNG",
+      "icoResolutions": null,
+      "icoFrames": null
+    },
+    {
+      "path": "Art/UI/portraits/mgr_paragoz.png",
+      "exists": true,
+      "w": 512,
+      "h": 512,
+      "bytes": 211036,
+      "mode": "RGBA",
+      "hasAlpha": true,
+      "alphaExtrema": [
+        0,
+        255
+      ],
+      "cornerAlpha": [
+        0,
+        0,
+        0,
+        0
+      ],
+      "transparentFraction": 0.520073,
+      "clearFractionInsideSilhouetteBounds": 0.265506,
+      "screenRectClear": null,
+      "tileEdgesMatch": null,
+      "metadataSource": "portraits/_metadata.json",
+      "sha256": "1b96ac1169bd753170e89fc7cad8e9e5a2485b691cd8dc81b407262bfb47da86",
+      "format": "PNG",
+      "icoResolutions": null,
+      "icoFrames": null
+    },
+    {
+      "path": "Art/UI/portraits/mgr_paragoz_angry.png",
+      "exists": true,
+      "w": 512,
+      "h": 512,
+      "bytes": 205537,
+      "mode": "RGBA",
+      "hasAlpha": true,
+      "alphaExtrema": [
+        0,
+        255
+      ],
+      "cornerAlpha": [
+        0,
+        0,
+        0,
+        0
+      ],
+      "transparentFraction": 0.520248,
+      "clearFractionInsideSilhouetteBounds": 0.267775,
+      "screenRectClear": null,
+      "tileEdgesMatch": null,
+      "metadataSource": "portraits/_metadata.json",
+      "sha256": "2cc26e912dc5f92f9ff81b35f9f53a9fe560f80694fa65744ae3a43ce46700a4",
+      "format": "PNG",
+      "icoResolutions": null,
+      "icoFrames": null
+    },
+    {
+      "path": "Art/UI/portraits/mgr_disiplinci.png",
+      "exists": true,
+      "w": 512,
+      "h": 512,
+      "bytes": 210500,
+      "mode": "RGBA",
+      "hasAlpha": true,
+      "alphaExtrema": [
+        0,
+        255
+      ],
+      "cornerAlpha": [
+        0,
+        0,
+        0,
+        0
+      ],
+      "transparentFraction": 0.538921,
+      "clearFractionInsideSilhouetteBounds": 0.294352,
+      "screenRectClear": null,
+      "tileEdgesMatch": null,
+      "metadataSource": "portraits/_metadata.json",
+      "sha256": "910ae4fdf364b72bf7b9f460e4f9b9dd9bddcba06b0d79e0cb82025f6f69e449",
+      "format": "PNG",
+      "icoResolutions": null,
+      "icoFrames": null
+    },
+    {
+      "path": "Art/UI/portraits/mgr_disiplinci_angry.png",
+      "exists": true,
+      "w": 512,
+      "h": 512,
+      "bytes": 207145,
+      "mode": "RGBA",
+      "hasAlpha": true,
+      "alphaExtrema": [
+        0,
+        255
+      ],
+      "cornerAlpha": [
+        0,
+        0,
+        0,
+        0
+      ],
+      "transparentFraction": 0.537991,
+      "clearFractionInsideSilhouetteBounds": 0.292928,
+      "screenRectClear": null,
+      "tileEdgesMatch": null,
+      "metadataSource": "portraits/_metadata.json",
+      "sha256": "a596532885f01ef76d607501cd2bd517839d971c2fc025cfeea65640f73f6692",
+      "format": "PNG",
+      "icoResolutions": null,
+      "icoFrames": null
+    },
+    {
+      "path": "Art/UI/portraits/mgr_kayirmaci.png",
+      "exists": true,
+      "w": 512,
+      "h": 512,
+      "bytes": 78526,
+      "mode": "RGBA",
+      "hasAlpha": true,
+      "alphaExtrema": [
+        0,
+        255
+      ],
+      "cornerAlpha": [
+        0,
+        0,
+        0,
+        0
+      ],
+      "transparentFraction": 0.485603,
+      "clearFractionInsideSilhouetteBounds": 0.305705,
+      "screenRectClear": null,
+      "tileEdgesMatch": null,
+      "metadataSource": "portraits/_metadata.json",
+      "sha256": "dd3cb22b2c9a416283d0e0672f9dec52616b952a1a2a8f60aaea8d112a5b6057",
+      "format": "PNG",
+      "icoResolutions": null,
+      "icoFrames": null
+    },
+    {
+      "path": "Art/UI/portraits/mgr_kayirmaci_angry.png",
+      "exists": true,
+      "w": 512,
+      "h": 512,
+      "bytes": 80191,
+      "mode": "RGBA",
+      "hasAlpha": true,
+      "alphaExtrema": [
+        0,
+        255
+      ],
+      "cornerAlpha": [
+        0,
+        0,
+        0,
+        0
+      ],
+      "transparentFraction": 0.484116,
+      "clearFractionInsideSilhouetteBounds": 0.305371,
+      "screenRectClear": null,
+      "tileEdgesMatch": null,
+      "metadataSource": "portraits/_metadata.json",
+      "sha256": "f24abd5883974335782ca29e3248120d17e6d609715e4a5e033d2320e7bf908a",
+      "format": "PNG",
+      "icoResolutions": null,
+      "icoFrames": null
+    },
+    {
+      "path": "Art/UI/portraits/mgr_paranoyak.png",
+      "exists": true,
+      "w": 512,
+      "h": 512,
+      "bytes": 82046,
+      "mode": "RGBA",
+      "hasAlpha": true,
+      "alphaExtrema": [
+        0,
+        255
+      ],
+      "cornerAlpha": [
+        0,
+        0,
+        0,
+        0
+      ],
+      "transparentFraction": 0.461487,
+      "clearFractionInsideSilhouetteBounds": 0.253364,
+      "screenRectClear": null,
+      "tileEdgesMatch": null,
+      "metadataSource": "portraits/_metadata.json",
+      "sha256": "0f8221ff23e06f9eebc22b44f14f934a24206586f8a959251928e345cf45f6c2",
+      "format": "PNG",
+      "icoResolutions": null,
+      "icoFrames": null
+    },
+    {
+      "path": "Art/UI/portraits/mgr_paranoyak_angry.png",
+      "exists": true,
+      "w": 512,
+      "h": 512,
+      "bytes": 89031,
+      "mode": "RGBA",
+      "hasAlpha": true,
+      "alphaExtrema": [
+        0,
+        255
+      ],
+      "cornerAlpha": [
+        0,
+        0,
+        0,
+        0
+      ],
+      "transparentFraction": 0.460957,
+      "clearFractionInsideSilhouetteBounds": 0.254474,
+      "screenRectClear": null,
+      "tileEdgesMatch": null,
+      "metadataSource": "portraits/_metadata.json",
+      "sha256": "14d9477507cc9243409c3e772ad03bf6a0f5d5309c411f8b3e26732598c0a2cc",
+      "format": "PNG",
+      "icoResolutions": null,
+      "icoFrames": null
+    },
+    {
+      "path": "Art/UI/portraits/player_0.png",
+      "exists": true,
+      "w": 512,
+      "h": 512,
+      "bytes": 191337,
+      "mode": "RGBA",
+      "hasAlpha": true,
+      "alphaExtrema": [
+        0,
+        255
+      ],
+      "cornerAlpha": [
+        0,
+        0,
+        0,
+        0
+      ],
+      "transparentFraction": 0.536541,
+      "clearFractionInsideSilhouetteBounds": 0.264588,
+      "screenRectClear": null,
+      "tileEdgesMatch": null,
+      "metadataSource": "portraits/_metadata.json",
+      "sha256": "05ebca8b01fd54392ce94b7f6f8c402bd19d068516ec4768f41e3cac05adc1e7",
+      "format": "PNG",
+      "icoResolutions": null,
+      "icoFrames": null
+    },
+    {
+      "path": "Art/UI/portraits/player_1.png",
+      "exists": true,
+      "w": 512,
+      "h": 512,
+      "bytes": 215208,
+      "mode": "RGBA",
+      "hasAlpha": true,
+      "alphaExtrema": [
+        0,
+        255
+      ],
+      "cornerAlpha": [
+        0,
+        0,
+        0,
+        0
+      ],
+      "transparentFraction": 0.458076,
+      "clearFractionInsideSilhouetteBounds": 0.300573,
+      "screenRectClear": null,
+      "tileEdgesMatch": null,
+      "metadataSource": "portraits/_metadata.json",
+      "sha256": "f2d78d3929d5c17d3fc5c4273d10edb629775fdd03f8f53549244a343ac39d79",
+      "format": "PNG",
+      "icoResolutions": null,
+      "icoFrames": null
+    },
+    {
+      "path": "Art/UI/portraits/player_2.png",
+      "exists": true,
+      "w": 512,
+      "h": 512,
+      "bytes": 190846,
+      "mode": "RGBA",
+      "hasAlpha": true,
+      "alphaExtrema": [
+        0,
+        255
+      ],
+      "cornerAlpha": [
+        0,
+        0,
+        0,
+        0
+      ],
+      "transparentFraction": 0.526337,
+      "clearFractionInsideSilhouetteBounds": 0.284862,
+      "screenRectClear": null,
+      "tileEdgesMatch": null,
+      "metadataSource": "portraits/_metadata.json",
+      "sha256": "c00168654ebc84c68b831c156f7fcfa64a00454e165efee30be07e78953b0fbf",
+      "format": "PNG",
+      "icoResolutions": null,
+      "icoFrames": null
+    },
+    {
+      "path": "Art/UI/portraits/player_3.png",
+      "exists": true,
+      "w": 512,
+      "h": 512,
+      "bytes": 91413,
+      "mode": "RGBA",
+      "hasAlpha": true,
+      "alphaExtrema": [
+        0,
+        255
+      ],
+      "cornerAlpha": [
+        0,
+        0,
+        0,
+        0
+      ],
+      "transparentFraction": 0.463448,
+      "clearFractionInsideSilhouetteBounds": 0.21937,
+      "screenRectClear": null,
+      "tileEdgesMatch": null,
+      "metadataSource": "portraits/_metadata.json",
+      "sha256": "712fb095c6edea9916b046426c8333c91c80ee35487159c660233b7d119241d4",
+      "format": "PNG",
+      "icoResolutions": null,
+      "icoFrames": null
+    },
+    {
+      "path": "Art/UI/portraits/player_4.png",
+      "exists": true,
+      "w": 512,
+      "h": 512,
+      "bytes": 205288,
+      "mode": "RGBA",
+      "hasAlpha": true,
+      "alphaExtrema": [
+        0,
+        255
+      ],
+      "cornerAlpha": [
+        0,
+        0,
+        0,
+        0
+      ],
+      "transparentFraction": 0.521015,
+      "clearFractionInsideSilhouetteBounds": 0.266948,
+      "screenRectClear": null,
+      "tileEdgesMatch": null,
+      "metadataSource": "portraits/_metadata.json",
+      "sha256": "09a8c7eae019d728db6d208d097804df4ae9bfa4dfba407001a0e3c3fdec87d5",
+      "format": "PNG",
+      "icoResolutions": null,
+      "icoFrames": null
+    },
+    {
+      "path": "Art/UI/portraits/player_5.png",
+      "exists": true,
+      "w": 512,
+      "h": 512,
+      "bytes": 203270,
+      "mode": "RGBA",
+      "hasAlpha": true,
+      "alphaExtrema": [
+        0,
+        255
+      ],
+      "cornerAlpha": [
+        0,
+        0,
+        0,
+        0
+      ],
+      "transparentFraction": 0.510841,
+      "clearFractionInsideSilhouetteBounds": 0.241009,
+      "screenRectClear": null,
+      "tileEdgesMatch": null,
+      "metadataSource": "portraits/_metadata.json",
+      "sha256": "9a8b8d01e07e3d2a1bbf2d4f6ef46e1e84f6473f92ff6a17010cc6ecba26bfa2",
+      "format": "PNG",
+      "icoResolutions": null,
+      "icoFrames": null
+    },
+    {
+      "path": "Art/UI/portraits/player_unknown.png",
+      "exists": true,
+      "w": 512,
+      "h": 512,
+      "bytes": 218429,
+      "mode": "RGBA",
+      "hasAlpha": true,
+      "alphaExtrema": [
+        0,
+        255
+      ],
+      "cornerAlpha": [
+        0,
+        0,
+        0,
+        0
+      ],
+      "transparentFraction": 0.473644,
+      "clearFractionInsideSilhouetteBounds": 0.253592,
+      "screenRectClear": null,
+      "tileEdgesMatch": null,
+      "metadataSource": "portraits/_metadata.json",
+      "sha256": "1e58e74f5701078bf72a330a23444c1bc25d40eb2a8f80b989757ef4a257a2aa",
+      "format": "PNG",
+      "icoResolutions": null,
+      "icoFrames": null
+    },
+    {
+      "path": "Art/UI/stamps/stamp_kovuldu.png",
+      "exists": true,
+      "w": 960,
+      "h": 320,
+      "bytes": 100274,
+      "mode": "RGBA",
+      "hasAlpha": true,
+      "alphaExtrema": [
+        0,
+        255
+      ],
+      "cornerAlpha": [
+        0,
+        0,
+        0,
+        0
+      ],
+      "transparentFraction": 0.788359,
+      "clearFractionInsideSilhouetteBounds": 0.714671,
+      "screenRectClear": null,
+      "tileEdgesMatch": null,
+      "metadataSource": "stamps/_metadata.json",
+      "sha256": "ba42201c71a9bb160f275b778383ac76c1ac9a0ba0ba371745509d835cd7555b",
+      "format": "PNG",
+      "icoResolutions": null,
+      "icoFrames": null
+    },
+    {
+      "path": "Art/UI/stamps/stamp_kurtuldu.png",
+      "exists": true,
+      "w": 960,
+      "h": 320,
+      "bytes": 98186,
+      "mode": "RGBA",
+      "hasAlpha": true,
+      "alphaExtrema": [
+        0,
+        255
+      ],
+      "cornerAlpha": [
+        0,
+        0,
+        0,
+        0
+      ],
+      "transparentFraction": 0.77488,
+      "clearFractionInsideSilhouetteBounds": 0.677842,
+      "screenRectClear": null,
+      "tileEdgesMatch": null,
+      "metadataSource": "stamps/_metadata.json",
+      "sha256": "38f807f0291be9f74bffe27f4995e35e96363a8b84714b70a83bd7b045216e46",
+      "format": "PNG",
+      "icoResolutions": null,
+      "icoFrames": null
+    },
+    {
+      "path": "Art/UI/stamps/stamp_onaylandi.png",
+      "exists": true,
+      "w": 960,
+      "h": 320,
+      "bytes": 97132,
+      "mode": "RGBA",
+      "hasAlpha": true,
+      "alphaExtrema": [
+        0,
+        255
+      ],
+      "cornerAlpha": [
+        0,
+        0,
+        0,
+        0
+      ],
+      "transparentFraction": 0.776722,
+      "clearFractionInsideSilhouetteBounds": 0.680479,
+      "screenRectClear": null,
+      "tileEdgesMatch": null,
+      "metadataSource": "stamps/_metadata.json",
+      "sha256": "3b2c89ab96eb44d0fdd31617db95e9b02b4e22ba209998e3477309b7ba93b10f",
+      "format": "PNG",
+      "icoResolutions": null,
+      "icoFrames": null
+    },
+    {
+      "path": "Art/UI/stamps/stamp_reddedildi.png",
+      "exists": true,
+      "w": 960,
+      "h": 320,
+      "bytes": 107138,
+      "mode": "RGBA",
+      "hasAlpha": true,
+      "alphaExtrema": [
+        0,
+        255
+      ],
+      "cornerAlpha": [
+        0,
+        0,
+        0,
+        0
+      ],
+      "transparentFraction": 0.768548,
+      "clearFractionInsideSilhouetteBounds": 0.687961,
+      "screenRectClear": null,
+      "tileEdgesMatch": null,
+      "metadataSource": "stamps/_metadata.json",
+      "sha256": "4b62d32d524c0816b6321f3347797c4d20a7f7e5a1ee89e66096fb41b4488f00",
+      "format": "PNG",
+      "icoResolutions": null,
+      "icoFrames": null
+    },
+    {
+      "path": "Art/UI/stamps/stamp_gizli.png",
+      "exists": true,
+      "w": 960,
+      "h": 320,
+      "bytes": 80949,
+      "mode": "RGBA",
+      "hasAlpha": true,
+      "alphaExtrema": [
+        0,
+        255
+      ],
+      "cornerAlpha": [
+        0,
+        0,
+        0,
+        0
+      ],
+      "transparentFraction": 0.83457,
+      "clearFractionInsideSilhouetteBounds": 0.776979,
+      "screenRectClear": null,
+      "tileEdgesMatch": null,
+      "metadataSource": "stamps/_metadata.json",
+      "sha256": "63bbcc21e219450ac19d90d4c52ec7587d67612634e24ee847a37e25c3cb1c5e",
+      "format": "PNG",
+      "icoResolutions": null,
+      "icoFrames": null
+    },
+    {
+      "path": "Art/UI/stamps/stamp_ayin_elemani.png",
+      "exists": true,
+      "w": 960,
+      "h": 320,
+      "bytes": 96632,
+      "mode": "RGBA",
+      "hasAlpha": true,
+      "alphaExtrema": [
+        0,
+        255
+      ],
+      "cornerAlpha": [
+        0,
+        0,
+        0,
+        0
+      ],
+      "transparentFraction": 0.796458,
+      "clearFractionInsideSilhouetteBounds": 0.70873,
+      "screenRectClear": null,
+      "tileEdgesMatch": null,
+      "metadataSource": "stamps/_metadata.json",
+      "sha256": "c0a8c59601d69b52820483f84289934ad0293e39a1e019578d6841faac75273a",
+      "format": "PNG",
+      "icoResolutions": null,
+      "icoFrames": null
+    },
+    {
+      "path": "Art/UI/phone/phone_frame.png",
+      "exists": true,
+      "w": 600,
+      "h": 1200,
+      "bytes": 31498,
+      "mode": "RGBA",
+      "hasAlpha": true,
+      "alphaExtrema": [
+        0,
+        255
+      ],
+      "cornerAlpha": [
+        0,
+        0,
+        0,
+        0
+      ],
+      "transparentFraction": 0.765951,
+      "clearFractionInsideSilhouetteBounds": 0.757526,
+      "screenRectClear": true,
+      "tileEdgesMatch": null,
+      "metadataSource": "phone/_metadata_frames.json",
+      "sha256": "c770028e3652ddc046c0c4e4689efc32963e9d6d903d4aa21368ad75afc6a61c",
+      "format": "PNG",
+      "icoResolutions": null,
+      "icoFrames": null
+    },
+    {
+      "path": "Art/UI/phone/app_tasks.png",
+      "exists": true,
+      "w": 192,
+      "h": 192,
+      "bytes": 43999,
+      "mode": "RGBA",
+      "hasAlpha": true,
+      "alphaExtrema": [
+        0,
+        255
+      ],
+      "cornerAlpha": [
+        0,
+        0,
+        0,
+        0
+      ],
+      "transparentFraction": 0.222711,
+      "clearFractionInsideSilhouetteBounds": 0.025772,
+      "screenRectClear": null,
+      "tileEdgesMatch": null,
+      "metadataSource": "phone/_metadata_apps.json",
+      "sha256": "d247a5df0d2d24ca1250641e345a79615829240afcb80ba18fe3769bb1c1e05a",
+      "format": "PNG",
+      "icoResolutions": null,
+      "icoFrames": null
+    },
+    {
+      "path": "Art/UI/phone/app_cards.png",
+      "exists": true,
+      "w": 192,
+      "h": 192,
+      "bytes": 44886,
+      "mode": "RGBA",
+      "hasAlpha": true,
+      "alphaExtrema": [
+        0,
+        255
+      ],
+      "cornerAlpha": [
+        0,
+        0,
+        0,
+        0
+      ],
+      "transparentFraction": 0.217719,
+      "clearFractionInsideSilhouetteBounds": 0.019516,
+      "screenRectClear": null,
+      "tileEdgesMatch": null,
+      "metadataSource": "phone/_metadata_apps.json",
+      "sha256": "ee9699b0489b9228dc5e061859cccdeeb8635460e35f4c3b0c793c4e8a83d98c",
+      "format": "PNG",
+      "icoResolutions": null,
+      "icoFrames": null
+    },
+    {
+      "path": "Art/UI/phone/app_contacts.png",
+      "exists": true,
+      "w": 192,
+      "h": 192,
+      "bytes": 40483,
+      "mode": "RGBA",
+      "hasAlpha": true,
+      "alphaExtrema": [
+        0,
+        255
+      ],
+      "cornerAlpha": [
+        0,
+        0,
+        0,
+        0
+      ],
+      "transparentFraction": 0.227837,
+      "clearFractionInsideSilhouetteBounds": 0.026505,
+      "screenRectClear": null,
+      "tileEdgesMatch": null,
+      "metadataSource": "phone/_metadata_apps.json",
+      "sha256": "7802b47dc512184ac71702559861bd150b571c1efa47f641346bb607741aa495",
+      "format": "PNG",
+      "icoResolutions": null,
+      "icoFrames": null
+    },
+    {
+      "path": "Art/UI/phone/app_inbox.png",
+      "exists": true,
+      "w": 192,
+      "h": 192,
+      "bytes": 42086,
+      "mode": "RGBA",
+      "hasAlpha": true,
+      "alphaExtrema": [
+        0,
+        255
+      ],
+      "cornerAlpha": [
+        0,
+        0,
+        0,
+        0
+      ],
+      "transparentFraction": 0.228814,
+      "clearFractionInsideSilhouetteBounds": 0.021983,
+      "screenRectClear": null,
+      "tileEdgesMatch": null,
+      "metadataSource": "phone/_metadata_apps.json",
+      "sha256": "2b2dfad6466e1f3817431119c26624910420e061553fcf5e1b9fe46974ae27c4",
+      "format": "PNG",
+      "icoResolutions": null,
+      "icoFrames": null
+    },
+    {
+      "path": "Art/UI/phone/app_notes.png",
+      "exists": true,
+      "w": 192,
+      "h": 192,
+      "bytes": 43038,
+      "mode": "RGBA",
+      "hasAlpha": true,
+      "alphaExtrema": [
+        0,
+        255
+      ],
+      "cornerAlpha": [
+        0,
+        0,
+        0,
+        0
+      ],
+      "transparentFraction": 0.222629,
+      "clearFractionInsideSilhouetteBounds": 0.02567,
+      "screenRectClear": null,
+      "tileEdgesMatch": null,
+      "metadataSource": "phone/_metadata_apps.json",
+      "sha256": "7b818bbb1fd9139fa4efc963def279eff201ac8b4a21560008cd83a71a0dcb99",
+      "format": "PNG",
+      "icoResolutions": null,
+      "icoFrames": null
+    },
+    {
+      "path": "Art/UI/phone/app_hr.png",
+      "exists": true,
+      "w": 192,
+      "h": 192,
+      "bytes": 51069,
+      "mode": "RGBA",
+      "hasAlpha": true,
+      "alphaExtrema": [
+        0,
+        255
+      ],
+      "cornerAlpha": [
+        0,
+        0,
+        0,
+        0
+      ],
+      "transparentFraction": 0.227241,
+      "clearFractionInsideSilhouetteBounds": 0.025752,
+      "screenRectClear": null,
+      "tileEdgesMatch": null,
+      "metadataSource": "phone/_metadata_apps.json",
+      "sha256": "157e76221a773988969e054500b2d1f009b00a3fd78c268f68b58eb67200ad55",
+      "format": "PNG",
+      "icoResolutions": null,
+      "icoFrames": null
+    },
+    {
+      "path": "Art/UI/phone/call_screen_bg.png",
+      "exists": true,
+      "w": 504,
+      "h": 984,
+      "bytes": 614145,
+      "mode": "RGBA",
+      "hasAlpha": true,
+      "alphaExtrema": [
+        255,
+        255
+      ],
+      "cornerAlpha": [
+        255,
+        255,
+        255,
+        255
+      ],
+      "transparentFraction": 0.0,
+      "clearFractionInsideSilhouetteBounds": 0.0,
+      "screenRectClear": null,
+      "tileEdgesMatch": null,
+      "metadataSource": "phone/_metadata_bg.json",
+      "sha256": "69ab505d83fabd667d9307ccec3fa7abc89ef235b20c346d5de731192619991b",
+      "format": "PNG",
+      "icoResolutions": null,
+      "icoFrames": null
+    },
+    {
+      "path": "Art/UI/meeting/projector_frame.png",
+      "exists": true,
+      "w": 1600,
+      "h": 900,
+      "bytes": 19809,
+      "mode": "RGBA",
+      "hasAlpha": true,
+      "alphaExtrema": [
+        0,
+        255
+      ],
+      "cornerAlpha": [
+        0,
+        0,
+        0,
+        0
+      ],
+      "transparentFraction": 0.817522,
+      "clearFractionInsideSilhouetteBounds": 0.806602,
+      "screenRectClear": true,
+      "tileEdgesMatch": null,
+      "metadataSource": "meeting/_metadata_frames.json",
+      "sha256": "ac9270a77d515d140383bb98368e74ae768b0723593e02b82671565b8beef2ed",
+      "format": "PNG",
+      "icoResolutions": null,
+      "icoFrames": null
+    },
+    {
+      "path": "Art/UI/meeting/week_board.png",
+      "exists": true,
+      "w": 1600,
+      "h": 900,
+      "bytes": 1693094,
+      "mode": "RGBA",
+      "hasAlpha": true,
+      "alphaExtrema": [
+        0,
+        255
+      ],
+      "cornerAlpha": [
+        0,
+        0,
+        0,
+        0
+      ],
+      "transparentFraction": 0.188485,
+      "clearFractionInsideSilhouetteBounds": 0.001005,
+      "screenRectClear": null,
+      "tileEdgesMatch": null,
+      "metadataSource": "meeting/_metadata_root.json",
+      "sha256": "800cd4cb09290b8e26bd13b2b6f534a509ac9c0f981702d4271bd0d378c5c787",
+      "format": "PNG",
+      "icoResolutions": null,
+      "icoFrames": null
+    },
+    {
+      "path": "Art/UI/meeting/evidence_folder.png",
+      "exists": true,
+      "w": 800,
+      "h": 600,
+      "bytes": 387840,
+      "mode": "RGBA",
+      "hasAlpha": true,
+      "alphaExtrema": [
+        0,
+        255
+      ],
+      "cornerAlpha": [
+        0,
+        0,
+        0,
+        0
+      ],
+      "transparentFraction": 0.463856,
+      "clearFractionInsideSilhouetteBounds": 0.089282,
+      "screenRectClear": null,
+      "tileEdgesMatch": null,
+      "metadataSource": "meeting/_metadata_root.json",
+      "sha256": "45604943b11406cffc94f48d35f052f7b3d3f3e09884e0596003728d5f0ce926",
+      "format": "PNG",
+      "icoResolutions": null,
+      "icoFrames": null
+    },
+    {
+      "path": "Art/UI/meeting/cctv_overlay.png",
+      "exists": true,
+      "w": 1280,
+      "h": 720,
+      "bytes": 10430,
+      "mode": "RGBA",
+      "hasAlpha": true,
+      "alphaExtrema": [
+        0,
+        255
+      ],
+      "cornerAlpha": [
+        0,
+        0,
+        0,
+        0
+      ],
+      "transparentFraction": 0.505399,
+      "clearFractionInsideSilhouetteBounds": 0.496358,
+      "screenRectClear": null,
+      "tileEdgesMatch": null,
+      "metadataSource": "meeting/_metadata_frames.json",
+      "sha256": "bcdf386a49e138b2e1bd5b855951bb834b73bc80f30bf4bdaf90648bb3a579b3",
+      "format": "PNG",
+      "icoResolutions": null,
+      "icoFrames": null
+    },
+    {
+      "path": "Art/UI/meeting/termination_letter.png",
+      "exists": true,
+      "w": 1200,
+      "h": 1600,
+      "bytes": 33143,
+      "mode": "RGBA",
+      "hasAlpha": true,
+      "alphaExtrema": [
+        0,
+        255
+      ],
+      "cornerAlpha": [
+        0,
+        0,
+        0,
+        0
+      ],
+      "transparentFraction": 0.068927,
+      "clearFractionInsideSilhouetteBounds": 0.000136,
+      "screenRectClear": null,
+      "tileEdgesMatch": null,
+      "metadataSource": "meeting/_metadata_root.json",
+      "sha256": "ac4a3c0066def2f0f3f30520e4c0cf328fb1514a7d4b49c6a717e6d4ae875408",
+      "format": "PNG",
+      "icoResolutions": null,
+      "icoFrames": null
+    },
+    {
+      "path": "Art/UI/decals/poster_takim_ruhu.png",
+      "exists": true,
+      "w": 512,
+      "h": 768,
+      "bytes": 206805,
+      "mode": "RGBA",
+      "hasAlpha": true,
+      "alphaExtrema": [
+        0,
+        255
+      ],
+      "cornerAlpha": [
+        0,
+        0,
+        0,
+        0
+      ],
+      "transparentFraction": 0.077413,
+      "clearFractionInsideSilhouetteBounds": 0.000815,
+      "screenRectClear": null,
+      "tileEdgesMatch": null,
+      "metadataSource": "decals/_metadata.json",
+      "sha256": "c082ea379c206f7da71907b8882056224804401767e34e176f0df7afa57ef4c2",
+      "format": "PNG",
+      "icoResolutions": null,
+      "icoFrames": null
+    },
+    {
+      "path": "Art/UI/decals/poster_verimlilik.png",
+      "exists": true,
+      "w": 512,
+      "h": 768,
+      "bytes": 244168,
+      "mode": "RGBA",
+      "hasAlpha": true,
+      "alphaExtrema": [
+        0,
+        255
+      ],
+      "cornerAlpha": [
+        0,
+        0,
+        0,
+        0
+      ],
+      "transparentFraction": 0.077413,
+      "clearFractionInsideSilhouetteBounds": 0.000815,
+      "screenRectClear": null,
+      "tileEdgesMatch": null,
+      "metadataSource": "decals/_metadata.json",
+      "sha256": "2ef3eacdb5a6c48f0ae4e0f7cd60f716d4ee61afce1f14996de5c4c91decde91",
+      "format": "PNG",
+      "icoResolutions": null,
+      "icoFrames": null
+    },
+    {
+      "path": "Art/UI/decals/poster_sadakat.png",
+      "exists": true,
+      "w": 512,
+      "h": 768,
+      "bytes": 200448,
+      "mode": "RGBA",
+      "hasAlpha": true,
+      "alphaExtrema": [
+        0,
+        255
+      ],
+      "cornerAlpha": [
+        0,
+        0,
+        0,
+        0
+      ],
+      "transparentFraction": 0.077413,
+      "clearFractionInsideSilhouetteBounds": 0.000815,
+      "screenRectClear": null,
+      "tileEdgesMatch": null,
+      "metadataSource": "decals/_metadata.json",
+      "sha256": "d46107e4b44d69d616cb2ad8a85eb28c25416aa0a80291854f3ceeb9de24c5e9",
+      "format": "PNG",
+      "icoResolutions": null,
+      "icoFrames": null
+    },
+    {
+      "path": "Art/UI/decals/poster_kahve.png",
+      "exists": true,
+      "w": 512,
+      "h": 768,
+      "bytes": 207501,
+      "mode": "RGBA",
+      "hasAlpha": true,
+      "alphaExtrema": [
+        0,
+        255
+      ],
+      "cornerAlpha": [
+        0,
+        0,
+        0,
+        0
+      ],
+      "transparentFraction": 0.077413,
+      "clearFractionInsideSilhouetteBounds": 0.000815,
+      "screenRectClear": null,
+      "tileEdgesMatch": null,
+      "metadataSource": "decals/_metadata.json",
+      "sha256": "4b5714e4ff633f2f8d5482ac8153110f0f223f62bce34e2fd596b84ad50c2b86",
+      "format": "PNG",
+      "icoResolutions": null,
+      "icoFrames": null
+    },
+    {
+      "path": "Art/UI/decals/wet_floor.png",
+      "exists": true,
+      "w": 512,
+      "h": 768,
+      "bytes": 358240,
+      "mode": "RGBA",
+      "hasAlpha": true,
+      "alphaExtrema": [
+        0,
+        255
+      ],
+      "cornerAlpha": [
+        0,
+        0,
+        0,
+        0
+      ],
+      "transparentFraction": 0.362694,
+      "clearFractionInsideSilhouetteBounds": 0.272867,
+      "screenRectClear": null,
+      "tileEdgesMatch": null,
+      "metadataSource": "decals/_metadata.json",
+      "sha256": "391260b91e32b7636ae9120c71a9da5fd602a7d7954073368d410bb01e5d235c",
+      "format": "PNG",
+      "icoResolutions": null,
+      "icoFrames": null
+    },
+    {
+      "path": "Art/UI/decals/whiteboard_doodles.png",
+      "exists": true,
+      "w": 1024,
+      "h": 512,
+      "bytes": 583542,
+      "mode": "RGBA",
+      "hasAlpha": true,
+      "alphaExtrema": [
+        0,
+        255
+      ],
+      "cornerAlpha": [
+        0,
+        0,
+        0,
+        0
+      ],
+      "transparentFraction": 0.260469,
+      "clearFractionInsideSilhouetteBounds": 0.014157,
+      "screenRectClear": null,
+      "tileEdgesMatch": null,
+      "metadataSource": "decals/_metadata.json",
+      "sha256": "5e1174c1f9952b048ba1794d452d66711f057873c9c9d22293541ce52224ecb4",
+      "format": "PNG",
+      "icoResolutions": null,
+      "icoFrames": null
+    },
+    {
+      "path": "Art/UI/decals/corkboard_notes.png",
+      "exists": true,
+      "w": 1024,
+      "h": 768,
+      "bytes": 1176210,
+      "mode": "RGBA",
+      "hasAlpha": true,
+      "alphaExtrema": [
+        0,
+        255
+      ],
+      "cornerAlpha": [
+        0,
+        0,
+        0,
+        0
+      ],
+      "transparentFraction": 0.16354,
+      "clearFractionInsideSilhouetteBounds": 0.00099,
+      "screenRectClear": null,
+      "tileEdgesMatch": null,
+      "metadataSource": "decals/_metadata.json",
+      "sha256": "c2931b2d3997fbb36b1c4717296edeb9f6aad1015f707402e46dc4500c806e1d",
+      "format": "PNG",
+      "icoResolutions": null,
+      "icoFrames": null
+    },
+    {
+      "path": "Art/UI/decals/exit_sign.png",
+      "exists": true,
+      "w": 512,
+      "h": 256,
+      "bytes": 23982,
+      "mode": "RGBA",
+      "hasAlpha": true,
+      "alphaExtrema": [
+        0,
+        255
+      ],
+      "cornerAlpha": [
+        0,
+        0,
+        0,
+        0
+      ],
+      "transparentFraction": 0.083862,
+      "clearFractionInsideSilhouetteBounds": 0.001735,
+      "screenRectClear": null,
+      "tileEdgesMatch": null,
+      "metadataSource": "decals/_metadata.json",
+      "sha256": "3fda6f1e5dde4373199dd16a342ed14ebc65818a723aaab7ae516496650467f3",
+      "format": "PNG",
+      "icoResolutions": null,
+      "icoFrames": null
+    },
+    {
+      "path": "Art/UI/decals/poster_teamwork.png",
+      "exists": true,
+      "w": 360,
+      "h": 510,
+      "bytes": 156256,
+      "mode": "RGB",
+      "hasAlpha": false,
+      "alphaExtrema": [
+        255,
+        255
+      ],
+      "cornerAlpha": [
+        255,
+        255,
+        255,
+        255
+      ],
+      "transparentFraction": 0.0,
+      "clearFractionInsideSilhouetteBounds": 0.0,
+      "screenRectClear": null,
+      "tileEdgesMatch": null,
+      "metadataSource": "decals/_metadata_v2.json",
+      "sha256": "1b32a9fb91ffc7f3557ed8721d8275d5d9527f6e7eb24e1d0fd78f90e921a5bc",
+      "format": "PNG",
+      "icoResolutions": null,
+      "icoFrames": null
+    },
+    {
+      "path": "Art/UI/decals/poster_motivation.png",
+      "exists": true,
+      "w": 360,
+      "h": 510,
+      "bytes": 172508,
+      "mode": "RGB",
+      "hasAlpha": false,
+      "alphaExtrema": [
+        255,
+        255
+      ],
+      "cornerAlpha": [
+        255,
+        255,
+        255,
+        255
+      ],
+      "transparentFraction": 0.0,
+      "clearFractionInsideSilhouetteBounds": 0.0,
+      "screenRectClear": null,
+      "tileEdgesMatch": null,
+      "metadataSource": "decals/_metadata_v2.json",
+      "sha256": "5116c291a5719bb2bede529336d59299d098f93b94eb68d9c4609cbd13bf3a6d",
+      "format": "PNG",
+      "icoResolutions": null,
+      "icoFrames": null
+    },
+    {
+      "path": "Art/UI/decals/poster_safety.png",
+      "exists": true,
+      "w": 360,
+      "h": 510,
+      "bytes": 135770,
+      "mode": "RGB",
+      "hasAlpha": false,
+      "alphaExtrema": [
+        255,
+        255
+      ],
+      "cornerAlpha": [
+        255,
+        255,
+        255,
+        255
+      ],
+      "transparentFraction": 0.0,
+      "clearFractionInsideSilhouetteBounds": 0.0,
+      "screenRectClear": null,
+      "tileEdgesMatch": null,
+      "metadataSource": "decals/_metadata_v2.json",
+      "sha256": "c17725dc04fd683cc926f306a60e8e65393b40c1813e2cb53f03e3867b0a23e9",
+      "format": "PNG",
+      "icoResolutions": null,
+      "icoFrames": null
+    },
+    {
+      "path": "Art/UI/decals/memo_board.png",
+      "exists": true,
+      "w": 756,
+      "h": 468,
+      "bytes": 503880,
+      "mode": "RGB",
+      "hasAlpha": false,
+      "alphaExtrema": [
+        255,
+        255
+      ],
+      "cornerAlpha": [
+        255,
+        255,
+        255,
+        255
+      ],
+      "transparentFraction": 0.0,
+      "clearFractionInsideSilhouetteBounds": 0.0,
+      "screenRectClear": null,
+      "tileEdgesMatch": null,
+      "metadataSource": "decals/_metadata_v2.json",
+      "sha256": "828de99957b6b8995b859cc4561533f52915ce5d6b04d62907df2f2787e48a11",
+      "format": "PNG",
+      "icoResolutions": null,
+      "icoFrames": null
+    },
+    {
+      "path": "Art/UI/decals/poster_quota.png",
+      "exists": true,
+      "w": 504,
+      "h": 360,
+      "bytes": 118773,
+      "mode": "RGB",
+      "hasAlpha": false,
+      "alphaExtrema": [
+        255,
+        255
+      ],
+      "cornerAlpha": [
+        255,
+        255,
+        255,
+        255
+      ],
+      "transparentFraction": 0.0,
+      "clearFractionInsideSilhouetteBounds": 0.0,
+      "screenRectClear": null,
+      "tileEdgesMatch": null,
+      "metadataSource": "decals/_metadata_v2.json",
+      "sha256": "50d84303a3d17664813826b910c01697abccc44c5f0e546d0db397d9da82a0a7",
+      "format": "PNG",
+      "icoResolutions": null,
+      "icoFrames": null
+    },
+    {
+      "path": "Art/UI/decals/portrait_manager.png",
+      "exists": true,
+      "w": 392,
+      "h": 504,
+      "bytes": 247016,
+      "mode": "RGB",
+      "hasAlpha": false,
+      "alphaExtrema": [
+        255,
+        255
+      ],
+      "cornerAlpha": [
+        255,
+        255,
+        255,
+        255
+      ],
+      "transparentFraction": 0.0,
+      "clearFractionInsideSilhouetteBounds": 0.0,
+      "screenRectClear": null,
+      "tileEdgesMatch": null,
+      "metadataSource": "decals/_metadata_v2.json",
+      "sha256": "8fb34b910607d8ddfe9e6d6f6e2b16eb5cc4c64154242b2d9312a76096659fc4",
+      "format": "PNG",
+      "icoResolutions": null,
+      "icoFrames": null
+    },
+    {
+      "path": "Art/UI/decals/diploma.png",
+      "exists": true,
+      "w": 495,
+      "h": 374,
+      "bytes": 180770,
+      "mode": "RGB",
+      "hasAlpha": false,
+      "alphaExtrema": [
+        255,
+        255
+      ],
+      "cornerAlpha": [
+        255,
+        255,
+        255,
+        255
+      ],
+      "transparentFraction": 0.0,
+      "clearFractionInsideSilhouetteBounds": 0.0,
+      "screenRectClear": null,
+      "tileEdgesMatch": null,
+      "metadataSource": "decals/_metadata_v2.json",
+      "sha256": "e98355a17edf09b999044b546b6e3e7d036b30aee6bdd9a6cb8600f31e554b32",
+      "format": "PNG",
+      "icoResolutions": null,
+      "icoFrames": null
+    },
+    {
+      "path": "Art/UI/decals/poster_kpi.png",
+      "exists": true,
+      "w": 512,
+      "h": 384,
+      "bytes": 123269,
+      "mode": "RGB",
+      "hasAlpha": false,
+      "alphaExtrema": [
+        255,
+        255
+      ],
+      "cornerAlpha": [
+        255,
+        255,
+        255,
+        255
+      ],
+      "transparentFraction": 0.0,
+      "clearFractionInsideSilhouetteBounds": 0.0,
+      "screenRectClear": null,
+      "tileEdgesMatch": null,
+      "metadataSource": "decals/_metadata_v2.json",
+      "sha256": "81826084ddf82fa421e3d3c4bdfe8bff9b555b99fece89436e25ebd0d717f5d2",
+      "format": "PNG",
+      "icoResolutions": null,
+      "icoFrames": null
+    },
+    {
+      "path": "Art/UI/decals/poster_mission.png",
+      "exists": true,
+      "w": 504,
+      "h": 364,
+      "bytes": 156845,
+      "mode": "RGB",
+      "hasAlpha": false,
+      "alphaExtrema": [
+        255,
+        255
+      ],
+      "cornerAlpha": [
+        255,
+        255,
+        255,
+        255
+      ],
+      "transparentFraction": 0.0,
+      "clearFractionInsideSilhouetteBounds": 0.0,
+      "screenRectClear": null,
+      "tileEdgesMatch": null,
+      "metadataSource": "decals/_metadata_v2.json",
+      "sha256": "97c5ee143cefbafe8593273adcea06e2d25cd22600953d0c144bd7e5bece4bfb",
+      "format": "PNG",
+      "icoResolutions": null,
+      "icoFrames": null
+    },
+    {
+      "path": "Art/UI/decals/poster_coffee.png",
+      "exists": true,
+      "w": 360,
+      "h": 510,
+      "bytes": 149819,
+      "mode": "RGB",
+      "hasAlpha": false,
+      "alphaExtrema": [
+        255,
+        255
+      ],
+      "cornerAlpha": [
+        255,
+        255,
+        255,
+        255
+      ],
+      "transparentFraction": 0.0,
+      "clearFractionInsideSilhouetteBounds": 0.0,
+      "screenRectClear": null,
+      "tileEdgesMatch": null,
+      "metadataSource": "decals/_metadata_v2.json",
+      "sha256": "dfd843adaa4b79d0739685068080df91ef0ec9c5ecaad9af8b0f88db0906e2b8",
+      "format": "PNG",
+      "icoResolutions": null,
+      "icoFrames": null
+    },
+    {
+      "path": "Art/UI/decals/sign_salt.png",
+      "exists": true,
+      "w": 512,
+      "h": 352,
+      "bytes": 153946,
+      "mode": "RGB",
+      "hasAlpha": false,
+      "alphaExtrema": [
+        255,
+        255
+      ],
+      "cornerAlpha": [
+        255,
+        255,
+        255,
+        255
+      ],
+      "transparentFraction": 0.0,
+      "clearFractionInsideSilhouetteBounds": 0.0,
+      "screenRectClear": null,
+      "tileEdgesMatch": null,
+      "metadataSource": "decals/_metadata_v2.json",
+      "sha256": "0669d81f74bc30a5957dad756f89657f6f74d9f503a33504c19033f89a14b7f0",
+      "format": "PNG",
+      "icoResolutions": null,
+      "icoFrames": null
+    },
+    {
+      "path": "Art/UI/decals/poster_fridge_rules.png",
+      "exists": true,
+      "w": 384,
+      "h": 504,
+      "bytes": 175172,
+      "mode": "RGB",
+      "hasAlpha": false,
+      "alphaExtrema": [
+        255,
+        255
+      ],
+      "cornerAlpha": [
+        255,
+        255,
+        255,
+        255
+      ],
+      "transparentFraction": 0.0,
+      "clearFractionInsideSilhouetteBounds": 0.0,
+      "screenRectClear": null,
+      "tileEdgesMatch": null,
+      "metadataSource": "decals/_metadata_v2.json",
+      "sha256": "9ac815edf058241ee175086a820458f9d4c7d51abe6936423ea3b517b0ef2378",
+      "format": "PNG",
+      "icoResolutions": null,
+      "icoFrames": null
+    },
+    {
+      "path": "Art/UI/decals/poster_printer.png",
+      "exists": true,
+      "w": 384,
+      "h": 512,
+      "bytes": 190710,
+      "mode": "RGB",
+      "hasAlpha": false,
+      "alphaExtrema": [
+        255,
+        255
+      ],
+      "cornerAlpha": [
+        255,
+        255,
+        255,
+        255
+      ],
+      "transparentFraction": 0.0,
+      "clearFractionInsideSilhouetteBounds": 0.0,
+      "screenRectClear": null,
+      "tileEdgesMatch": null,
+      "metadataSource": "decals/_metadata_v2.json",
+      "sha256": "5206759f6b3f85ad7f8bb28c24bdf996c4618b7faa931b41516e6099a1648e8f",
+      "format": "PNG",
+      "icoResolutions": null,
+      "icoFrames": null
+    },
+    {
+      "path": "Art/UI/decals/sign_out_of_order.png",
+      "exists": true,
+      "w": 504,
+      "h": 308,
+      "bytes": 80478,
+      "mode": "RGB",
+      "hasAlpha": false,
+      "alphaExtrema": [
+        255,
+        255
+      ],
+      "cornerAlpha": [
+        255,
+        255,
+        255,
+        255
+      ],
+      "transparentFraction": 0.0,
+      "clearFractionInsideSilhouetteBounds": 0.0,
+      "screenRectClear": null,
+      "tileEdgesMatch": null,
+      "metadataSource": "decals/_metadata_v2.json",
+      "sha256": "f9a7b05c67ed74b7aeec85be7bc205ce9759934b57876fb0a3b0154063f334a1",
+      "format": "PNG",
+      "icoResolutions": null,
+      "icoFrames": null
+    },
+    {
+      "path": "Art/UI/decals/logo_company.png",
+      "exists": true,
+      "w": 768,
+      "h": 384,
+      "bytes": 127055,
+      "mode": "RGB",
+      "hasAlpha": false,
+      "alphaExtrema": [
+        255,
+        255
+      ],
+      "cornerAlpha": [
+        255,
+        255,
+        255,
+        255
+      ],
+      "transparentFraction": 0.0,
+      "clearFractionInsideSilhouetteBounds": 0.0,
+      "screenRectClear": null,
+      "tileEdgesMatch": null,
+      "metadataSource": "decals/_metadata_v2.json",
+      "sha256": "47f76c38298f688059522a9a7b0a6c721dd7cde04a558d6287fc32436223a4e4",
+      "format": "PNG",
+      "icoResolutions": null,
+      "icoFrames": null
+    },
+    {
+      "path": "Art/UI/decals/poster_welcome.png",
+      "exists": true,
+      "w": 504,
+      "h": 360,
+      "bytes": 133843,
+      "mode": "RGB",
+      "hasAlpha": false,
+      "alphaExtrema": [
+        255,
+        255
+      ],
+      "cornerAlpha": [
+        255,
+        255,
+        255,
+        255
+      ],
+      "transparentFraction": 0.0,
+      "clearFractionInsideSilhouetteBounds": 0.0,
+      "screenRectClear": null,
+      "tileEdgesMatch": null,
+      "metadataSource": "decals/_metadata_v2.json",
+      "sha256": "2b4248071559fab9f00c78a4224f8d86a96a43fcc0e2039a4920e7aedd4c81e5",
+      "format": "PNG",
+      "icoResolutions": null,
+      "icoFrames": null
+    },
+    {
+      "path": "Art/UI/decals/sign_fusebox.png",
+      "exists": true,
+      "w": 512,
+      "h": 512,
+      "bytes": 147711,
+      "mode": "RGB",
+      "hasAlpha": false,
+      "alphaExtrema": [
+        255,
+        255
+      ],
+      "cornerAlpha": [
+        255,
+        255,
+        255,
+        255
+      ],
+      "transparentFraction": 0.0,
+      "clearFractionInsideSilhouetteBounds": 0.0,
+      "screenRectClear": null,
+      "tileEdgesMatch": null,
+      "metadataSource": "decals/_metadata_v2.json",
+      "sha256": "5454bfac40eda0fd837432675dbf8444ade744f9ff4ce9f19c7ade5190a114dc",
+      "format": "PNG",
+      "icoResolutions": null,
+      "icoFrames": null
+    },
+    {
+      "path": "Art/UI/decals/sign_wash_hands.png",
+      "exists": true,
+      "w": 384,
+      "h": 512,
+      "bytes": 162200,
+      "mode": "RGB",
+      "hasAlpha": false,
+      "alphaExtrema": [
+        255,
+        255
+      ],
+      "cornerAlpha": [
+        255,
+        255,
+        255,
+        255
+      ],
+      "transparentFraction": 0.0,
+      "clearFractionInsideSilhouetteBounds": 0.0,
+      "screenRectClear": null,
+      "tileEdgesMatch": null,
+      "metadataSource": "decals/_metadata_v2.json",
+      "sha256": "3278962a957de96de8cac26b7b169b3121575cc89cc5c8a2da7b2b3d91b5504b",
+      "format": "PNG",
+      "icoResolutions": null,
+      "icoFrames": null
+    },
+    {
+      "path": "Art/UI/decals/sign_server_danger.png",
+      "exists": true,
+      "w": 512,
+      "h": 512,
+      "bytes": 121184,
+      "mode": "RGB",
+      "hasAlpha": false,
+      "alphaExtrema": [
+        255,
+        255
+      ],
+      "cornerAlpha": [
+        255,
+        255,
+        255,
+        255
+      ],
+      "transparentFraction": 0.0,
+      "clearFractionInsideSilhouetteBounds": 0.0,
+      "screenRectClear": null,
+      "tileEdgesMatch": null,
+      "metadataSource": "decals/_metadata_v2.json",
+      "sha256": "549743166de27ed95a538655f197c65a1d21a0702b2d8d17389f698b3ecaa95b",
+      "format": "PNG",
+      "icoResolutions": null,
+      "icoFrames": null
+    },
+    {
+      "path": "Art/UI/decals/poster_relax.png",
+      "exists": true,
+      "w": 504,
+      "h": 360,
+      "bytes": 165170,
+      "mode": "RGB",
+      "hasAlpha": false,
+      "alphaExtrema": [
+        255,
+        255
+      ],
+      "cornerAlpha": [
+        255,
+        255,
+        255,
+        255
+      ],
+      "transparentFraction": 0.0,
+      "clearFractionInsideSilhouetteBounds": 0.0,
+      "screenRectClear": null,
+      "tileEdgesMatch": null,
+      "metadataSource": "decals/_metadata_v2.json",
+      "sha256": "6c915da3216eb88b354dd159c4c1009bdaab7f95dfe84f5eb88fbf01fc8bb243",
+      "format": "PNG",
+      "icoResolutions": null,
+      "icoFrames": null
+    },
+    {
+      "path": "Art/UI/decals/poster_vending.png",
+      "exists": true,
+      "w": 384,
+      "h": 512,
+      "bytes": 193634,
+      "mode": "RGB",
+      "hasAlpha": false,
+      "alphaExtrema": [
+        255,
+        255
+      ],
+      "cornerAlpha": [
+        255,
+        255,
+        255,
+        255
+      ],
+      "transparentFraction": 0.0,
+      "clearFractionInsideSilhouetteBounds": 0.0,
+      "screenRectClear": null,
+      "tileEdgesMatch": null,
+      "metadataSource": "decals/_metadata_v2.json",
+      "sha256": "f4d1b8670a94ef2eda1db1cf4f33f493584ff6f2db65bc9dc92659887d367bd9",
+      "format": "PNG",
+      "icoResolutions": null,
+      "icoFrames": null
+    },
+    {
+      "path": "Art/UI/howto/howto_1_work.png",
+      "exists": true,
+      "w": 1280,
+      "h": 720,
+      "bytes": 231175,
+      "mode": "P",
+      "hasAlpha": true,
+      "alphaExtrema": [
+        255,
+        255
+      ],
+      "cornerAlpha": [
+        255,
+        255,
+        255,
+        255
+      ],
+      "transparentFraction": 0.0,
+      "clearFractionInsideSilhouetteBounds": 0.0,
+      "screenRectClear": null,
+      "tileEdgesMatch": null,
+      "metadataSource": "howto/_metadata.json",
+      "sha256": "58fa9e25c77605b7af1e263c2ecc00aa5d8e26ae30f8c6a5169703474ca0df8f",
+      "format": "PNG",
+      "icoResolutions": null,
+      "icoFrames": null
+    },
+    {
+      "path": "Art/UI/howto/howto_2_sabotage.png",
+      "exists": true,
+      "w": 1280,
+      "h": 720,
+      "bytes": 1379346,
+      "mode": "RGBA",
+      "hasAlpha": true,
+      "alphaExtrema": [
+        255,
+        255
+      ],
+      "cornerAlpha": [
+        255,
+        255,
+        255,
+        255
+      ],
+      "transparentFraction": 0.0,
+      "clearFractionInsideSilhouetteBounds": 0.0,
+      "screenRectClear": null,
+      "tileEdgesMatch": null,
+      "metadataSource": "howto/_metadata.json",
+      "sha256": "619c9c95108c267eee86767ee6bff26c2441f866eb3f5fc88eb9bf1567739d85",
+      "format": "PNG",
+      "icoResolutions": null,
+      "icoFrames": null
+    },
+    {
+      "path": "Art/UI/howto/howto_3_manager.png",
+      "exists": true,
+      "w": 1280,
+      "h": 720,
+      "bytes": 1487676,
+      "mode": "RGBA",
+      "hasAlpha": true,
+      "alphaExtrema": [
+        255,
+        255
+      ],
+      "cornerAlpha": [
+        255,
+        255,
+        255,
+        255
+      ],
+      "transparentFraction": 0.0,
+      "clearFractionInsideSilhouetteBounds": 0.0,
+      "screenRectClear": null,
+      "tileEdgesMatch": null,
+      "metadataSource": "howto/_metadata.json",
+      "sha256": "04de6fbcc01aaf429ae0e24b3efad5f58531f02ff975a884c784c28011f5d83d",
+      "format": "PNG",
+      "icoResolutions": null,
+      "icoFrames": null
+    },
+    {
+      "path": "Art/UI/howto/howto_4_calls.png",
+      "exists": true,
+      "w": 1280,
+      "h": 720,
+      "bytes": 1449733,
+      "mode": "RGBA",
+      "hasAlpha": true,
+      "alphaExtrema": [
+        255,
+        255
+      ],
+      "cornerAlpha": [
+        255,
+        255,
+        255,
+        255
+      ],
+      "transparentFraction": 0.0,
+      "clearFractionInsideSilhouetteBounds": 0.0,
+      "screenRectClear": null,
+      "tileEdgesMatch": null,
+      "metadataSource": "howto/_metadata.json",
+      "sha256": "50cf1eea1876fb8dac8466cc1bdf81883f803f1a87b51af10ef5aab11609b425",
+      "format": "PNG",
+      "icoResolutions": null,
+      "icoFrames": null
+    },
+    {
+      "path": "Art/UI/howto/howto_5_meeting.png",
+      "exists": true,
+      "w": 1280,
+      "h": 720,
+      "bytes": 1494364,
+      "mode": "RGBA",
+      "hasAlpha": true,
+      "alphaExtrema": [
+        255,
+        255
+      ],
+      "cornerAlpha": [
+        255,
+        255,
+        255,
+        255
+      ],
+      "transparentFraction": 0.0,
+      "clearFractionInsideSilhouetteBounds": 0.0,
+      "screenRectClear": null,
+      "tileEdgesMatch": null,
+      "metadataSource": "howto/_metadata.json",
+      "sha256": "d0b6f2b68891e56f0051fe1f27022939df2f4709e79a507181127be975d74325",
+      "format": "PNG",
+      "icoResolutions": null,
+      "icoFrames": null
+    },
+    {
+      "path": "Art/UI/howto/howto_6_week.png",
+      "exists": true,
+      "w": 1280,
+      "h": 720,
+      "bytes": 1448361,
+      "mode": "RGBA",
+      "hasAlpha": true,
+      "alphaExtrema": [
+        255,
+        255
+      ],
+      "cornerAlpha": [
+        255,
+        255,
+        255,
+        255
+      ],
+      "transparentFraction": 0.0,
+      "clearFractionInsideSilhouetteBounds": 0.0,
+      "screenRectClear": null,
+      "tileEdgesMatch": null,
+      "metadataSource": "howto/_metadata.json",
+      "sha256": "f228cc2a0547aa3a0999200805a60ebef992cbe233d2e2b346040e74c8507cff",
+      "format": "PNG",
+      "icoResolutions": null,
+      "icoFrames": null
+    },
+    {
+      "path": "Art/UI/week/week_pazartesi.png",
+      "exists": true,
+      "w": 960,
+      "h": 200,
+      "bytes": 44262,
+      "mode": "RGBA",
+      "hasAlpha": true,
+      "alphaExtrema": [
+        0,
+        255
+      ],
+      "cornerAlpha": [
+        0,
+        0,
+        0,
+        0
+      ],
+      "transparentFraction": 0.089573,
+      "clearFractionInsideSilhouetteBounds": 0.003095,
+      "screenRectClear": null,
+      "tileEdgesMatch": null,
+      "metadataSource": "week/_metadata.json",
+      "sha256": "0045058c2d184bff8d043f1fd122429b8e730a04a8ea9cf1cfb9fd005c62edb8",
+      "format": "PNG",
+      "icoResolutions": null,
+      "icoFrames": null
+    },
+    {
+      "path": "Art/UI/week/week_sali.png",
+      "exists": true,
+      "w": 960,
+      "h": 200,
+      "bytes": 41760,
+      "mode": "RGBA",
+      "hasAlpha": true,
+      "alphaExtrema": [
+        0,
+        255
+      ],
+      "cornerAlpha": [
+        0,
+        0,
+        0,
+        0
+      ],
+      "transparentFraction": 0.089573,
+      "clearFractionInsideSilhouetteBounds": 0.003095,
+      "screenRectClear": null,
+      "tileEdgesMatch": null,
+      "metadataSource": "week/_metadata.json",
+      "sha256": "06343bda741eb96bfa1f3e47c8adb5e7d02c837843bf144cf644bbd0d6d2d878",
+      "format": "PNG",
+      "icoResolutions": null,
+      "icoFrames": null
+    },
+    {
+      "path": "Art/UI/week/week_carsamba.png",
+      "exists": true,
+      "w": 960,
+      "h": 200,
+      "bytes": 52920,
+      "mode": "RGBA",
+      "hasAlpha": true,
+      "alphaExtrema": [
+        0,
+        255
+      ],
+      "cornerAlpha": [
+        0,
+        0,
+        0,
+        0
+      ],
+      "transparentFraction": 0.089573,
+      "clearFractionInsideSilhouetteBounds": 0.003095,
+      "screenRectClear": null,
+      "tileEdgesMatch": null,
+      "metadataSource": "week/_metadata.json",
+      "sha256": "46e8c16ca96e7fd200c921fa62cfb6784883b818d2d763968a3daaabf761a78f",
+      "format": "PNG",
+      "icoResolutions": null,
+      "icoFrames": null
+    },
+    {
+      "path": "Art/UI/week/week_persembe.png",
+      "exists": true,
+      "w": 960,
+      "h": 200,
+      "bytes": 52628,
+      "mode": "RGBA",
+      "hasAlpha": true,
+      "alphaExtrema": [
+        0,
+        255
+      ],
+      "cornerAlpha": [
+        0,
+        0,
+        0,
+        0
+      ],
+      "transparentFraction": 0.089573,
+      "clearFractionInsideSilhouetteBounds": 0.003095,
+      "screenRectClear": null,
+      "tileEdgesMatch": null,
+      "metadataSource": "week/_metadata.json",
+      "sha256": "7ba5c0e45115e0c5de7ef8585bd5a673a8dec27b3545b2b117a018d77c21a0be",
+      "format": "PNG",
+      "icoResolutions": null,
+      "icoFrames": null
+    },
+    {
+      "path": "Art/UI/week/week_cuma.png",
+      "exists": true,
+      "w": 960,
+      "h": 200,
+      "bytes": 50748,
+      "mode": "RGBA",
+      "hasAlpha": true,
+      "alphaExtrema": [
+        0,
+        255
+      ],
+      "cornerAlpha": [
+        0,
+        0,
+        0,
+        0
+      ],
+      "transparentFraction": 0.089573,
+      "clearFractionInsideSilhouetteBounds": 0.003095,
+      "screenRectClear": null,
+      "tileEdgesMatch": null,
+      "metadataSource": "week/_metadata.json",
+      "sha256": "60c8a474ad53c5e40e6d400386f549f8596a3f4770c6bc2d1faf53a8cad0219a",
+      "format": "PNG",
+      "icoResolutions": null,
+      "icoFrames": null
+    },
+    {
+      "path": "Art/UI/week/week_trophy.png",
+      "exists": true,
+      "w": 512,
+      "h": 512,
+      "bytes": 238486,
+      "mode": "RGBA",
+      "hasAlpha": true,
+      "alphaExtrema": [
+        0,
+        255
+      ],
+      "cornerAlpha": [
+        0,
+        0,
+        0,
+        0
+      ],
+      "transparentFraction": 0.620064,
+      "clearFractionInsideSilhouetteBounds": 0.403489,
+      "screenRectClear": null,
+      "tileEdgesMatch": null,
+      "metadataSource": "week/_metadata.json",
+      "sha256": "c472e47bab6d49cbd2dfb2f746e70dd542d4f38d8e90703c9284ada190ae1b4d",
+      "format": "PNG",
+      "icoResolutions": null,
+      "icoFrames": null
+    },
+    {
+      "path": "Art/UI/titles/title_chaos_agent.png",
+      "exists": true,
+      "w": 256,
+      "h": 256,
+      "bytes": 72351,
+      "mode": "RGBA",
+      "hasAlpha": true,
+      "alphaExtrema": [
+        0,
+        255
+      ],
+      "cornerAlpha": [
+        0,
+        0,
+        0,
+        0
+      ],
+      "transparentFraction": 0.349594,
+      "clearFractionInsideSilhouetteBounds": 0.201181,
+      "screenRectClear": null,
+      "tileEdgesMatch": null,
+      "metadataSource": "titles/_metadata.json",
+      "sha256": "5cb60a1022bb1fa7fcf0c789bcb0e52da8862837bf7d0df9e75adc975e44aeaf",
+      "format": "PNG",
+      "icoResolutions": null,
+      "icoFrames": null
+    },
+    {
+      "path": "Art/UI/titles/title_cleanest_desk.png",
+      "exists": true,
+      "w": 256,
+      "h": 256,
+      "bytes": 64959,
+      "mode": "RGBA",
+      "hasAlpha": true,
+      "alphaExtrema": [
+        0,
+        255
+      ],
+      "cornerAlpha": [
+        0,
+        0,
+        0,
+        0
+      ],
+      "transparentFraction": 0.349014,
+      "clearFractionInsideSilhouetteBounds": 0.200469,
+      "screenRectClear": null,
+      "tileEdgesMatch": null,
+      "metadataSource": "titles/_metadata.json",
+      "sha256": "70e9b41ebae059437b054b39226488f0efd21de98423c870956a34e289ed4d49",
+      "format": "PNG",
+      "icoResolutions": null,
+      "icoFrames": null
+    },
+    {
+      "path": "Art/UI/titles/title_coffee_master.png",
+      "exists": true,
+      "w": 256,
+      "h": 256,
+      "bytes": 68287,
+      "mode": "RGBA",
+      "hasAlpha": true,
+      "alphaExtrema": [
+        0,
+        255
+      ],
+      "cornerAlpha": [
+        0,
+        0,
+        0,
+        0
+      ],
+      "transparentFraction": 0.351013,
+      "clearFractionInsideSilhouetteBounds": 0.202924,
+      "screenRectClear": null,
+      "tileEdgesMatch": null,
+      "metadataSource": "titles/_metadata.json",
+      "sha256": "287b997f2efa6cdfc8565c5b4cc1df4a39c78de229d84654571ea043334e6cc8",
+      "format": "PNG",
+      "icoResolutions": null,
+      "icoFrames": null
+    },
+    {
+      "path": "Art/UI/titles/title_favourite.png",
+      "exists": true,
+      "w": 256,
+      "h": 256,
+      "bytes": 72823,
+      "mode": "RGBA",
+      "hasAlpha": true,
+      "alphaExtrema": [
+        0,
+        255
+      ],
+      "cornerAlpha": [
+        0,
+        0,
+        0,
+        0
+      ],
+      "transparentFraction": 0.349457,
+      "clearFractionInsideSilhouetteBounds": 0.201012,
+      "screenRectClear": null,
+      "tileEdgesMatch": null,
+      "metadataSource": "titles/_metadata.json",
+      "sha256": "9acdb91d35852ee3d73c239357add135f6e2492b3c3495cab893f464fe0a6b58",
+      "format": "PNG",
+      "icoResolutions": null,
+      "icoFrames": null
+    },
+    {
+      "path": "Art/UI/titles/title_informant_of_month.png",
+      "exists": true,
+      "w": 256,
+      "h": 256,
+      "bytes": 74660,
+      "mode": "RGBA",
+      "hasAlpha": true,
+      "alphaExtrema": [
+        0,
+        255
+      ],
+      "cornerAlpha": [
+        0,
+        0,
+        0,
+        0
+      ],
+      "transparentFraction": 0.350739,
+      "clearFractionInsideSilhouetteBounds": 0.202586,
+      "screenRectClear": null,
+      "tileEdgesMatch": null,
+      "metadataSource": "titles/_metadata.json",
+      "sha256": "832dce9bca183e2ed779c50f72d9661a9340f25ceed4a3428cb6047994dfc506",
+      "format": "PNG",
+      "icoResolutions": null,
+      "icoFrames": null
+    },
+    {
+      "path": "Art/UI/titles/title_it_hero.png",
+      "exists": true,
+      "w": 256,
+      "h": 256,
+      "bytes": 72531,
+      "mode": "RGBA",
+      "hasAlpha": true,
+      "alphaExtrema": [
+        0,
+        255
+      ],
+      "cornerAlpha": [
+        0,
+        0,
+        0,
+        0
+      ],
+      "transparentFraction": 0.352478,
+      "clearFractionInsideSilhouetteBounds": 0.20125,
+      "screenRectClear": null,
+      "tileEdgesMatch": null,
+      "metadataSource": "titles/_metadata.json",
+      "sha256": "fc2525361297fe9ff26f6018e3d5b2144a2620595ec26af068ed33e49cec4613",
+      "format": "PNG",
+      "icoResolutions": null,
+      "icoFrames": null
+    },
+    {
+      "path": "Art/UI/titles/title_printer_enemy.png",
+      "exists": true,
+      "w": 256,
+      "h": 256,
+      "bytes": 71166,
+      "mode": "RGBA",
+      "hasAlpha": true,
+      "alphaExtrema": [
+        0,
+        255
+      ],
+      "cornerAlpha": [
+        0,
+        0,
+        0,
+        0
+      ],
+      "transparentFraction": 0.348251,
+      "clearFractionInsideSilhouetteBounds": 0.199531,
+      "screenRectClear": null,
+      "tileEdgesMatch": null,
+      "metadataSource": "titles/_metadata.json",
+      "sha256": "39f479b585d75e94f9d0c59b371719041194e5f3d234b65ccd4e991f101e6992",
+      "format": "PNG",
+      "icoResolutions": null,
+      "icoFrames": null
+    },
+    {
+      "path": "Art/UI/titles/title_pro_scapegoat.png",
+      "exists": true,
+      "w": 256,
+      "h": 256,
+      "bytes": 74574,
+      "mode": "RGBA",
+      "hasAlpha": true,
+      "alphaExtrema": [
+        0,
+        255
+      ],
+      "cornerAlpha": [
+        0,
+        0,
+        0,
+        0
+      ],
+      "transparentFraction": 0.357025,
+      "clearFractionInsideSilhouetteBounds": 0.20338,
+      "screenRectClear": null,
+      "tileEdgesMatch": null,
+      "metadataSource": "titles/_metadata.json",
+      "sha256": "e48c932e9e6d93d12f75999eb4a88c6ec9cd665f7e59177a8805c44c47fb333c",
+      "format": "PNG",
+      "icoResolutions": null,
+      "icoFrames": null
+    },
+    {
+      "path": "Art/UI/titles/title_salt_bae.png",
+      "exists": true,
+      "w": 256,
+      "h": 256,
+      "bytes": 65286,
+      "mode": "RGBA",
+      "hasAlpha": true,
+      "alphaExtrema": [
+        0,
+        255
+      ],
+      "cornerAlpha": [
+        0,
+        0,
+        0,
+        0
+      ],
+      "transparentFraction": 0.351364,
+      "clearFractionInsideSilhouetteBounds": 0.203355,
+      "screenRectClear": null,
+      "tileEdgesMatch": null,
+      "metadataSource": "titles/_metadata.json",
+      "sha256": "a978dbb7709b2a10e50a7f38d5bc5d36496b294c645cda16a1d50ac790e184e3",
+      "format": "PNG",
+      "icoResolutions": null,
+      "icoFrames": null
+    },
+    {
+      "path": "Art/UI/titles/title_scam_artist.png",
+      "exists": true,
+      "w": 256,
+      "h": 256,
+      "bytes": 72022,
+      "mode": "RGBA",
+      "hasAlpha": true,
+      "alphaExtrema": [
+        0,
+        255
+      ],
+      "cornerAlpha": [
+        0,
+        0,
+        0,
+        0
+      ],
+      "transparentFraction": 0.348755,
+      "clearFractionInsideSilhouetteBounds": 0.20015,
+      "screenRectClear": null,
+      "tileEdgesMatch": null,
+      "metadataSource": "titles/_metadata.json",
+      "sha256": "c5351ba9c28df083480d3a1b1882bf459fbf2b5a6a7f15ee96d4ee8b24a14651",
+      "format": "PNG",
+      "icoResolutions": null,
+      "icoFrames": null
+    },
+    {
+      "path": "Art/UI/bubbles/bubble_ringing.png",
+      "exists": true,
+      "w": 256,
+      "h": 256,
+      "bytes": 62894,
+      "mode": "RGBA",
+      "hasAlpha": true,
+      "alphaExtrema": [
+        0,
+        255
+      ],
+      "cornerAlpha": [
+        0,
+        0,
+        0,
+        0
+      ],
+      "transparentFraction": 0.404175,
+      "clearFractionInsideSilhouetteBounds": 0.177729,
+      "screenRectClear": null,
+      "tileEdgesMatch": null,
+      "metadataSource": "bubbles/_metadata.json",
+      "sha256": "f72dcbec4bed04ea0b3e145270a52caa19cb515a743c0c343e4b640af0329bed",
+      "format": "PNG",
+      "icoResolutions": null,
+      "icoFrames": null
+    },
+    {
+      "path": "Art/UI/bubbles/bubble_on_call.png",
+      "exists": true,
+      "w": 256,
+      "h": 256,
+      "bytes": 65230,
+      "mode": "RGBA",
+      "hasAlpha": true,
+      "alphaExtrema": [
+        0,
+        255
+      ],
+      "cornerAlpha": [
+        0,
+        0,
+        0,
+        0
+      ],
+      "transparentFraction": 0.403275,
+      "clearFractionInsideSilhouetteBounds": 0.176487,
+      "screenRectClear": null,
+      "tileEdgesMatch": null,
+      "metadataSource": "bubbles/_metadata.json",
+      "sha256": "9d106c6a92139aca4a631803442a22895bca7417669aa0bf3cbcd822944281fc",
+      "format": "PNG",
+      "icoResolutions": null,
+      "icoFrames": null
+    },
+    {
+      "path": "Art/UI/bubbles/bubble_exclaim.png",
+      "exists": true,
+      "w": 256,
+      "h": 256,
+      "bytes": 55343,
+      "mode": "RGBA",
+      "hasAlpha": true,
+      "alphaExtrema": [
+        0,
+        255
+      ],
+      "cornerAlpha": [
+        0,
+        0,
+        0,
+        0
+      ],
+      "transparentFraction": 0.402008,
+      "clearFractionInsideSilhouetteBounds": 0.178613,
+      "screenRectClear": null,
+      "tileEdgesMatch": null,
+      "metadataSource": "bubbles/_metadata.json",
+      "sha256": "7bd4bff73299415fd881236da13eef0c7291efc6b3cb50b463efcbf0009ed8a8",
+      "format": "PNG",
+      "icoResolutions": null,
+      "icoFrames": null
+    },
+    {
+      "path": "Art/UI/bubbles/bubble_question.png",
+      "exists": true,
+      "w": 256,
+      "h": 256,
+      "bytes": 61196,
+      "mode": "RGBA",
+      "hasAlpha": true,
+      "alphaExtrema": [
+        0,
+        255
+      ],
+      "cornerAlpha": [
+        0,
+        0,
+        0,
+        0
+      ],
+      "transparentFraction": 0.404053,
+      "clearFractionInsideSilhouetteBounds": 0.177561,
+      "screenRectClear": null,
+      "tileEdgesMatch": null,
+      "metadataSource": "bubbles/_metadata.json",
+      "sha256": "433b5e157d72c5e80539721051232dff8b52e112c12a3b30eab3e97a211bac48",
+      "format": "PNG",
+      "icoResolutions": null,
+      "icoFrames": null
+    },
+    {
+      "path": "Art/UI/bubbles/bubble_angry.png",
+      "exists": true,
+      "w": 256,
+      "h": 256,
+      "bytes": 62564,
+      "mode": "RGBA",
+      "hasAlpha": true,
+      "alphaExtrema": [
+        0,
+        255
+      ],
+      "cornerAlpha": [
+        0,
+        0,
+        0,
+        0
+      ],
+      "transparentFraction": 0.403305,
+      "clearFractionInsideSilhouetteBounds": 0.176529,
+      "screenRectClear": null,
+      "tileEdgesMatch": null,
+      "metadataSource": "bubbles/_metadata.json",
+      "sha256": "90eeb654aabe230e33ce120048cc41abbbea005e5f11100cc55cda89896fb5e5",
+      "format": "PNG",
+      "icoResolutions": null,
+      "icoFrames": null
+    },
+    {
+      "path": "Art/UI/bubbles/bubble_heart.png",
+      "exists": true,
+      "w": 256,
+      "h": 256,
+      "bytes": 59398,
+      "mode": "RGBA",
+      "hasAlpha": true,
+      "alphaExtrema": [
+        0,
+        255
+      ],
+      "cornerAlpha": [
+        0,
+        0,
+        0,
+        0
+      ],
+      "transparentFraction": 0.404022,
+      "clearFractionInsideSilhouetteBounds": 0.177519,
+      "screenRectClear": null,
+      "tileEdgesMatch": null,
+      "metadataSource": "bubbles/_metadata.json",
+      "sha256": "a1a313694a4fcc34d283e38744fd957181d079c03ce1f412188f940102ecd2db",
+      "format": "PNG",
+      "icoResolutions": null,
+      "icoFrames": null
+    },
+    {
+      "path": "Art/UI/bubbles/bubble_zzz.png",
+      "exists": true,
+      "w": 256,
+      "h": 256,
+      "bytes": 55736,
+      "mode": "RGBA",
+      "hasAlpha": true,
+      "alphaExtrema": [
+        0,
+        255
+      ],
+      "cornerAlpha": [
+        0,
+        0,
+        0,
+        0
+      ],
+      "transparentFraction": 0.403595,
+      "clearFractionInsideSilhouetteBounds": 0.176929,
+      "screenRectClear": null,
+      "tileEdgesMatch": null,
+      "metadataSource": "bubbles/_metadata.json",
+      "sha256": "8f6403d60f7db315b22311ac4d75dbbf7979682bd76feb55aae55e3e3282958b",
+      "format": "PNG",
+      "icoResolutions": null,
+      "icoFrames": null
+    },
+    {
+      "path": "Art/UI/bubbles/bubble_sweat.png",
+      "exists": true,
+      "w": 256,
+      "h": 256,
+      "bytes": 56241,
+      "mode": "RGBA",
+      "hasAlpha": true,
+      "alphaExtrema": [
+        0,
+        255
+      ],
+      "cornerAlpha": [
+        0,
+        0,
+        0,
+        0
+      ],
+      "transparentFraction": 0.404495,
+      "clearFractionInsideSilhouetteBounds": 0.178171,
+      "screenRectClear": null,
+      "tileEdgesMatch": null,
+      "metadataSource": "bubbles/_metadata.json",
+      "sha256": "8ef299c1e749de0586381f45107a7c3f5cca14f6f60ec7376ecd72fb365c2c11",
+      "format": "PNG",
+      "icoResolutions": null,
+      "icoFrames": null
+    },
+    {
+      "path": "Art/UI/app/app_icon_1024.png",
+      "exists": true,
+      "w": 1024,
+      "h": 1024,
+      "bytes": 1181841,
+      "mode": "RGBA",
+      "hasAlpha": true,
+      "alphaExtrema": [
+        0,
+        255
+      ],
+      "cornerAlpha": [
+        0,
+        0,
+        0,
+        0
+      ],
+      "transparentFraction": 0.144997,
+      "clearFractionInsideSilhouetteBounds": 0.039266,
+      "screenRectClear": null,
+      "tileEdgesMatch": null,
+      "metadataSource": "app/_metadata.json",
+      "sha256": "86f7cf0be3ec29e3218b376d29c436f7298adf01339196926e6dd38416323a7b",
+      "format": "PNG",
+      "icoResolutions": null,
+      "icoFrames": null
+    },
+    {
+      "path": "Art/UI/app/app_icon.ico",
+      "exists": true,
+      "w": 256,
+      "h": 256,
+      "bytes": 144777,
+      "mode": "RGBA",
+      "hasAlpha": true,
+      "alphaExtrema": [
+        0,
+        255
+      ],
+      "cornerAlpha": [
+        0,
+        0,
+        0,
+        0
+      ],
+      "transparentFraction": 0.131958,
+      "clearFractionInsideSilhouetteBounds": 0.036693,
+      "screenRectClear": null,
+      "tileEdgesMatch": null,
+      "metadataSource": "app/_metadata.json",
+      "sha256": "749e255a443899981ec134eaecd26f8939d5a781c636dce00d55a3fb720b4a96",
+      "format": "ICO",
+      "icoResolutions": [
+        [
+          16,
+          16
+        ],
+        [
+          24,
+          24
+        ],
+        [
+          32,
+          32
+        ],
+        [
+          48,
+          48
+        ],
+        [
+          64,
+          64
+        ],
+        [
+          128,
+          128
+        ],
+        [
+          256,
+          256
+        ]
+      ],
+      "icoFrames": [
+        {
+          "size": [
+            16,
+            16
+          ],
+          "alphaExtrema": [
+            0,
+            255
+          ]
+        },
+        {
+          "size": [
+            24,
+            24
+          ],
+          "alphaExtrema": [
+            0,
+            255
+          ]
+        },
+        {
+          "size": [
+            32,
+            32
+          ],
+          "alphaExtrema": [
+            0,
+            255
+          ]
+        },
+        {
+          "size": [
+            48,
+            48
+          ],
+          "alphaExtrema": [
+            0,
+            255
+          ]
+        },
+        {
+          "size": [
+            64,
+            64
+          ],
+          "alphaExtrema": [
+            0,
+            255
+          ]
+        },
+        {
+          "size": [
+            128,
+            128
+          ],
+          "alphaExtrema": [
+            0,
+            255
+          ]
+        },
+        {
+          "size": [
+            256,
+            256
+          ],
+          "alphaExtrema": [
+            0,
+            255
+          ]
+        }
+      ]
+    },
+    {
+      "path": "Art/UI/store/capsule_header_920x430.png",
+      "exists": true,
+      "w": 920,
+      "h": 430,
+      "bytes": 567663,
+      "mode": "RGB",
+      "hasAlpha": false,
+      "alphaExtrema": [
+        255,
+        255
+      ],
+      "cornerAlpha": [
+        255,
+        255,
+        255,
+        255
+      ],
+      "transparentFraction": 0.0,
+      "clearFractionInsideSilhouetteBounds": 0.0,
+      "screenRectClear": null,
+      "tileEdgesMatch": null,
+      "metadataSource": "store/_metadata.json",
+      "sha256": "8a79d68da3fad648ca83abd1051a5b6ea6ed223e598eec2124e58e7df54fb950",
+      "format": "PNG",
+      "icoResolutions": null,
+      "icoFrames": null
+    },
+    {
+      "path": "Art/UI/store/capsule_main_1232x706.png",
+      "exists": true,
+      "w": 1232,
+      "h": 706,
+      "bytes": 1157939,
+      "mode": "RGB",
+      "hasAlpha": false,
+      "alphaExtrema": [
+        255,
+        255
+      ],
+      "cornerAlpha": [
+        255,
+        255,
+        255,
+        255
+      ],
+      "transparentFraction": 0.0,
+      "clearFractionInsideSilhouetteBounds": 0.0,
+      "screenRectClear": null,
+      "tileEdgesMatch": null,
+      "metadataSource": "store/_metadata.json",
+      "sha256": "c13f446db66c937cbcf297f8d1f7a626d8075f2f9cb23ade512d415c33074c6e",
+      "format": "PNG",
+      "icoResolutions": null,
+      "icoFrames": null
+    },
+    {
+      "path": "Art/UI/store/key_art_1920x1080.png",
+      "exists": true,
+      "w": 1920,
+      "h": 1080,
+      "bytes": 377147,
+      "mode": "P",
+      "hasAlpha": false,
+      "alphaExtrema": [
+        255,
+        255
+      ],
+      "cornerAlpha": [
+        255,
+        255,
+        255,
+        255
+      ],
+      "transparentFraction": 0.0,
+      "clearFractionInsideSilhouetteBounds": 0.0,
+      "screenRectClear": null,
+      "tileEdgesMatch": null,
+      "metadataSource": "store/_metadata.json",
+      "sha256": "b32cf8a90693d9ae90a535892e273747d6f6a6976548ed489990ccf6a8af9e71",
+      "format": "PNG",
+      "icoResolutions": null,
+      "icoFrames": null
+    }
+  ],
+  "sourceArchives": [
+    {
+      "id": "howto_1_work",
+      "path": "Art/UI/_sources/howto/howto_1_work_raw.png",
+      "ledger": "_sources/howto_prompts.json",
+      "bytes": 2378989,
+      "sha256": "db3dd277ed9d7baba07d668de23e7a572dab9ecdd8705fdeb5aeee9ad7b28a84"
+    },
+    {
+      "id": "howto_2_sabotage",
+      "path": "Art/UI/_sources/howto/howto_2_sabotage_raw.png",
+      "ledger": "_sources/howto_prompts.json",
+      "bytes": 2131918,
+      "sha256": "84023cf54a03e27ce1c352bd53d019ae7b9fad1798cfb45f0261c00fc4ce0788"
+    },
+    {
+      "id": "howto_3_manager",
+      "path": "Art/UI/_sources/howto/howto_3_manager_raw.png",
+      "ledger": "_sources/howto_prompts.json",
+      "bytes": 2267453,
+      "sha256": "0783196d8047ee146f7ffdd353712b609c2a9b5fe27527751fe154df0a16eff6"
+    },
+    {
+      "id": "howto_4_calls",
+      "path": "Art/UI/_sources/howto/howto_4_calls_raw.png",
+      "ledger": "_sources/howto_prompts.json",
+      "bytes": 2275662,
+      "sha256": "691e6c350e59cc72056f802416084cd4b8af37dc7ebc1348c1b3d9f5f2698ca6"
+    },
+    {
+      "id": "howto_5_meeting",
+      "path": "Art/UI/_sources/howto/howto_5_meeting_raw.png",
+      "ledger": "_sources/howto_prompts.json",
+      "bytes": 2288773,
+      "sha256": "7c8417472831e79fce87123241f2516492062add01af8df837f247a380baab1a"
+    },
+    {
+      "id": "howto_6_week",
+      "path": "Art/UI/_sources/howto/howto_6_week_raw.png",
+      "ledger": "_sources/howto_prompts.json",
+      "bytes": 2187735,
+      "sha256": "64d8bad03d4266f562860fd44f6c2240ee607292d080bfaddb5d2f9ceb97981f"
+    },
+    {
+      "id": "title_chaos_agent",
+      "path": "Art/UI/_sources/title_chaos_agent_raw.png",
+      "ledger": "_sources/titles_generation_records.json",
+      "bytes": 1808948,
+      "sha256": "e50dcd72b4aafdf4de49f7e45d5b5cf363a9a1eaa52af6d5125549376207d38b"
+    },
+    {
+      "id": "title_cleanest_desk",
+      "path": "Art/UI/_sources/title_cleanest_desk_raw.png",
+      "ledger": "_sources/titles_generation_records.json",
+      "bytes": 1667255,
+      "sha256": "5f7485ad18c9c4c38368a363d2b0de42903bb6aaef1cc28316f27cb436be47dc"
+    },
+    {
+      "id": "title_coffee_master",
+      "path": "Art/UI/_sources/title_coffee_master_raw.png",
+      "ledger": "_sources/titles_generation_records.json",
+      "bytes": 1817717,
+      "sha256": "777ed0c823601749a52668ae300bebe71050592070843da4a08b0f13270e372d"
+    },
+    {
+      "id": "title_favourite",
+      "path": "Art/UI/_sources/title_favourite_raw.png",
+      "ledger": "_sources/titles_generation_records.json",
+      "bytes": 1853171,
+      "sha256": "fd180c127e3d2d790479d3f7885924c8f2f2b3c4099ebe3604da3d2099ac0d2c"
+    },
+    {
+      "id": "title_informant_of_month",
+      "path": "Art/UI/_sources/title_informant_of_month_raw.png",
+      "ledger": "_sources/titles_generation_records.json",
+      "bytes": 1769855,
+      "sha256": "7aad93dae825b882f0e869140559a524206b8fa2289e35095650e0ade07bf0ab"
+    },
+    {
+      "id": "title_it_hero",
+      "path": "Art/UI/_sources/title_it_hero_raw.png",
+      "ledger": "_sources/titles_generation_records.json",
+      "bytes": 1869590,
+      "sha256": "4d8edfc5c580b24dc5638331582cb854643923c338ba328badd029f2c2084640"
+    },
+    {
+      "id": "title_printer_enemy",
+      "path": "Art/UI/_sources/title_printer_enemy_raw.png",
+      "ledger": "_sources/titles_generation_records.json",
+      "bytes": 1853146,
+      "sha256": "4b548271590ce85f61c4ad3db24ad34c7989643850fb8f461c29850b89aac2d3"
+    },
+    {
+      "id": "title_pro_scapegoat",
+      "path": "Art/UI/_sources/title_pro_scapegoat_raw.png",
+      "ledger": "_sources/titles_generation_records.json",
+      "bytes": 1757379,
+      "sha256": "f0367de4009d67f4d42437eb6ff57dd8042378625da039575fe74efc87e115b9"
+    },
+    {
+      "id": "title_salt_bae",
+      "path": "Art/UI/_sources/title_salt_bae_raw.png",
+      "ledger": "_sources/titles_generation_records.json",
+      "bytes": 1739030,
+      "sha256": "5cb9fccb2c7edcae3af8b7fddeb282429e259262a260a94c2ab725daa3b20ea0"
+    },
+    {
+      "id": "title_scam_artist",
+      "path": "Art/UI/_sources/title_scam_artist_raw.png",
+      "ledger": "_sources/titles_generation_records.json",
+      "bytes": 1744726,
+      "sha256": "ba81c8390075fca82764136e333a61d34406a2e2cd3727e59fb822a6979d8525"
+    },
+    {
+      "id": "bubble_ringing",
+      "path": "Art/UI/_sources/bubbles_app/bubble_ringing_raw.png",
+      "ledger": "_sources/bubbles_app_prompts.json",
+      "bytes": 1184587,
+      "sha256": "82ffabf171055358f4e5346f59ea379727f2d1fb66bc091c4eef95911c6a683a"
+    },
+    {
+      "id": "bubble_on_call",
+      "path": "Art/UI/_sources/bubbles_app/bubble_on_call_raw.png",
+      "ledger": "_sources/bubbles_app_prompts.json",
+      "bytes": 1106130,
+      "sha256": "f906bcfb504770dc8e299fc551de65ad79308198e8fe79189f54f51cf297d058"
+    },
+    {
+      "id": "bubble_exclaim",
+      "path": "Art/UI/_sources/bubbles_app/bubble_exclaim_raw.png",
+      "ledger": "_sources/bubbles_app_prompts.json",
+      "bytes": 1079496,
+      "sha256": "d75047a6204c3de38b41b5fa6d6573329052da9fe165d3dd1852ea977d2ece1a"
+    },
+    {
+      "id": "bubble_question",
+      "path": "Art/UI/_sources/bubbles_app/bubble_question_raw.png",
+      "ledger": "_sources/bubbles_app_prompts.json",
+      "bytes": 1092795,
+      "sha256": "ce28b6883fc681f5b4248f602b9f6305e6a966075a87825913ea728503726b9f"
+    },
+    {
+      "id": "bubble_angry",
+      "path": "Art/UI/_sources/bubbles_app/bubble_angry_raw.png",
+      "ledger": "_sources/bubbles_app_prompts.json",
+      "bytes": 1061440,
+      "sha256": "0b72227f45cadd7f34164213bb0b36a090c6b3e4f1de326d0e9b8d8bc6ff3d06"
+    },
+    {
+      "id": "bubble_heart",
+      "path": "Art/UI/_sources/bubbles_app/bubble_heart_raw.png",
+      "ledger": "_sources/bubbles_app_prompts.json",
+      "bytes": 1078075,
+      "sha256": "67fe5cd6cbc069e9393e242c7fba828ed9db82f15fb0eceed67d25fb57abf6c8"
+    },
+    {
+      "id": "bubble_zzz",
+      "path": "Art/UI/_sources/bubbles_app/bubble_zzz_raw.png",
+      "ledger": "_sources/bubbles_app_prompts.json",
+      "bytes": 1037120,
+      "sha256": "c6227852eb65f5980a8d1adcccddb30ef66b039d4ff13cf259df1fbc4d92668c"
+    },
+    {
+      "id": "bubble_sweat",
+      "path": "Art/UI/_sources/bubbles_app/bubble_sweat_raw.png",
+      "ledger": "_sources/bubbles_app_prompts.json",
+      "bytes": 1052739,
+      "sha256": "fd3544e3811f0c24fd4d1d6ff06ca37b73d5f7dc74b875179c6046e1abdd4893"
+    },
+    {
+      "id": "app_icon_1024",
+      "path": "Art/UI/_sources/bubbles_app/app_icon_raw.png",
+      "ledger": "_sources/bubbles_app_prompts.json",
+      "bytes": 1947919,
+      "sha256": "21b61991a75f9fac9b0645f47d89a337d06a4ae33aff2e8012b6b8039e0d5b81"
+    },
+    {
+      "id": "store_key_art",
+      "path": "Art/UI/_sources/store_key_art_raw.png",
+      "ledger": "_sources/second_run_root_prompts.json",
+      "bytes": 2087532,
+      "sha256": "aaddd8c03f1f19c785dd748c64bac0a83cde79303f8b1425747f3307d13f4b37"
+    },
+    {
+      "id": "week_trophy",
+      "path": "Art/UI/_sources/week_trophy_raw.png",
+      "ledger": "_sources/second_run_root_prompts.json",
+      "bytes": 1462335,
+      "sha256": "98ac333cbfdf9f8c7805cea0f87672ba911e6e91b924cebd7802d2da124e0264"
+    },
+    {
+      "id": "poster_teamwork",
+      "path": "Art/UI/_sources/decals_v2/poster_teamwork_raw.png",
+      "ledger": "_sources/decals_v2/prompts_a.json",
+      "bytes": 1877907,
+      "sha256": "50df02532626b6994bb7fc3a0cedc1240b5997d28e2e7fe8b675dbef25f48d7b"
+    },
+    {
+      "id": "poster_motivation",
+      "path": "Art/UI/_sources/decals_v2/poster_motivation_raw.png",
+      "ledger": "_sources/decals_v2/prompts_a.json",
+      "bytes": 2038679,
+      "sha256": "5a2d45e0ffc02f585ad481e7c98f50e9ff82ee61e6283e3e1317d135e30d8019"
+    },
+    {
+      "id": "poster_safety",
+      "path": "Art/UI/_sources/decals_v2/poster_safety_raw.png",
+      "ledger": "_sources/decals_v2/prompts_a.json",
+      "bytes": 1641424,
+      "sha256": "a352eedb9a82b889d103d4a2484c79ef7ff51229f7691fec07724e1befbd2aa4"
+    },
+    {
+      "id": "memo_board",
+      "path": "Art/UI/_sources/decals_v2/memo_board_raw.png",
+      "ledger": "_sources/decals_v2/prompts_a.json",
+      "bytes": 2207517,
+      "sha256": "b9e7873ff9289ceb5937495c42ba0191002274b7947351e3d607820e2de1ac0e"
+    },
+    {
+      "id": "poster_quota",
+      "path": "Art/UI/_sources/decals_v2/poster_quota_raw.png",
+      "ledger": "_sources/decals_v2/prompts_a.json",
+      "bytes": 1829415,
+      "sha256": "6741b4a05e97e226bbefa93d944d5a6e15d9bf52eb748e4b797737b9e3cc862f"
+    },
+    {
+      "id": "portrait_manager",
+      "path": "Art/UI/_sources/decals_v2/portrait_manager_raw.png",
+      "ledger": "_sources/decals_v2/prompts_a.json",
+      "bytes": 2508800,
+      "sha256": "c648013be02e17548df4b6e764161e2ed8a9b938453b8aed72570bf97df57188"
+    },
+    {
+      "id": "diploma",
+      "path": "Art/UI/_sources/decals_v2/diploma_raw.png",
+      "ledger": "_sources/decals_v2/prompts_a.json",
+      "bytes": 1989817,
+      "sha256": "1408a9edd5685b9556425c735c8cb05d17a8b7f0553723819e5840e249080730"
+    },
+    {
+      "id": "poster_kpi",
+      "path": "Art/UI/_sources/decals_v2/poster_kpi_raw.png",
+      "ledger": "_sources/decals_v2/prompts_b.json",
+      "bytes": 1816003,
+      "sha256": "52aa3c816acf4ac882036edad31b8354067be70a0e65e06945709e93ff89cca7"
+    },
+    {
+      "id": "poster_mission",
+      "path": "Art/UI/_sources/decals_v2/poster_mission_raw.png",
+      "ledger": "_sources/decals_v2/prompts_b.json",
+      "bytes": 2131996,
+      "sha256": "b0e1713da088cf555d0087b680c42e553b71be35fb4181664d717f4a233bf0fe"
+    },
+    {
+      "id": "poster_coffee",
+      "path": "Art/UI/_sources/decals_v2/poster_coffee_raw.png",
+      "ledger": "_sources/decals_v2/prompts_b.json",
+      "bytes": 1976622,
+      "sha256": "de7bfb4c99c63255f9eb74483ea32881665634ca2f48cfa5ff14346c8baf39cb"
+    },
+    {
+      "id": "sign_salt",
+      "path": "Art/UI/_sources/decals_v2/sign_salt_raw.png",
+      "ledger": "_sources/decals_v2/prompts_b.json",
+      "bytes": 1953419,
+      "sha256": "c3aacf3ab883a1b8a9050381feacbdcdb24f8e5127c61d8bc469876d339ca910"
+    },
+    {
+      "id": "poster_fridge_rules",
+      "path": "Art/UI/_sources/decals_v2/poster_fridge_rules_raw.png",
+      "ledger": "_sources/decals_v2/prompts_b.json",
+      "bytes": 2144267,
+      "sha256": "ecdb7e0658707e0056d6955118aafc44b2a7737b21d1534c011438dc86fd070d"
+    },
+    {
+      "id": "poster_printer",
+      "path": "Art/UI/_sources/decals_v2/poster_printer_raw.png",
+      "ledger": "_sources/decals_v2/prompts_b.json",
+      "bytes": 2069711,
+      "sha256": "f3f74c1126694a5ccc0a0987bf4d95b6e5ff1afeebb3d677265c9141f055626a"
+    },
+    {
+      "id": "sign_out_of_order",
+      "path": "Art/UI/_sources/decals_v2/sign_out_of_order_raw.png",
+      "ledger": "_sources/decals_v2/prompts_b.json",
+      "bytes": 1890760,
+      "sha256": "f046c5b2a0ee9ba92a5c3564449eed8199918249de7e8600f540f521dae92088"
+    },
+    {
+      "id": "logo_company",
+      "path": "Art/UI/_sources/decals_v2/logo_company_raw.png",
+      "ledger": "_sources/decals_v2/prompts_c.json",
+      "bytes": 2147423,
+      "sha256": "8b09e8b60b1faed9e024575dffae51b381d6259852eae7da8b57c01e677f80d6"
+    },
+    {
+      "id": "poster_welcome",
+      "path": "Art/UI/_sources/decals_v2/poster_welcome_raw.png",
+      "ledger": "_sources/decals_v2/prompts_c.json",
+      "bytes": 2006868,
+      "sha256": "5fb7050bb7ccc26d76f287a1dcdda0b2d7eb7867f74142f3b21a73b38086f238"
+    },
+    {
+      "id": "sign_fusebox",
+      "path": "Art/UI/_sources/decals_v2/sign_fusebox_raw.png",
+      "ledger": "_sources/decals_v2/prompts_c.json",
+      "bytes": 1777514,
+      "sha256": "50ad03f238b21a65e7fab0851941e4fe227928079154b6ec522969245e7a3383"
+    },
+    {
+      "id": "sign_wash_hands",
+      "path": "Art/UI/_sources/decals_v2/sign_wash_hands_raw.png",
+      "ledger": "_sources/decals_v2/prompts_c.json",
+      "bytes": 1922290,
+      "sha256": "ef565edfb50c0a4bb5b7faa2a098f650dc54f730e9943b6a078bb8b501c44edd"
+    },
+    {
+      "id": "sign_server_danger",
+      "path": "Art/UI/_sources/decals_v2/sign_server_danger_raw.png",
+      "ledger": "_sources/decals_v2/prompts_c.json",
+      "bytes": 1505339,
+      "sha256": "ee3aa42151143bf6a2ab8590bf76a1f9bc70352bfb83e532e2ed670ef7cbc34c"
+    },
+    {
+      "id": "poster_relax",
+      "path": "Art/UI/_sources/decals_v2/poster_relax_raw.png",
+      "ledger": "_sources/decals_v2/prompts_c.json",
+      "bytes": 2461705,
+      "sha256": "c6c78f5e74a12aed863b9c07568267c1f1a626de42660fc5554bab840c191413"
+    },
+    {
+      "id": "poster_vending",
+      "path": "Art/UI/_sources/decals_v2/poster_vending_raw.png",
+      "ledger": "_sources/decals_v2/prompts_c.json",
+      "bytes": 2244880,
+      "sha256": "9ef9bcb0bde71fded0ac765f6d44332d09e904d211d758154bb37cd77fa92ce3"
+    }
+  ]
+}

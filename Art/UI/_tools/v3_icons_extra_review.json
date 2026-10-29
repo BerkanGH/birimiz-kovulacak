@@ -1,0 +1,17 @@
+{
+  "reviewed": true,
+  "sheet": "_sheets/v3_icons_extra.png",
+  "displayPixels": [48, 48],
+  "count": 9,
+  "observations": [
+    "All nine subjects remain distinct at 48px with isolated silhouettes and matching navy contours.",
+    "Coffee spill is distinguishable from morning coffee by tilt, brown pour and keyboard; morning uses sunrise and upright mug.",
+    "Dead phone handset is distinct from red manager phone; cut-cord detail is intentionally secondary at 48px.",
+    "Whispering blue bean and yellow intern retain style-sheet facial construction, with hand and lanyard readable.",
+    "Defense microphone and meeting table/chairs remain recognizable at the intended display size.",
+    "All icons contain only requested semantic imagery, no letters, no outer panel, no arbitrary side stripe, no sparkle or neon."
+  ],
+  "weaknesses": [],
+  "missing": [],
+  "hashLedger": "_tools/v3_icons_extra_audit.json"
+}

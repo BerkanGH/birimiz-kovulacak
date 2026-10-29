@@ -1,0 +1,339 @@
+{
+  "assets": [
+    {
+      "path": "rounds\\round_prim_havuzu.png",
+      "w": 512,
+      "h": 716,
+      "bytes": 206338,
+      "alphaExtrema": [
+        0,
+        255
+      ],
+      "cornerAlpha": [
+        0,
+        0,
+        0,
+        0
+      ],
+      "alphaBounds": [
+        11,
+        9,
+        501,
+        707
+      ]
+    },
+    {
+      "path": "rounds\\round_farkli_eposta.png",
+      "w": 512,
+      "h": 716,
+      "bytes": 217761,
+      "alphaExtrema": [
+        0,
+        255
+      ],
+      "cornerAlpha": [
+        0,
+        0,
+        0,
+        0
+      ],
+      "alphaBounds": [
+        11,
+        9,
+        501,
+        707
+      ]
+    },
+    {
+      "path": "rounds\\round_kayip_rapor.png",
+      "w": 512,
+      "h": 716,
+      "bytes": 192626,
+      "alphaExtrema": [
+        0,
+        255
+      ],
+      "cornerAlpha": [
+        0,
+        0,
+        0,
+        0
+      ],
+      "alphaBounds": [
+        11,
+        9,
+        501,
+        707
+      ]
+    },
+    {
+      "path": "rounds\\round_ihbar_kutusu.png",
+      "w": 512,
+      "h": 716,
+      "bytes": 174159,
+      "alphaExtrema": [
+        0,
+        255
+      ],
+      "cornerAlpha": [
+        0,
+        0,
+        0,
+        0
+      ],
+      "alphaBounds": [
+        11,
+        9,
+        501,
+        707
+      ]
+    },
+    {
+      "path": "rounds\\round_terfi_listesi.png",
+      "w": 512,
+      "h": 716,
+      "bytes": 192787,
+      "alphaExtrema": [
+        0,
+        255
+      ],
+      "cornerAlpha": [
+        0,
+        0,
+        0,
+        0
+      ],
+      "alphaBounds": [
+        11,
+        9,
+        501,
+        707
+      ]
+    },
+    {
+      "path": "rounds\\round_ortak_sifre.png",
+      "w": 512,
+      "h": 716,
+      "bytes": 168275,
+      "alphaExtrema": [
+        0,
+        255
+      ],
+      "cornerAlpha": [
+        0,
+        0,
+        0,
+        0
+      ],
+      "alphaBounds": [
+        11,
+        9,
+        501,
+        707
+      ]
+    },
+    {
+      "path": "tricks\\trick_coffee_spill.png",
+      "w": 512,
+      "h": 716,
+      "bytes": 188582,
+      "alphaExtrema": [
+        0,
+        255
+      ],
+      "cornerAlpha": [
+        0,
+        0,
+        0,
+        0
+      ],
+      "alphaBounds": [
+        11,
+        9,
+        501,
+        707
+      ]
+    },
+    {
+      "path": "tricks\\trick_wiretap.png",
+      "w": 512,
+      "h": 716,
+      "bytes": 152071,
+      "alphaExtrema": [
+        0,
+        255
+      ],
+      "cornerAlpha": [
+        0,
+        0,
+        0,
+        0
+      ],
+      "alphaBounds": [
+        11,
+        9,
+        501,
+        707
+      ]
+    },
+    {
+      "path": "tricks\\trick_erase_tape.png",
+      "w": 512,
+      "h": 716,
+      "bytes": 198765,
+      "alphaExtrema": [
+        0,
+        255
+      ],
+      "cornerAlpha": [
+        0,
+        0,
+        0,
+        0
+      ],
+      "alphaBounds": [
+        11,
+        9,
+        501,
+        707
+      ]
+    },
+    {
+      "path": "rounds\\round_card_back.png",
+      "w": 512,
+      "h": 716,
+      "bytes": 87036,
+      "alphaExtrema": [
+        0,
+        255
+      ],
+      "cornerAlpha": [
+        0,
+        0,
+        0,
+        0
+      ],
+      "alphaBounds": [
+        11,
+        9,
+        501,
+        707
+      ]
+    }
+  ],
+  "typography": {
+    "font": "Arial Bold",
+    "sizeInSourcePixels": 78,
+    "asset": "round_ortak_sifre",
+    "glyphs": [
+      {
+        "text": "4",
+        "codepoints": [
+          "U+0034"
+        ],
+        "center": [
+          143,
+          800
+        ],
+        "bounds": [
+          121,
+          772,
+          164,
+          827
+        ]
+      },
+      {
+        "text": "1",
+        "codepoints": [
+          "U+0031"
+        ],
+        "center": [
+          339,
+          810
+        ],
+        "bounds": [
+          317,
+          781,
+          360,
+          837
+        ]
+      },
+      {
+        "text": "7",
+        "codepoints": [
+          "U+0037"
+        ],
+        "center": [
+          535,
+          816
+        ],
+        "bounds": [
+          513,
+          788,
+          556,
+          843
+        ]
+      },
+      {
+        "text": "2",
+        "codepoints": [
+          "U+0032"
+        ],
+        "center": [
+          730,
+          826
+        ],
+        "bounds": [
+          708,
+          797,
+          751,
+          853
+        ]
+      },
+      {
+        "text": "9",
+        "codepoints": [
+          "U+0039"
+        ],
+        "center": [
+          932,
+          824
+        ],
+        "bounds": [
+          910,
+          795,
+          953,
+          852
+        ]
+      },
+      {
+        "text": "6",
+        "codepoints": [
+          "U+0036"
+        ],
+        "center": [
+          1181,
+          841
+        ],
+        "bounds": [
+          1159,
+          812,
+          1202,
+          869
+        ]
+      }
+    ]
+  },
+  "frameSafeArea": [
+    52,
+    552,
+    408,
+    104
+  ],
+  "illustrationArea": [
+    40,
+    44,
+    428,
+    474
+  ]
+}
