@@ -18,7 +18,7 @@ $logs = Join-Path $root "Builds\logs"
 New-Item -ItemType Directory -Force $logs | Out-Null
 
 if ($Art) {
-    foreach ($s in "build_characters.py", "build_props.py", "build_architecture.py") {
+    foreach ($s in "build_characters.py", "build_props.py", "build_architecture.py", "build_rooms.py") {
         Write-Host "Blender: $s"
         & $Blender -b --factory-startup -P (Join-Path $root "Art\Scripts\$s") | Select-String "DONE|Error|Traceback"
     }

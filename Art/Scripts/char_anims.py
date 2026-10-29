@@ -250,6 +250,50 @@ def player_clips(rig):
                     (14, P(body=dict(up=SIT_UP, lean=8, sq=0.98), head=dict(lean=6, turn=4, tilt=4), hands=gest(1), feet=sit_feet)),
                     (27, P(body=dict(up=SIT_UP, lean=5), head=dict(lean=-2, turn=-2), hands=gest(2), feet=sit_feet)),
                     (41, P(body=dict(up=SIT_UP, lean=4), head=dict(lean=-4, turn=-6), hands=gest(0), feet=sit_feet))])
+    # v3 meeting table (seated reactions; Scripts/Rooms/SeatedBean plays them as one-shots over Sit / SitTalk)
+    sitb = lambda **kw: dict({"up": SIT_UP}, **kw)
+    add("SitNod", [(1, P(body=sitb(lean=-2), hands=lap, feet=sit_feet)),
+                   (7, P(body=sitb(lean=2), head=dict(lean=16), hands=lap, feet=sit_feet)),
+                   (13, P(body=sitb(lean=-1), head=dict(lean=-4), hands=lap, feet=sit_feet)),
+                   (19, P(body=sitb(lean=2), head=dict(lean=15), hands=lap, feet=sit_feet)),
+                   (26, P(body=sitb(lean=-2), head=dict(lean=0), hands=lap, feet=sit_feet)),
+                   (30, P(body=sitb(lean=-4, sq=0.98), hands=lap, feet=sit_feet))], loop=False)
+    sit_belly = hands(L=(-0.22, 0.34, 0.4), R=(0.22, 0.34, 0.4), poleL=(-1, -0.3, -0.3), poleR=(1, -0.3, -0.3))
+    sl = [(1, P(body=sitb(lean=-4), hands=lap, feet=sit_feet))]
+    for i in range(7):
+        sl.append((5 + i * 5, P(body=sitb(lean=-14 + (i % 2) * 4, sq=(1.05, 0.95)[i % 2]), head=dict(lean=-16 + (i % 2) * 6, tilt=(5, -5)[i % 2]),
+                                 hands=sit_belly, feet={"L": (0, 0.22, SIT_UP - 0.1 + 0.03 * (i % 2), 35), "R": (0, 0.22, SIT_UP - 0.1, 35)},
+                                 top=dict(lean=(6, -6)[i % 2]))))
+    sl.append((45, P(body=sitb(lean=-4), hands=lap, feet=sit_feet)))
+    add("SitLaugh", sl, loop=False)
+    cheeks = hands(L=(-0.17, 0.3, 0.84), R=(0.17, 0.3, 0.84), poleL=(-1, -0.4, -0.4), poleR=(1, -0.4, -0.4))
+    add("SitGasp", [(1, P(body=sitb(lean=-4), hands=lap, feet=sit_feet)),
+                    (5, P(body=sitb(lean=-16, sq=1.08), head=dict(lean=-14), hands=cheeks, feet={"L": (0, 0.24, SIT_UP - 0.05, 40), "R": (0, 0.24, SIT_UP - 0.05, 40)}, top=dict(lean=-10))),
+                    (10, P(body=sitb(lean=-13, sq=0.97), head=dict(lean=-10), hands=cheeks, feet=sit_feet, top=dict(lean=8))),
+                    (30, P(body=sitb(lean=-12), head=dict(lean=-8, tilt=4), hands=cheeks, feet=sit_feet)),
+                    (40, P(body=sitb(lean=-4), hands=lap, feet=sit_feet))], loop=False)
+    sit_point = hands(L=(-0.2, 0.26, 0.42), R=(0.2, 0.56, 0.68), poleL=(-1, -0.6, -0.3), poleR=(1, -0.2, -0.3))
+    add("SitPoint", [(1, P(body=sitb(lean=-4), hands=lap, feet=sit_feet)),
+                     (6, P(body=sitb(lean=4), head=dict(lean=-4), hands=hands(R=(0.3, 0.3, 0.7), poleR=(1, -0.3, -0.6), L=(-0.2, 0.26, 0.42), poleL=(-1, -0.6, -0.3)), feet=sit_feet)),
+                     (10, P(body=sitb(lean=12, sq=0.97), head=dict(lean=2), hands=sit_point, feet=sit_feet, top=dict(lean=8))),
+                     (14, P(body=sitb(lean=14, sq=0.96), head=dict(lean=4), hands=sit_point, feet=sit_feet, top=dict(lean=-4))),
+                     (32, P(body=sitb(lean=12), head=dict(lean=2), hands=sit_point, feet=sit_feet)),
+                     (40, P(body=sitb(lean=-4), hands=lap, feet=sit_feet))], loop=False)
+    low_lap = hands(L=(-0.16, 0.24, 0.32), R=(0.16, 0.24, 0.32), poleL=(-1, -0.5, -0.2), poleR=(1, -0.5, -0.2))
+    add("SitSlump", [(1, P(body=sitb(lean=16, sq=0.93, up=SIT_UP - 0.02), head=dict(lean=24, tilt=3), hands=low_lap, feet=sit_feet, top=dict(lean=4))),
+                     (31, P(body=sitb(lean=18, sq=0.92, up=SIT_UP - 0.025), head=dict(lean=27, tilt=-2), hands=low_lap, feet=sit_feet)),
+                     (61, P(body=sitb(lean=16, sq=0.93, up=SIT_UP - 0.02), head=dict(lean=24, tilt=3), hands=low_lap, feet=sit_feet, top=dict(lean=4)))])
+    sit_up_h = hands(L=(-0.4, 0.1, 0.86), R=(0.4, 0.1, 0.86), poleL=(-1, -0.2, -0.4), poleR=(1, -0.2, -0.4))
+    add("SitCheer", [(1, P(body=sitb(lean=-4), hands=lap, feet=sit_feet)),
+                     (6, P(body=sitb(lean=-8, sq=1.1, up=SIT_UP + 0.05), head=dict(lean=-12), hands=sit_up_h, feet={"L": (0, 0.24, SIT_UP - 0.04, 40), "R": (0, 0.24, SIT_UP - 0.04, 40)}, top=dict(lean=-8))),
+                     (11, P(body=sitb(lean=-6, sq=0.94), hands=sit_up_h, feet=sit_feet, top=dict(lean=8))),
+                     (16, P(body=sitb(lean=-8, sq=1.08, up=SIT_UP + 0.04), head=dict(lean=-10), hands=sit_up_h, feet=sit_feet, top=dict(lean=-8))),
+                     (24, P(body=sitb(lean=-6, sq=0.97), hands=sit_up_h, feet=sit_feet)),
+                     (36, P(body=sitb(lean=-4), hands=lap, feet=sit_feet))], loop=False)
+    add("SitBox", [(1, P(body=sitb(lean=8, sq=0.95), head=dict(lean=24), hands=FIRED_BOX, feet=sit_feet)),
+                   (31, P(body=sitb(lean=10, sq=0.93), head=dict(lean=28, tilt=4), hands=FIRED_BOX, feet=sit_feet, top=dict(lean=4))),
+                   (61, P(body=sitb(lean=8, sq=0.95), head=dict(lean=24), hands=FIRED_BOX, feet=sit_feet))])
+
     tgest = lambda t: hands(L=((-0.4, 0.2, 0.5), (-0.36, 0.3, 0.6), (-0.42, 0.18, 0.46))[t], R=((0.3, 0.38, 0.66), (0.26, 0.42, 0.76), (0.4, 0.3, 0.6))[t],
                             poleL=(-1, -0.4, -0.7), poleR=(1, -0.4, -0.7))
     add("Talk", [(1, P(body=dict(lean=2), head=dict(lean=-4, turn=-6), hands=tgest(0))),
