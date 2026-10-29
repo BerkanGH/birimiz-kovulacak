@@ -223,7 +223,7 @@ namespace BirimizKovulacak.Core
         RoundOutcome = 1,
         /// <summary>Trick = type; Player = culprit if Named else -1; Victim; TemplateId for fake mail.</summary>
         TrickTrace = 2,
-        /// <summary>Player = subject of the tip; Arg = 1 confirmed / 0 false. The tipper is never shown.</summary>
+        /// <summary>Player = subject of the tip; Arg = 1 confirmed / 0 false. v3.1: a false tip names the tipper in Victim; a true tip stays anonymous (Victim = -1).</summary>
         TipResult = 3,
         /// <summary>Player = author of one complaint; Victim = its target.</summary>
         ComplaintLeak = 4,
