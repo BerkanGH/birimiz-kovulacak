@@ -34,6 +34,17 @@ engine), `UiMotion` (tweens), `Loc` area files (`<lang>.<area>.json`) + `SetLang
   109 voice tests. Lead wiring `9bc0e80` (HostLineVoiceBridge).
 - **First v3 network week (4 processes, bots, synthetic voice, scale 0.15): completed, all 4 agree on the result hash.**
   Host clock jitter threw in LineEngine.Tick → monotonic clock (`5bfdfa3`). Calls too short at 0.15 for recordings.
-- Waiting for: engine (runtime needs `LineCodec`/`LineEngineFactory`), voice API (bridge v3 + recordings hook
-  `HostLineController.PlayRecording`), world presenter, UI screens, art sync into `UI/Resources/ui/**`.
+- Codex v3.1 engine merged (`fc31911`): 774 tests green (497 v2 + 277 v3); LineSim 2,000 weeks per head count.
+- Week start time fix (`2cee6d5`): no more monotonic-time exceptions. Recordings play every meeting (voice picks the call with speech).
+- Meeting/shell UI merged (`3315582`): dossier slides on the projector RenderTexture, tape deck, ballot, İhtar stamp,
+  shortlist defenses, final ballot + letter, week results with next-manager pick, menu/lobby/settings/how-to, TR+EN.
+- World merged (`e0dbd91`): first-person office + meeting room (Blender kit, ~49k tris), seated characters with talk
+  animation, POV camera, room lighting morning→dusk; scenetest peak 385 MB working set.
+- Desk UI merged (`3810bf4`): KOVA OS computer (5 apps), desk phone, morning call, rule cards, all six rounds play +
+  reveal, onboarding sticky note, TR+EN (548 keys each).
+- Codex review of the integration layer: 12 findings, 11 fixed (`c4da37d`) — server-only host RPCs, stale recordings,
+  session history on lobby return, reconnect seat races, rejoin credentials, tape queueing, per-frame clones, cue order.
+  The 12th (v2 screens kept alive on language rebuild) goes away with the v2 cleanup (running, branch v3-cleanup).
+- **Network runs (bots + synthetic voice):** 4p Short (0.3) PASS, 5p Short (0.3) PASS, **6p Full Week (0.25) PASS** —
+  same result hash on every process, all v3 phases, 0 errors, a recording played in every meeting.
 - After all merges: remove v2 gameplay code (engine v2, HUD, open-office map, third-person camera, v2 bots) from `v3`.
