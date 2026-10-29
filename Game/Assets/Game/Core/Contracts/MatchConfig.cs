@@ -13,7 +13,9 @@ namespace BirimizKovulacak.Core
         /// <summary>v2: Protocol.Version the file was written for. 0 (missing) = an older file: loaders fall back to defaults.</summary>
         public int ConfigVersion;
         public int PlayerCount = 4;
-        public float QuotaTarget = 22f;
+        // v2.3: 22 -> 28 for 4 players. v2 adds mail and a faster manager; Unity bots now reach ~2x the old target
+        // (v1: ~1.35x). Re-tune after the first human week (docs/BALANCE_SIM.md); ApplyHeadcount scales it.
+        public float QuotaTarget = 28f;
         /// <summary>When true, desks are shuffled per match; when false player N sits at desk N.</summary>
         public bool ShuffleDesks = true; // v2 review: the last desk on the route must not belong to a fixed lobby slot
 
@@ -90,10 +92,10 @@ namespace BirimizKovulacak.Core
 
             c.Objectives.Add(new ObjectiveDef { Id = "DISMISSAL_PLAN", Type = ObjectiveType.DismissalPlan, RequiresTarget = true });
             c.Objectives.Add(new ObjectiveDef { Id = "PROTECTION_DEAL", Type = ObjectiveType.ProtectionDeal, RequiresTarget = true });
-            c.Objectives.Add(new ObjectiveDef { Id = "SCAPEGOAT", Type = ObjectiveType.Scapegoat, RequiresTarget = true, Count = 2 });
+            c.Objectives.Add(new ObjectiveDef { Id = "SCAPEGOAT", Type = ObjectiveType.Scapegoat, RequiresTarget = true, Count = 1 });
             c.Objectives.Add(new ObjectiveDef { Id = "QUIET_STAR", Type = ObjectiveType.QuietStar });
-            c.Objectives.Add(new ObjectiveDef { Id = "CHAOS_COORDINATOR", Type = ObjectiveType.ChaosCoordinator, Count = 2 });
-            c.Objectives.Add(new ObjectiveDef { Id = "CLEAN_HANDS", Type = ObjectiveType.CleanHands, Count = 4, Count2 = 2 });
+            c.Objectives.Add(new ObjectiveDef { Id = "CHAOS_COORDINATOR", Type = ObjectiveType.ChaosCoordinator, Count = 1 });
+            c.Objectives.Add(new ObjectiveDef { Id = "CLEAN_HANDS", Type = ObjectiveType.CleanHands, Count = 7, Count2 = 2 });
             c.Objectives.Add(new ObjectiveDef { Id = "OFFICE_ALL_ROUNDER", Type = ObjectiveType.OfficeAllRounder, Count = 5 });
             c.Objectives.Add(new ObjectiveDef { Id = "FIXER", Type = ObjectiveType.Fixer, Count = 2 });
             c.Objectives.Add(new ObjectiveDef { Id = "DESK_GUARDIAN", Type = ObjectiveType.DeskGuardian, RequiresTarget = true });
