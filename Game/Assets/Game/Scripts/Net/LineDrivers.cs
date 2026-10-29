@@ -107,8 +107,12 @@ namespace BirimizKovulacak.Game
                     rooms.EnterOffice(me, p != null ? p.ColorIndex : me, p != null ? p.Name : "");
                     if (rooms.Mode != PovMode.Monitor && rooms.Mode != PovMode.Phone) rooms.SetPovMode(PovMode.Office);
                 }
-                rooms.SetPhoneState(PhoneState(v, now));
-                rooms.SetMonitorState(MonitorStateOf(v, now));
+                // Phone/monitor prop states are driven by DeskUi (DrivesWorldProps) unless it is switched off.
+                if (!DeskUi.DrivesWorldProps)
+                {
+                    rooms.SetPhoneState(PhoneState(v, now));
+                    rooms.SetMonitorState(MonitorStateOf(v, now));
+                }
                 rooms.SetTimeOfDay(TimeOfDay(v, now));
                 return;
             }
