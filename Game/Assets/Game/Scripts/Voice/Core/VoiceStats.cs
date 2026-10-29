@@ -17,7 +17,8 @@ namespace BirimizKovulacak.Voice
         readonly RxSnap[] _rx = new RxSnap[VoiceFormat.MaxPlayers];
         long _txFrames, _txBytes, _txErrors, _txSpurts;
         long _upMsgs, _upBytes, _downMsgs, _downBytes;
-        long _rtDecisions, _rtDelivered, _rtCall, _rtMuffled, _rtMuted, _rtRange, _rtRateLimited, _rtUnknown;
+        long _rtDecisions, _rtDelivered, _rtCall, _rtTap, _rtMuffled, _rtMuted, _rtRange, _rtRateLimited, _rtUnknown;
+        long _recFrames, _recDropped;
         double _lastMs = -1;
 
         public static string Kbps(long bytes, double seconds)
@@ -30,7 +31,7 @@ namespace BirimizKovulacak.Voice
         /// Any argument may be null.
         /// </summary>
         public string Build(double nowMs, string codec, VoiceCapturePipeline tx, VoicePlaybackChannel[] channels,
-            PcmPlayoutReader[] readers, ProximityVoiceRouter router, VoiceTransportCounters net)
+            PcmPlayoutReader[] readers, ProximityVoiceRouter router, VoiceTransportCounters net, VoiceCallRecorder recorder = null)
         {
             double seconds = _lastMs < 0 ? 0 : (nowMs - _lastMs) / 1000.0;
             _lastMs = nowMs;
@@ -61,9 +62,9 @@ namespace BirimizKovulacak.Voice
 
             if (router != null)
             {
-                long d = router.Decisions - _rtDecisions, del = router.Delivered - _rtDelivered, c = router.CallRoutes - _rtCall;
+                long d = router.Decisions - _rtDecisions, del = router.Delivered - _rtDelivered, c = router.CallRoutes - _rtCall, tp = router.TapRoutes - _rtTap;
                 long m = router.MuffledRoutes - _rtMuffled, mu = router.MutedDrops - _rtMuted, rg = router.OutOfRange - _rtRange;
-                _rtDecisions = router.Decisions; _rtDelivered = router.Delivered; _rtCall = router.CallRoutes;
+                _rtDecisions = router.Decisions; _rtDelivered = router.Delivered; _rtCall = router.CallRoutes; _rtTap = router.TapRoutes;
                 _rtMuffled = router.MuffledRoutes; _rtMuted = router.MutedDrops; _rtRange = router.OutOfRange;
                 long rl = 0, unk = 0;
                 if (net != null)
@@ -72,9 +73,20 @@ namespace BirimizKovulacak.Voice
                     _rtRateLimited = net.RateLimited; _rtUnknown = net.UnknownSender;
                 }
                 if (d > 0) any = true;
-                _sb.Append(" | route decisions=").Append(d).Append(" delivered=").Append(del).Append(" call=").Append(c)
+                _sb.Append(" | route decisions=").Append(d).Append(" delivered=").Append(del).Append(" call=").Append(c).Append(" tap=").Append(tp)
                    .Append(" muffled=").Append(m).Append(" muted=").Append(mu).Append(" out_of_range=").Append(rg)
                    .Append(" rate_limited=").Append(rl).Append(" unknown_sender=").Append(unk);
+            }
+
+            if (recorder != null && recorder.Enabled)
+            {
+                long rf = recorder.RecordedFrames - _recFrames, rd = recorder.DroppedFrames - _recDropped;
+                _recFrames = recorder.RecordedFrames; _recDropped = recorder.DroppedFrames;
+                if (rf > 0 || rd > 0) any = true;
+                _sb.Append(" | rec frames=").Append(rf).Append(" dropped=").Append(rd)
+                   .Append(" calls=").Append(recorder.CallCount)
+                   .Append(" used_kb=").Append(recorder.UsedBytes / 1024)
+                   .Append(" reserved_kb=").Append(recorder.ReservedBytes / 1024);
             }
 
             if (channels != null)

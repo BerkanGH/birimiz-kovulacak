@@ -2,12 +2,23 @@ using System;
 
 namespace BirimizKovulacak.Voice
 {
+    /// <summary>What an audio emitter plays: a 48 kHz mono ring filled on the main thread.</summary>
+    public interface IVoicePcmSource
+    {
+        PcmRing Ring { get; }
+        /// <summary>True while audio is (about to be) produced; the emitter keeps its AudioSource running.</summary>
+        bool IsPlaying { get; }
+        int SampleRate { get; }
+        /// <summary>Play in 2D (calls, all-hear, loopback, tape) instead of at the speaker's position.</summary>
+        bool Is2D { get; }
+    }
+
     /// <summary>
     /// Receive side for one remote speaker: jitter buffer → Opus decode (FEC / PLC on loss) → gain + muffle
-    /// low-pass (ramped per frame, no zipper noise) → <see cref="PcmRing"/> at 48 kHz for the audio thread.
-    /// Main thread only (except <see cref="Ring"/>, which the audio thread reads). No allocations per frame.
+    /// low-pass + phone EQ (each ramped per frame, no zipper noise) → <see cref="PcmRing"/> at 48 kHz for the audio
+    /// thread. Main thread only (except <see cref="Ring"/>, which the audio thread reads). No allocations per frame.
     /// </summary>
-    public sealed class VoicePlaybackChannel : IDisposable
+    public sealed class VoicePlaybackChannel : IVoicePcmSource, IDisposable
     {
         public readonly int Slot;
         readonly VoiceJitterBuffer _jitter = new VoiceJitterBuffer();
@@ -16,8 +27,11 @@ namespace BirimizKovulacak.Voice
         readonly float[] _pcm;
         readonly int _frame;
         Biquad _lowpass;
+        PhoneEq _phoneEq;
         float _gain;        // current (ramped) linear gain
         float _wet;         // current muffle mix 0..1
+        float _phone;       // current phone-EQ mix 0..1
+        float _frameLevel;  // speech level 0..1 of the last decoded frame (before any gain)
         double _lastFrameMs = -1e9;
         VoiceFrameFlags _currentFlags;
 
@@ -26,6 +40,10 @@ namespace BirimizKovulacak.Voice
         /// <summary>Player volume × master volume × (deafened ? 0 : 1).</summary>
         public float VolumeScale = 1f;
         public float MuffledGain = 0.45f;
+        /// <summary>Gain of wiretapped call audio (flag Tap) relative to a normal call.</summary>
+        public float TapGain = 0.7f;
+        /// <summary>Telephone colour on call (and tap) audio (<see cref="PhoneEq"/>). Default on.</summary>
+        public bool PhoneEqEnabled = true;
 
         // Counters (cumulative).
         public long DecodeErrors, BytesReceived;
@@ -38,6 +56,7 @@ namespace BirimizKovulacak.Voice
             _pcm = new float[_frame];
             _ring = new PcmRing(ringCapacity);
             _lowpass = Biquad.LowPass(decoder.SampleRate, muffleCutoffHz, 0.707f);
+            _phoneEq = PhoneEq.Create(decoder.SampleRate);
         }
 
         public PcmRing Ring => _ring;
@@ -45,10 +64,14 @@ namespace BirimizKovulacak.Voice
         public int SampleRate => _decoder.SampleRate;
         public int FrameSamples => _frame;
         public VoiceCodecBackend Backend => _decoder.Backend;
-        /// <summary>Flags of the most recently decoded frame (Call / AllHear / Muffled / Loopback).</summary>
+        /// <summary>Flags of the most recently decoded frame (Call / Tap / AllHear / Muffled / Loopback).</summary>
         public VoiceFrameFlags CurrentFlags => _currentFlags;
         public bool IsPlaying => _jitter.IsPlaying;
+        public bool Is2D => (_currentFlags & (VoiceFrameFlags.Call | VoiceFrameFlags.AllHear | VoiceFrameFlags.Loopback)) != 0;
         public double LastFrameMs => _lastFrameMs;
+        /// <summary>Speech level 0..1 (<see cref="VoiceLevel.Speech01"/>) of the last decoded frame, before volume,
+        /// distance or muffle — i.e. how loud the person talks, not how loud you hear them.</summary>
+        public float FrameLevel01 => _frameLevel;
 
         public void SetMuffleCutoff(float hz) { _lowpass.SetLowPass(_decoder.SampleRate, hz, 0.707f); }
 
@@ -102,6 +125,7 @@ namespace BirimizKovulacak.Voice
                     DecodeErrors++;
                     Array.Clear(_pcm, 0, _frame);
                 }
+                _frameLevel = VoiceLevel.Speech01(VoiceLevel.RmsDb(_pcm, 0, _frame));
                 _currentFlags = flags & ~VoiceFrameFlags.EndOfSpeech;
                 Process(flags);
                 _ring.Write(_pcm, 0, _frame);
@@ -115,21 +139,28 @@ namespace BirimizKovulacak.Voice
         {
             bool twoD = (flags & (VoiceFrameFlags.Call | VoiceFrameFlags.AllHear | VoiceFrameFlags.Loopback)) != 0;
             bool muffled = !twoD && (flags & VoiceFrameFlags.Muffled) != 0;
-            float targetGain = (twoD ? 1f : ProximityGain * (muffled ? MuffledGain : 1f)) * VolumeScale;
+            bool call = (flags & VoiceFrameFlags.Call) != 0;
+            bool tap = (flags & VoiceFrameFlags.Tap) != 0;
+            float targetGain = (twoD ? (tap ? TapGain : 1f) : ProximityGain * (muffled ? MuffledGain : 1f)) * VolumeScale;
             float targetWet = muffled ? 1f : 0f;
-            float g = _gain, w = _wet;
-            float dg = (targetGain - g) / _frame, dw = (targetWet - w) / _frame;
+            float targetPhone = call && PhoneEqEnabled ? 1f : 0f;
+            float g = _gain, w = _wet, ph = _phone;
+            float dg = (targetGain - g) / _frame, dw = (targetWet - w) / _frame, dph = (targetPhone - ph) / _frame;
             for (int i = 0; i < _frame; i++)
             {
                 g += dg;
                 w += dw;
+                ph += dph;
                 float dry = _pcm[i];
                 float wet = _lowpass.Process(dry);
-                float s = (dry + (wet - dry) * w) * g;
+                float s = dry + (wet - dry) * w;
+                float p = _phoneEq.Process(s); // always run: keeps the filter state warm for click-free switching
+                s = (s + (p - s) * ph) * g;
                 _pcm[i] = s > 1f ? 1f : (s < -1f ? -1f : s);
             }
             _gain = targetGain;
             _wet = targetWet;
+            _phone = targetPhone;
         }
 
         /// <summary>Drops queued audio and state (disconnect, deafen toggles do not need this).</summary>
@@ -139,7 +170,9 @@ namespace BirimizKovulacak.Voice
             _ring.Clear();
             _decoder.Reset();
             _lowpass.Reset();
+            _phoneEq.Reset();
             _currentFlags = VoiceFrameFlags.None;
+            _frameLevel = 0f;
         }
 
         public void Dispose() { _decoder.Dispose(); }

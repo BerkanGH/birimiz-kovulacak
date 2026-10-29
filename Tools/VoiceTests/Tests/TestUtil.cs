@@ -119,6 +119,11 @@ namespace BirimizKovulacak.VoiceTests
         public readonly VoiceVec3[] Pos = new VoiceVec3[VoiceFormat.MaxPlayers];
         public readonly bool[] HasPos = new bool[VoiceFormat.MaxPlayers];
         public readonly int[] Partner = { -1, -1, -1, -1, -1, -1 };
+        public readonly int[] CallIds = { -1, -1, -1, -1, -1, -1 };
+        /// <summary>Taps[target, tapper].</summary>
+        public readonly bool[,] Taps = new bool[VoiceFormat.MaxPlayers, VoiceFormat.MaxPlayers];
+        public int NextCallId = 100;
+        public int TapperQueries;
         public readonly bool[] Muted = new bool[VoiceFormat.MaxPlayers];
         public VoiceMode Mode = VoiceMode.Office;
         /// <summary>Walls: an axis-aligned plane x = WallX between WallZMin..WallZMax blocks when crossed.</summary>
@@ -133,11 +138,23 @@ namespace BirimizKovulacak.VoiceTests
             return this;
         }
 
-        public void Call(int a, int b) { Partner[a] = b; Partner[b] = a; }
+        public void Call(int a, int b) { Partner[a] = b; Partner[b] = a; CallIds[a] = CallIds[b] = NextCallId++; }
+        public void HangUp(int a) { int b = Partner[a]; Partner[a] = -1; CallIds[a] = -1; if (b >= 0) { Partner[b] = -1; CallIds[b] = -1; } }
+        public void Tap(int tapper, int target, bool on = true) { Taps[target, tapper] = on; }
 
         public bool IsActive(int slot) { return slot >= 0 && slot < Active.Length && Active[slot]; }
         public bool TryGetPosition(int slot, out VoiceVec3 position) { position = Pos[slot]; return HasPos[slot]; }
         public int GetCallPartner(int slot) { return Partner[slot]; }
+        public int GetCallId(int slot) { return CallIds[slot]; }
+
+        public int GetTappers(int target, int[] buffer)
+        {
+            TapperQueries++;
+            int n = 0;
+            for (int t = 0; t < VoiceFormat.MaxPlayers && n < buffer.Length; t++)
+                if (Taps[target, t]) buffer[n++] = t;
+            return n;
+        }
         public VoiceMode CurrentMode => Mode;
         public bool CanSpeak(int slot) { return !Muted[slot]; }
 
