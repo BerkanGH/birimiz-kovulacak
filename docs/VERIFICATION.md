@@ -6,7 +6,7 @@ Build: Windows x64, Unity 6000.6.3f1, protocol 2, same machine as below. Logs un
 
 | Level | Status | Evidence |
 |---|---|---|
-| Rules engine tests | **464 passed, 0 failed** | `dotnet test` in `Tools/CoreTests/Tests` (privacy byte scans, determinism with 6 players and all 39 verbs, full 5-day week, balance v2.2) |
+| Rules engine tests | **497 passed, 0 failed** | `dotnet test` in `Tools/CoreTests/Tests` (privacy byte scans, determinism with 6 players and all 39 verbs, full 5-day week, balance v2.2/v2.3) |
 | Voice core tests | **70 passed, 0 failed** | `dotnet test` in `Tools/VoiceTests/Tests` (Opus round trip, jitter/loss/FEC, routing incl. call privacy, zero-alloc hot path) |
 | Unity compile + player build | **Yes** | `Tools/build.ps1`: "Player build Succeeded", 0 errors; builder "NAV reachability: 69 ok, 0 problems" |
 | 3-player local match, week mode, 2 days | **Yes** | `final_p3_week`: Monday (Paragöz) → Tuesday (Disiplinci), identical result hashes per match, 0 errors |

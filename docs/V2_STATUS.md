@@ -66,3 +66,12 @@ Codex logs: `Builds/codex/*.log`, last messages `Builds/codex/*_last.txt`. Basel
 - 05:20 Codex UI review: 8 findings (P1: contacts revealed ringing/busy of players behind walls) → fixed by the UI
   agent; letter layout + delayed evidence toasts fixed; manager bubbles for v2 observations.
 - 05:25 camera default 42°/5 m (furniture occluded the avatar in small rooms at 24°/3.6 m).
+- 05:40 Codex decal run (21 posters/signs) → builder "Decal spots: 21 (21 with art)".
+- 05:45 adversarial design review (Claude, probe harness against the real engine): 12 findings → config pass
+  (`d3a265a`) + Codex engine v2.2 rules (`4092264`, 464 tests). `docs/BALANCE_V2.md`.
+- 06:05 **verification:** 3-player 2-day week (Paragöz → Disiplinci, Informant win) and 6-player quick play with
+  synthetic voice: identical hashes, 0 errors. ZIP packaged; tag `v2.0-night`. README/HOSTING/PLAYTEST/VERIFICATION
+  updated for v2 (in-game voice, no Discord).
+- 06:20 ringing toast limited to line of sight (paired callers/callees office-wide).
+- 06:40 Codex balance simulator (`Tools/BalanceSim`, 9,000+ matches in 6 min) → v2.3 tuning (quota 28, objective
+  counts) + Codex Under Pressure rule (`19a5d64`): **497 tests**; every objective card 19–62 % except Clean Hands 81 %.

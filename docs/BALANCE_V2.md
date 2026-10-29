@@ -19,5 +19,15 @@ A Claude reviewer read the engine and drove it with a probe console app (default
 | 12 | Parking an item on an empty desk counted as PlantItem (3 misconduct) | Unassigned desks are neutral (no incident) | Rule |
 | — | Tasting always emptied the mug, so it was never worth it | An unsalted mug stays full after tasting | Rule |
 
+## v2.3 — from the balance simulator (`docs/BALANCE_SIM.md`)
+
+The simulator (Codex, 9,000+ matches against the real engine) showed quota at 100 % success with ~2× the target, and
+objective outliers: Under Pressure ~0 %, Chaos 3–6 %, Scapegoat 7–14 %, Clean Hands 70–92 %. Changes: QuotaTarget
+22 → 28 (4p base, head-count scaled), Scapegoat/Chaos Count 1, Clean Hands 7 tasks, Under Pressure only fails on
+incriminating final-inspection observations. 4-player result: every card 19–62 % except Clean Hands 81 % and quota
+still 100 % for the (tireless, silent) sim workers. **Not adopted:** zeroing NotAtDesk/Moving/PersonalCall risk
+(would remove inspection tension) and quota ~44 (sim workers do not talk, call or sneak). Re-tune quota after the
+first human week.
+
 Also noted (no change tonight): the Informant outs themselves by requesting footage during the discussion (only they
 can then); unplugging is a weak stall (fine); favour resets every match (fine).
