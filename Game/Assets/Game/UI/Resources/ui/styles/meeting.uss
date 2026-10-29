@@ -392,7 +392,7 @@
 .count-token-fallback { background-color: rgb(232, 201, 138); border-radius: 22px; border-width: 3px; border-color: rgb(31, 42, 68); }
 .count-num { font-size: 64px; color: rgb(31, 42, 68); margin-top: 2px; }
 .count-card-fired .count-num { color: rgb(210, 56, 47); }
-.count-stamp { position: absolute; left: 10px; right: 10px; top: 70px; height: 96px; -unity-background-scale-mode: scale-to-fit; opacity: 0; }
+.count-stamp { position: absolute; left: 10px; right: 10px; top: 208px; height: 96px; -unity-background-scale-mode: scale-to-fit; opacity: 0; }
 .count-stamp .stamp-text-label { font-size: 44px; }
 .count-tie { font-size: 20px; color: rgb(210, 56, 47); -unity-text-align: middle-center; margin-top: 6px; }
 .count-safe { font-size: 17px; color: rgb(107, 111, 128); -unity-text-align: middle-center; margin-top: 6px; }
