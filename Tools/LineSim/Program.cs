@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.Diagnostics;
 using System.Globalization;
 using BirimizKovulacak.Core;
@@ -8,8 +9,11 @@ internal static class Program
     private sealed class Totals
     {
         internal readonly long[] RoundDelta = new long[7];
+        internal readonly long[] RoundSwing = new long[7];
         internal readonly int[] RoundPlayers = new int[7], FiredSeat = new int[6], FiredTrick = new int[7], AgendaHits = new int[6];
+        internal readonly int[] FiredRank = new int[6], HiddenRounds = new int[7], Caught = new int[7];
         internal int Weeks, Recordings, Actions, Busy, MidweekBytes;
+        internal int EveningLeaderFired, StrictEveningWeeks, StrictEveningFired, FinalChanged, Tricks, Tips, TrickAllowance, TipAllowance;
         internal double SimulatedSeconds, WallSeconds;
     }
 
@@ -17,14 +21,15 @@ internal static class Program
     {
         try
         {
-            int weeks = 1, seed = 1927, selectedPlayers = 0;
+            int weeks = 1, seed = 1927, selectedPlayers = 0, sessionWeeks = 10;
+            double step = 0.25;
             string selectedLength = "both";
             for (int i = 0; i < args.Length; i++)
             {
                 string option = args[i];
                 if (option == "--help")
                 {
-                    Console.WriteLine("LineSim [--weeks N] [--players 3|4|5|6|all] [--length short|full|both] [--seed N]");
+                    Console.WriteLine("LineSim [--weeks N] [--players 3|4|5|6|all] [--length short|full|both] [--seed N] [--step seconds] [--session-weeks N]");
                     Console.WriteLine("N weeks are played for each selected player-count/week-length combination.");
                     return 0;
                 }
@@ -35,25 +40,38 @@ internal static class Program
                     case "--seed": seed = int.Parse(args[i], CultureInfo.InvariantCulture); break;
                     case "--players": selectedPlayers = args[i] == "all" ? 0 : int.Parse(args[i], CultureInfo.InvariantCulture); break;
                     case "--length": selectedLength = args[i].ToLowerInvariant(); break;
+                    case "--step": step = double.Parse(args[i], CultureInfo.InvariantCulture); break;
+                    case "--session-weeks": sessionWeeks = int.Parse(args[i], CultureInfo.InvariantCulture); break;
                     default: throw new ArgumentException("Unknown option " + option);
                 }
             }
-            if (weeks < 1 || (selectedPlayers != 0 && (selectedPlayers < 3 || selectedPlayers > 6)) ||
+            if (weeks < 1 || sessionWeeks < 1 || double.IsNaN(step) || double.IsInfinity(step) || step <= 0 || step > 5 ||
+                (selectedPlayers != 0 && (selectedPlayers < 3 || selectedPlayers > 6)) ||
                 (selectedLength != "short" && selectedLength != "full" && selectedLength != "both"))
                 throw new ArgumentException("Invalid argument. Use --help for usage.");
 
-            Console.WriteLine("All runs use the default rules, a 0.25 s host step, and only recipient views as bot input.");
+            Console.WriteLine("Default rules; " + step.ToString(CultureInfo.InvariantCulture) + " s host step; " + sessionWeeks +
+                "-week sessions; seeds start at " + seed + "; bots use only recipient views (no simulated speech or shared hidden knowledge).");
+            var summaries = new List<Totals>();
+            var headcounts = new List<int>();
             for (int players = 3; players <= 6; players++)
             {
                 if (selectedPlayers != 0 && selectedPlayers != players) continue;
+                var totals = new Totals();
                 foreach (var length in new[] { WeekLength.Short, WeekLength.Full })
                 {
                     if (selectedLength != "both" && selectedLength != length.ToString().ToLowerInvariant()) continue;
-                    var totals = new Totals();
-                    for (int i = 0; i < weeks; i++) Run(players, length, seed + i, totals);
-                    Print(players, length, totals);
+                    LineSessionHistory history = null;
+                    for (int i = 0; i < weeks; i++)
+                    {
+                        if (i % sessionWeeks == 0) history = null;
+                        history = Run(players, length, seed + i, totals, history, step);
+                    }
                 }
+                Print(players, selectedLength, totals);
+                summaries.Add(totals); headcounts.Add(players);
             }
+            PrintTables(headcounts, summaries);
             BenchmarkTicks();
             return 0;
         }
@@ -67,16 +85,18 @@ internal static class Program
         return setup;
     }
 
-    private static void Run(int players, WeekLength length, int seed, Totals totals)
+    private static LineSessionHistory Run(int players, WeekLength length, int seed, Totals totals, LineSessionHistory history, double step)
     {
         var timer = Stopwatch.StartNew();
         var config = LineConfig.CreateDefault();
-        var engine = LineEngineFactory.Create(Setup(players, seed, length), config);
+        var setup = Setup(players, seed, length); setup.History = history;
+        var engine = LineEngineFactory.Create(setup, config);
         var bots = new LineBot[players];
         for (int p = 0; p < players; p++) bots[p] = new LineBot(p, seed + p * 313);
         int previousReveal = -1, previousDossier = -1;
+        List<int> finalRanking = null, eveningLeaders = null;
         double now;
-        for (now = 0; !engine.IsFinished && now < 20000; now += 0.25)
+        for (now = 0; !engine.IsFinished && now < 20000; now += step)
         {
             engine.Tick(now);
             if (engine.IsFinished) break;
@@ -89,8 +109,18 @@ internal static class Program
                     {
                         previousReveal = view.Day * config.RoundsPerDay + view.RoundIndex;
                         var reveal = view.Round.Reveal;
-                        for (int d = 0; d < reveal.Deltas.Count; d++) totals.RoundDelta[(int)reveal.Type] += reveal.Deltas[d].Delta;
+                        for (int d = 0; d < reveal.Deltas.Count; d++)
+                        {
+                            totals.RoundDelta[(int)reveal.Type] += reveal.Deltas[d].Delta;
+                            totals.RoundSwing[(int)reveal.Type] += Math.Abs(reveal.Deltas[d].Delta);
+                        }
                         totals.RoundPlayers[(int)reveal.Type] += players;
+                        if (reveal.Type == RoundType.FarkliEposta || reveal.Type == RoundType.KayipRapor || reveal.Type == RoundType.OrtakSifre)
+                        {
+                            totals.HiddenRounds[(int)reveal.Type]++;
+                            if (reveal.Type == RoundType.OrtakSifre ? reveal.Solved : reveal.Winner == reveal.Hidden)
+                                totals.Caught[(int)reveal.Type]++;
+                        }
                     }
                     if (view.Phase == LinePhase.MeetingDossier && previousDossier != view.Day)
                     {
@@ -98,6 +128,17 @@ internal static class Program
                     }
                     if (players == 6 && view.Day == 1 && view.RoundIndex == 1 && view.Phase == LinePhase.RoundPlay && totals.MidweekBytes == 0)
                         totals.MidweekBytes = LineCodec.EncodeView(view).Length;
+                    if (view.Phase == LinePhase.MeetingVerdict && view.Day == view.DayCount - 2 && eveningLeaders == null)
+                    {
+                        eveningLeaders = new List<int>(); int highest = int.MinValue;
+                        foreach (var colleague in view.Players)
+                        {
+                            if (colleague.Blame > highest) { highest = colleague.Blame; eveningLeaders.Clear(); }
+                            if (colleague.Blame == highest) eveningLeaders.Add(colleague.Id);
+                        }
+                    }
+                    if (view.Phase == LinePhase.FinalDefense && finalRanking == null)
+                        finalRanking = new List<int>(view.Meeting.Shortlist);
                 }
                 var action = bots[p].Next(view, config, now);
                 if (action == null) continue;
@@ -108,6 +149,8 @@ internal static class Program
                     if (action.Verb == LineVerb.Call && result.Failure == LineFailure.Busy) totals.Busy++;
                     else throw new InvalidOperationException("Bot action failed: " + action + " " + result + " at " + now);
                 }
+                else if (action.Verb == LineVerb.UseTrick) totals.Tricks++;
+                else if (action.Verb == LineVerb.TipOff) totals.Tips++;
             }
             if (engine.Phase == LinePhase.MeetingDossier)
             {
@@ -119,16 +162,32 @@ internal static class Program
             engine.DrainEvents();
         }
         if (!engine.IsFinished || engine.Result == null) throw new InvalidOperationException("Week failed to finish.");
-        totals.FiredSeat[engine.Result.Fired]++;
-        foreach (var p in engine.Result.Players)
+        var outcome = engine.Result;
+        if (finalRanking == null || !finalRanking.Contains(outcome.Fired)) throw new InvalidOperationException("Missing final shortlist.");
+        totals.FiredRank[finalRanking.IndexOf(outcome.Fired)]++;
+        if (finalRanking[0] != outcome.Fired) totals.FinalChanged++;
+        if (eveningLeaders != null)
+        {
+            if (eveningLeaders.Contains(outcome.Fired)) totals.EveningLeaderFired++;
+            if (eveningLeaders.Count == 1)
+            {
+                totals.StrictEveningWeeks++;
+                if (eveningLeaders[0] == outcome.Fired) totals.StrictEveningFired++;
+            }
+        }
+        totals.TrickAllowance += players * (length == WeekLength.Short ? config.TricksPerWeekShort : config.TricksPerWeekFull);
+        totals.TipAllowance += players * config.TipsPerWeek;
+        totals.FiredSeat[outcome.Fired]++;
+        foreach (var p in outcome.Players)
         {
             if (!p.Survived) totals.FiredTrick[(int)p.Trick]++;
             if (p.AgendaHit) totals.AgendaHits[p.Player]++;
         }
         timer.Stop(); totals.Weeks++; totals.WallSeconds += timer.Elapsed.TotalSeconds; totals.SimulatedSeconds += now;
+        return engine.NextHistory();
     }
 
-    private static void Print(int players, WeekLength length, Totals totals)
+    private static void Print(int players, string length, Totals totals)
     {
         Console.WriteLine(players + " players, " + length + ": " + totals.Weeks + " weeks, " +
             (totals.WallSeconds * 1000 / totals.Weeks).ToString("F2", CultureInfo.InvariantCulture) + " ms/week; " +
@@ -142,6 +201,43 @@ internal static class Program
         Console.Write("  Agenda hits by seat:"); for (int p = 0; p < players; p++) Console.Write(" " + p + "=" + totals.AgendaHits[p]); Console.WriteLine();
         Console.Write("  Fired by trick:"); for (int t = 1; t <= 6; t++) Console.Write(" " + (TrickType)t + "=" + totals.FiredTrick[t]); Console.WriteLine();
         if (totals.MidweekBytes > 0) Console.WriteLine("  Six-player mid-week view: " + totals.MidweekBytes + " bytes.");
+        Console.WriteLine("  Strict prior-evening leader fired: " + Percent(totals.StrictEveningFired, totals.StrictEveningWeeks) +
+            " (" + totals.StrictEveningFired + "/" + totals.StrictEveningWeeks + " strict-leader weeks).");
+    }
+
+    private static string Percent(int numerator, int denominator)
+    { return denominator == 0 ? "n/a" : (100.0 * numerator / denominator).ToString("F2", CultureInfo.InvariantCulture) + "%"; }
+
+    private static void PrintTables(List<int> headcounts, List<Totals> summaries)
+    {
+        Console.WriteLine("\nRank uses the final shortlist's blame, warnings, seeded tie order; lower ranks cannot be fired. Prior-evening leader includes ties.");
+        Console.WriteLine("| Players | Weeks | Fired rank 1 | Rank 2 | Rank 3 | Ranks 4-6 | Prior-evening leader fired | Final vote changed outcome | Odd caught | Culprit caught | Password cracked |");
+        Console.WriteLine("|---|---|---|---|---|---|---|---|---|---|---|");
+        for (int i = 0; i < summaries.Count; i++)
+        {
+            var t = summaries[i];
+            Console.WriteLine("| " + headcounts[i] + " | " + t.Weeks + " | " + Percent(t.FiredRank[0], t.Weeks) + " | " +
+                Percent(t.FiredRank[1], t.Weeks) + " | " + Percent(t.FiredRank[2], t.Weeks) + " | " +
+                Percent(t.FiredRank[3] + t.FiredRank[4] + t.FiredRank[5], t.Weeks) + " | " +
+                Percent(t.EveningLeaderFired, t.Weeks) + " | " + Percent(t.FinalChanged, t.Weeks) + " | " +
+                Percent(t.Caught[(int)RoundType.FarkliEposta], t.HiddenRounds[(int)RoundType.FarkliEposta]) + " | " +
+                Percent(t.Caught[(int)RoundType.KayipRapor], t.HiddenRounds[(int)RoundType.KayipRapor]) + " | " +
+                Percent(t.Caught[(int)RoundType.OrtakSifre], t.HiddenRounds[(int)RoundType.OrtakSifre]) + " |");
+        }
+        Console.WriteLine("\nMean applied blame delta / mean absolute swing per player per round (floor and favourite included).");
+        Console.WriteLine("| Players | Bonus Pool | Odd Email | Lost Report | Complaint Box | Promotion List | Shared Password | Tricks/player/week | Trick allowance used | Tips/player/week | Tip allowance used |");
+        Console.WriteLine("|---|---|---|---|---|---|---|---|---|---|---|");
+        for (int i = 0; i < summaries.Count; i++)
+        {
+            var t = summaries[i]; string row = "| " + headcounts[i] + " |";
+            for (int r = 1; r <= 6; r++) row += t.RoundPlayers[r] == 0 ? " n/a |" : " " +
+                ((double)t.RoundDelta[r] / t.RoundPlayers[r]).ToString("F3", CultureInfo.InvariantCulture) + " / " +
+                ((double)t.RoundSwing[r] / t.RoundPlayers[r]).ToString("F3", CultureInfo.InvariantCulture) + " |";
+            row += " " + ((double)t.Tricks / (t.Weeks * headcounts[i])).ToString("F3", CultureInfo.InvariantCulture) + " | " +
+                Percent(t.Tricks, t.TrickAllowance) + " | " + ((double)t.Tips / (t.Weeks * headcounts[i])).ToString("F3", CultureInfo.InvariantCulture) +
+                " | " + Percent(t.Tips, t.TipAllowance) + " |";
+            Console.WriteLine(row);
+        }
     }
 
     private static void BenchmarkTicks()

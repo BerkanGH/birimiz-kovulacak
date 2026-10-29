@@ -1,108 +1,163 @@
-# v3 rules engine
+# v3.1 rules engine
 
-The implementation is independent of v2 and uses only the unchanged `Core/Line/Contracts` types. All eight engine
-stages are implemented, including the optional `Tools/LineSim` console runner. Core targets netstandard2.1 / C# 9;
-engine and tests use no UnityEngine APIs.
+The pure C# engine implements V3_DESIGN §0 with the supplied contracts, targeting netstandard2.1 / C# 9
+without UnityEngine. No contracts or v2 sources were changed.
 
-## Structure and determinism
+## Implementation and determinism
 
-`LineEngineFactory` creates the internal partial `LineEngine`. Its main file owns setup, schedule, phase deadlines,
-presence, request deduplication and the event queue. `Rounds` owns private round state and applied blame deltas;
-`Office` owns calls, queued mail, tricks and tips; `Meeting` owns dossiers, weighted recordings, votes, firing,
-points and history. `Views` constructs a recipient allow-list. Input/config/result/history/view objects are detached
-copies, so callers cannot mutate engine state through a returned list.
+LineEngine owns setup, scheduling, deadlines, presence and requests; its Rounds partial owns deals and
+outcomes, Office owns calls/mail/tricks/tips, Meeting owns dossiers/recordings/votes/points/history, and
+Views constructs the recipient allow-list. Setup, config, views, results and history are detached copies.
+One seeded SplitMix64 stream drives randomness, with ordered seat traversal and no dictionary dependence.
+Tick processes absolute deadlines, including each shortlisted defender. Idle ticks allocate zero bytes
+and leave StateVersion unchanged. Identical setup/actions/times reproduce views, events and hashes.
 
-One independent SplitMix64 stream drives engine randomness. Seats are traversed in ascending id order; no logic
-depends on dictionary order or LINQ. `Tick` processes the earliest absolute phase/timer/defender/presence deadline
-until caught up. Expiries precede phase transitions at equal times. Host clocks must be finite, nonnegative and
-monotonic. Fractional defense boundaries advance by index without floating-point division. An unchanged tick
-allocates nothing and leaves StateVersion unchanged; consuming a fresh request also advances StateVersion.
+Everyone starts at StartBlame (5); the strict session-points leader receives LeaderStartBonus (2).
+Agendas independently draw non-self targets, rejecting assignments with more than two authors per target.
+Five active tricks are shuffled; the sixth player receives a seeded duplicate. KayitSil is retired.
 
-Round deltas record the applied amount after the favourite reduction and zero floor. Disconnected seats retain
-their place and use default choices. A full week produces a deterministic FNV-1a result hash at WeekResults;
-natural completion or HostContinue then makes NextHistory available. Abandonment awards no points.
+Each generated day is a deal then a vote round; session day one is Bonus Pool then Odd Email. Eligible
+types minimize History.RoundUses plus planned uses. Complaint Box respects ComplaintMinPlayers; Lost
+Report always needs at least four seats. Generated schedules cap hidden-role rounds at the seat count
+to guarantee no repeats within the week. Once that budget is exhausted, alternatives are Bonus Pool
+and Promotion List / Complaint Box. Roles go to unused seats with the lowest historical hidden-role
+count. NextHistory accumulates actual rounds introduced and roles dealt. Forced test schedules/roles
+may repeat hidden players; forced rounds still obey player minimums. Isolated complaint fixtures
+explicitly lower ComplaintMinPlayers.
 
-## Wire format and privacy
+RoundPlayLength = RoundPlayByPlayers[players - 3] × Durations.RoundPlay / 150.0. The list retains base
+seconds; LineDurations.Scale scales the effective length via that ratio. RoundIntro's PlayEndTime uses
+the same calculation. Defaults are 100 / 120 / 135 / 150 seconds.
 
-LineCodec uses magic `B3`, little-endian UInt16 protocol version, and a message-kind byte. Primitive widths and
-field order are explicit; enums/bools are one byte, nullable objects have a presence byte, and strings/lists use
-canonical unsigned LEB128 length+1. The decoder rejects foreign tags/versions, invalid enums/bools/UTF-8,
-truncation, trailing data and excessive lengths with FormatException. All 34 contract classes and 314 fields
-have explicit serializers; only tests use reflection to check completeness.
+## Rounds and actions
 
-Views contain the recipient's secrets and public facts. They never contain host recording candidate IDs;
-recording identities appear only after ReportRecording. Calls and victim notices use player audiences. Anonymous
-complaints are shuffled, and only the selected dossier leak identifies an author. False-tip blame remains public,
-but its public event omits the identifying FalseTip reason. Each broadcast shares one message ID across all
-recipients, preventing numeric offsets from exposing an omitted trick actor. Offline recipients queue all mail,
-including manager/IT messages; the separate TrickHit event immediately signals an outage.
+- Bonus Pool deals pairs and exactly one trio at odd head counts. Partners contains every peer; Partner
+  is its first entry. C/ChoiceC contain the third member, otherwise -1. GreedBonus is subtracted from
+  the taker's blame delta whenever a group contains a sharer: Paragoz solo taker -5, two trio takers -3 each.
+  InternShareChance is unused.
+- Lost Report slips name another innocent. Every named innocent has an honest witness; exactly one
+  innocent at 4–5 players or two at 6 appears on no slip. Only the culprit sees NoAlibi.
+- Shared Password reveals the recipient's digit and the next position's digit, wrapping in public
+  PositionOwners order. SubmitChoice.A is a private, changeable code. Because A is an integer with
+  exactly CodeLength digits, generation uses a nonzero first digit and validation requires
+  [10^(CodeLength-1), 10^CodeLength). No live correctness feedback is emitted. Attempts remains empty;
+  AttemptsLeft is zero. Attempt returns BadParam during RoundPlay, WrongPhase otherwise. All connected
+  players submitting shortens the remaining phase to AllSubmittedRemaining. At reveal, more than half
+  of all seats must have entered the exact code. CodesByPlayer has six id-indexed entries (-1 for none
+  or unused seats). Collective success uses SolvedBy=-1 and PasswordCracked.Actor=-1.
+- Odd Email uses category × TopicsPerCategory + item IDs. The odd text comes from another category;
+  guess options contain every topic in the majority category. TopicVariant is consistently -1.
+  Historical topics are preferred unused, with seeded reuse when eligible topics are exhausted.
+  TopicPairs is unused.
 
-## Tests
+Tricks allow 1 Short / 2 Full uses per week, still at most once daily. Tips default to once weekly,
+unlocking on zero-based day 2 of the first week; tricks unlock on day 1. Later weeks unlock both
+immediately. Allowances are private. Genuine mail respects MailsPerDay (1). False tips add FalseTipBlame
+(2), with TipResult.Player=subject, Arg=0, Victim=tipper; true tips keep Victim=-1. Busy/dead-line calls
+privately notify the callee through MissedCall.Actor.
 
-Tests live in `Game/Assets/Game/Tests/Line` and have their own Unity EditMode asmdef. The .NET test project includes
-the same sources alongside every v2 test.
+## Meetings, results and recordings
 
-The combined suite has **727 passing cases: 497 v2 + 230 v3**. The final Unity-side compile check printed
-`COMPILE OK (0 errors)`. The existing v2 populated-results timing assertion is sensitive to machine contention:
-it exceeded its 0.3 ms budget in some runs (0.324 ms and 0.618 ms), while full-suite runs also passed unchanged.
-No v2 tests or implementation were altered to accommodate that timing fluctuation.
+Warning ties award nobody. A plurality on a player at MaxIhtarsPerPlayerPerWeek awards nobody, without
+transferring votes. The final shortlist is built after dossier blame adjustments: top 2 at 3–4 seats,
+top 3 at 5–6, configurable through FinalShortlistSmall/Large. Ranking is blame, warnings, then seeded
+priority. Only the shortlist defends, for DefensePerPlayer (30 seconds) each, and only the defender may
+speak. Final votes abstain or target another shortlisted player. Most votes is fired, then higher blame,
+more warnings, then the same seeded priority. Empty/tied ballots preserve ranking. Scores contains
+every seat's votes/blame/warnings with Score=Votes; FinalVoteWeight is unused.
 
-| File | Coverage |
-|---|---|
-| LineFlowTests | Setup, sparse seats, derangements, schedule, onboarding, deadlines, presence, deduplication |
-| LineRoundTests | All six outcome tables, ties, intern, clue-cycle property, attempts, favourite and floors |
-| LineOfficeTests | Phone transitions, mail limits/queue, all tricks, wiretaps, trace/tip resolution |
-| LineMeetingTests | Dossier order, leaks, votes, defense order, firing ties, points and history |
-| LineRecordingTests | Minimum duration, erasure, deterministic duration weighting, candidates, playback reports |
-| LinePrivacyTests | Every recipient at every phase, encoded secret fingerprints, differential mail/call/vote/agenda/complaint scans |
-| LineCodecTests | Every field of every contract class, root messages, malformed payloads and hash stability |
-| LineSnapshotTests | Input/config/view/reveal/result/history mutation isolation |
-| LineValidationTests | Invalid clocks/config/history, zero durations and large fractional-clock boundaries |
-| LineSimulationTests | Bot decisions, 24 scenarios replayed twice, allocation/throughput/view-size measurements |
+Survivors earn SurvivePoints, AgendaPointsPerIhtar per target warning, AgendaPoints for a fired target,
+and EmployeeOfWeekPoints for a strict lowest blame. Fired players retain the existing zero-point rule.
+AgendaIhtars is populated for everyone; tied lowest blame awards no employee bonus. The fired player
+alone can PickNextManager during WeekResults, with A indexing LineManagerIds.All, excluding the current
+manager. NextManagerPicked, NextManagerPick, ResultHash and NextHistory.NextManager reflect the choice.
+Week start prioritizes Setup.ManagerProfileId, then History.NextManager, then a seeded nonprevious pick.
 
-The simulation matrix is 3, 4, 5 and 6 players, Short and Full weeks, seeds 13, 179 and 4261; each scenario is replayed
-and must produce the same ResultHash. A bot's own view guards every action. Calls may return Busy because another
-player's phone state is intentionally private; bots cannot know that failure beforehand.
+Recordings weight duration by RecordingFocusWeight (3) for calls joining any two members of today's
+Bonus Pool pair/trio or involving today's hidden player from either round. The multiplier applies once
+even if both conditions hold. Candidates remain distinct and meet minimum connected duration. Identities
+become public only after ReportRecording. Capture, speech-density analysis, playback and audio-buffer
+clearing remain the host adapter's responsibility; the engine holds metadata only.
 
-## Measurements
+## Codec and privacy
 
-Windows x64, .NET 8, Release runner, default durations, host step 0.25 seconds; these are local measurements,
-not performance guarantees. Three seeds (1927–1929) per player-count/week-length combination completed all 24
-weeks and picked 126 recordings. Six-player averages: Short Week **341.62 ms**, Full Week **568.27 ms**.
-Six-player idle Tick: **26.62 million/s**, **0 allocated bytes over one million ticks**. A six-player mid-week view
-(day 1, second RoundPlay) encoded to **1,060 bytes**, below the 4 KB target.
+LineCodec uses magic B3, little-endian UInt16 version and message kind, explicit field order/widths,
+nullable presence bytes and canonical unsigned LEB128 length+1 for lists/strings. Invalid versions,
+tags, enums, booleans, UTF-8, truncation, trailing bytes and excessive lengths fail with FormatException.
+Every additive field is encoded, including config/history. Retired fields round-trip for completeness.
 
-For the three six-player Short Weeks, average applied blame per player per round was: PrimHavuzu +0.611,
-FarkliEposta -0.111, KayipRapor -0.111, IhbarKutusu +0.778, TerfiListesi -0.722, OrtakSifre +0.500.
-Firings by seat 0–5 were `[1,0,0,1,1,0]`; agenda hits by seat were `[0,0,0,1,0,2]`.
-Fired tricks (enum order 1–6) were `[1,0,0,1,1,0]`; 12 recordings were selected. This small sample checks the
-runner, not game balance.
+Views include only the recipient's agenda, trick, allowances, partners, no-alibi information, digits,
+code entry, calls and inbox. Encoded differential/sentinel scans cover these fields and every phase.
+Other codes appear only at reveal; tip authors only in explicit false-tip results. Complaint authors
+remain hidden except selected dossier leaks. Recording candidate IDs stay host-only. Broadcasts share
+one mail ID, preventing offsets from exposing omitted actors. Offline recipients queue all mail.
 
-Run tests with `dotnet test Tools/CoreTests/Tests/CoreTests.csproj`. If the NuGet service is unavailable and packages
-are already cached, restore from the local NuGet package directory, then use `--no-restore`. Unity-side validation
-uses `python -I Tools/scripts/compile_check.py`; the installed Blender Python can substitute for the unusable
-WindowsApps Python alias on this machine.
+## Validation
 
-Run the simulator with:
+Final full run: **774 passed, 0 failed, 0 skipped: 497 v2 + 277 v3**.
+The Unity-side compile check reports **COMPILE OK (0 errors)**. Deterministic replays and zero-allocation
+idle ticks pass. Existing v2 wall-time performance thresholds can fail under concurrent builds/simulations;
+the final full run passed after those processes stopped, without changing v2 code or thresholds.
 
-```
-dotnet run -c Release --project Tools/LineSim/LineSim.csproj -- --weeks 3 --players all --length both --seed 1927
-```
+Tests cover payoff tables, trios, no-alibi guarantees, password majority/overwrite/privacy, categories,
+session balance, shortlist voting/ties/speaking, points/history/picks, weekly limits, missed calls and
+recording focus. Reflection completeness/null tests cover every contract class. Bot weeks cover every
+head count/length and replay identical hashes. Bots use only their own views; private Busy results
+discovered by calling are the only accepted action failures.
 
-## Contract clarifications requested
+Run dotnet test Tools/CoreTests/Tests/CoreTests.csproj and python -I Tools/scripts/compile_check.py.
+The WindowsApps Python alias cannot launch on this machine; the installed Blender Python runs the same
+isolated compile-check script. Final counts and measurements are recorded below.
 
-- Session history has SeenRounds membership but no per-type usage counts. The engine prefers least-used types
-  this week, then unseen session types. Exact session-frequency preference needs a round-count list in history.
-- GreedBonus defaults to positive 1 although its XML comment describes a negative delta. The engine subtracts
-  the configured bonus, so default Paragoz takers receive -3. Clarify that this field is a relief magnitude.
-- Odd Email gives the odd player TopicId and includes that same id in GuessOptions. A client can therefore infer
-  the correct guess without conversation. Independent topic/display identifiers or opaque guess tokens are needed
-  to remove this contract-level information leak; the engine preserves the specified fields.
-- Public blame changes necessarily permit inference about a lone false tipper. The engine never explicitly names
-  the author in dossiers or public tip events and removes the public FalseTip reason, but perfect anonymity needs
-  a rule change (for example, a private penalty or delayed combined adjustments).
+## v3.1 balance
 
-Finite topic pools eventually exhaust in an unlimited session; after exhaustion the engine reuses a seeded topic
-from the pool. RecordingCandidates means total candidates per pick, matching CONTRACTS_V3/config. Voice capture,
-speech-density analysis, audio playback and clearing audio buffers remain the host voice adapter's responsibility;
-the engine holds metadata only. No contract files or v2 implementation files were changed.
+Reproduce with:
+
+    dotnet run -c Release --project Tools/LineSim/LineSim.csproj -- --weeks 1000 --players all --length both --seed 1927 --step 2 --session-weeks 10
+
+This runs 2,000 weeks per head count (1,000 Short + 1,000 Full), 8,000 total, with default rules and
+unscaled durations. Each length uses seeds 1927–2926 and resets history every ten weeks. The host step
+is 2 seconds (--step defaults to 0.25): bot actions occur on those boundaries, while engine deadlines
+remain exact. Sessions exercise points, round/role history, allowances and next-manager picks.
+Raw output: Tools/LineSim/v31-balance.txt.
+
+Rank is pre-vote blame descending, warnings, then seeded shortlist priority; lower ranks cannot be fired.
+Prior-evening leaders are sampled after the penultimate warning and include ties; strict-leader counts
+are separate. Final-changed means the fired player differs from rank 1. Catch rates divide by rounds of
+the corresponding type; n/a means ineligible. Blame cells give signed applied delta / absolute applied
+swing per player per round after floor/favourite. Usage counts accepted actions.
+
+Bots call but do not simulate speech or pool hidden knowledge. Password codes combine two known digits
+with random guesses; Odd Email voting cannot use human conversation. Catch rates describe this policy,
+not expected human success rates.
+
+| Players | Weeks | Fired rank 1 | Rank 2 | Rank 3 | Ranks 4-6 | Prior-evening leader fired | Final vote changed outcome | Odd caught | Culprit caught | Password cracked |
+|---|---|---|---|---|---|---|---|---|---|---|
+| 3 | 2000 | 76.40% | 23.60% | 0.00% | 0.00% | 67.30% | 23.60% | 26.57% | n/a | 2.58% |
+| 4 | 2000 | 95.95% | 4.05% | 0.00% | 0.00% | 78.40% | 4.05% | 18.20% | 23.80% | 0.00% |
+| 5 | 2000 | 93.05% | 6.60% | 0.35% | 0.00% | 78.05% | 6.95% | 13.01% | 19.77% | 0.00% |
+| 6 | 2000 | 95.70% | 4.10% | 0.20% | 0.00% | 77.80% | 4.30% | 10.41% | 13.62% | 0.00% |
+
+Mean applied delta / absolute swing per player per round:
+
+| Players | Bonus Pool | Odd Email | Lost Report | Complaint Box | Promotion List | Shared Password | Tricks/player/week | Trick allowance used | Tips/player/week | Tip allowance used |
+|---|---|---|---|---|---|---|---|---|---|---|
+| 3 | -0.372 / 1.989 | -0.104 / 1.184 | n/a | n/a | -1.132 / 1.132 | -0.044 / 1.273 | 1.491 | 99.41% | 0.716 | 71.57% |
+| 4 | -0.680 / 1.921 | -0.108 / 0.868 | -0.098 / 0.933 | n/a | -0.871 / 0.871 | 0.212 / 1.192 | 1.493 | 99.53% | 0.723 | 72.31% |
+| 5 | -0.519 / 1.998 | -0.124 / 0.665 | -0.097 / 0.725 | 0.319 / 0.883 | -0.687 / 0.687 | 0.371 / 1.148 | 1.491 | 99.39% | 0.716 | 71.60% |
+| 6 | -0.709 / 1.949 | -0.131 / 0.522 | -0.117 / 0.555 | 0.245 / 0.815 | -0.529 / 0.529 | 0.479 / 1.119 | 1.490 | 99.32% | 0.722 | 72.17% |
+
+| Players | Strict prior-evening leader fired | Strict-leader weeks |
+|---|---|---|
+| 3 | 65.42% | 1,226 / 1,874 |
+| 4 | 77.60% | 1,434 / 1,848 |
+| 5 | 77.01% | 1,397 / 1,814 |
+| 6 | 76.36% | 1,363 / 1,785 |
+
+Release measurement: **17.88 million idle ticks/second**, **0 bytes over 1,000,000 ticks**;
+a six-player mid-week encoded view was **979 bytes**, below the 4 KB target. Wall-time measurements
+are local observations and vary with machine load.
+
+## Contract requests
+
+None. RoundUses, GreedBonus, category topic IDs and false-tip attribution use the producer's clarifications.

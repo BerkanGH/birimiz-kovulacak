@@ -23,6 +23,8 @@ namespace BirimizKovulacak.Core
         private readonly List<Trace> traces = new List<Trace>();
         private readonly List<Tip> tips = new List<Tip>();
         private int nextCallId = 1, nextMailId = 1;
+        private bool TipUnlocked { get { return !firstWeek || Day >= c.TipUnlockDayFirstWeek; } }
+        private int TrickAllowance { get { return setup.Length == WeekLength.Short ? c.TricksPerWeekShort : c.TricksPerWeekFull; } }
 
         private Call FindCall(int callId)
         { for (int i = 0; i < calls.Count; i++) if (calls[i].Id == callId) return calls[i]; return null; }
@@ -38,7 +40,11 @@ namespace BirimizKovulacak.Core
                 if (s.Phone.Status != CallStatus.Idle) return LineFailure.AlreadyInCall;
                 var other = seats[a.Target];
                 if (other.Phone.Status != CallStatus.Idle || other.DeadUntil > time)
-                { Emit(LineEventType.CallBusy, time, target: a.Target, recipient: id); return LineFailure.Busy; }
+                {
+                    Emit(LineEventType.CallBusy, time, target: a.Target, recipient: id);
+                    Emit(LineEventType.MissedCall, time, actor: id, recipient: a.Target);
+                    return LineFailure.Busy;
+                }
                 var call = new Call { Id = nextCallId++, Caller = id, Callee = a.Target, Start = time };
                 call.CallerLog = new LineCallRecordView { CallId = call.Id, Other = a.Target, Outgoing = true, Start = time };
                 call.CalleeLog = new LineCallRecordView { CallId = call.Id, Other = id, Start = time };
@@ -143,19 +149,22 @@ namespace BirimizKovulacak.Core
         private LineFailure TrickAction(int id, LineAction a, double time)
         {
             if (!Office || (a.Verb == LineVerb.UseTrick && !InRound)) return LineFailure.WrongPhase;
-            if (!Unlocked) return LineFailure.NotUnlocked;
             var s = seats[id];
             if (a.Verb == LineVerb.TipOff)
             {
+                if (!TipUnlocked) return LineFailure.NotUnlocked;
                 if (s.TipUsed) return LineFailure.AlreadyUsed;
+                if (s.TipsUsed >= c.TipsPerWeek) return LineFailure.LimitReached;
                 if (s.DeadUntil > time) return LineFailure.PhoneDead;
                 var target = TargetFailure(id, a.Target); if (target != LineFailure.None) return target;
-                tips.Add(new Tip { Actor = id, Target = a.Target }); s.TipUsed = true;
+                tips.Add(new Tip { Actor = id, Target = a.Target }); s.TipUsed = true; s.TipsUsed++;
                 Emit(LineEventType.TipFiled, time, target: a.Target, recipient: id); return LineFailure.None;
             }
+            if (!Unlocked) return LineFailure.NotUnlocked;
             if (s.TrickUsed) return LineFailure.AlreadyUsed;
-            if (s.Trick == TrickType.None) return LineFailure.NotAvailable;
-            bool needsTarget = s.Trick != TrickType.InternetKes && s.Trick != TrickType.KayitSil;
+            if (s.TricksUsed >= TrickAllowance) return LineFailure.LimitReached;
+            if (s.Trick == TrickType.None || s.Trick == TrickType.KayitSil) return LineFailure.NotAvailable;
+            bool needsTarget = s.Trick != TrickType.InternetKes;
             if (needsTarget) { var target = TargetFailure(id, a.Target); if (target != LineFailure.None) return target; }
             if (s.Trick == TrickType.SahteEposta && !ValidMail(a)) return LineFailure.BadParam;
             var trace = new Trace { Actor = id, Victim = needsTarget ? a.Target : -1, Trick = s.Trick,
@@ -175,7 +184,6 @@ namespace BirimizKovulacak.Core
                 case TrickType.HatDinle:
                     s.TapTarget = a.Target; s.TapUntil = time + c.WiretapSeconds;
                     Emit(LineEventType.Wiretap, time, target: a.Target, a: 1, recipient: id); break;
-                case TrickType.KayitSil: s.Erased = true; break;
             }
             Emit(LineEventType.TrickUsed, time, target: needsTarget ? a.Target : -1, a: (int)s.Trick, recipient: id);
             return LineFailure.None;
