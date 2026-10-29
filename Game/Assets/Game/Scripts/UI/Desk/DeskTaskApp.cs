@@ -298,6 +298,7 @@ namespace BirimizKovulacak.Game
             bool valid = _canSubmit == null || _canSubmit(v);
             bool same = r.Submitted && SameAsSubmitted(r);
             _primary.SetEnabled(play && !blocked && valid && !same);
+            _primary.Show(!same);
             string label = r.Submitted ? (same ? Dk.T("desk.task.locked") : Dk.T("desk.task.relock")) : Dk.T(_sendKey);
             _primary.SetText(label);
             string status;

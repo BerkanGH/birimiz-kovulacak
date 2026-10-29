@@ -22,6 +22,9 @@ namespace BirimizKovulacak.Game
         public bool ObOpenedComputer, ObReadCard, ObCalled, ObSubmitted;
         public int LastRoundKey = -1;
         public int IntroSeenKey = -1;
+        // survives UIRoot.Rebuild (language switch): what was open in which phase
+        public int PhaseKey = int.MinValue;
+        public bool ComputerOpen, PhoneOpen;
 
         public void Reset(int weekId)
         {
@@ -32,6 +35,7 @@ namespace BirimizKovulacak.Game
             LastApp = DeskApp.Task;
             ObOpenedComputer = ObReadCard = ObCalled = ObSubmitted = false;
             LastRoundKey = -1; IntroSeenKey = -1;
+            PhaseKey = int.MinValue; ComputerOpen = PhoneOpen = false;
         }
     }
 
@@ -48,7 +52,9 @@ namespace BirimizKovulacak.Game
         /// <summary>When true the desk UI also tells the world which state the phone and monitor props show.</summary>
         public static bool DrivesWorldProps = true;
 
-        internal readonly DeskState State = new DeskState();
+        /// <summary>One per process: UIRoot rebuilds the screens on a language switch, the week's desk memory stays.</summary>
+        static readonly DeskState _state = new DeskState();
+        internal DeskState State => _state;
         internal DeskHud Hud;
         internal DeskNotes Notes;
         internal DeskComputer Computer;
@@ -60,7 +66,7 @@ namespace BirimizKovulacak.Game
         VisualElement _hudLayer, _computerLayer, _phoneLayer, _cardLayer, _coachLayer, _popupLayer, _notesLayer;
         readonly DeskEsc _esc;
         LineView _last;
-        bool _subscribed, _locDirty;
+        bool _subscribed;
         VisualElement _pauseRoot, _settingsRoot, _howtoRoot;
         bool _overlayLookedUp;
         CallStatus _activeStatus;
@@ -75,9 +81,20 @@ namespace BirimizKovulacak.Game
             var sheet = Resources.Load<StyleSheet>("ui/styles/desk");
             if (sheet != null) Root.styleSheets.Add(sheet);
             _esc = new DeskEsc(new VisualElement(), Back);
+            if (Dk.View == null) _state.Reset(-1); // built (or rebuilt) outside a week: nothing to carry over
             Build();
-            Loc.Changed += () => _locDirty = true;
             Rooms.DeskClicked += OnDeskClicked;
+            // UIRoot.Rebuild() drops this screen and builds a new one: let go of every static hook.
+            Root.RegisterCallback<DetachFromPanelEvent>(_ => Detach());
+        }
+
+        void Detach()
+        {
+            Rooms.DeskClicked -= OnDeskClicked;
+            var c = LineClient.I;
+            if (c != null && _subscribed) { c.EventReceived -= OnEvent; c.ResultReceived -= OnResult; }
+            _subscribed = false;
+            _esc.SetOpen(false);
         }
 
         void Build()
@@ -90,7 +107,7 @@ namespace BirimizKovulacak.Game
             _coachLayer = Layer("dk-layer-coach");
             _popupLayer = Layer("dk-layer-popup");
             _notesLayer = Layer("dk-layer-notes");
-            Hud = new DeskHud(this, _hudLayer);
+            Hud = new DeskHud(this, _hudLayer, _popupLayer);
             Computer = new DeskComputer(this, _computerLayer);
             Phone = new DeskPhone(this, _phoneLayer);
             Cards = new DeskCards(this, _cardLayer);
@@ -154,9 +171,6 @@ namespace BirimizKovulacak.Game
             Cards.Back();
         }
 
-        /// <summary>UI mock: rebuild every text after Loc.Load.</summary>
-        internal void MarkLocDirty() { _locDirty = true; }
-
         bool AnyBackTarget => Computer.IsOpen || Phone.IsOpen || Cards.WantsCursor;
 
         // ------------------------------------------------------------------ calls
@@ -185,6 +199,8 @@ namespace BirimizKovulacak.Game
 
         protected override void OnHide()
         {
+            bool keep = Dk.View != null && LineClient.IsOfficePhase(Dk.View.Phase);
+            bool pc = State.ComputerOpen, ph = State.PhoneOpen;
             // Meetings (or the end of the week) take the screen: close everything without moving the camera.
             Computer.Close();
             Phone.Close(true);
@@ -194,6 +210,7 @@ namespace BirimizKovulacak.Game
             _last = null;
             Sfx.StopLoop("desk_ringback");
             if (Dk.View == null) State.Reset(-1);
+            else if (keep) { State.ComputerOpen = pc; State.PhoneOpen = ph; }
         }
 
         // ------------------------------------------------------------------ tick
@@ -204,16 +221,6 @@ namespace BirimizKovulacak.Game
             var v = Dk.View;
             if (v == null) return;
             if (!_subscribed) Subscribe();
-            if (_locDirty)
-            {
-                _locDirty = false;
-                bool pc = Computer.IsOpen, ph = Phone.IsOpen;
-                DeskApp app = Computer.App;
-                Build();
-                _last = null;
-                if (pc) Computer.Open(app);
-                if (ph) Phone.Open();
-            }
             if (v.WeekId != State.WeekId) State.Reset(v.WeekId);
 
             bool changed = !ReferenceEquals(v, _last);
@@ -235,6 +242,8 @@ namespace BirimizKovulacak.Game
             Onboarding.Tick(v, changed);
             Notes.Tick();
             _esc.SetOpen(AnyBackTarget);
+            State.ComputerOpen = Computer.IsOpen;
+            State.PhoneOpen = Phone.IsOpen;
             if (DrivesWorldProps) SyncWorld(v);
         }
 
@@ -247,8 +256,22 @@ namespace BirimizKovulacak.Game
             else Sfx.StopLoop("desk_ringback");
             if (v.Round != null && v.Round.Submitted && v.Features.OnboardingDay) State.ObSubmitted = true;
             if (ph.Status == CallStatus.Connected || ph.Status == CallStatus.Dialing) State.ObCalled = true;
-            if (newPhase) OnPhaseEnter(old, v);
+            if (!newPhase) return;
+            int key = PhaseKey(v);
+            if (old == null && key == State.PhaseKey)
+            {
+                // Same phase as before a screen rebuild (language switch): restore instead of replaying the entrance.
+                if (State.ComputerOpen) OpenComputer(State.LastApp);
+                else if (State.PhoneOpen) OpenPhone();
+                if (v.Phase == LinePhase.RoundReveal) Cards.ShowReveal(v);
+                else if (v.Phase == LinePhase.Morning && State.MorningClosedDay != v.Day) Cards.MorningRing(v);
+                return;
+            }
+            State.PhaseKey = key;
+            OnPhaseEnter(old, v);
         }
+
+        static int PhaseKey(LineView v) { return ((v.WeekId * 8 + v.Day) * 16 + (int)v.Phase) * 8 + v.RoundIndex + 1; }
 
         void OnPhaseEnter(LineView old, LineView v)
         {

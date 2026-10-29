@@ -336,7 +336,7 @@ namespace BirimizKovulacak.Game
                 Hand(what, "dk-log-what").NoPick().AddTo(col);
                 if (!c.Connected) row.AddToClassList("dk-log-row-miss");
                 Box("spacer").NoPick().AddTo(row);
-                Hand(Dk.Ago(c.Start), "dk-log-time").NoPick().AddTo(row);
+                MemoBold(Dk.OfficeClock(c.Start), "dk-log-time").NoPick().AddTo(row);
             }
         }
     }

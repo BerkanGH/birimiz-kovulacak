@@ -23,7 +23,9 @@ namespace BirimizKovulacak.Game
         bool _urgent;
         Label _callTimer, _tapTimer;
 
-        public DeskHud(DeskUi ui, VisualElement layer)
+        /// <param name="layer">HUD layer (under the computer).</param>
+        /// <param name="topLayer">Layer above the computer and phone: the call strip must stay visible while you read your screen.</param>
+        public DeskHud(DeskUi ui, VisualElement layer, VisualElement topLayer)
         {
             _ui = ui;
             // desk block: calendar + clock
@@ -40,7 +42,7 @@ namespace BirimizKovulacak.Game
             _clockSub = Bold("", "dk-clock-sub").NoPick().AddTo(_clockBox);
 
             // call strip
-            var top = Box("dk-topwrap").NoPick().AddTo(layer);
+            var top = Box("dk-topwrap").NoPick().AddTo(topLayer);
             _call = Box("dk-callstrip").AddTo(top);
             _call.Show(false);
             _tap = Box("dk-tapstrip").NoPick().AddTo(top);
@@ -90,7 +92,7 @@ namespace BirimizKovulacak.Game
                     _sig = sig;
                     _calBand.SetText(Loc.Upper(Dk.F("desk.cal.band", v.Day + 1, v.DayCount)));
                     _calDay.SetText(Dk.DayName(v.Day));
-                    _calSub.SetText(v.Features.IsLastDay ? Dk.T("desk.cal.last_day") : Dk.ManagerName(v.ManagerProfileId));
+                    _calSub.SetText(v.Features.IsLastDay ? Dk.T("desk.cal.last_day") : "");
                     _clockSub.SetText(ClockSub(v));
                     if (first) { UiMotion.SlideIn(_block, new Vector2(-40, 0), 0.4f); UiMotion.SlideIn(_keys, new Vector2(30, 0), 0.4f, 0.2f); }
                     else UiMotion.Pulse(_clockBox, 0.06f, 0.35f);
@@ -105,6 +107,7 @@ namespace BirimizKovulacak.Game
             {
                 _lastSec = sec;
                 _clock.SetText(ClockInt(sec));
+                if (!v.Features.IsLastDay) _calSub.SetText(Dk.OfficeClock(Dk.Now));
                 bool urgent = sec <= 10 && v.Phase == LinePhase.RoundPlay;
                 if (urgent != _urgent) { _urgent = urgent; _clockBox.EnableInClassList("dk-clock-urgent", urgent); }
                 if (urgent && sec > 0) UiMotion.Pulse(_clock, 0.12f, 0.3f);

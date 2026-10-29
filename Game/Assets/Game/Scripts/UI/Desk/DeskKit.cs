@@ -95,7 +95,13 @@ namespace BirimizKovulacak.Game
 
         /// <summary>v3.1 Odd Email topic text (topic.&lt;category*4+item&gt;).</summary>
         public static string Topic(int id) { return id < 0 ? "" : T("topic." + id); }
-        public static string ComplaintReason(int r) { return r < 0 ? "" : T("complaint.reason." + r); }
+        /// <summary>Complaint reason; the meeting dossier's wording wins so the form and the dossier say the same thing.</summary>
+        public static string ComplaintReason(int r)
+        {
+            if (r < 0) return "";
+            string s = TShared("dossier.reason." + r, "complaint.reason." + r);
+            return s.Length > 0 ? char.ToUpper(s[0], Loc.Culture) + s.Substring(1) : s;
+        }
 
         /// <summary>Signed blame delta for display ("+2", "–1", "0").</summary>
         public static string Delta(int d)
@@ -451,6 +457,29 @@ namespace BirimizKovulacak.Game
             StampText(Loc.Upper(text), "dk-heading-text").NoPick().AddTo(h);
             if (!string.IsNullOrEmpty(hint)) Text(hint, "dk-heading-hint").NoPick().AddTo(h);
             return h;
+        }
+
+        /// <summary>Office wall-clock time ("14:11") of a host time — the meeting UI's mapping, so times agree everywhere.</summary>
+        public static string OfficeClock(double hostTime)
+        {
+            var v = View;
+            if (v == null || !LineClient.IsOfficePhase(v.Phase)) return MeetingText.OfficeClock(hostTime, v);
+            // MeetingText.DossierStart() is only exact from the dossier on; in office phases it returns the current phase
+            // start. Project today's dossier start forward (same durations as MeetingText's day length) and shift the
+            // time so the shared mapping sees the same distance to the meeting.
+            var d = Config.Durations;
+            double round = d.RoundIntro + d.RoundPlay + d.RoundReveal;
+            int left = Config.RoundsPerDay - Math.Max(0, v.RoundIndex) - 1;
+            double after;
+            switch (v.Phase)
+            {
+                case LinePhase.Morning: after = Config.RoundsPerDay * round; break;
+                case LinePhase.RoundIntro: after = d.RoundPlay + d.RoundReveal + left * round; break;
+                case LinePhase.RoundPlay: after = d.RoundReveal + left * round; break;
+                default: after = left * round; break;
+            }
+            double dossier = v.PhaseEndTime + Math.Max(0, after);
+            return MeetingText.OfficeClock(hostTime - dossier + v.PhaseStartTime, v);
         }
 
         /// <summary>"az önce" / "3 dk önce" relative host time.</summary>

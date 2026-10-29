@@ -245,7 +245,6 @@ namespace BirimizKovulacak.Game
             Loc.SetLanguage(want);
             if (had) PlayerPrefs.SetString(Loc.PrefKey, saved); else PlayerPrefs.DeleteKey(Loc.PrefKey);
             PlayerPrefs.Save();
-            Ui?.MarkLocDirty();
         }
 
         static LineMockScenario Show(this LineMockScenario s, float at, Func<LineView> make, bool shot = false)

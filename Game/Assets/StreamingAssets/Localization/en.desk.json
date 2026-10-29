@@ -431,7 +431,7 @@
   "round.KayipRapor.long.2": "One or two innocents have no alibi — and the culprit knows who.",
   "round.IhbarKutusu.name": "Complaint Box",
   "round.IhbarKutusu.rule": "File one anonymous complaint.",
-  "round.IhbarKutusu.example": "Example: 'Microwaves fish.' The author isn't named. (Usually.)",
+  "round.IhbarKutusu.example": "Example: 'Microwaved fish.' The author isn't named. (Usually.)",
   "round.IhbarKutusu.long.0": "Most complaints: +2 blame.",
   "round.IhbarKutusu.long.1": "If any complaint was filed, everyone with none gets –1.",
   "round.IhbarKutusu.long.2": "Sometimes the manager leaks an author at the meeting.",
@@ -541,10 +541,10 @@
   "topic.21": "The office got an aquarium.",
   "topic.22": "Desk plants are being collected.",
   "topic.23": "Everyone has to renew their door badge.",
-  "complaint.reason.0": "Microwaves fish",
-  "complaint.reason.1": "Says 'one last thing' and talks for 20 minutes",
-  "complaint.reason.2": "Ate my yogurt from the fridge",
-  "complaint.reason.3": "Hits 'Reply all' on everything",
-  "complaint.reason.4": "Jams the printer and walks away",
-  "complaint.reason.5": "Talks far too loudly on the phone"
+  "complaint.reason.0": "finishes the coffee and never makes more",
+  "complaint.reason.1": "plays on their phone in meetings",
+  "complaint.reason.2": "microwaved fish",
+  "complaint.reason.3": "hits Reply All on everything",
+  "complaint.reason.4": "jammed the printer and walked away",
+  "complaint.reason.5": "has a disaster of a desk"
 }

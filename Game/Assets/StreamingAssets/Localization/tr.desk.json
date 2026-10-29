@@ -431,7 +431,7 @@
   "round.KayipRapor.long.2": "Bir iki masumun hiç tanığı yok — suçlu da bunu biliyor.",
   "round.IhbarKutusu.name": "İhbar Kutusu",
   "round.IhbarKutusu.rule": "İsimsiz bir şikâyet at.",
-  "round.IhbarKutusu.example": "Örnek: 'Mikrodalgada balık ısıtıyor.' Yazanın adı söylenmez. (Genelde.)",
+  "round.IhbarKutusu.example": "Örnek: 'Mikrodalgada balık ısıttı.' Yazanın adı söylenmez. (Genelde.)",
   "round.IhbarKutusu.long.0": "En çok şikâyet alan +2 kusur.",
   "round.IhbarKutusu.long.1": "Şikâyet atıldıysa, hiç şikâyet almayan herkes –1.",
   "round.IhbarKutusu.long.2": "Müdür bazen yazanlardan birini toplantıda açık eder.",
@@ -541,10 +541,10 @@
   "topic.21": "Ofise akvaryum alındı.",
   "topic.22": "Masalardaki bitkiler toplanacak.",
   "topic.23": "Herkes kapı kartını yenileyecek.",
-  "complaint.reason.0": "Mikrodalgada balık ısıtıyor",
-  "complaint.reason.1": "Toplantıda 'son bir şey' deyip 20 dakika konuşuyor",
-  "complaint.reason.2": "Buzdolabından yoğurdumu yedi",
-  "complaint.reason.3": "Her şeye 'Tümünü yanıtla' yapıyor",
-  "complaint.reason.4": "Yazıcıyı sıkıştırıp kaçıyor",
-  "complaint.reason.5": "Telefonda çok yüksek sesle konuşuyor"
+  "complaint.reason.0": "kahveyi bitirip yenisini koymuyor",
+  "complaint.reason.1": "toplantıda telefonla oynuyor",
+  "complaint.reason.2": "mikrodalgada balık ısıttı",
+  "complaint.reason.3": "her şeye «Tümünü yanıtla» yapıyor",
+  "complaint.reason.4": "yazıcıyı bozup kaçtı",
+  "complaint.reason.5": "masası felaket dağınık"
 }

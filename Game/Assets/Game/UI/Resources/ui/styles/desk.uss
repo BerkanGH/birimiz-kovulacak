@@ -172,7 +172,7 @@
 .dk-task-card { width: 256px; height: 358px; }
 .dk-task-rule { font-size: 18px; -unity-text-align: middle-center; margin-top: 12px; white-space: normal; color: rgb(31, 42, 68); }
 .dk-task-clock { margin-top: 14px; align-items: center; background-color: rgb(31, 42, 68); border-radius: 12px; padding: 4px 22px 8px 22px; border-bottom-width: 5px; border-color: rgb(12, 18, 32); }
-.dk-task-clock-inline { align-self: flex-start; margin-top: 20px; }
+.dk-task-clock-inline { align-self: center; margin-top: 24px; }
 .dk-task-clock-label { font-size: 13px; color: rgb(232, 201, 138); }
 .dk-task-clock-digits { font-size: 40px; color: rgb(196, 232, 170); }
 .dk-task-clock-urgent .dk-task-clock-digits { color: rgb(255, 130, 110); }
@@ -193,7 +193,8 @@
 .dk-task-status-ok { color: rgb(47, 107, 79); }
 .dk-task-act-row { flex-direction: row; align-items: center; }
 
-.dk-task-idle { flex-grow: 1; }
+.dk-task-idle { flex-grow: 1; align-items: center; justify-content: center; }
+.dk-task-idle > .dk-heading { align-self: center; }
 .dk-task-idle-cards { flex-direction: row; margin-top: 6px; }
 .dk-task-idle-col { width: 300px; margin-right: 34px; align-items: center; }
 .dk-idle-card { width: 230px; height: 322px; }
@@ -421,7 +422,7 @@
 .dk-trick-main { flex-grow: 1; flex-shrink: 1; }
 .dk-trick-name { font-size: 48px; color: rgb(31, 42, 68); margin-top: -6px; }
 .dk-trick-how { font-size: 21px; white-space: normal; margin-bottom: 10px; color: rgb(31, 42, 68); }
-.dk-trick-rules { margin-bottom: 12px; padding: 8px 14px; background-color: rgba(31, 42, 68, 0.04); border-radius: 10px; }
+.dk-trick-rules { margin-top: 16px; align-self: stretch; padding: 10px 12px; background-color: rgba(31, 42, 68, 0.04); border-radius: 10px; }
 .dk-rule-line { flex-direction: row; align-items: center; margin: 2px 0; }
 .dk-rule-icon { width: 30px; height: 30px; margin-right: 10px; }
 .dk-rule-text { font-size: 16px; color: rgb(60, 66, 84); white-space: normal; flex-shrink: 1; }
@@ -602,13 +603,13 @@
 .dk-clue-slip { flex-direction: row; align-items: center; background-color: rgb(250, 247, 238); border-width: 1px; border-color: rgba(31, 42, 68, 0.25); border-bottom-width: 3px; padding: 6px 12px 6px 6px; margin: 0 8px 8px 0; }
 .dk-clue-slip-culprit { border-color: rgb(210, 56, 47); }
 .dk-clue-text { font-size: 15px; margin-left: 6px; }
-.dk-piles { flex-direction: row; justify-content: center; align-items: flex-end; height: 400px; }
+.dk-piles { flex-direction: row; justify-content: center; align-items: flex-end; height: 360px; }
 .dk-pile { width: 180px; align-items: center; margin: 0 8px; }
 .dk-pile-stack { height: 230px; width: 170px; justify-content: flex-end; align-items: center; }
 .dk-pile-slip { width: 168px; background-color: rgb(255, 253, 247); border-width: 1px; border-color: rgba(31, 42, 68, 0.3); border-bottom-width: 3px; padding: 6px 10px; margin-top: -8px; }
 .dk-pile-slip-text { font-size: 13px; white-space: normal; color: rgb(31, 42, 68); }
 .dk-pile-n { font-size: 46px; color: rgb(31, 42, 68); }
-.dk-pile-stamp { position: absolute; bottom: 62px; }
+.dk-pile-stamp { position: absolute; bottom: 96px; }
 .dk-pile-stamp .dk-stamp-text { font-size: 26px; }
 .dk-arrow-row { flex-direction: row; align-items: center; margin-bottom: 6px; padding: 4px 10px; border-radius: 10px; }
 .dk-arrow-row-win { background-color: rgba(47, 107, 79, 0.12); }
@@ -723,3 +724,10 @@
 .dk-system-badge { background-color: rgb(31, 42, 68); border-color: rgb(31, 42, 68); }
 .dk-system-badge-icon { width: 70%; height: 70%; }
 .dk-system-badge .icon-fallback { background-color: rgba(0, 0, 0, 0); }
+.dk-reveal-hidden-col { flex-direction: column; align-items: center; }
+.dk-reveal-hidden-col .dk-reveal-small { margin-bottom: 6px; }
+.dk-code > .dk-reveal-stamp, .dk-code > .dk-reveal-stamp-green { top: -40px; right: -30px; }
+.dk-incoming-phone { width: 104px; height: 78px; margin-right: 8px; flex-shrink: 0; }
+.dk-incoming-layer { position: absolute; left: 0; top: 0; right: 0; bottom: 0; -unity-background-scale-mode: scale-to-fit; }
+.dk-incoming-handset { transform-origin: 57% 23%; }
+.dk-incoming-waves { position: absolute; left: -14px; top: -10px; right: -14px; bottom: -4px; -unity-background-scale-mode: scale-to-fit; opacity: 0; }

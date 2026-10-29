@@ -16,6 +16,7 @@ namespace BirimizKovulacak.Game
 
         readonly DeskUi _ui;
         readonly VisualElement _card, _icon, _fill;
+        readonly VisualElement _handset, _waves;
         readonly VisualElement _badgeSlot;
         readonly Label _band, _name, _sub;
         readonly Button _answer, _decline;
@@ -31,7 +32,14 @@ namespace BirimizKovulacak.Game
             var wrap = Box("dk-topwrap").NoPick().AddTo(layer);
             _card = Box("dk-incoming").AddTo(wrap);
             var row = Box("dk-incoming-row").AddTo(_card);
-            _icon = Dk.Icon("ringing", "dk-incoming-icon").AddTo(row);
+            // the desk phone itself: base + handset layers (800x600, same origin); the handset jumps on every ring
+            var phone = Box("dk-incoming-phone").NoPick().AddTo(row);
+            _waves = Box("dk-incoming-waves").NoPick().AddTo(phone);
+            Dk.Art(_waves, "deskphone/ring_waves");
+            var baseArt = Box("dk-incoming-layer").NoPick().AddTo(phone);
+            _handset = Box("dk-incoming-layer", "dk-incoming-handset").NoPick().AddTo(phone);
+            if (Dk.Art(baseArt, "deskphone/phone_base") && Dk.Art(_handset, "deskphone/handset")) _icon = phone;
+            else { phone.RemoveFromHierarchy(); _handset = null; _icon = Dk.Icon("ringing", "dk-incoming-icon").AddTo(row); }
             _badgeSlot = Box("dk-incoming-badge").NoPick().AddTo(row);
             var col = Box("dk-incoming-col").NoPick().AddTo(row);
             _band = StampText("", "dk-incoming-band").NoPick().AddTo(col);
@@ -120,7 +128,19 @@ namespace BirimizKovulacak.Game
             if (Time.unscaledTime >= _nextWobble)
             {
                 _nextWobble = Time.unscaledTime + 1.15f;
-                UiMotion.Shake(_icon, 7f, 0.5f, 11f);
+                if (_handset != null)
+                {
+                    var h = _handset;
+                    UiMotion.Tween(h, 0.55f, t =>
+                    {
+                        float k = Mathf.Sin(t * Mathf.PI * 7f) * (1f - t);
+                        h.style.rotate = new Rotate(new Angle(k * 9f, AngleUnit.Degree));
+                        h.style.translate = new Translate(0f, -Mathf.Abs(k) * 7f);
+                    }, UiMotion.Ease.Linear, () => { h.style.rotate = StyleKeyword.Null; h.style.translate = StyleKeyword.Null; }, 0f, "ring");
+                    var w = _waves;
+                    UiMotion.Tween(w, 0.6f, t => { w.style.opacity = Mathf.Sin(t * Mathf.PI); float s = 0.85f + 0.3f * t; w.style.scale = new Scale(new Vector3(s, s, 1f)); }, UiMotion.Ease.OutCubic, null, 0f, "ring");
+                }
+                else UiMotion.Shake(_icon, 7f, 0.5f, 11f);
                 Ring(_card);
             }
         }

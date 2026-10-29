@@ -106,7 +106,7 @@ namespace BirimizKovulacak.Game
                 var top = Box("dk-mail-row-top").NoPick().AddTo(col);
                 Bold(Dk.Name(m.From), "dk-mail-row-from").NoPick().AddTo(top);
                 Box("spacer").NoPick().AddTo(top);
-                Text(Dk.Ago(m.Time), "dk-mail-row-time").NoPick().AddTo(top);
+                Text(Dk.OfficeClock(m.Time), "dk-mail-row-time").NoPick().AddTo(top);
                 var subj = Box("dk-mail-row-subj").NoPick().AddTo(col);
                 if (unread) Box("dk-unread-dot").NoPick().AddTo(subj);
                 Text(Dk.MailSubject(m), "dk-mail-row-subject").NoPick().AddTo(subj);
@@ -137,7 +137,7 @@ namespace BirimizKovulacak.Game
             Dk.Badge(m.From, "badge-l").AddTo(head);
             var hc = Box("dk-letter-headcol").NoPick().AddTo(head);
             Title(Dk.MailSubject(m), "dk-letter-subject").NoPick().AddTo(hc);
-            Text(Dk.F("desk.mail.from_to", Dk.Name(m.From), Dk.T(m.ToAll ? "desk.mail.to_all" : "desk.mail.to_you")) + "  ·  " + Dk.Ago(m.Time), "dk-letter-meta").NoPick().AddTo(hc);
+            Text(Dk.F("desk.mail.from_to", Dk.Name(m.From), Dk.T(m.ToAll ? "desk.mail.to_all" : "desk.mail.to_you")) + "  ·  " + Dk.OfficeClock(m.Time), "dk-letter-meta").NoPick().AddTo(hc);
             Box("dk-email-rule").NoPick().AddTo(paper);
             Memo(Dk.MailBody(m), "dk-letter-body").NoPick().AddTo(paper);
             if (m.Kind == MailKind.Personal)
@@ -376,7 +376,7 @@ namespace BirimizKovulacak.Game
             StampText(Loc.Upper(Dk.T("desk.trick.band")), "dk-section-band").NoPick().AddTo(main);
             Title(Dk.TrickName(t), "dk-trick-name").NoPick().AddTo(main);
             Text(Dk.TrickHow(t), "dk-trick-how").NoPick().AddTo(main);
-            var rules = Box("dk-trick-rules").NoPick().AddTo(main);
+            var rules = Box("dk-trick-rules").NoPick().AddTo(side);
             var prof = Dk.Profile(v);
             RuleLine(rules, "timer", Dk.F("desk.trick.allowance", v.Mine.TricksLeftThisWeek, v.Length == WeekLength.Full ? Dk.Config.TricksPerWeekFull : Dk.Config.TricksPerWeekShort));
             RuleLine(rules, "warning", Dk.F("desk.trick.trace", Mathf.RoundToInt(prof.TraceChance * 100f), prof.TrickCaughtBlame));

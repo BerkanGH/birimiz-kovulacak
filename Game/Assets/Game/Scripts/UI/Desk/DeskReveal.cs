@@ -185,7 +185,7 @@ namespace BirimizKovulacak.Game
         {
             var cols = Box("dk-reveal-cols").NoPick().AddTo(body);
             var left = Box("dk-reveal-col").NoPick().AddTo(cols);
-            var hidden = Box("dk-reveal-hidden").NoPick().AddTo(left);
+            var hidden = Box("dk-reveal-hidden", "dk-reveal-hidden-col").NoPick().AddTo(left);
             Text(Dk.T("desk.reveal.lost.culprit"), "dk-reveal-small").NoPick().AddTo(hidden);
             Who(r.Hidden, "badge-l", "dk-who-big").AddTo(hidden);
             UiMotion.PopIn(hidden, 0.3f, 0.4f);
