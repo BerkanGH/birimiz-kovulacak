@@ -393,7 +393,21 @@ namespace BirimizKovulacak.Game
         void TickHands(Camera cam, PovMode mode, float now, float dt)
         {
             float breathe = Mathf.Sin(now * 1.3f) * 0.0025f;
-            if (HandL != null) HandL.SetPositionAndRotation(_handLPos + Vector3.up * breathe, _handLRot);
+            if (HandL != null)
+            {
+                Vector3 lp = _handLPos + Vector3.up * breathe;
+                Quaternion lr = _handLRot;
+                if (_sip > 0f && Mug != null && cam != null)
+                {
+                    // the left mitten brings the mug up
+                    float se = _sip * _sip * (3f - 2f * _sip);
+                    Vector3 grip = Mug.position + Mug.up * 0.06f - cam.transform.right * 0.07f - cam.transform.forward * 0.02f;
+                    Vector3 armDir = (-cam.transform.up * 0.8f - cam.transform.forward * 0.3f - cam.transform.right * 0.25f).normalized;
+                    lp = Vector3.Lerp(lp, grip, se);
+                    lr = Quaternion.Slerp(lr, Quaternion.LookRotation(armDir, -cam.transform.right), se);
+                }
+                HandL.SetPositionAndRotation(lp, lr);
+            }
             if (HandR == null) return;
             Vector3 p = _handRPos + Vector3.up * breathe * 0.7f;
             Quaternion r = _handRRot;

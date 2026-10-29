@@ -96,8 +96,20 @@ namespace BirimizKovulacak.Game
             p.Office.PassBy(0.3f, 1f);
             yield return Shot("office_door_passerby", 0.35f);
             var sil = p.Office.Silhouette;
+            var silR = sil != null ? sil.GetComponent<Renderer>() : null;
             Debug.Log("[SceneTest] silhouette active=" + (sil != null && sil.gameObject.activeInHierarchy) + " pos=" + (sil != null ? sil.position.ToString("F2") : "-")
-                      + " visible=" + (sil != null && sil.GetComponent<Renderer>().isVisible));
+                      + " rot=" + (sil != null ? sil.eulerAngles.ToString("F0") : "-") + " scale=" + (sil != null ? sil.lossyScale.ToString("F2") : "-")
+                      + " enabled=" + (silR != null && silR.enabled) + " mat=" + (silR != null && silR.sharedMaterial != null ? silR.sharedMaterial.name + "/" + silR.sharedMaterial.shader.name + " q" + silR.sharedMaterial.renderQueue : "-"));
+            // straight through the door glass, then from inside the corridor
+            p.SetCutscenePose(new Vector3(0.9f, 1.45f, -0.85f), Quaternion.LookRotation(Vector3.right), 50f);
+            rooms.SetPovMode(PovMode.Cutscene);
+            p.Office.PassBy(0.38f, 1f);
+            yield return Shot("debug_door_straight", 0.45f);
+            p.SetCutscenePose(new Vector3(2.9f, 1.4f, -0.85f), Quaternion.LookRotation(Vector3.left), 60f);
+            p.Office.PassBy(0.38f, 1f);
+            yield return Shot("debug_corridor", 0.45f);
+            p.ClearCutscenePose();
+            rooms.SetPovMode(PovMode.Office);
             p.SetLook(0f, 13f);
             rooms.SetPhoneState(PhoneLineState.Ringing);
             yield return new WaitForSeconds(0.6f);

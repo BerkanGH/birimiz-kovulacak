@@ -122,10 +122,20 @@ namespace BirimizKovulacak.EditorTools
             hover.SetFloat("_Cull", 1f); // render front faces culled
             hover.SetShaderPassEnabled("ShadowCaster", false);
             EditorUtility.SetDirty(hover);
-            var sil = GetOrCreate("M_RmSilhouette", unlit);
+            // passer-by behind the frosted door glass: alpha-tested dark shape (the glass in front softens it)
+            var sil = GetOrCreate("M_RmSilhouette", lit);
             sil.SetTexture("_BaseMap", AssetDatabase.LoadAssetAtPath<Texture2D>(RoomsTexDir + "/Silhouette.png"));
-            sil.SetColor("_BaseColor", new Color(0.1f, 0.11f, 0.16f, 1f));
-            SetTransparent(sil);
+            sil.SetColor("_BaseColor", new Color(0.16f, 0.17f, 0.24f, 1f));
+            sil.SetFloat("_Smoothness", 0f);
+            sil.SetFloat("_Metallic", 0f);
+            sil.DisableKeyword("_EMISSION");
+            sil.SetColor("_EmissionColor", Color.black);
+            SetOpaque(sil);
+            sil.SetFloat("_AlphaClip", 1f);
+            sil.SetFloat("_Cutoff", 0.45f);
+            sil.EnableKeyword("_ALPHATEST_ON");
+            sil.SetFloat("_Cull", 0f);
+            sil.renderQueue = (int)RenderQueue.AlphaTest;
             EditorUtility.SetDirty(sil);
             var cord = GetOrCreate("M_RmCord", unlit);
             cord.SetColor("_BaseColor", Hex("#E2DACB"));
@@ -810,6 +820,9 @@ namespace BirimizKovulacak.EditorTools
                 office.RingGlow = glow;
                 var targetRenderers = g.GetComponentsInChildren<Renderer>(true).Where(r => office.Plug == null || !r.transform.IsChildOf(office.Plug.transform));
                 MakeTarget(g, targetRenderers, DeskTarget.Phone, rb, 0.03f);
+                // the merged body includes the wall cord trailing behind: keep the click box on the base
+                var pbc = g.GetComponent<BoxCollider>();
+                if (pbc != null) { pbc.center = new Vector3(0f, 0.07f, 0f); pbc.size = new Vector3(0.27f, 0.16f, 0.25f); }
             }
             office.RingOff = Mat("M_RmRingOff"); office.RingRed = Mat("M_LEDRed"); office.RingGreen = Mat("M_LEDGreen");
             office.LcdOn = Mat("M_RmPhoneLcd"); office.LcdOff = Mat("M_RmScreenOff");
@@ -908,7 +921,7 @@ namespace BirimizKovulacak.EditorTools
             office.SkinMats = RoomSkins.Select(Mat).ToArray();
             // passer-by behind the frosted door glass
             var corridor = (JObject)a["corridor"];
-            var sil = Quad(root, "Silhouette", new Vector3((float)corridor["x"], 0.82f, -0.85f), new Vector3(0f, 90f, 0f), new Vector3(0.95f, 1.64f, 1f), Mat("M_RmSilhouette"));
+            var sil = Quad(root, "Silhouette", new Vector3((float)corridor["x"], 0.98f, -0.85f), new Vector3(0f, 90f, 0f), new Vector3(1.1f, 1.9f, 1f), Mat("M_RmSilhouette"));
             office.Silhouette = sil.transform;
             office.CorridorX = (float)corridor["x"];
             office.CorridorZ0 = (float)corridor["z0"];
