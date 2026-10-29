@@ -1,5 +1,31 @@
 # Verification Report
 
+## v2 "İş Haftası" (2026-10-29, overnight)
+
+Build: Windows x64, Unity 6000.6.3f1, protocol 2, same machine as below. Logs under `Builds/runs/` (ignored).
+
+| Level | Status | Evidence |
+|---|---|---|
+| Rules engine tests | **464 passed, 0 failed** | `dotnet test` in `Tools/CoreTests/Tests` (privacy byte scans, determinism with 6 players and all 39 verbs, full 5-day week, balance v2.2) |
+| Voice core tests | **70 passed, 0 failed** | `dotnet test` in `Tools/VoiceTests/Tests` (Opus round trip, jitter/loss/FEC, routing incl. call privacy, zero-alloc hot path) |
+| Unity compile + player build | **Yes** | `Tools/build.ps1`: "Player build Succeeded", 0 errors; builder "NAV reachability: 69 ok, 0 problems" |
+| 3-player local match, week mode, 2 days | **Yes** | `final_p3_week`: Monday (Paragöz) → Tuesday (Disiplinci), identical result hashes per match, 0 errors |
+| 6-player local match, quick play, synthetic voice | **Yes** | `final_p6_quick`: 6 processes, identical hash, 9 incidents, 0 errors |
+| 6-player week day with voice | **Yes** | `int7_p6_week`: identical hash, company succeeded, a winner |
+| In-game voice end to end in Unity | **Yes (synthetic audio)** | `-VoiceTest speech`: native libopus loaded, ~16–17 kbps per talker, call frames routed only to the partner, walls muffle; no real microphones were used |
+| Memory per process (4 bots, visible windows) | **−39 % working set / −29 % private vs v1 RC** | `docs/PERFORMANCE.md` |
+| Remote internet match | **No** | One machine only. |
+| Human playtest (fun, voice feel, camera feel) | **No** | Everything above is bots or synthetic audio. Needs real players. |
+
+Cross-reviews performed: Codex reviewed the Claude-written Unity code twice (5 + 8 verified findings, all fixed);
+a Claude reviewer stress-tested the Codex rules engine for exploits with a probe harness (12 findings →
+`docs/BALANCE_V2.md`, fixed in config + engine v2.2).
+
+---
+
+## v1 release candidate (2026-10-23)
+
+
 Date: 2026-10-23 · Build: Windows x64, Unity 6000.6.3f1 · Machine: i5-12500H, RTX 3050 Ti Laptop, Windows 11.
 
 ## Status at a glance
