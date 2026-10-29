@@ -530,6 +530,9 @@ namespace BirimizKovulacak.EditorTools
             // (players/hosts may still edit it in a build folder).
             File.WriteAllText(cfgPath, GameConfig.ToJson(MatchConfig.CreateDefault()));
             Log("match_config.json written from MatchConfig.CreateDefault (protocol " + Protocol.Version + (current ? ")" : ", replaced an outdated file)"));
+            // v3 rules file (same policy: regenerated from LineConfig.CreateDefault on every build).
+            File.WriteAllText("Assets/StreamingAssets/Config/line_config.json", GameConfig.ToJson(LineConfig.CreateDefault()));
+            Log("line_config.json written from LineConfig.CreateDefault (protocol " + LineProtocol.Version + ")");
             string id = DateTime.UtcNow.ToString("yyyyMMddHHmm") + "-" + Guid.NewGuid().ToString("N").Substring(0, 6);
             File.WriteAllText(Root + "/Resources/build_id.txt", id);
             if (!File.Exists("Assets/StreamingAssets/Localization/tr.json")) Log("WARNING: tr.json missing");
