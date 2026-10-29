@@ -154,7 +154,7 @@ namespace BirimizKovulacak.Core
                     if (displaced != null) { BeforePickup(p, displaced); Take(p, displaced); }
                     if (slot.Kind == SlotKind.DeliveryTray)
                     {
-                        if (held.View.Kind == ItemKind.Report) { held.View.Location = ItemLocationKind.Archived; quota.ReportOrders--; AwardTask(p, TaskType.Report); }
+                        if (held.View.Kind == ItemKind.Report) { held.View.Location = ItemLocationKind.Archived; quota.ReportOrders--; AwardTask(p, TaskType.Report, held.View.ReportOwner); }
                         else { held.View.Fill = MugFill.Used; quota.CoffeeOrders--; if (!SaltedDeliveryV2(p, held)) AwardTask(p, TaskType.Coffee); }
                     }
                     DeliverMail(p, held, slot);

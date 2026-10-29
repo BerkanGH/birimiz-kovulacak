@@ -7,6 +7,7 @@ namespace BirimizKovulacak.Core
     {
         private readonly List<CallRecordView> calls = new List<CallRecordView>();
         private readonly int[] callRecord = new int[Protocol.MaxPlayers];
+        private readonly double[,] declinedCallUntil = new double[Protocol.MaxPlayers, Protocol.MaxPlayers];
         private readonly bool[] personalCallObserved = new bool[Protocol.MaxPlayers];
         private readonly List<int> pendingTips = new List<int>();
 
@@ -37,7 +38,7 @@ namespace BirimizKovulacak.Core
         {
             foreach (int p in playerIds)
                 if (players[p].Private.Call.State != CallState.None && clock >= players[p].Private.Call.Until)
-                    EndCall(p);
+                    EndCall(p, players[p].Private.Call.State != CallState.Active);
         }
 
         private void CallsPhaseChanged()
@@ -60,16 +61,16 @@ namespace BirimizKovulacak.Core
                 {
                     Request = new ActionRequest(request.MatchId, request.RequestId, request.Verb, request.TargetId, request.IntParam),
                     Start = clock, End = clock + Math.Max(0, Config.Calls.TipSeconds), StartPosition = players[p].Avatar.Position,
-                    Activity = PublicActivity.OnCall, DeskIndex = Layout.GetDesk(request.TargetId).Index
+                    Activity = PublicActivity.None, DeskIndex = Layout.GetDesk(request.TargetId).Index
                 };
+                end = interaction.End;
+                if (interaction.End <= clock) { CompleteTip(p, interaction); return; }
                 players[p].Interaction = interaction;
                 players[p].Public.WorkPose = false;
-                players[p].Public.Activity = PublicActivity.OnCall;
-                // A phone user is visible, but the target desk is private until the manager visits it.
+                // Only an answered personal call has public phone activity; tips remain anonymous.
+                players[p].Public.Activity = PublicActivity.None;
                 players[p].Public.ActivityTargetId = "";
-                players[p].Public.ActivityStart = clock; players[p].Public.ActivityEnd = interaction.End;
-                end = interaction.End;
-                if (interaction.End <= clock) CompleteTip(p, interaction);
+                players[p].Public.ActivityStart = players[p].Public.ActivityEnd = 0;
                 return;
             }
             if (!features.Calls) { failure = FailureCode.FeatureDisabled; return; }
@@ -92,6 +93,7 @@ namespace BirimizKovulacak.Core
                 if (!Present(other)) { failure = FailureCode.InvalidTarget; return; }
                 if (!players[other].Public.Connected || players[other].Private.Call.State != CallState.None || UsingTipLine(other))
                 { failure = FailureCode.Unavailable; return; }
+                if (declinedCallUntil[p, other] > clock) { failure = FailureCode.Unavailable; return; }
                 if (me.CallCooldownUntil > clock) { failure = FailureCode.Cooldown; return; }
                 double until = clock + Math.Max(0, Config.Calls.RingSeconds);
                 SetCall(p, other, CallState.RingingOut, until);
@@ -118,7 +120,7 @@ namespace BirimizKovulacak.Core
                 { failure = FailureCode.NoIncomingCall; return; }
             }
             else if (call.State != CallState.Active) { failure = FailureCode.NotInCall; return; }
-            EndCall(p);
+            EndCall(p, call.State == CallState.RingingIn);
         }
 
         private void SetCall(int p, int other, CallState state, double until)
@@ -129,25 +131,28 @@ namespace BirimizKovulacak.Core
             RefreshCallActivity(p);
         }
 
-        private void EndCall(int p)
+        private void EndCall(int p, bool blockPair = false)
         {
             CallView call = players[p].Private.Call;
             if (call.State == CallState.None) return;
             int other = call.Other;
-            bool answered = calls[callRecord[p]].Answered;
-            calls[callRecord[p]].End = clock;
-            ClearCall(p);
-            ClearCall(other);
+            CallRecordView record = calls[callRecord[p]];
+            bool answered = record.Answered;
+            record.End = clock;
+            if (!answered && blockPair)
+                declinedCallUntil[record.Caller, record.Callee] = clock + Math.Max(0, Config.Calls.DeclineBlockSeconds);
+            ClearCall(p, answered || record.Caller == p);
+            ClearCall(other, answered || record.Caller == other);
             Emit(EventType.CallEnded, other, arg: answered ? 1 : 0, audience: Audience.Player, recipient: p);
             Emit(EventType.CallEnded, p, arg: answered ? 1 : 0, audience: Audience.Player, recipient: other);
         }
 
-        private void ClearCall(int p)
+        private void ClearCall(int p, bool cooldown)
         {
             CallView call = players[p].Private.Call;
             call.State = CallState.None; call.Other = PlayerIds.None; call.Since = call.Until = 0;
             players[p].Public.Ringing = false;
-            players[p].Private.CallCooldownUntil = clock + Math.Max(0, Config.Calls.CooldownSeconds);
+            if (cooldown) players[p].Private.CallCooldownUntil = clock + Math.Max(0, Config.Calls.CooldownSeconds);
             callRecord[p] = -1;
             RefreshCallActivity(p);
         }
@@ -157,7 +162,7 @@ namespace BirimizKovulacak.Core
             if (players[p].Interaction != null) return;
             PlayerPublicView pub = players[p].Public;
             CallView call = players[p].Private.Call;
-            bool usingPhone = call.State == CallState.RingingOut || call.State == CallState.Active;
+            bool usingPhone = call.State == CallState.Active;
             pub.Activity = usingPhone ? PublicActivity.OnCall : PublicActivity.None;
             pub.ActivityTargetId = "";
             pub.ActivityStart = usingPhone ? call.Since : 0;

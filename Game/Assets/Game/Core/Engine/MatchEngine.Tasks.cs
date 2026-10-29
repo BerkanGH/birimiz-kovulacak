@@ -51,12 +51,14 @@ namespace BirimizKovulacak.Core
         private bool AnswerInProgress() { foreach (int id in playerIds) { PlayerState p = players[id]; if (p.Interaction != null && p.Interaction.Request.Verb == ActionVerb.AnswerPhone && p.Interaction.PhoneCall == phoneCall) return true; } return false; }
         private bool PrinterHasRoom() { SlotDef tray = Layout.GetSlot(EntityIds.PrinterTray); return tray != null && FreeIndex(tray.Id) < Math.Min(tray.Capacity, Config.Tasks.PrinterTrayCapacity); }
         private void EnqueuePrint(int p) { printQueue.Enqueue(p); if (printQueue.Count == 1) printEnds = clock + Math.Max(0, Config.Tasks.PrintSeconds); Changed(); }
-        private void AwardTask(int p, TaskType task)
+        private void AwardTask(int p, TaskType task, int creditedPlayer = PlayerIds.None)
         {
             if (quota.Frozen) return;
-            bool reached = quota.Points >= quota.Target; float points = Config.Tasks.PointsFor(task); quota.Points += points; players[p].Public.Performance += points;
+            if (creditedPlayer == PlayerIds.None) creditedPlayer = p;
+            bool reached = quota.Points >= quota.Target; float points = Config.Tasks.PointsFor(task); quota.Points += points; players[creditedPlayer].Public.Performance += points;
+            // Delivery is the actor's completed task; report performance/favour belongs to its writer.
             players[p].Public.TasksCompleted++; players[p].TaskCounts[(int)task]++; if (Phase == MatchPhase.Work2) players[p].Work2Tasks++;
-            AwardFavor(p, task);
+            AwardFavor(creditedPlayer, task);
             Emit(EventType.TaskCompleted, p, arg: (int)task); if (!reached && quota.Points >= quota.Target) Emit(EventType.QuotaReached);
         }
         partial void FillStation(StationView station) { if (station.Kind == StationKind.Printer) { station.PrintQueue = new List<int>(printQueue); station.PrintEndsAt = printEnds; } }

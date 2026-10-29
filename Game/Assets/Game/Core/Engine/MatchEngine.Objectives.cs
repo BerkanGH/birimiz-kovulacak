@@ -140,7 +140,7 @@ namespace BirimizKovulacak.Core
                     return true;
                 case ObjectiveType.ChaosCoordinator: return ChaosProgress(p) >= card.Count;
                 case ObjectiveType.CleanHands: return player.Public.TasksCompleted >= card.Count && TaskTypesCompleted(p) >= card.Count2 && SabotageCount(p) == 0;
-                case ObjectiveType.OfficeAllRounder: return TaskTypesCompleted(p) >= 4;
+                case ObjectiveType.OfficeAllRounder: return TaskTypesCompleted(p) >= card.Count;
                 case ObjectiveType.Fixer: return FixerProgress(p) >= card.Count;
                 case ObjectiveType.DeskGuardian: return GuardianClean(target, MatchPhase.Raid) && GuardianClean(target, MatchPhase.FinalInspection);
                 case ObjectiveType.Unnoticed: return player.Public.AccusationsReceived == 0;

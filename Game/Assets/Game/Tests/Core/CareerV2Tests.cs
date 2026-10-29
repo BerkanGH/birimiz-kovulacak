@@ -17,16 +17,16 @@ namespace BirimizKovulacak.Core.Tests
 
         private static int Expected(PlayerOutcome p, MatchResultView r, CareerConfig c, float multiplier)
         {
-            return (int)Math.Round(multiplier * (r.CompanySucceeded && !p.Fired ? c.QuotaMet : 0)
+            return (int)Math.Round(multiplier * ((r.CompanySucceeded && !p.Fired ? c.QuotaMet : 0)
                 + (!p.Fired ? c.Survived : 0) + (p.Role == Role.Employee && p.Won ? c.ObjectiveWon : 0)
-                + (p.Role == Role.Informant && r.InformantWon ? c.InformantWon : 0) + (p.Fired ? c.Fired : 0)
-                + (r.Favourites.Contains(p.Player) ? c.Favourite : 0), MidpointRounding.AwayFromZero);
+                + (p.Role == Role.Informant && r.InformantWon ? c.InformantWon : 0)
+                + (r.Favourites.Contains(p.Player) ? c.Favourite : 0)) + (p.Fired ? c.Fired : 0), MidpointRounding.AwayFromZero);
         }
 
         [TestCase(0, 1f)]
         [TestCase(3, 1.5f)]
         [TestCase(4, 2f)]
-        public void WeekAwardsExactFormulaAndOnlyQuotaBonusIsMultiplied(int day, float multiplier)
+        public void WeekAwardsExactFormulaWithAllPositiveTermsMultiplied(int day, float multiplier)
         {
             var setup = Setup(day); setup.ForceObjectives[0] = "UNNOTICED";
             var m = new TestMatch(setup: setup, configure: c => { c.QuotaTarget = 0; c.WeekDays[day].CareerMultiplier = multiplier; });
@@ -135,7 +135,7 @@ namespace BirimizKovulacak.Core.Tests
             setup.ForceFavourite = 2;
             var m = new TestMatch(setup: setup, configure: c => { c.Calls.CooldownSeconds = 0; c.ManagerProfiles[0].HasFavourite = true; c.Tasks.InitialDirtyDesks = 0; });
             m.Work();
-            for (int n = 0; n < 3; n++) { m.Do(3, ActionVerb.CallPlayer, param: 1); m.Do(1, ActionVerb.DeclineCall); }
+            for (int n = 0; n < 3; n++) { m.Do(3, ActionVerb.CallPlayer, param: 1); m.Do(1, ActionVerb.AnswerCall); m.Do(3, ActionVerb.HangUp); }
             m.Do(0, ActionVerb.CutPower, EntityIds.FuseBox); m.Do(0, ActionVerb.ResetFuse, EntityIds.FuseBox);
             m.Do(0, ActionVerb.PickUp, EntityIds.Mug(0)); m.Do(0, ActionVerb.BrewCoffee, EntityIds.CoffeeMachine);
             m.Do(0, ActionVerb.SaltCoffee, EntityIds.CoffeeMachine); m.Do(0, ActionVerb.Drop);

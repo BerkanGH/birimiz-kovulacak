@@ -89,14 +89,15 @@ namespace BirimizKovulacak.Core.Tests
         }
 
         [Test]
-        public void OfficeAllRounderAcceptsMailAmongAnyFourTaskTypes()
+        public void OfficeAllRounderRequiresAllFiveDefaultTaskTypes()
         {
             var m = new TestMatch(); m.Work(); m.Coffee(0, 0);
             string report = m.Print(0); m.Do(0, ActionVerb.PickUp, report); m.Do(0, ActionVerb.Place, EntityIds.DeliveryTray);
             while (!m.View().Quota.PhoneRinging) m.Advance(0.2);
             m.Do(0, ActionVerb.AnswerPhone, EntityIds.Phone);
             ItemView mail = m.Item(EntityIds.Mail(1)); m.Do(0, ActionVerb.PickUp, mail.Id); m.Do(0, ActionVerb.Place, EntityIds.DeskSurface(mail.AddressedDesk));
-            Assert.AreEqual(4, m.View().Me.Objective.Progress); Assert.AreEqual(ObjectiveStatus.OnTrack, m.View().Me.Objective.Status);
+            Assert.AreEqual(5, m.View().Me.Objective.Required);
+            Assert.AreEqual(4, m.View().Me.Objective.Progress); Assert.AreEqual(ObjectiveStatus.InProgress, m.View().Me.Objective.Status);
             m.Do(0, ActionVerb.PickUp, EntityIds.Spray(0));
             int dirty = m.View().Desks.First(d => d.Dirty).Index; m.Do(0, ActionVerb.CleanDesk, EntityIds.Desk(dirty));
             Assert.AreEqual(5, m.View().Me.Objective.Progress); Assert.AreEqual(ObjectiveStatus.OnTrack, m.View().Me.Objective.Status);

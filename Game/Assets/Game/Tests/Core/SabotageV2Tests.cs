@@ -259,7 +259,7 @@ namespace BirimizKovulacak.Core.Tests
 
         [TestCase(true)]
         [TestCase(false)]
-        public void TastingConsumesCoffeeCreatesPrivateNoteAndReversesSalt(bool salted)
+        public void TastingOnlyConsumesSaltedCoffeeCreatesPrivateNoteAndReversesSalt(bool salted)
         {
             var match = Match(); match.Work(); FullMug(match, 0, 0);
             if (salted) match.Do(0, ActionVerb.SaltCoffee, EntityIds.CoffeeMachine);
@@ -268,7 +268,7 @@ namespace BirimizKovulacak.Core.Tests
             PrivateNote note = match.View(1).Me.Notes.Single(n => n.Kind == NoteKind.TasteResult);
             Assert.AreEqual(salted, note.Salted); Assert.AreEqual(EntityIds.Mug(0), note.ItemId);
             Assert.IsFalse(match.View(2).Me.Notes.Any(n => n.Kind == NoteKind.TasteResult));
-            Assert.AreEqual(MugFill.Used, match.Item(EntityIds.Mug(0)).Fill);
+            Assert.AreEqual(salted ? MugFill.Used : MugFill.Full, match.Item(EntityIds.Mug(0)).Fill);
             GameEvent tasted = match.Events.Last(e => e.Type == EventType.CoffeeTasted);
             Assert.AreEqual(Audience.Player, tasted.Audience); Assert.AreEqual(1, tasted.AudiencePlayer);
             Assert.AreEqual(salted ? 1 : 0, tasted.IntArg);

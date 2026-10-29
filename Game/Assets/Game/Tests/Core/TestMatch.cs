@@ -19,6 +19,8 @@ namespace BirimizKovulacak.Core.Tests
             Action<OfficeLayout> arrange = null, IWorldQueries world = null, MatchSetup setup = null)
         {
             Config = MatchConfig.CreateDefault();
+            // Fixtures address desks by player id unless they explicitly exercise shuffled assignment.
+            Config.ShuffleDesks = false;
             // Legacy rules fixtures explicitly opt into drawer searches and neutral profile weights.
             Config.ManagerProfiles.Clear();
             Config.ManagerProfiles.Add(new ManagerProfileDef { Id = "legacy_test", SearchAllDrawers = true });

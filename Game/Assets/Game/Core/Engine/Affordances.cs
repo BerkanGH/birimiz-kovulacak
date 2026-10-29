@@ -291,7 +291,7 @@ namespace BirimizKovulacak.Core
                 held.AddressedDesk == slot.DeskIndex && desk != null && desk.AssignedOwner != PlayerIds.None)
                 label = "deliver_mail";
             SabotageType? sabotage = null;
-            if (held != null)
+            if (held != null && (desk == null || desk.AssignedOwner != PlayerIds.None))
             {
                 if (held.Kind == ItemKind.Suspicious && slot.Kind == SlotKind.Drawer)
                     seconds = Duration(config, SabotageType.PlantItem);
@@ -473,7 +473,8 @@ namespace BirimizKovulacak.Core
             ActionVerb verb, string target, string label, float seconds, bool sabotage, FailureCode blocked, bool physical)
         {
             if (!actor.Connected) blocked = FailureCode.NotConnected;
-            else if (view.Phase < MatchPhase.Work1 || view.Phase > MatchPhase.FinalInspection) blocked = FailureCode.WrongPhase;
+            else if (view.Phase < MatchPhase.Work1 || view.Phase > MatchPhase.FinalInspection ||
+                (view.Phase == MatchPhase.FinalInspection && (verb == ActionVerb.CutInternet || verb == ActionVerb.CutPower))) blocked = FailureCode.WrongPhase;
             else if (physical && view.Me.ActiveInteraction != null) blocked = FailureCode.Busy;
             options.Add(new Affordance { Verb = verb, TargetId = target, LabelKey = "verb." + label,
                 Seconds = seconds, IsSabotage = sabotage, BlockedBy = blocked });

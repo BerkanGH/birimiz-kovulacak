@@ -88,6 +88,8 @@ namespace BirimizKovulacak.Core
         {
             duration = 0;
             ActionVerb verb = a.Request.Verb;
+            if ((verb == ActionVerb.CutInternet || verb == ActionVerb.CutPower) && Phase >= MatchPhase.FinalInspection)
+                return FailureCode.WrongPhase;
             string id = a.Request.TargetId;
             StationDef station = Layout.GetStation(id);
             DeskDef deskDef = Layout.GetDesk(id);
@@ -213,8 +215,7 @@ namespace BirimizKovulacak.Core
                 case ActionVerb.TasteCoffee:
                     SaltedMugState tasted;
                     bool wasSalted = saltedMugs.TryGetValue(held.View.Id, out tasted);
-                    if (wasSalted) { ReverseEffect(p, tasted.Incident); saltedMugs.Remove(held.View.Id); }
-                    held.View.Fill = MugFill.Used;
+                    if (wasSalted) { ReverseEffect(p, tasted.Incident); saltedMugs.Remove(held.View.Id); held.View.Fill = MugFill.Used; }
                     AddPrivateNote(p, new PrivateNote { Kind = NoteKind.TasteResult, ItemId = held.View.Id, Salted = wasSalted });
                     Emit(EventType.CoffeeTasted, p, item: held.View.Id, arg: wasSalted ? 1 : 0, audience: Audience.Player, recipient: p);
                     break;

@@ -1153,7 +1153,12 @@ namespace BirimizKovulacak.Core.Tests
 
         private static TestMatch ScriptedMatch()
         {
-            var m = new TestMatch(configure: c => c.QuotaTarget = 5); m.Work();
+            var m = new TestMatch(configure: c =>
+            {
+                c.QuotaTarget = 5;
+                // This fixture exercises the four task types present in v1.
+                c.Objectives.Single(o => o.Type == ObjectiveType.OfficeAllRounder).Count = 4;
+            }); m.Work();
             m.Coffee(0, 0);
             string report = m.Print(0);
             m.Do(2, ActionVerb.PickUp, report);

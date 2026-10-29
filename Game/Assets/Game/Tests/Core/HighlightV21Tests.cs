@@ -289,11 +289,12 @@ namespace BirimizKovulacak.Core.Tests
             {
                 c.Durations.Work1 = 10; c.Durations.Raid = 1;
                 c.Durations.Work2 = 10; c.Durations.FinalInspection = 3;
-                c.GetSabotage(SabotageType.PowerCut).DurationSeconds = 1;
+                c.GetSabotage(SabotageType.PlantItem).DurationSeconds = 1;
             });
+            match.Work(); match.Do(0, ActionVerb.PickUp, EntityIds.Suspicious(ItemVariants.Duck));
             match.Phase(MatchPhase.FinalInspection);
             double start = match.Now;
-            ActionResult action = match.Start(0, ActionVerb.CutPower, EntityIds.FuseBox);
+            ActionResult action = match.Start(0, ActionVerb.Place, EntityIds.DeskDrawer(1));
             double freeze = match.View().PhaseEndTime;
             match.AdvanceTo(action.CompletesAt + .001); match.Finish();
             HighlightView highlight = match.View().Result.Highlight;

@@ -147,16 +147,14 @@ namespace BirimizKovulacak.Core.Tests
             Assert.AreEqual(m.Config.Calls.TipsPerPlayer, m.View().Me.TipsLeft);
         }
 
-        [TestCase(ActionVerb.CutInternet)]
-        [TestCase(ActionVerb.CutPower)]
         [TestCase(ActionVerb.PullPlug)]
         [TestCase(ActionVerb.TipManager)]
         public void NewTimedVerbAtExactMeetingBoundaryIsCancelledBeforeEffect(ActionVerb verb)
         {
-            TestMatch m = Match(); m.Phase(MatchPhase.FinalInspection);
+            TestMatch m = Match(c => c.Calls.TipSeconds = 3); m.Phase(MatchPhase.FinalInspection);
             double end = m.View().PhaseEndTime;
-            float duration = verb == ActionVerb.TipManager ? m.Config.Calls.TipSeconds : m.Config.GetSabotage(verb == ActionVerb.CutInternet ? SabotageType.InternetOutage : verb == ActionVerb.CutPower ? SabotageType.PowerCut : SabotageType.PullPlug).DurationSeconds;
-            string target = verb == ActionVerb.CutInternet ? EntityIds.Router : verb == ActionVerb.CutPower ? EntityIds.FuseBox : EntityIds.Desk(1);
+            float duration = verb == ActionVerb.TipManager ? m.Config.Calls.TipSeconds : m.Config.GetSabotage(SabotageType.PullPlug).DurationSeconds;
+            string target = EntityIds.Desk(1);
             m.AdvanceTo(end - duration); m.Engine.Tick(end - duration); m.MoveTo(0, target);
             ActionResult action = m.Engine.Submit(0, new ActionRequest(m.Engine.MatchId, 90000, verb, target), end - duration);
             Assert.IsTrue(action.Accepted, action.Failure.ToString()); Assert.AreEqual(end, action.CompletesAt);

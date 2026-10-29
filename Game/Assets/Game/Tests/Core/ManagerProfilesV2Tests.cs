@@ -116,28 +116,28 @@ namespace BirimizKovulacak.Core.Tests
             foreach (int p in m.Engine.Players)
             {
                 Assert.AreEqual(4, m.View(p).Favourite);
-                Assert.AreEqual(2, m.Player(4).Favor);
+                Assert.AreEqual(1, m.Player(4).Favor);
             }
             GameEvent change = m.Events.Single(e => e.Type == EventType.FavorChanged);
-            Assert.AreEqual(4, change.Actor); Assert.AreEqual(Audience.All, change.Audience); Assert.AreEqual("2", change.StrArg);
+            Assert.AreEqual(4, change.Actor); Assert.AreEqual(Audience.All, change.Audience); Assert.AreEqual("1", change.StrArg);
             setup.ForceFavourite = PlayerIds.None;
             int selected = Match(new ManagerProfileDef { Id = "favourite", HasFavourite = true }, setup: setup).View().Favourite;
             Assert.Contains(selected, setup.Players.Select(p => p.Id).ToList());
             Assert.AreEqual(selected, Match(new ManagerProfileDef { Id = "favourite", HasFavourite = true }, setup: setup).View().Favourite);
         }
 
-        [TestCase(FavorSource.None, 0)]
-        [TestCase(FavorSource.CoffeeDelivered, 0.75f)]
-        [TestCase(FavorSource.ReportsDelivered, 0.75f)]
-        [TestCase(FavorSource.AnyTask, 1.5f)]
-        public void FavorSourceRewardsCompleterExactlyOnce(FavorSource source, float expected)
+        [TestCase(FavorSource.None, 0, 0)]
+        [TestCase(FavorSource.CoffeeDelivered, 0.75f, 0)]
+        [TestCase(FavorSource.ReportsDelivered, 0, 0.75f)]
+        [TestCase(FavorSource.AnyTask, 0.75f, 0.75f)]
+        public void FavorSourceRewardsReportOwnerAndCoffeeDelivererExactlyOnce(FavorSource source, float expected, float ownerFavor)
         {
             TestMatch m = Match(new ManagerProfileDef { Id = "favor", FavorSource = source, FavorPerAction = 0.75f }); m.Work();
             m.Coffee(1, 0);
             string report = m.Print(0); m.Do(1, ActionVerb.PickUp, report); m.Do(1, ActionVerb.Place, EntityIds.DeliveryTray);
             Assert.AreEqual(expected, m.Player(1).Favor);
-            Assert.AreEqual(0, m.Player(0).Favor);
-            m.Advance(2); Assert.AreEqual(expected, m.Player(1).Favor);
+            Assert.AreEqual(ownerFavor, m.Player(0).Favor);
+            m.Advance(2); Assert.AreEqual(expected, m.Player(1).Favor); Assert.AreEqual(ownerFavor, m.Player(0).Favor);
         }
 
         [Test]
@@ -198,6 +198,7 @@ namespace BirimizKovulacak.Core.Tests
         {
             TestMatch m = Match(new ManagerProfileDef { Id = "surprise", SurpriseInspection = true }, c =>
             {
+                c.Manager.SurpriseMinFraction = c.Manager.SurpriseMaxFraction = 0;
                 c.Manager.SurpriseAtFraction = 0.25f; c.Manager.SurpriseSeconds = 2; c.Manager.WalkSpeed = 0.1f;
             });
             m.Phase(MatchPhase.Work2); double start = m.View().PhaseStartTime + m.Config.Durations.Work2 * 0.25;
@@ -214,6 +215,7 @@ namespace BirimizKovulacak.Core.Tests
         {
             TestMatch m = Match(new ManagerProfileDef { Id = "surprise", SurpriseInspection = true }, c =>
             {
+                c.Manager.SurpriseMinFraction = c.Manager.SurpriseMaxFraction = 0;
                 c.Manager.SurpriseAtFraction = 0; c.Manager.SurpriseSeconds = 100;
             });
             m.Work(); m.Plant(2, 0); m.Phase(MatchPhase.Work2); Assert.IsTrue(m.View().Manager.Surprise);
@@ -227,12 +229,13 @@ namespace BirimizKovulacak.Core.Tests
         {
             TestMatch m = Match(new ManagerProfileDef { Id = "surprise", SurpriseInspection = true }, c =>
             {
+                c.Manager.SurpriseMinFraction = c.Manager.SurpriseMaxFraction = 0;
                 c.Durations.Work2 = 2; c.Manager.SurpriseAtFraction = 0.5f; c.Manager.SurpriseSeconds = 100; c.Manager.WalkSpeed = 0.1f;
             });
             m.Phase(MatchPhase.Work2); double end = m.View().PhaseEndTime;
             m.AdvanceTo(end - 0.01); Assert.IsTrue(m.View().Manager.Surprise);
             m.AdvanceTo(end); Assert.AreEqual(MatchPhase.FinalInspection, m.Engine.Phase); Assert.IsFalse(m.View().Manager.Surprise);
-            TestMatch zero = Match(new ManagerProfileDef { Id = "zero", SurpriseInspection = true }, c => { c.Manager.SurpriseAtFraction = 0; c.Manager.SurpriseSeconds = 0; });
+            TestMatch zero = Match(new ManagerProfileDef { Id = "zero", SurpriseInspection = true }, c => { c.Manager.SurpriseMinFraction = c.Manager.SurpriseMaxFraction = 0; c.Manager.SurpriseAtFraction = 0; c.Manager.SurpriseSeconds = 0; });
             zero.Phase(MatchPhase.Work2); Assert.IsFalse(zero.View().Manager.Surprise); Assert.AreEqual(1, zero.Events.Count(e => e.Type == EventType.SurpriseInspection));
         }
     }
