@@ -15,20 +15,33 @@ namespace BirimizKovulacak.Game
     {
         public static NetSession Instance { get; private set; }
         public HostMatchController Host { get; private set; }
+        /// <summary>v3 host (null on clients).</summary>
+        public HostLineController LineHost { get; private set; }
 
         public override void OnNetworkSpawn()
         {
             Instance = this;
+            // v3 client plumbing (the host's own client goes through the same path).
+            LineClient.Transport = req => SubmitLineRpc(LineCodec.EncodeAction(req));
+            LineClient.ReadyTransport = SetReady;
+            LineClient.Clock = () => NetworkManager != null && NetworkManager.IsListening ? NetworkManager.ServerTime.Time : Time.realtimeSinceStartupAsDouble;
             if (IsServer)
             {
                 Host = ConnectionManager.I.HostController;
                 Host?.Attach(this);
+                LineHost = ConnectionManager.I.LineHost;
+                LineHost?.Attach(this);
             }
         }
 
         public override void OnNetworkDespawn()
         {
-            if (Instance == this) Instance = null;
+            if (Instance == this)
+            {
+                Instance = null;
+                LineClient.Transport = null;
+                LineClient.ReadyTransport = null;
+            }
         }
 
         // ---------------------------------------------------------------- client -> host
@@ -50,6 +63,65 @@ namespace BirimizKovulacak.Game
         void SetReadyRpc(bool ready, RpcParams rpcParams = default)
         {
             Host?.SetReady(rpcParams.Receive.SenderClientId, ready);
+            LineHost?.SetReady(rpcParams.Receive.SenderClientId, ready);
+        }
+
+        // ---------------------------------------------------------------- v3 (LineCodec payloads)
+
+        [Rpc(SendTo.Server, RequireOwnership = false)]
+        void SubmitLineRpc(byte[] payload, RpcParams rpcParams = default)
+        {
+            LineHost?.OnClientRequest(rpcParams.Receive.SenderClientId, payload);
+        }
+
+        public void SendLineWelcome(ulong clientId, LineWelcome welcome, string configJson)
+        {
+            LineWelcomeRpc(LineCodec.EncodeWelcome(welcome), configJson ?? "", RpcTarget.Single(clientId, RpcTargetUse.Temp));
+        }
+
+        public void BroadcastLineLobby(LineLobbyView lobby) { LineLobbyRpc(LineCodec.EncodeLobby(lobby)); }
+
+        public void SendLineView(ulong clientId, byte[] payload) { LineViewRpc(payload, RpcTarget.Single(clientId, RpcTargetUse.Temp)); }
+
+        public void SendLineEvents(ulong clientId, List<LineEvent> events)
+        {
+            if (events.Count == 0) return;
+            LineEventsRpc(LineCodec.EncodeEvents(events), RpcTarget.Single(clientId, RpcTargetUse.Temp));
+        }
+
+        public void SendLineResult(ulong clientId, LineActionResult result)
+        {
+            LineResultRpc(LineCodec.EncodeResult(result), RpcTarget.Single(clientId, RpcTargetUse.Temp));
+        }
+
+        [Rpc(SendTo.SpecifiedInParams)]
+        void LineWelcomeRpc(byte[] payload, string configJson, RpcParams rpcParams)
+        {
+            Safe(() => LineClient.I.ApplyWelcome(LineCodec.DecodeWelcome(payload), configJson), "welcome");
+        }
+
+        [Rpc(SendTo.ClientsAndHost)]
+        void LineLobbyRpc(byte[] payload)
+        {
+            Safe(() => LineClient.I.ApplyLobby(LineCodec.DecodeLobby(payload)), "lobby");
+        }
+
+        [Rpc(SendTo.SpecifiedInParams)]
+        void LineViewRpc(byte[] payload, RpcParams rpcParams)
+        {
+            Safe(() => LineClient.I.ApplyView(LineCodec.DecodeView(payload)), "view");
+        }
+
+        [Rpc(SendTo.SpecifiedInParams)]
+        void LineEventsRpc(byte[] payload, RpcParams rpcParams)
+        {
+            Safe(() => LineClient.I.ApplyEvents(LineCodec.DecodeEvents(payload)), "events");
+        }
+
+        [Rpc(SendTo.SpecifiedInParams)]
+        void LineResultRpc(byte[] payload, RpcParams rpcParams)
+        {
+            Safe(() => LineClient.I.ApplyResult(LineCodec.DecodeResult(payload)), "result");
         }
 
         // ---------------------------------------------------------------- host -> client(s)
@@ -117,6 +189,7 @@ namespace BirimizKovulacak.Game
             {
                 Debug.LogError("[Net] Incompatible " + what + " payload: " + e.Message);
                 ClientState.I.StatusKey = "net.incompatible";
+                if (LineClient.I != null) LineClient.I.StatusKey = "net.incompatible";
             }
             catch (Exception e) { Debug.LogException(e); }
         }

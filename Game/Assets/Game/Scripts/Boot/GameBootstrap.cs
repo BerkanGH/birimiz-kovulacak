@@ -26,8 +26,9 @@ namespace BirimizKovulacak.Game
             if (GetComponent<VoiceSystem>() == null) gameObject.AddComponent<VoiceSystem>();
             if (GetComponent<LineClient>() == null) gameObject.AddComponent<LineClient>();
             if (System.Array.IndexOf(System.Environment.GetCommandLineArgs(), "-uimock") >= 0) gameObject.AddComponent<LineMockDriver>();
-            if (args.Bot) gameObject.AddComponent<NetworkBotDriver>();
-            if (args.Screenshots) gameObject.AddComponent<ScreenshotRecorder>();
+            if (args.Bot) gameObject.AddComponent<LineBotDriver>();
+            if (args.Screenshots) gameObject.AddComponent<LineScreenshotRecorder>();
+            if (GetComponent<LineWorldDriver>() == null) gameObject.AddComponent<LineWorldDriver>();
             if (args.InputSim && !args.Bot) gameObject.AddComponent<InputSimDriver>();
         }
 
@@ -35,7 +36,7 @@ namespace BirimizKovulacak.Game
         {
             var args = LaunchArgs.Current;
             yield return null;
-            ClientState.I.PhaseChanged += OnPhase;
+            LineClient.I.PhaseChanged += OnLinePhase;
             string name = !string.IsNullOrEmpty(args.Name) ? args.Name : PlayerPrefs.GetString("player.name", System.Environment.UserName);
             if (args.AutoHost)
             {
@@ -64,9 +65,9 @@ namespace BirimizKovulacak.Game
                 // Bots ready up automatically once they are in the lobby.
                 while (ConnectionManager.I.Current != ConnectionManager.State.Connected && ConnectionManager.I.Current != ConnectionManager.State.Hosting) yield return null;
                 float t = Time.realtimeSinceStartup + 20f;
-                while (Time.realtimeSinceStartup < t && (NetSession.Instance == null || ClientState.I.MySlot < 0)) yield return null;
+                while (Time.realtimeSinceStartup < t && (NetSession.Instance == null || LineClient.I.MySlot < 0)) yield return null;
                 yield return new WaitForSecondsRealtime(1f);
-                if (ConnectionManager.I.HostController == null) NetSession.Instance?.SetReady(true);
+                if (ConnectionManager.I.LineHost == null) LineClient.I.SetReady(true);
             }
         }
 
@@ -82,11 +83,25 @@ namespace BirimizKovulacak.Game
             }
         }
 
+        int _lastResultsWeek = -1;
+
+        void OnLinePhase(LinePhase from, LinePhase to)
+        {
+            var v = LineClient.I.View;
+            if (to == LinePhase.WeekResults && v != null && v.WeekId != _lastResultsWeek)
+            {
+                _lastResultsWeek = v.WeekId;
+                _matchesFinished++;
+                int quitAfter = LaunchArgs.Current.QuitAfterMatches;
+                if (quitAfter > 0 && _matchesFinished >= quitAfter) StartCoroutine(QuitSoon(8f));
+            }
+        }
+
         IEnumerator QuitSoon(float seconds)
         {
             MatchLog.Write("quitting after " + _matchesFinished + " match(es)");
             yield return new WaitForSecondsRealtime(seconds);
-            if (ConnectionManager.I.HostController != null)
+            if (ConnectionManager.I.LineHost != null)
             {
                 // Give clients time to quit first so they do not report a host loss.
                 yield return new WaitForSecondsRealtime(4f);
@@ -100,9 +115,9 @@ namespace BirimizKovulacak.Game
         void Update()
         {
             var a = LaunchArgs.Current;
-            var view = ClientState.I != null ? ClientState.I.View : null;
-            if (!_dropped && a.SimulateDropAt > 0 && view != null && view.Phase >= MatchPhase.Work1 && view.Phase <= MatchPhase.Work2 &&
-                ClientState.I.Now - MatchClock.MatchStart > a.SimulateDropAt)
+            var view = LineClient.I != null ? LineClient.I.View : null;
+            if (!_dropped && a.SimulateDropAt > 0 && view != null && view.Phase == LinePhase.RoundPlay && view.Day >= 1 &&
+                LineClient.I.Now - view.PhaseStartTime > a.SimulateDropAt)
             {
                 _dropped = true;
                 ConnectionManager.I.SimulateNetworkDrop(a.DropRejoin, a.DropDowntime);

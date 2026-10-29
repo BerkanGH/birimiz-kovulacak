@@ -92,5 +92,48 @@ namespace BirimizKovulacak.Game
         }
 
         public static string ToJson(MatchConfig cfg) { return JsonConvert.SerializeObject(cfg, JsonSettings); }
+
+        // ================================================================ v3
+
+        public const string LineConfigRelativePath = "Config/line_config.json";
+        static LineConfig _line;
+
+        /// <summary>v3 rules config: StreamingAssets/Config/line_config.json when it matches the protocol version, else defaults; -durationscale applied.</summary>
+        public static LineConfig Line
+        {
+            get
+            {
+                if (_line == null) _line = LoadLine();
+                return _line;
+            }
+        }
+
+        static LineConfig LoadLine()
+        {
+            LineConfig cfg = LineConfig.CreateDefault();
+            string path = Path.Combine(Application.streamingAssetsPath, LineConfigRelativePath);
+            try
+            {
+                if (File.Exists(path))
+                {
+                    var loaded = JsonConvert.DeserializeObject<LineConfig>(File.ReadAllText(path), JsonSettings);
+                    if (loaded != null && loaded.ConfigVersion == LineProtocol.Version) { cfg = loaded; Debug.Log("[Config] Loaded " + path); }
+                    else Debug.LogWarning("[Config] " + path + " is for another version - using built-in v3 defaults.");
+                }
+            }
+            catch (Exception e)
+            {
+                Debug.LogError("[Config] Failed to read " + path + ": " + e.Message + " — using v3 defaults.");
+                cfg = LineConfig.CreateDefault();
+            }
+            float scale = LaunchArgs.Current.DurationScale;
+            if (scale > 0f && Math.Abs(scale - 1f) > 0.001f) cfg.Durations.Scale(scale);
+            return cfg;
+        }
+
+        /// <summary>Deep copy (one per week, so per-week tweaks never leak into the next).</summary>
+        public static LineConfig CopyLine() { return JsonConvert.DeserializeObject<LineConfig>(ToJson(Line), JsonSettings); }
+
+        public static string ToJson(LineConfig cfg) { return JsonConvert.SerializeObject(cfg, JsonSettings); }
     }
 }

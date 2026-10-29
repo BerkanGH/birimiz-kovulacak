@@ -7,6 +7,9 @@ import sys
 
 PHASES = ["Briefing", "Work1", "Raid", "Work2", "FinalInspection", "MeetingDiscussion", "MeetingDefense1",
           "MeetingDefense2", "MeetingVote", "MeetingVerdict", "Results"]
+# v3 weeks ("phase X -> Y day=D round=R week=W", "results week=W hash=H fired=F manager=M days=N")
+PHASES_V3 = ["Morning", "RoundIntro", "RoundPlay", "RoundReveal", "MeetingDossier", "MeetingDiscussion", "MeetingVote",
+             "MeetingVerdict", "FinalDefense", "FinalVote", "FinalVerdict", "WeekResults"]
 
 run = sys.argv[1]
 logs = sorted(f for f in glob.glob(os.path.join(run, "*.log")) if not os.path.basename(f).startswith("unity_"))
@@ -23,10 +26,17 @@ for path in logs:
         phases.setdefault(int(m.group(3)), []).append(m.group(2))
     for m in re.finditer(r"results match=(\d+) hash=(\w+) fired=(-?\d+) company=(\w+) quota=([\d.]+)/([\d.]+) informant=(-?\d+) informantWon=(\w+) incidents=(\d+) winners=([\d,]*)", text):
         results.setdefault(int(m.group(1)), {})[name] = m.groups()[1:]
+    v3 = False
+    for m in re.finditer(r"phase (\w+) -> (\w+) day=\d+ round=-?\d+ week=(\d+)", text):
+        v3 = True
+        phases.setdefault(int(m.group(3)), []).append(m.group(2))
+    for m in re.finditer(r"(?<!host: )results week=(\d+) hash=(\w+) fired=(-?\d+) manager=(\w*) days=(\d+)", text):
+        g = m.groups()
+        results.setdefault(int(g[0]), {})[name] = (g[1], g[2], "-", "-", "-", g[3], "-", "-", g[4])
     errors = re.findall(r"unity-(?:Exception|Error) .*", text)
     print("%-22s matches=%s errors=%d" % (name, sorted(phases), len(errors)))
     for match, seq in sorted(phases.items()):
-        missing = [p for p in PHASES if p not in seq]
+        missing = [p for p in (PHASES_V3 if v3 else PHASES) if p not in seq]
         if missing:
             ok = False
             print("   match %d missing phases: %s" % (match, missing))

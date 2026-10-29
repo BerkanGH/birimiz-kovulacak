@@ -75,9 +75,11 @@ namespace BirimizKovulacak.Game
         {
             MySlot = w.Slot;
             ReconnectToken = w.ReconnectToken;
+            var cm = ConnectionManager.I;
+            if (cm != null && cm.LineHost == null && !string.IsNullOrEmpty(w.ReconnectToken)) ConnectionManager.RememberSession(w.ReconnectToken, cm.Address, cm.Port);
             if (!string.IsNullOrEmpty(configJson))
             {
-                try { HostConfig = Newtonsoft.Json.JsonConvert.DeserializeObject<LineConfig>(configJson); }
+                try { HostConfig = Newtonsoft.Json.JsonConvert.DeserializeObject<LineConfig>(configJson, GameConfig.JsonSettings); }
                 catch (Exception e) { Debug.LogWarning("[LineClient] Bad host config: " + e.Message); }
             }
             MatchLog.Write("welcome slot=" + w.Slot + " reconnected=" + w.Reconnected + " week=" + w.WeekId);
@@ -104,6 +106,7 @@ namespace BirimizKovulacak.Game
             var old = View;
             if (old != null && v.WeekId == old.WeekId && v.StateVersion < old.StateVersion) return; // out of order
             View = v;
+            if (v.Phase == LinePhase.WeekResults && ConnectionManager.I != null && ConnectionManager.I.LineHost == null) ConnectionManager.ForgetSession();
             if (v.Phase == LinePhase.WeekResults && v.Result != null && (old == null || old.Phase != LinePhase.WeekResults))
                 MatchLog.Write("results week=" + v.WeekId + " hash=" + v.Result.ResultHash + " fired=" + v.Result.Fired + " manager=" + v.Result.ManagerProfileId + " days=" + v.Result.Days);
             ViewChanged?.Invoke(old, v);

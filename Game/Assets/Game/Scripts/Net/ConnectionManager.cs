@@ -16,7 +16,10 @@ namespace BirimizKovulacak.Game
         public static ConnectionManager I { get; private set; }
 
         public NetworkObject SessionPrefab;
+        /// <summary>v2 host (unused on the v3 branch; kept until v2 code is removed).</summary>
         public HostMatchController HostController { get; private set; }
+        /// <summary>v3 host session (null on clients and offline).</summary>
+        public HostLineController LineHost { get; private set; }
 
         public enum State { Offline, Hosting, Connecting, Connected, Reconnecting, Failed }
         public State Current { get; private set; } = State.Offline;
@@ -67,12 +70,13 @@ namespace BirimizKovulacak.Game
 
         byte[] BuildPayload(string token)
         {
-            return WireCodec.EncodeConnectionPayload(new ConnectionPayload
+            return LineCodec.EncodeConnection(new LineConnectionPayload
             {
-                ProtocolVersion = Protocol.Version,
+                ProtocolVersion = LineProtocol.Version,
                 BuildId = GameConfig.BuildId,
                 PlayerName = PlayerName,
                 ReconnectToken = token ?? "",
+                Language = Loc.Language,
             });
         }
 
@@ -85,7 +89,8 @@ namespace BirimizKovulacak.Game
             Port = port;
             LastErrorKey = "";
             ClientState.I.ResetSession();
-            HostController = new HostMatchController();
+            LineClient.I.ResetSession();
+            LineHost = new HostLineController();
             Transport.SetConnectionData("0.0.0.0", port, "0.0.0.0");
             _nm.NetworkConfig.ConnectionData = BuildPayload("");
             bool ok;
@@ -93,7 +98,8 @@ namespace BirimizKovulacak.Game
             catch (Exception e) { Debug.LogException(e); ok = false; }
             if (!ok)
             {
-                HostController = null;
+                LineHost?.Dispose();
+                LineHost = null;
                 SetState(State.Failed, "net.host_failed");
                 return false;
             }
@@ -113,6 +119,7 @@ namespace BirimizKovulacak.Game
             Port = port;
             LastErrorKey = "";
             ClientState.I.ResetSession();
+            LineClient.I.ResetSession();
             return Connect(reconnectToken ?? "");
         }
 
@@ -149,7 +156,7 @@ namespace BirimizKovulacak.Game
         public void SimulateNetworkDrop(bool rejoin, float downtime)
         {
             if (!_nm.IsConnectedClient || _nm.IsServer) return;
-            string token = ClientState.I.ReconnectToken;
+            string token = LineClient.I.ReconnectToken;
             MatchLog.Write("simulated network drop (rejoin=" + rejoin + ", downtime=" + downtime + "s)");
             SetState(State.Reconnecting, "net.reconnecting");
             if (rejoin)
@@ -175,6 +182,7 @@ namespace BirimizKovulacak.Game
         bool Connect(string token)
         {
             HostController = null;
+            LineHost = null;
             Transport.SetConnectionData(Address, Port);
             _nm.NetworkConfig.ConnectionData = BuildPayload(token);
             bool ok;
@@ -193,17 +201,19 @@ namespace BirimizKovulacak.Game
         {
             _intentionalShutdown = true;
             if (_reconnect != null) { StopCoroutine(_reconnect); _reconnect = null; }
-            bool hosting = HostController != null && _nm.IsServer;
+            bool hosting = LineHost != null && _nm.IsServer;
             if (hosting)
             {
-                // Tell clients the match is abandoned before the transport goes away.
-                HostController.Abort();
-                HostController.Dispose();
+                // Tell clients the week is over before the transport goes away.
+                LineHost.Abort();
+                LineHost.Dispose();
                 StartCoroutine(ShutdownAfter(0.4f));
             }
             else if (_nm.IsListening) _nm.Shutdown();
             HostController = null;
+            LineHost = null;
             ClientState.I.ResetSession();
+            LineClient.I.ResetSession();
             SetState(State.Offline, "");
             if (!hosting) _intentionalShutdown = false;
         }
@@ -217,33 +227,31 @@ namespace BirimizKovulacak.Game
 
         void Update()
         {
-            if (HostController != null && _nm.IsServer) HostController.Update();
+            if (LineHost != null && _nm.IsServer) LineHost.Update();
         }
 
         // ------------------------------------------------------------------ callbacks
 
         void ApprovalCheck(NetworkManager.ConnectionApprovalRequest request, NetworkManager.ConnectionApprovalResponse response)
         {
-            if (HostController == null)
+            if (LineHost == null)
             {
                 response.Approved = false;
                 response.Reason = "reject.not_host";
                 return;
             }
             bool isHostClient = request.ClientNetworkId == NetworkManager.ServerClientId;
-            var a = HostController.Approve(request.ClientNetworkId, request.Payload, isHostClient);
+            var a = LineHost.Approve(request.ClientNetworkId, request.Payload, isHostClient);
             response.Approved = a.Approved;
             response.Reason = a.Reason ?? "";
-            response.CreatePlayerObject = a.Approved;
-            response.Position = a.Position;
-            response.Rotation = a.Rotation;
+            response.CreatePlayerObject = false; // v3: no avatars travel over the network (seated first person)
             response.Pending = false;
             MatchLog.Write("approval client=" + request.ClientNetworkId + " ok=" + a.Approved + " slot=" + a.Slot + " reason=" + a.Reason);
         }
 
         void OnClientConnected(ulong clientId)
         {
-            if (_nm.IsServer) HostController?.OnClientConnected(clientId);
+            if (_nm.IsServer) LineHost?.OnClientConnected(clientId);
             if (clientId == _nm.LocalClientId && !_nm.IsServer)
             {
                 _freshConnect = true;
@@ -256,31 +264,33 @@ namespace BirimizKovulacak.Game
         {
             if (_nm.IsServer)
             {
-                if (clientId != NetworkManager.ServerClientId) HostController?.OnClientDisconnected(clientId);
+                if (clientId != NetworkManager.ServerClientId) LineHost?.OnClientDisconnected(clientId);
                 return;
             }
             if (clientId != _nm.LocalClientId && clientId != NetworkManager.ServerClientId) return;
             if (_intentionalShutdown) return;
 
             string reason = _nm.DisconnectReason;
-            var view = ClientState.I.View;
-            bool midMatch = view != null && view.Phase != MatchPhase.Results && view.Phase != MatchPhase.Abandoned;
+            var view = LineClient.I.View;
+            bool midMatch = view != null && view.Phase != LinePhase.WeekResults && view.Phase != LinePhase.Abandoned;
             bool rejected = !string.IsNullOrEmpty(reason) && reason.StartsWith("reject.");
             MatchLog.Write("disconnected reason='" + reason + "' midMatch=" + midMatch);
             if (rejected)
             {
                 SetState(State.Failed, reason);
                 ClientState.I.ResetSession();
+                LineClient.I.ResetSession();
                 return;
             }
             if (Current == State.Reconnecting) return; // the reconnect loop handles retries
-            if (midMatch && !string.IsNullOrEmpty(ClientState.I.ReconnectToken))
+            if (midMatch && !string.IsNullOrEmpty(LineClient.I.ReconnectToken))
             {
-                _reconnect = StartCoroutine(ReconnectLoop(ClientState.I.ReconnectToken));
+                _reconnect = StartCoroutine(ReconnectLoop(LineClient.I.ReconnectToken));
                 return;
             }
             SetState(State.Failed, Current == State.Connecting ? "net.connect_failed" : "net.host_lost");
             ClientState.I.ResetSession();
+            LineClient.I.ResetSession();
         }
 
         void OnTransportFailure()
@@ -291,7 +301,7 @@ namespace BirimizKovulacak.Game
 
         IEnumerator ReconnectLoop(string token, float initialDelay = 0f)
         {
-            float grace = (ClientState.I.Config != null ? ClientState.I.Config.Reconnect.GraceSeconds : 30f);
+            const float grace = 30f;
             float deadline = Time.realtimeSinceStartup + grace;
             SetState(State.Reconnecting, "net.reconnecting");
             // The old connection may still look alive inside NGO when its disconnect callback fires: tear it down
@@ -327,13 +337,14 @@ namespace BirimizKovulacak.Game
             }
             _reconnect = null;
             ClientState.I.ResetSession();
+            LineClient.I.ResetSession();
             SetState(State.Failed, "net.reconnect_failed");
         }
 
         void OnApplicationQuit()
         {
             _intentionalShutdown = true;
-            HostController?.Abort();
+            LineHost?.Abort();
             MatchLog.Close();
         }
     }
