@@ -57,6 +57,7 @@ namespace BirimizKovulacak.Game
         double _abandonedAt = -1;
         bool _resultLogged;
         int _recordingsPhaseKey = -1;
+        LinePhase _lastPhase = LinePhase.None;
 
         public ILineEngine Engine => _engine;
         public bool WeekRunning => _engine != null;
@@ -79,6 +80,7 @@ namespace BirimizKovulacak.Game
         public void Attach(NetSession session)
         {
             _session = session;
+            HostLineVoiceBridge.Bind(this);
             foreach (var s in _slots)
                 if (s.Occupied && !s.Virtual && s.Connected)
                     _session.SendLineWelcome(s.ClientId, new LineWelcome { Slot = s.Index, ReconnectToken = s.Token, WeekId = _weekId }, ConfigJson);
@@ -224,6 +226,7 @@ namespace BirimizKovulacak.Game
         {
             if (WeekRunning || RecordingsEnabled == on) return;
             RecordingsEnabled = on;
+            if (VoiceSystem.Instance != null) VoiceSystem.Instance.RecordingEnabled = on;
             BroadcastLobby();
         }
 
@@ -398,6 +401,12 @@ namespace BirimizKovulacak.Game
             }
             try { _engine.Tick(now); }
             catch (Exception e) { Debug.LogException(e); }
+            if (_engine.Phase != _lastPhase)
+            {
+                // Recordings live for one day only: drop them when the next day (or the results) begins.
+                if (_engine.Phase == LinePhase.Morning || _engine.Phase == LinePhase.WeekResults) VoiceSystem.Instance?.ClearRecordings();
+                _lastPhase = _engine.Phase;
+            }
 
             if (now >= _nextBotTick) { _nextBotTick = now + BotInterval; TickBots(now); }
             TriggerRecordings(now);
@@ -528,6 +537,7 @@ namespace BirimizKovulacak.Game
         {
             if (Current == this) Current = null;
             _engine = null;
+            HostLineVoiceBridge.Unbind();
         }
     }
 }

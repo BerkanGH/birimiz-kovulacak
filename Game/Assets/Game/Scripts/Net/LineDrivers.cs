@@ -126,7 +126,7 @@ namespace BirimizKovulacak.Game
             }
             var voice = VoiceSystem.Instance;
             foreach (var p in v.Players)
-                rooms.SetSpeaking(p.Id, voice != null && voice.IsSpeaking(p.Id) ? 1f : 0f);
+                rooms.SetSpeaking(p.Id, voice != null ? voice.GetSpeechLevel(p.Id) : 0f);
             var m = v.Meeting;
             rooms.SetSpotlight(v.Phase == LinePhase.FinalDefense && m != null ? m.Defender : -1);
             bool firedKnown = m != null && (v.Phase == LinePhase.FinalVerdict || v.Phase == LinePhase.WeekResults);
