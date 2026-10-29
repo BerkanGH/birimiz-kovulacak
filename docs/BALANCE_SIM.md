@@ -274,3 +274,31 @@ Validation: Release build passed with zero warnings/errors. [Verify-Results.ps1]
 ```powershell
 ./Tools/BalanceSim/Verify-Results.ps1 -Path Tools/BalanceSim/results/smoke.json -Compare Tools/BalanceSim/results/smoke_serial.json
 ```
+
+## v2.3 defaults
+
+Four-player quick play was rerun for **1,000 matches** with the same policy and seeds as the original baseline, using `CreateDefault` with no overrides: `QuotaTarget=28`, `SCAPEGOAT.Count=1`, `CHAOS_COORDINATOR.Count=1`, and `CLEAN_HANDS.Count=7` (two task types). UNDER_PRESSURE still requires its configured Work2 task count (default two), but now fails only for an incriminating final-inspection observation attributed to its holder: CaughtInAct, CarryingSuspicious, SuspiciousItemAtDesk, TipFound, InappropriateEmail, or SaltyCoffee, regardless of severity. Ordinary inspection observations still affect firing risk but no longer fail this card or set its `penalty` flag.
+
+```powershell
+dotnet run -c Release --project Tools/BalanceSim -- --experiment quick --players 4 --matches 1000 --seed 220000 --threads 8 --out v23_defaults_4
+./Tools/BalanceSim/Verify-Results.ps1 -Path Tools/BalanceSim/results/v23_defaults_4.json
+```
+
+**Quota success: 100.0% (1,000/1,000)**; mean points / target: **45.06 / 28.53** (target includes manager adjustments). At least one player won in 91.8% of matches. Objective wins below include the final company-success and survival gates; N counts employee card holders.
+
+| Card | Win % | N |
+|---|---:|---:|
+| DISMISSAL_PLAN | 42.1% | 233 |
+| PROTECTION_DEAL | 57.7% | 274 |
+| SCAPEGOAT | 35.1% | 248 |
+| QUIET_STAR | 19.1% | 251 |
+| CHAOS_COORDINATOR | 26.1% | 234 |
+| CLEAN_HANDS | 81.3% | 262 |
+| OFFICE_ALL_ROUNDER | 37.7% | 257 |
+| FIXER | 35.5% | 242 |
+| DESK_GUARDIAN | 61.9% | 247 |
+| UNNOTICED | 38.7% | 271 |
+| PERFORMANCE_RIVAL | 33.2% | 259 |
+| UNDER_PRESSURE | 51.4% | 222 |
+
+Simulation took 11.0 seconds on .NET 8.0.22 with eight workers. Engine seeds: 260000–260999; ordered result SHA-256: `38530A18852C0B389708AA513B57CFF03A7589A2A9EDC21FC5A86A9F251812AE`. Export validation passed for all 1,000 match records. These remain measurements of the headless policy; Clean Hands is still strong and quota remains easy under this policy.

@@ -64,6 +64,18 @@ Implement v2.2 balance rules and migrate core tests to new defaults
 Co-Authored-By: Codex <noreply@openai.com>
 ```
 
+## v2.3 objective tuning
+
+- UNDER_PRESSURE requires at least its configured `Count` of tasks completed during Work2 and no incriminating observation attributed to its holder during `FinalInspection`. The shared result/progress predicate recognizes only `CaughtInAct`, `CarryingSuspicious`, `SuspiciousItemAtDesk`, `TipFound`, `InappropriateEmail` and `SaltyCoffee`, regardless of severity. Ordinary inspection observations no longer fail the card or set its `penalty` flag; their risk/verdict effects are unchanged. Raid and Work2 surprise observations do not fail it.
+- Existing four-task CLEAN_HANDS fixtures explicitly set `Count=4` and `Count2=2`; discovery fixtures explicitly retain their two-incident/two-desk requirement. This keeps each predicate test focused under the lead's new defaults without weakening assertions.
+- The requested 1,000-match four-player baseline, reproduction command and complete objective table are appended to [BALANCE_SIM.md](BALANCE_SIM.md#v23-defaults). Quota succeeds in 100.0% of these matches; UNDER_PRESSURE wins 51.4%, SCAPEGOAT 35.1%, CHAOS_COORDINATOR 26.1%, and CLEAN_HANDS 81.3%. Export validation passed for all 1,000 records.
+
+Lead-owned wording follow-up: `docs/DECISIONS.md` section 9 and `Game/Assets/StreamingAssets/Localization/tr.json` key `objective.UnderPressure.desc` still describe any negative final observation. Suggested localized replacement: `İkinci çalışma saatinde en az {1} görev tamamla ve son denetimde müdürün sana yönelttiği suçlayıcı bir gözlem olmasın.` The producer's v2.3 rule above supersedes that older description; no contract or localization files were edited.
+
+Validation: **497 passed, 0 failed, 0 skipped** with `dotnet test Tools/CoreTests/Tests/CoreTests.csproj --no-restore --logger "console;verbosity=minimal" --logger "trx;LogFileName=v23.trx" --results-directory Tools/CoreTests/TestResults`. There are 34 new public-action cases covering all six ordinary kinds, all six incriminating kinds at normal/zero severity, prior-raid findings, swapped-nameplate attribution, and below/exact/above configured Work2 thresholds. One obsolete ordinary-observation rejection case was removed (net +33). Core/tests compile without compiler warnings. The Unity-free Core/Game/Editor compile check passed with zero errors using Blender's bundled Python (`C:/Program Files/Blender Foundation/Blender 5.2/5.2/python/bin/python.exe -I Tools/scripts/compile_check.py`); the WindowsApps Python alias could not launch in this session. `git diff --check` passed.
+
+Commit attempt: staging the six owned/explicitly authorized files was denied creating `.git/worktrees/codex-engine-v2/index.lock`. Changes remain uncommitted; no permissions or history were changed. Suggested commit: `Tune Under Pressure and validate v2.3 defaults`, with `Co-Authored-By: Codex <noreply@openai.com>`.
+
 ## Known gaps
 
 - No known unimplemented v2 engine rules. Unity/network/UI/voice integration was not run in this owned-core worktree.

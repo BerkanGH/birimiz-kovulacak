@@ -48,22 +48,14 @@ namespace BirimizKovulacak.Core.Tests
         }
 
         [Test]
-        public void WorkTwoTasksDoNotSatisfyUnderPressureAfterNegativeFinalObservation()
-        {
-            var m = new TestMatch(setup: Objective("UNDER_PRESSURE"), configure: c => c.QuotaTarget = 0);
-            m.Phase(MatchPhase.Work2);
-            m.Coffee(0, 0); m.Coffee(0, 1);
-            m.Move(0, new Vec3(60, 0, 60));
-            m.Finish();
-            Assert.GreaterOrEqual(m.View().Me.Objective.Progress, 2);
-            Assert.IsTrue(m.View().Me.Objective.Flags.Contains("penalty"));
-            Assert.IsFalse(m.View().Result.Players.Single(p => p.Player == 0).ObjectiveCompleted);
-        }
-
-        [Test]
         public void CleanHandsRejectsSabotageDespiteEnoughTasksAndTypes()
         {
-            var m = new TestMatch(setup: Objective("CLEAN_HANDS"), configure: c => c.QuotaTarget = 0, arrange: l => l.ManagerRoute.Clear());
+            var m = new TestMatch(setup: Objective("CLEAN_HANDS"), configure: c =>
+            {
+                c.QuotaTarget = 0;
+                c.Objectives.Single(o => o.Id == "CLEAN_HANDS").Count = 4;
+                c.Objectives.Single(o => o.Id == "CLEAN_HANDS").Count2 = 2;
+            }, arrange: l => l.ManagerRoute.Clear());
             m.Work(); m.Coffee(0, 0); m.Coffee(0, 1); m.Coffee(0, 2);
             string report = m.Print(0);
             m.Do(0, ActionVerb.PickUp, report); m.Do(0, ActionVerb.Place, EntityIds.DeliveryTray);
@@ -71,6 +63,8 @@ namespace BirimizKovulacak.Core.Tests
             m.Finish();
             Assert.AreEqual(4, m.View().Me.Objective.Progress);
             Assert.AreEqual(2, m.View().Me.Objective.Progress2);
+            Assert.AreEqual(m.View().Me.Objective.Required, m.View().Me.Objective.Progress);
+            Assert.AreEqual(m.View().Me.Objective.Required2, m.View().Me.Objective.Progress2);
             Assert.IsTrue(m.View().Me.Objective.Flags.Contains("sabotaged"));
             Assert.IsFalse(m.View().Result.Players.Single(p => p.Player == 0).ObjectiveCompleted);
         }

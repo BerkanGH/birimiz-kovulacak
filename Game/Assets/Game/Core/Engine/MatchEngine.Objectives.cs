@@ -124,7 +124,26 @@ namespace BirimizKovulacak.Core
             return !observations.Exists(o => o.Kind == ObservationKind.SuspiciousItemAtDesk && o.DeskIndex == desk && o.Phase == phase);
         }
 
-        private bool FinalPenalty(int p) { return observations.Exists(o => o.Subject == p && o.Phase == MatchPhase.FinalInspection && (o.Severity > 0 || o.Kind == ObservationKind.SuspiciousItemAtDesk)); }
+        private bool HasIncriminatingFinalObservation(int p)
+        {
+            foreach (ObservationView observation in observations)
+            {
+                if (observation.Subject != p || observation.Phase != MatchPhase.FinalInspection) continue;
+                // Under Pressure follows manager attribution, regardless of the observation's risk weight.
+                // Ordinary inspection findings still affect firing risk, but do not fail this objective.
+                switch (observation.Kind)
+                {
+                    case ObservationKind.CaughtInAct:
+                    case ObservationKind.CarryingSuspicious:
+                    case ObservationKind.SuspiciousItemAtDesk:
+                    case ObservationKind.TipFound:
+                    case ObservationKind.InappropriateEmail:
+                    case ObservationKind.SaltyCoffee:
+                        return true;
+                }
+            }
+            return false;
+        }
 
         private bool ObjectiveSatisfied(int p, int fired)
         {
@@ -145,7 +164,7 @@ namespace BirimizKovulacak.Core
                 case ObjectiveType.DeskGuardian: return GuardianClean(target, MatchPhase.Raid) && GuardianClean(target, MatchPhase.FinalInspection);
                 case ObjectiveType.Unnoticed: return player.Public.AccusationsReceived == 0;
                 case ObjectiveType.PerformanceRival: return Present(target) && player.Public.Performance > players[target].Public.Performance;
-                case ObjectiveType.UnderPressure: return player.Work2Tasks >= card.Count && !FinalPenalty(p);
+                case ObjectiveType.UnderPressure: return player.Work2Tasks >= card.Count && !HasIncriminatingFinalObservation(p);
                 default:
                     if (fired == PlayerIds.None || Misconduct(fired) <= 0) return false;
                     foreach (int other in playerIds) if (Misconduct(other) > Misconduct(fired)) return false;
@@ -182,7 +201,7 @@ namespace BirimizKovulacak.Core
                     view.Flags.Add("raid:" + (inspectedDesks.Contains(((int)MatchPhase.Raid) + ":" + desk) ? GuardianClean(player.ObjectiveTarget, MatchPhase.Raid) ? "clean" : "found" : "pending"));
                     view.Flags.Add("final:" + (inspectedDesks.Contains(((int)MatchPhase.FinalInspection) + ":" + desk) ? GuardianClean(player.ObjectiveTarget, MatchPhase.FinalInspection) ? "clean" : "found" : "pending")); break;
                 case ObjectiveType.Unnoticed: if (player.Public.AccusationsReceived > 0) view.Flags.Add("accused"); break;
-                case ObjectiveType.UnderPressure: view.Progress = player.Work2Tasks; if (FinalPenalty(p)) view.Flags.Add("penalty"); break;
+                case ObjectiveType.UnderPressure: view.Progress = player.Work2Tasks; if (HasIncriminatingFinalObservation(p)) view.Flags.Add("penalty"); break;
             }
             int fired = meeting.Verdict == null ? PlayerIds.None : meeting.Verdict.FiredPlayer;
             if (Phase == MatchPhase.Results) view.Status = ObjectiveSatisfied(p, fired) ? ObjectiveStatus.Completed : ObjectiveStatus.Failed;

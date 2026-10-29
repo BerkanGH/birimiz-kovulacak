@@ -798,7 +798,16 @@ namespace BirimizKovulacak.Core.Tests
             MatchSetup setup = TestMatch.Setup();
             setup.ForceObjectives = new List<string> { card, card == "FIXER" ? "OFFICE_ALL_ROUNDER" : "FIXER", "SCAPEGOAT", "" };
             setup.ForceTargets = new List<int> { card == "PROTECTION_DEAL" ? 2 : 1, -1, 0, -1 };
-            var m = new TestMatch(setup: setup, configure: c => c.QuotaTarget = 0,
+            var m = new TestMatch(setup: setup, configure: c =>
+            {
+                c.QuotaTarget = 0;
+                if (card == "CLEAN_HANDS")
+                {
+                    ObjectiveDef cleanHands = c.Objectives.Single(o => o.Id == card);
+                    cleanHands.Count = 4;
+                    cleanHands.Count2 = 2;
+                }
+            },
                 arrange: l => l.ManagerRoute.Clear()); m.Work();
             if (card == "CLEAN_HANDS")
             {
@@ -842,7 +851,11 @@ namespace BirimizKovulacak.Core.Tests
             MatchSetup setup = TestMatch.Setup();
             setup.ForceObjectives = new List<string> { card, "FIXER", "UNNOTICED", "" };
             setup.ForceTargets = new List<int> { 1, -1, -1, -1 };
-            var m = new TestMatch(setup: setup, configure: c => c.QuotaTarget = 0); m.Work();
+            var m = new TestMatch(setup: setup, configure: c =>
+            {
+                c.QuotaTarget = 0;
+                c.Objectives.Single(o => o.Id == card).Count = 2;
+            }); m.Work();
             m.Plant(0, 1, ItemVariants.Duck, false);
             if (card == "SCAPEGOAT")
             {
