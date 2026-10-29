@@ -267,14 +267,15 @@
 .offline { opacity: 0.4; }
 
 .feed { position: absolute; right: 16px; top: 330px; width: 420px; align-items: flex-end; }
-.toast { flex-direction: row; align-items: center; background-color: rgba(31, 42, 68, 0.92); border-radius: 10px; padding: 6px 12px; margin: 3px 0; max-width: 420px; border-left-width: 6px; border-color: rgb(232, 201, 138); transition-property: opacity, translate; transition-duration: 0.18s; }
-.toast-text { color: rgb(244, 239, 227); font-size: 17px; white-space: normal; flex-shrink: 1; }
-.toast .icon { width: 26px; height: 26px; margin-right: 8px; }
-.toast-enter { opacity: 0; translate: 30px 0; }
-.toast-warning { border-color: rgb(210, 56, 47); }
-.toast-good { border-color: rgb(47, 160, 110); }
-.toast-manager { border-color: rgb(255, 224, 102); background-color: rgba(90, 52, 22, 0.94); }
-.toast-private { border-color: rgb(59, 185, 176); }
+/* toasts are paper memo slips (same ink border as the panels); the kind shows in the paper tint and icon, not a side stripe */
+.toast { flex-direction: row; align-items: center; background-color: rgb(250, 247, 238); border-radius: 10px; border-width: 2px; border-bottom-width: 4px; border-color: rgb(31, 42, 68); padding: 6px 14px 6px 8px; margin: 4px 0; max-width: 420px; transition-property: opacity, translate, rotate; transition-duration: 0.22s; transition-timing-function: ease-out-back; }
+.toast-text { color: rgb(31, 42, 68); font-size: 17px; white-space: normal; flex-shrink: 1; }
+.toast .icon { width: 30px; height: 30px; margin-right: 8px; }
+.toast-enter { opacity: 0; translate: 40px 0; rotate: 3deg; }
+.toast-warning { background-color: rgb(255, 226, 216); }
+.toast-good { background-color: rgb(225, 243, 230); }
+.toast-manager { background-color: rgb(255, 224, 102); rotate: -1deg; }
+.toast-private { background-color: rgb(212, 239, 234); }
 
 .prompt-area { position: absolute; bottom: 120px; left: 0; right: 0; align-items: center; }
 .prompt { flex-direction: row; align-items: center; background-color: rgba(31, 42, 68, 0.9); border-radius: 14px; padding: 6px 16px 6px 8px; margin: 3px; border-width: 2px; border-color: rgba(244, 239, 227, 0.25); }
@@ -579,15 +580,16 @@
 
 /* ---------------------------------------------------------------- menus */
 .menu-bg { background-color: rgb(244, 239, 227); -unity-background-scale-mode: scale-and-crop; }
-.menu-layout { flex-direction: row; align-items: center; justify-content: center; flex-grow: 1; }
-.menu-logo { width: 760px; height: 333px; -unity-background-scale-mode: scale-to-fit; margin-bottom: 8px; }
+/* the menu sits on the empty left third of menu_bg; the characters fill the right side */
+.menu-layout { flex-direction: row; align-items: center; justify-content: flex-start; flex-grow: 1; padding-left: 96px; }
+.menu-logo { width: 660px; height: 289px; -unity-background-scale-mode: scale-to-fit; margin-bottom: 8px; }
 .menu-title { font-size: 96px; color: rgb(31, 42, 68); -unity-text-align: middle-center; }
 .menu-title-red { font-size: 96px; color: rgb(210, 56, 47); -unity-text-align: middle-center; border-width: 6px; border-color: rgb(210, 56, 47); border-radius: 12px; padding: 0 18px; rotate: -3deg; }
 .menu-tagline { font-size: 26px; color: rgb(31, 42, 68); -unity-text-align: middle-center; margin-bottom: 18px; }
 .menu-card { width: 560px; }
 .menu-btn { min-height: 62px; font-size: 25px; margin: 6px 0; }
 .menu-mark { width: 300px; height: 300px; -unity-background-scale-mode: scale-to-fit; margin-right: 30px; }
-.version { position: absolute; right: 14px; bottom: 8px; font-size: 14px; color: rgb(107, 111, 128); }
+.version { position: absolute; left: 14px; bottom: 8px; font-size: 14px; color: rgb(107, 111, 128); }
 .error-line { color: rgb(210, 56, 47); font-size: 18px; white-space: normal; margin-top: 6px; }
 .recent-row { flex-direction: row; align-items: center; padding: 6px 8px; margin: 3px 0; border-radius: 8px; background-color: rgba(255, 253, 247, 0.9); border-width: 1px; border-color: rgba(31, 42, 68, 0.15); }
 
