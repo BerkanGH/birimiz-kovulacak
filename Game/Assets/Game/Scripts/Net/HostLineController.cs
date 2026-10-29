@@ -297,7 +297,7 @@ namespace BirimizKovulacak.Game
             {
                 WeekId = _weekId,
                 Seed = args.Seed != 0 ? args.Seed + _weekId - 1 : _rng.Next(1, int.MaxValue),
-                StartTime = Now + 0.5,
+                StartTime = Now, // the engine clock starts here; anything earlier would be time going backwards
                 Length = Length,
                 ManagerProfileId = args.ManagerProfile ?? "",
                 RecordingsEnabled = RecordingsEnabled,
