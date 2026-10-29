@@ -46,6 +46,7 @@ namespace BirimizKovulacak.Game
                 // ---- results
                 LineMock.Register("results.week" + L, () => Results(en, en ? 3 : 6, false));
                 LineMock.Register("results.pick" + L, () => Results(en, en ? 6 : 4, true));
+                LineMock.Register("results.abandoned" + L, () => Abandoned(en));
                 // ---- shell
                 LineMock.Register("menu.main" + L, () => Menu(en, 0));
                 LineMock.Register("menu.join" + L, () => Menu(en, 1));
@@ -427,6 +428,21 @@ namespace BirimizKovulacak.Game
             Show(s, 0.3f, () => make(""), true);
             Wait(s, 4.0f);
             if (meFired) Show(s, 6.0f, () => make(LineManagerIds.Disiplinci), true);
+            return s;
+        }
+
+        static LineMockScenario Abandoned(bool en)
+        {
+            var s = new LineMockScenario();
+            Setup(s, en, true);
+            _week++;
+            int week = _week;
+            Show(s, 0.3f, () =>
+            {
+                var v = Base(en, 4, LinePhase.Abandoned, 1, 0, 2, week);
+                v.Meeting = null;
+                return v;
+            }, true);
             return s;
         }
 

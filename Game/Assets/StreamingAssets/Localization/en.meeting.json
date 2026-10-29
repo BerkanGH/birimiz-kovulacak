@@ -135,7 +135,7 @@
   "meeting.ballot.abstain_sub": "I'm not picking anyone today.",
   "meeting.ballot.count": "{0}/{1} voted",
   "final.ballot.question": "Who gets fired?",
-  "final.ballot.note": "Pick one name from the shortlist. Most votes is fired. You can't vote for yourself.",
+  "final.ballot.note": "Pick one name from the shortlist. Whoever gets the most votes is fired. You can't vote for yourself.",
   "meeting.letter.dept": "HUMAN RESOURCES · WRITTEN WARNING",
   "meeting.letter.ref": "Ref: HR/{0}-{1} · {2}",
   "meeting.letter.subject": "RE: WRITTEN WARNING",
@@ -208,7 +208,7 @@
   "dossier.shortlist.order": "Defense {0}",
   "dossier.shortlist.safe": "Safe: {0}",
   "final.count.title": "Secret ballot",
-  "final.count.rule": "Most votes is fired. On a tie, higher blame goes, then more Warnings.",
+  "final.count.rule": "Whoever gets the most votes is fired. On a tie, higher blame goes, then more Warnings.",
   "final.count.safe": "Not on the shortlist: {0}",
   "final.count.tie": "A tie! Higher blame goes: {0}",
   "final.stamp.survived": "SURVIVED",
@@ -230,5 +230,6 @@
   "results.pick.pitch.disiplinci": "Catches dirty tricks more often and punishes harder.",
   "results.pick.pitch.kayirmaci": "Picks a favourite every morning and goes easy on them.",
   "results.pick.pitch.paranoyak": "Hears everything: plays two tapes at every meeting.",
-  "results.session.sub": "Totals including this week"
+  "results.session.sub": "Totals including this week",
+  "results.abandoned.stamp": "CANCELLED"
 }

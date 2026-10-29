@@ -571,6 +571,8 @@ namespace BirimizKovulacak.Game
         readonly VisualElement _root;
         readonly Label _text;
         string _last;
+        int _lastSec = -1;
+        string _reconnecting;
 
         public StatusOverlay(VisualElement parent)
         {
@@ -588,7 +590,12 @@ namespace BirimizKovulacak.Game
             if (c != null)
             {
                 if (c.Current == ConnectionManager.State.Connecting) s = Loc.T("net.connecting");
-                else if (c.Current == ConnectionManager.State.Reconnecting) s = Loc.F("net.reconnecting_s", Mathf.CeilToInt(c.ReconnectRemaining));
+                else if (c.Current == ConnectionManager.State.Reconnecting)
+                {
+                    int sec = Mathf.CeilToInt(c.ReconnectRemaining);
+                    if (sec != _lastSec || _reconnecting == null) { _lastSec = sec; _reconnecting = Loc.F("net.reconnecting_s", sec); }
+                    s = _reconnecting;
+                }
             }
             var lc = LineClient.I;
             if (s == null && lc != null && !string.IsNullOrEmpty(lc.StatusKey)) s = Loc.T(lc.StatusKey);

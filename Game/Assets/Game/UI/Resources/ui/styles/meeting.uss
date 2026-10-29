@@ -238,7 +238,9 @@
 
 /* ---------------------------------------------------------------- abandoned */
 .mt-abandoned { position: absolute; left: 0; top: 0; right: 0; bottom: 0; align-items: center; justify-content: center; }
-.abandon-card { width: 760px; align-items: center; }
+.abandon-card { width: 760px; align-items: center; padding-top: 30px; }
+.abandon-stamp { width: 330px; height: 110px; -unity-background-scale-mode: scale-to-fit; margin-bottom: 4px; opacity: 0; }
+.abandon-stamp .stamp-text-label { font-size: 44px; }
 .abandon-body { font-size: 22px; white-space: normal; -unity-text-align: middle-center; margin: 8px 0 16px 0; }
 .abandon-actions { justify-content: center; }
 

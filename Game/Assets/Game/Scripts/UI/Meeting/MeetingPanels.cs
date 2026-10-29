@@ -467,11 +467,13 @@ namespace BirimizKovulacak.Game
 
     public sealed class AbandonedView : MeetingPanel
     {
-        readonly VisualElement _actions;
+        readonly VisualElement _actions, _stamp;
 
         public AbandonedView(VisualElement parent) : base(parent, "mt-abandoned")
         {
             var card = Panel("panel", "abandon-card").AddTo(Root);
+            _stamp = Box("abandon-stamp").NoPick().AddTo(card);
+            if (!MeetingText.ApplyStamp(_stamp, "stamps/stamp_reddedildi", "stamps_v3/stamp_rejected")) TextStamp(_stamp, Loc.T("results.abandoned.stamp"));
             Title(Loc.T("results.abandoned.title"), "h1").NoPick().AddTo(card);
             Text(Loc.T("results.abandoned.body"), "abandon-body").NoPick().AddTo(card);
             _actions = Box("row", "abandon-actions").AddTo(card);
@@ -485,6 +487,7 @@ namespace BirimizKovulacak.Game
             else Bold(Loc.T("results.waiting_host"), "t-muted").AddTo(_actions);
             Btn(Loc.T("pause.leave"), () => ConnectionManager.I?.Leave(), "btn-ghost").AddTo(_actions);
             UiMotion.PopIn(Root[0], 0.3f);
+            UiMotion.Stamp(_stamp, -6f, 0.22f, 0.35f, () => Sfx.Play("place", 0.7f));
         }
     }
 }
