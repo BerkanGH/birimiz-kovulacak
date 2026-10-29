@@ -67,7 +67,18 @@ namespace BirimizKovulacak.Game
         public int WeeksPlayed => _history != null ? _history.WeeksPlayed : 0;
         public string ConfigJson { get; private set; }
 
-        public double Now => NetworkManager.Singleton != null && NetworkManager.Singleton.IsListening ? NetworkManager.Singleton.ServerTime.Time : Time.realtimeSinceStartupAsDouble;
+        /// <summary>Host time for the engine: NGO server time, clamped so it never goes backwards (the engine requires monotonic time).</summary>
+        public double Now
+        {
+            get
+            {
+                double t = NetworkManager.Singleton != null && NetworkManager.Singleton.IsListening ? NetworkManager.Singleton.ServerTime.Time : Time.realtimeSinceStartupAsDouble;
+                if (t < _clock) t = _clock;
+                _clock = t;
+                return t;
+            }
+        }
+        double _clock;
 
         public HostLineController()
         {
