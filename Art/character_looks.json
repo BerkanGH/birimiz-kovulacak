@@ -278,6 +278,41 @@
    "frames": 40
   },
   {
+   "name": "SitNod",
+   "loop": false,
+   "frames": 30
+  },
+  {
+   "name": "SitLaugh",
+   "loop": false,
+   "frames": 45
+  },
+  {
+   "name": "SitGasp",
+   "loop": false,
+   "frames": 40
+  },
+  {
+   "name": "SitPoint",
+   "loop": false,
+   "frames": 40
+  },
+  {
+   "name": "SitSlump",
+   "loop": true,
+   "frames": 60
+  },
+  {
+   "name": "SitCheer",
+   "loop": false,
+   "frames": 36
+  },
+  {
+   "name": "SitBox",
+   "loop": true,
+   "frames": 60
+  },
+  {
    "name": "Talk",
    "loop": true,
    "frames": 40

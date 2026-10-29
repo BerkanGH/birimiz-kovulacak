@@ -62,6 +62,7 @@ namespace BirimizKovulacak.EditorTools
             ConfigureProject();
             var pipeline = ConfigureRenderPipeline();
             CreateMaterials();
+            CreateRoomMaterials(); // v3 rooms (ProjectBuilder.Rooms.cs): before the model import remaps materials by name
             ConfigureModelImports();
             if (ImportTmpEssentials())
             {
@@ -72,7 +73,8 @@ namespace BirimizKovulacak.EditorTools
             var fonts = CreateFonts();
             WriteStreamingAssets();
             var prefabs = CreatePrefabs(fonts);
-            BuildScene(prefabs, fonts, pipeline);
+            // v3: the rooms scene (ProjectBuilder.Rooms.cs). The v2 office map (BuildScene) is no longer built.
+            BuildRoomsScene(prefabs, fonts, pipeline);
             AssetDatabase.SaveAssets();
             Log("=== Assets + scene done ===");
             if (player && !BuildPlayer()) throw new Exception("Player build failed");
@@ -547,11 +549,11 @@ namespace BirimizKovulacak.EditorTools
         public static bool BuildPlayer()
         {
             EditorUserBuildSettings.SwitchActiveBuildTarget(BuildTargetGroup.Standalone, BuildTarget.StandaloneWindows64);
-            EditorBuildSettings.scenes = new[] { new EditorBuildSettingsScene(ScenePath, true) };
+            EditorBuildSettings.scenes = new[] { new EditorBuildSettingsScene(RoomsScenePath, true) };
             string out_ = Path.GetFullPath(Path.Combine(BuildDir, ExeName));
             var opts = new BuildPlayerOptions
             {
-                scenes = new[] { ScenePath },
+                scenes = new[] { RoomsScenePath },
                 locationPathName = out_,
                 target = BuildTarget.StandaloneWindows64,
                 targetGroup = BuildTargetGroup.Standalone,
