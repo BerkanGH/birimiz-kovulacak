@@ -41,3 +41,23 @@ Rematch requested by: ____   Overall energy (1-5): __
 - Collect `Player.log` + `logs/` folders (paths in `HOSTING.md`) for any bug.
 - Tuning knobs to consider (all in `match_config.json`): `QuotaTarget`, phase durations, order intervals, sabotage
   cooldowns, manager vision range/angle, verdict weights, Informant charges.
+
+## v2 additions (İş Haftası build)
+
+Play one **İş Haftası** (5 matches, ~50 min) with 4–6 people, all on in-game voice (no Discord), headphones on.
+Before match 1: everyone opens Ayarlar → Mikrofon, picks the mic and uses "Kendini dinle".
+
+| Question | How to observe | Target |
+|---|---|---|
+| Does in-game voice work for everyone? | Anyone unheard / echo / too quiet in the first 2 min | 0 issues after setup |
+| Do private calls create scheming? | Count calls per match (results "Telefon kayıtları"); note quotes like "beni arayan…" | ≥ 2 calls per player per match by Wednesday |
+| Does eavesdropping happen? | Anyone repeating something they overheard next to a caller | ≥ 1 per session |
+| Does line of sight hide enough? | Ask: "Did you know where everyone was most of the time?" | Mostly "no" |
+| Is the tip line used and does it backfire? | Results recap: tips, tip_clean | Used in ≥ 1 of 2 matches from Wednesday; at least one backfire per week |
+| Is footage used in defenses and does it change votes? | Footage requests in the meeting, vote changes after it | ≥ 1 request per meeting; ≥ 1 vote swing per week |
+| Are manager personalities noticeable? | Ask after each day: "What did today's manager care about?" | ≥ 70 % answer correctly |
+| Does the week create a story? | Debrief: "Who was the villain of the week and why?" | Everyone has an answer; laughter at "Ayın Elemanı" |
+| Session length | Do they ask for another week? | ≥ 50 % yes |
+| Camera / readability | Complaints about camera height, walls fading, finding rooms | Note every complaint with a timestamp |
+
+Bugs and feel notes with timestamps → `Player.log` + `logs/` from `%USERPROFILE%\AppData\LocalLow\Leonidas Studio\Birimiz Kovulacak\`.
