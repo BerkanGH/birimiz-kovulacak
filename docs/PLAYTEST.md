@@ -61,3 +61,18 @@ Before match 1: everyone opens Ayarlar → Mikrofon, picks the mic and uses "Ken
 | Camera / readability | Complaints about camera height, walls fading, finding rooms | Note every complaint with a timestamp |
 
 Bugs and feel notes with timestamps → `Player.log` + `logs/` from `%USERPROFILE%\AppData\LocalLow\Leonidas Studio\Birimiz Kovulacak\`.
+
+## v3 "Ofis Hattı" (separate rooms, phone, final-day firing)
+
+Play one **Short Week** (≈ 30 min) first, then a **Full Week**. Note per day:
+
+1. **Talk vs. clicks:** in a typical round, how much of the time was spent on the phone vs. reading/clicking? (Goal: mostly talking.)
+2. **Lies:** did anybody lie on purpose in each round? Which round produced the best lie / betrayal / laugh?
+3. **The recording:** what did the 7-second clip catch? Did it change a vote? Did anyone feel exposed in a bad way (privacy)?
+4. **Dead time:** who was idle (never called, waiting)? At 3 and 5 players, did the trio / manager line help?
+5. **Clarity:** after the rule card, could everyone play the round without asking? Which round needed explanation?
+6. **Pacing:** round length (100–150 s by head count) and meeting length — too long / too short?
+7. **Final:** was the firing decided before the last day? Did defenses or the shortlist vote change the outcome?
+8. **Hook:** after the week, did the table want "one more week"? Which manager was the most fun? Was the next-manager pick used for revenge?
+9. **Tuning knobs** (StreamingAssets/Config/line_config.json): `RoundPlayByPlayers`, `Durations.Discussion`, `StartBlame`,
+   `Rounds.*` blame numbers, `TricksPerWeekShort/Full`, `RecordingSnippetSeconds`.

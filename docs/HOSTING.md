@@ -53,24 +53,21 @@ Ev sahibinin lobi ekranında gösterilen yerel IP'yi (ör. `192.168.1.23`) kulla
 - Oyun çöktüyse: hemen yeniden aç → ana menüde **Maça geri dön** düğmesi (yaklaşık 1 dakika görünür).
 - 30 saniye içinde dönülmezse ya da ev sahibi ayrılırsa maç **İPTAL** edilir (kazanan yok).
 
-## 5. Kontroller
+## 5. Kontroller (v3 — herkes kendi odasında, birinci şahıs)
 
 | Tuş | İş |
 |---|---|
-| WASD | Yürü |
-| Fare | Kamerayı çevir · tekerlek: yakınlaştır |
-| E / F | Bakılan şeyle etkileşim (birincil / ikincil) |
-| Q | Elindekini yere bırak |
-| R | Çalışıyormuş gibi yap (müdür baskınında hayat kurtarır) |
-| Sol Ctrl (basılı) / C | Eğil, sinsi yürü — tanıklar seni daha yakından fark eder, bölmelerin arkasında görünmezsin |
-| V (basılı) | Bas-konuş (Ayarlar'dan açık mikrofona geçilebilir) |
+| Fare | Etrafına bak (masada otururken) · nesnenin üstüne gelince ipucu çıkar |
+| Sol tık | Bakılan şey: monitör = bilgisayar, telefon = masa telefonu, kupa/çekmece/isimlik = küçük şakalar |
+| E | Bilgisayar (KOVA OS): Görev · E-posta · Sicil · Kirli İş · Ajanda (F1–F5 uygulamalar arasında) |
+| Tab | Masa telefonu: rehber (1–6 hızlı arama), **0 = Müdür Hattı** (haftada bir ihbar), arama geçmişi |
 | Y / N | Gelen aramayı aç / reddet · aramayı kapat |
-| G | Elindekini kullan (ör. kahvenin tadına bak) |
-| T (basılı) + fare · 1–5 | Mimik çarkı / hızlı mimik |
-| Tab | Telefon: görev, gizli kartlar, rehber (arama + **ihbar hattı**), gelen kutusu, notlar, pano, İK (muhbir) |
-| Esc | Menü, ayarlar (ses, fare hassasiyeti, tam ekran, **tuş atamaları**) |
+| V (basılı) | Bas-konuş (Ayarlar'dan açık mikrofona geçilebilir). Gündüz sadece telefondaki kişi duyar; toplantıda herkes |
+| Enter | Sabah çağrısı / kural kartı / kilit açma kartında devam |
+| Esc / sağ tık | Geri (bilgisayardan/telefondan çık) · menü |
+| Tab (toplantıda) | Etrafa bakmak ↔ projeksiyon/oy pusulası arasında geçiş; oylamada bir arkadaşa tıklamak da oy verir |
 
-Bir işlem sürerken hareket edersen işlem iptal olur.
+Ayarlar → Görünüm: fare hassasiyeti, Y eksenini ters çevir, görüş açısı (FOV). Ayarlar → Dil: Türkçe / English.
 
 ## 6. Test için botlar
 

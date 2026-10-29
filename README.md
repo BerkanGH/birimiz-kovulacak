@@ -2,28 +2,28 @@
 
 *Ofisi birlikte kurtar. Sonra suçu arkadaşına at.*
 
-A 3–6 player online social-sabotage comedy for Windows with **built-in voice**. Employees share an office quota;
-each has a secret personal objective and two secret sabotage cards, and one of them is secretly the **HR Informant
-(İK Muhbiri)**. Everyone can work, sabotage, plant and move evidence, sneak, phone colleagues privately to talk them
-into things, tip off the manager anonymously, and dodge raids by one of four manager personalities. The day ends in
-an HR meeting (accusations, CCTV footage, defenses, votes) that decides who gets fired — then the truth is revealed,
-including a security-camera replay of the decisive moment. **İş Haftası** chains five days with career points and an
-"Ayın Elemanı" finale.
+A 3–6 player online social-deception comedy for Windows (Turkish + English) with **built-in voice**. **v3 "Ofis
+Hattı":** every player sits alone in their own office, in first person. The only channel is the desk phone (private
+1:1 calls, which may be recorded). Each day brings two short office rounds with one-sentence rules (Bonus Pool, Odd
+Email, Lost Report, Complaint Box, Promotion List, Shared Password), played on your computer and decided on the phone.
+At the end of the day everyone meets around one table: the manager presents the day, **plays a real 7-second clip
+of somebody's phone call**, and the room votes a written warning (İhtar). Nobody is eliminated until the last day,
+when the shortlist defends and one person is fired. A hidden agenda, one dirty trick a week and four manager
+personalities keep every week different.
 
-v2 overview: `docs/V2_PLAN.md` · rules: `docs/CONTRACTS_V2.md` · balance: `docs/BALANCE_V2.md` ·
-status log: `docs/V2_STATUS.md` · performance: `docs/PERFORMANCE.md`.
-
-Design source: `Birimiz_Kovulacak_Oyun_Akisi.pdf`. Implementation decisions: `docs/DECISIONS.md`.
+v3: design `docs/V3_DESIGN.md` (§0 = v3.1 rules) · contract `docs/CONTRACTS_V3.md` · engine `docs/ENGINE_V3.md` ·
+voice `docs/VOICE.md` · status `docs/V3_STATUS.md`. v2 (open office, third person) lives on `main`, tag `v2.3-night`.
 
 ## Play (testers)
 
-1. Unzip `BirimizKovulacak-Windows-Playtest.zip`, run `BirimizKovulacak.exe`.
-2. Settings → Microphone: pick your mic (push-to-talk **V** by default). Voice is in-game — no Discord.
-3. One player: **Lobi Kur** (Quick Play or Work Week). Others: enter the host's IP + port 7777 → **Lobiye Katıl** →
-   **Hazırım**. 3–6 players; the host can add bots to empty seats.
+1. Unzip `BirimizKovulacak-Windows-Playtest.zip`, run `BirimizKovulacak.exe`, pick Türkçe or English.
+2. Settings → Microphone: pick your mic (push-to-talk **V**). Voice is in-game — no Discord. Headphones recommended.
+3. One player: **Lobi Kur / Host** (Short Week 3 days ≈ 30 min, Full Week 5 days ≈ 50 min; call recordings can be
+   switched off in the lobby). Others: host's IP + port 7777 → **Join** → **Ready**. 3–6 players; bots fill seats.
+4. In the office: mouse look, click the monitor (**E**) or the phone (**Tab**), **Y/N** answer/decline, **V** talk,
+   **Esc** back. In the meeting: **Tab** switches between looking around and the projector/ballot.
 
-Full Turkish guide (internet play via Tailscale/port forwarding, reconnects, controls, troubleshooting):
-`docs/HOSTING.md`.
+Full Turkish guide (internet play via Tailscale/port forwarding, reconnects, troubleshooting): `docs/HOSTING.md`.
 
 ## Build from source
 
@@ -41,11 +41,18 @@ Requirements (as used for this prototype):
 # Rules tests (pure C#, ~1 s)
 cd Tools\CoreTests\Tests ; dotnet test
 
-# Regenerate Unity content (materials, prefabs, Office scene) and build the Windows x64 player
+# Regenerate Unity content (materials, prefabs, Rooms scene) and build the Windows x64 player
 powershell -ExecutionPolicy Bypass -File Tools\build.ps1            # add -Art to regenerate Blender assets first
 
 # N local windows (host + clients, 3..6) driven by test bots, then verify identical results
-powershell -ExecutionPolicy Bypass -File Tools\run_local4.ps1 -Bots -DurationScale 0.5 -Matches 1 -Players 6 -Week -VoiceTest speech
+powershell -ExecutionPolicy Bypass -File Tools\run_local4.ps1 -Bots -DurationScale 0.3 -Matches 1 -Players 6 -Week -VoiceTest speech
+
+# v3 UI mocks / 3D scene test (screenshots without a network)
+Builds\BirimizKovulacak-Windows\BirimizKovulacak.exe -uimock "desk.*" -uimockout Builds\mock
+Builds\BirimizKovulacak-Windows\BirimizKovulacak.exe -scenetest -scenetestout Builds\scenetest
+
+# v3 balance simulator (bots that do not talk: social-round catch rates are a floor, not a forecast)
+dotnet run -c Release --project Tools\LineSim
 
 # Same, sampling memory of every process (writes memory_summary.csv)
 powershell -ExecutionPolicy Bypass -File Tools\scripts\measure_memory.ps1 -Players 4 -DurationScale 0.35
