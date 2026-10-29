@@ -1123,8 +1123,8 @@ namespace BirimizKovulacak.EditorTools
             return mr;
         }
 
-        // ================================================================== bootstrap / network / UI (same wiring as the v2 scene,
-        // minus the v2 world: no OfficeWorld, CameraRig, LocalPlayerController, NavMesh)
+        // ================================================================== bootstrap / network / UI
+        // No avatars travel over the network (seated first person): NGO only spawns the NetSession object.
 
         static void BuildRoomsBootstrap(PrefabSet prefabs, FontSet fonts)
         {
@@ -1140,7 +1140,6 @@ namespace BirimizKovulacak.EditorTools
             nm.NetworkConfig = new NetworkConfig
             {
                 NetworkTransport = utp,
-                PlayerPrefab = prefabs.Avatar,
                 ConnectionApproval = true,
                 EnableSceneManagement = false,
                 TickRate = 30,
@@ -1149,13 +1148,11 @@ namespace BirimizKovulacak.EditorTools
             string listPath = GenDir + "/NetworkPrefabs.asset";
             AssetDatabase.DeleteAsset(listPath);
             var list = ScriptableObject.CreateInstance<NetworkPrefabsList>();
-            if (prefabs.Avatar != null) list.Add(new NetworkPrefab { Prefab = prefabs.Avatar });
             list.Add(new NetworkPrefab { Prefab = prefabs.Session });
             AssetDatabase.CreateAsset(list, listPath);
             nm.NetworkConfig.Prefabs.NetworkPrefabsLists.Add(list);
             var conn = boot.AddComponent<ConnectionManager>();
             conn.SessionPrefab = prefabs.Session.GetComponent<NetworkObject>();
-            boot.AddComponent<ClientState>();
             boot.AddComponent<Sfx>();
 
             var uiGo = new GameObject("UI");

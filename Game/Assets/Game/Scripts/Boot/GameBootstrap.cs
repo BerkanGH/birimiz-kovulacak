@@ -1,5 +1,4 @@
 using System.Collections;
-using System.IO;
 using BirimizKovulacak.Core;
 using UnityEngine;
 
@@ -10,7 +9,6 @@ namespace BirimizKovulacak.Game
     public sealed class GameBootstrap : MonoBehaviour
     {
         int _matchesFinished;
-        int _lastResultsMatch = -1;
 
         void Awake()
         {
@@ -32,7 +30,6 @@ namespace BirimizKovulacak.Game
             if (args.Bot) gameObject.AddComponent<LineBotDriver>();
             if (args.Screenshots) gameObject.AddComponent<LineScreenshotRecorder>();
             if (GetComponent<LineWorldDriver>() == null) gameObject.AddComponent<LineWorldDriver>();
-            if (args.InputSim && !args.Bot) gameObject.AddComponent<InputSimDriver>();
         }
 
         IEnumerator Start()
@@ -71,18 +68,6 @@ namespace BirimizKovulacak.Game
                 while (Time.realtimeSinceStartup < t && (NetSession.Instance == null || LineClient.I.MySlot < 0)) yield return null;
                 yield return new WaitForSecondsRealtime(1f);
                 if (ConnectionManager.I.LineHost == null) LineClient.I.SetReady(true);
-            }
-        }
-
-        void OnPhase(MatchPhase from, MatchPhase to)
-        {
-            var v = ClientState.I.View;
-            if (to == MatchPhase.Results && v != null && v.MatchId != _lastResultsMatch)
-            {
-                _lastResultsMatch = v.MatchId;
-                _matchesFinished++;
-                int quitAfter = LaunchArgs.Current.QuitAfterMatches;
-                if (quitAfter > 0 && _matchesFinished >= quitAfter) StartCoroutine(QuitSoon(12f));
             }
         }
 
@@ -132,47 +117,6 @@ namespace BirimizKovulacak.Game
                 MatchLog.Close();
                 Application.Quit();
                 enabled = false;
-            }
-        }
-    }
-
-    /// <summary>Saves screenshots at key moments of each match (automation: -screenshots).</summary>
-    public sealed class ScreenshotRecorder : MonoBehaviour
-    {
-        void Start()
-        {
-            ClientState.I.PhaseChanged += (from, to) => StartCoroutine(Shot(to));
-        }
-
-        IEnumerator Shot(MatchPhase phase)
-        {
-            float[] delays;
-            switch (phase)
-            {
-                case MatchPhase.Briefing: delays = new[] { 3f }; break;
-                case MatchPhase.Work1: delays = new[] { 25f, 90f }; break;
-                case MatchPhase.Raid: delays = new[] { 4f, 14f }; break;
-                case MatchPhase.Work2: delays = new[] { 30f }; break;
-                case MatchPhase.FinalInspection: delays = new[] { 12f }; break;
-                case MatchPhase.MeetingDiscussion: delays = new[] { 12f }; break;
-                case MatchPhase.MeetingVote: delays = new[] { 6f }; break;
-                case MatchPhase.MeetingVerdict: delays = new[] { 3f }; break;
-                case MatchPhase.Results: delays = new[] { 4f }; break;
-                default: yield break;
-            }
-            int match = ClientState.I.View != null ? ClientState.I.View.MatchId : 0;
-            float start = Time.realtimeSinceStartup;
-            foreach (float d in delays)
-            {
-                while (Time.realtimeSinceStartup - start < d * Mathf.Max(0.3f, LaunchArgs.Current.DurationScale)) yield return null;
-                var v = ClientState.I.View;
-                if (v == null || v.Phase != phase) yield break;
-                string dir = Path.GetFullPath(Path.Combine(MatchLog.Directory ?? Application.persistentDataPath, "shots"));
-                Directory.CreateDirectory(dir);
-                string file = Path.Combine(dir, string.Format("{0}_m{1}_{2}_{3:000}.png", ConnectionManager.I.PlayerName, match, phase, (int)(Time.realtimeSinceStartup - start)));
-                yield return new WaitForEndOfFrame();
-                ScreenCapture.CaptureScreenshot(file);
-                MatchLog.Write("screenshot " + file);
             }
         }
     }

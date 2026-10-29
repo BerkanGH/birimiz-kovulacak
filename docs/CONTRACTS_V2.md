@@ -1,3 +1,5 @@
+> **This document describes v2** (open office, third-person, `MatchEngine`), which lives on branch `main` (tag `v2.3-night`). The `v3` branch no longer contains the v2 code.
+
 # Contracts v2 — normative semantics (Protocol.Version 2)
 
 Extends `docs/CONTRACTS.md` (still normative where not overridden) and `docs/DECISIONS.md`. Product context:

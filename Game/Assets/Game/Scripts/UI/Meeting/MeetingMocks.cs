@@ -67,7 +67,6 @@ namespace BirimizKovulacak.Game
             public bool IsSpeaking(int id) { return Speaking.Contains(id); }
             public float MicLevel => 0.3f;
             public bool Transmitting => false;
-            public VoiceUiRoute Route => VoiceUiRoute.Everyone;
             public string PttKeyLabel => "V";
             public bool Muted => false;
             public bool PushToTalk => true;

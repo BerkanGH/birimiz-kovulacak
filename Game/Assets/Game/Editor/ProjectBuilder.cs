@@ -19,8 +19,8 @@ namespace BirimizKovulacak.EditorTools
 {
     /// <summary>
     /// Regenerates every Unity-side asset from code and the Blender exports: project settings, URP, materials
-    /// (from Art/palette.json), model import rules, animator controllers, fonts, prefabs, the Office scene (from
-    /// DefaultOffice) and the Windows player. Run from the menu or batchmode:
+    /// (from Art/palette.json), model import rules, animator controllers, fonts, prefabs, the Rooms scene
+    /// (ProjectBuilder.Rooms.cs) and the Windows player. Run from the menu or batchmode:
     ///   Unity -batchmode -projectPath Game -executeMethod BirimizKovulacak.EditorTools.ProjectBuilder.BuildAllCli -quit
     /// </summary>
     public static partial class ProjectBuilder
@@ -30,7 +30,6 @@ namespace BirimizKovulacak.EditorTools
         public const string ModelDir = Root + "/Art/Models";
         public const string PrefabDir = Root + "/Prefabs";
         public const string GenDir = Root + "/Generated";
-        public const string ScenePath = Root + "/Scenes/Office.unity";
         public const string BuildDir = "../Builds/BirimizKovulacak-Windows";
         public const string ExeName = "BirimizKovulacak.exe";
 
@@ -72,8 +71,7 @@ namespace BirimizKovulacak.EditorTools
             }
             var fonts = CreateFonts();
             WriteStreamingAssets();
-            var prefabs = CreatePrefabs(fonts);
-            // v3: the rooms scene (ProjectBuilder.Rooms.cs). The v2 office map (BuildScene) is no longer built.
+            var prefabs = CreatePrefabs();
             BuildRoomsScene(prefabs, fonts, pipeline);
             AssetDatabase.SaveAssets();
             Log("=== Assets + scene done ===");
@@ -84,7 +82,7 @@ namespace BirimizKovulacak.EditorTools
 
         static void EnsureDirs()
         {
-            foreach (var d in new[] { MatDir, PrefabDir, PrefabDir + "/Items", GenDir, Root + "/Scenes", Root + "/Resources", "Assets/StreamingAssets/Config", "Assets/StreamingAssets/Localization" })
+            foreach (var d in new[] { MatDir, PrefabDir, GenDir, Root + "/Scenes", Root + "/Resources", "Assets/StreamingAssets/Config", "Assets/StreamingAssets/Localization" })
                 Directory.CreateDirectory(d);
             AssetDatabase.Refresh();
         }
@@ -122,15 +120,6 @@ namespace BirimizKovulacak.EditorTools
                 var p = so.FindProperty("activeInputHandler");
                 if (p != null) { p.intValue = 2; so.ApplyModifiedProperties(); }
             }
-
-            var tm = new SerializedObject(AssetDatabase.LoadAllAssetsAtPath("ProjectSettings/TagManager.asset")[0]);
-            var layers = tm.FindProperty("layers");
-            SetLayer(layers, Layers.Walls, Layers.WallsName);
-            SetLayer(layers, Layers.Glass, Layers.GlassName);
-            SetLayer(layers, Layers.Furniture, Layers.FurnitureName);
-            SetLayer(layers, Layers.Avatar, Layers.AvatarName);
-            SetLayer(layers, Layers.Partitions, Layers.PartitionsName);
-            tm.ApplyModifiedProperties();
             ApplyAppIcon();
             Log("Project settings configured");
         }
@@ -155,18 +144,11 @@ namespace BirimizKovulacak.EditorTools
             if (tex != null) PlayerSettings.SetIcons(NamedBuildTarget.Unknown, new[] { tex }, IconKind.Any);
         }
 
-        static void SetLayer(SerializedProperty layers, int index, string name)
-        {
-            var e = layers.GetArrayElementAtIndex(index);
-            if (e.stringValue != name) e.stringValue = name;
-        }
-
         // ================================================================== URP
 
         public sealed class PipelineAssets
         {
             public UniversalRenderPipelineAsset Asset;
-            public VolumeProfile Profile;
         }
 
         static PipelineAssets ConfigureRenderPipeline()
@@ -205,7 +187,7 @@ namespace BirimizKovulacak.EditorTools
                 }
                 EditorUtility.SetDirty(rd);
             }
-            // v2 map: ~20 room lights + emergency lights overlap; Forward+ has no per-object light limit.
+            // Forward+ has no per-object light limit (ConfigureRoomsPipeline tunes shadows / MSAA for the rooms).
             var rdo = new SerializedObject(rd);
             SetProp(rdo, "m_RenderingMode", 2); // 0 Forward, 1 Deferred, 2 Forward+
             rdo.ApplyModifiedPropertiesWithoutUndo();
@@ -236,22 +218,9 @@ namespace BirimizKovulacak.EditorTools
                 QualitySettings.renderPipeline = asset;
             }
 
-            string profilePath = GenDir + "/PostProfile.asset";
-            var profile = AssetDatabase.LoadAssetAtPath<VolumeProfile>(profilePath);
-            if (profile == null)
-            {
-                profile = ScriptableObject.CreateInstance<VolumeProfile>();
-                AssetDatabase.CreateAsset(profile, profilePath);
-                var tone = profile.Add<Tonemapping>(true); tone.mode.Override(TonemappingMode.Neutral);
-                var bloom = profile.Add<Bloom>(true); bloom.intensity.Override(0.55f); bloom.threshold.Override(1.05f); bloom.scatter.Override(0.6f);
-                var ca = profile.Add<ColorAdjustments>(true); ca.postExposure.Override(0.2f); ca.saturation.Override(14f); ca.contrast.Override(10f);
-                var vig = profile.Add<Vignette>(true); vig.intensity.Override(0.2f); vig.smoothness.Override(0.45f);
-                foreach (var c in profile.components) AssetDatabase.AddObjectToAsset(c, profile);
-                EditorUtility.SetDirty(profile);
-            }
             AssetDatabase.SaveAssets();
             Log("URP configured");
-            return new PipelineAssets { Asset = asset, Profile = profile };
+            return new PipelineAssets { Asset = asset };
         }
 
         static void SetProp(SerializedObject so, string name, object value)
@@ -286,30 +255,13 @@ namespace BirimizKovulacak.EditorTools
                 var spec = (JObject)prop.Value;
                 CreateLit(prop.Key, lit, Hex((string)spec["color"]), (float?)spec["smooth"] ?? 0.3f, (float?)spec["metal"] ?? 0f, (float?)spec["emit"] ?? 0f, (float?)spec["alpha"] ?? 1f);
             }
-            // Runtime-only materials.
-            var unlit = Shader.Find("Universal Render Pipeline/Unlit");
+            // Runtime-only materials (player colours: the mug and nameplate stripes in the office).
             CreateLit("M_PlayerColor0", lit, Hex("#4A90E2"), 0.4f, 0, 0.15f, 1);
             CreateLit("M_PlayerColor1", lit, Hex("#F5C842"), 0.4f, 0, 0.15f, 1);
             CreateLit("M_PlayerColor2", lit, Hex("#F28AB2"), 0.4f, 0, 0.15f, 1);
             CreateLit("M_PlayerColor3", lit, Hex("#6CC56A"), 0.4f, 0, 0.15f, 1);
             CreateLit("M_PlayerColor4", lit, Hex("#F4853C"), 0.4f, 0, 0.15f, 1);
             CreateLit("M_PlayerColor5", lit, Hex("#A872D0"), 0.4f, 0, 0.15f, 1);
-            CreateUnlit("M_VisionCone", unlit, new Color(1f, 0.85f, 0.2f, 0.22f));
-            CreateUnlit("M_FocusMarker", unlit, new Color(1f, 0.78f, 0.15f, 0.95f));
-            CreateUnlit("M_EvidenceRing", unlit, new Color(1f, 0.25f, 0.2f, 0.8f));
-            CreateUnlit("M_SealTape", unlit, new Color(1f, 0.82f, 0.1f, 1f));
-            CreateUnlit("M_BubbleBg", unlit, new Color(1f, 1f, 1f, 0.95f));
-            CreateLit("M_LightOn", lit, Hex("#FF3B2F"), 0.6f, 0, 2.5f, 1);
-            CreateLit("M_LightOff", lit, Hex("#5A1A16"), 0.6f, 0, 0, 1);
-            CreateLit("M_GreenOn", lit, Hex("#3BFF73"), 0.6f, 0, 2.5f, 1);
-            CreateLit("M_GreenOff", lit, Hex("#1E5A32"), 0.6f, 0, 0, 1);
-            var particle = Shader.Find("Universal Render Pipeline/Particles/Unlit");
-            if (particle != null)
-            {
-                var steam = GetOrCreate("M_Steam", particle);
-                steam.SetColor("_BaseColor", new Color(1, 1, 1, 0.35f));
-                SetTransparent(steam);
-            }
             AssetDatabase.SaveAssets();
             Log("Materials: " + Mats.Count);
         }
@@ -397,8 +349,6 @@ namespace BirimizKovulacak.EditorTools
 
         // ================================================================== model import
 
-        static readonly string[] LoopClips = { "Idle", "Walk", "CarryIdle", "CarryWalk", "Work", "WorkPose", "Interact", "Sneak", "Phone", "Panic", "Fired", "Cheer", "Talk", "Inspect", "Angry", "Point" };
-
         static void ConfigureModelImports()
         {
             var guids = AssetDatabase.FindAssets("t:Model", new[] { ModelDir });
@@ -407,8 +357,7 @@ namespace BirimizKovulacak.EditorTools
                 string path = AssetDatabase.GUIDToAssetPath(g);
                 var imp = AssetImporter.GetAtPath(path) as ModelImporter;
                 if (imp == null) continue;
-                bool character = path.Contains("/Characters/");
-                if (character) continue; // ProjectBuilder.Characters.ConfigureCharacterModel owns character imports (clips, loops)
+                if (path.Contains("/Characters/")) continue; // ProjectBuilder.Characters.ConfigureCharacterModel owns character imports (clips, loops)
                 imp.globalScale = 1f;
                 imp.useFileScale = true;
                 imp.bakeAxisConversion = true;
@@ -420,27 +369,8 @@ namespace BirimizKovulacak.EditorTools
                 imp.importNormals = ModelImporterNormals.Import;
                 imp.materialImportMode = ModelImporterMaterialImportMode.ImportViaMaterialDescription;
                 imp.materialLocation = ModelImporterMaterialLocation.InPrefab;
-                if (character)
-                {
-                    imp.animationType = ModelImporterAnimationType.Generic;
-                    imp.avatarSetup = ModelImporterAvatarSetup.CreateFromThisModel;
-                    imp.importAnimation = true;
-                    imp.animationCompression = ModelImporterAnimationCompression.Optimal;
-                    var clips = imp.defaultClipAnimations;
-                    foreach (var c in clips)
-                    {
-                        string n = c.name.Contains("|") ? c.name.Substring(c.name.LastIndexOf('|') + 1) : c.name;
-                        c.name = n;
-                        c.loopTime = LoopClips.Contains(n);
-                        c.loopPose = false;
-                    }
-                    imp.clipAnimations = clips;
-                }
-                else
-                {
-                    imp.animationType = ModelImporterAnimationType.None;
-                    imp.importAnimation = false;
-                }
+                imp.animationType = ModelImporterAnimationType.None;
+                imp.importAnimation = false;
                 imp.SaveAndReimport();
                 imp.SearchAndRemapMaterials(ModelImporterMaterialName.BasedOnMaterialName, ModelImporterMaterialSearch.Everywhere);
                 imp.SaveAndReimport();
@@ -520,19 +450,8 @@ namespace BirimizKovulacak.EditorTools
 
         static void WriteStreamingAssets()
         {
-            string cfgPath = "Assets/StreamingAssets/Config/match_config.json";
-            // (Re)write the balance file when it is missing or was written for another protocol version.
-            bool current = false;
-            if (File.Exists(cfgPath))
-            {
-                try { var c = Newtonsoft.Json.JsonConvert.DeserializeObject<MatchConfig>(File.ReadAllText(cfgPath), GameConfig.JsonSettings); current = c != null && c.ConfigVersion == Protocol.Version; }
-                catch (Exception) { current = false; }
-            }
-            // Designers tune MatchConfig.CreateDefault; the JSON next to the player is regenerated on every build
-            // (players/hosts may still edit it in a build folder).
-            File.WriteAllText(cfgPath, GameConfig.ToJson(MatchConfig.CreateDefault()));
-            Log("match_config.json written from MatchConfig.CreateDefault (protocol " + Protocol.Version + (current ? ")" : ", replaced an outdated file)"));
-            // v3 rules file (same policy: regenerated from LineConfig.CreateDefault on every build).
+            // The rules file next to the player is regenerated from LineConfig.CreateDefault on every build (designers
+            // tune the defaults in code; players / hosts may still edit it in a build folder).
             File.WriteAllText("Assets/StreamingAssets/Config/line_config.json", GameConfig.ToJson(LineConfig.CreateDefault()));
             Log("line_config.json written from LineConfig.CreateDefault (protocol " + LineProtocol.Version + ")");
             string id = DateTime.UtcNow.ToString("yyyyMMddHHmm") + "-" + Guid.NewGuid().ToString("N").Substring(0, 6);

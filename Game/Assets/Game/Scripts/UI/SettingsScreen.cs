@@ -68,7 +68,6 @@ namespace BirimizKovulacak.Game
             if (vs != null && vs.LoopbackTest) vs.LoopbackTest = false;
             PlayerPrefs.Save();
             SetVisible(false);
-            Hud.RefreshKeys();
         }
 
         protected override void OnShow()

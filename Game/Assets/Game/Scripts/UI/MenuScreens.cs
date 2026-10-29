@@ -599,7 +599,6 @@ namespace BirimizKovulacak.Game
             }
             var lc = LineClient.I;
             if (s == null && lc != null && !string.IsNullOrEmpty(lc.StatusKey)) s = Loc.T(lc.StatusKey);
-            if (s == null && ClientState.I != null && !string.IsNullOrEmpty(ClientState.I.StatusKey)) s = Loc.T(ClientState.I.StatusKey);
             bool show = s != null;
             if (show != _root.IsShown()) { _root.Show(show); if (show) UiMotion.PopIn(_root[0], 0.25f); }
             if (s != null && s != _last) { _last = s; _text.text = s; }

@@ -226,49 +226,12 @@ namespace BirimizKovulacak.Game
             return bar;
         }
 
-        public static void SetFill(VisualElement fill, float fraction)
-        {
-            fill.style.width = Length.Percent(Mathf.Clamp01(fraction) * 100f);
-        }
-
-        /// <summary>Suspicion pips (0..max).</summary>
-        public static VisualElement Pips(int level, int max = 4)
-        {
-            var p = Box("pips").NoPick();
-            for (int i = 0; i < max; i++) Box("pip").NoPick().AddTo(p);
-            SetPips(p, level);
-            return p;
-        }
-
-        public static void SetPips(VisualElement pips, int level)
-        {
-            for (int i = 0; i < pips.childCount; i++)
-            {
-                pips[i].EnableInClassList("pip-on", i < level);
-                pips[i].EnableInClassList("pip-hot", i < level && level >= 3);
-            }
-        }
-
         public static VisualElement Section(VisualElement parent, string title, string iconId = null)
         {
             var h = Box("section-head").AddTo(parent);
             if (iconId != null) Icon(iconId, "icon-s").AddTo(h);
             Bold(title, "section-title").AddTo(h);
             return h;
-        }
-
-        /// <summary>Keeps <paramref name="target"/> at aspect w/h, as large as fits inside <paramref name="container"/> (fixed-aspect art: letter, projector).</summary>
-        public static void KeepAspect(VisualElement container, VisualElement target, float aspect, float reserveHeight = 0f)
-        {
-            container.RegisterCallback<GeometryChangedEvent>(_ =>
-            {
-                float w = container.resolvedStyle.width, h = container.resolvedStyle.height - reserveHeight;
-                if (w <= 1f || h <= 1f) return;
-                float tw = w, th = w / aspect;
-                if (th > h) { th = h; tw = h * aspect; }
-                target.style.width = tw;
-                target.style.height = th;
-            });
         }
 
         public static Label Empty(VisualElement parent, string text) { return Text(text, "empty").AddTo(parent); }

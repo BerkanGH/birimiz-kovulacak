@@ -1,7 +1,6 @@
 using System;
 using System.IO;
 using System.Text;
-using BirimizKovulacak.Core;
 using UnityEngine;
 
 namespace BirimizKovulacak.Game
@@ -9,7 +8,7 @@ namespace BirimizKovulacak.Game
     /// <summary>
     /// Plain-text session log used by the automated multi-process verification (Tools/scripts/verify_logs.py)
     /// and for bug reports. One file per process: &lt;logdir&gt;/&lt;name&gt;_&lt;pid&gt;.log. Never contains another
-    /// player's private data except on the host when -debugtruth is passed (host truth dump at results).
+    /// player's private data.
     /// </summary>
     public static class MatchLog
     {
@@ -51,15 +50,6 @@ namespace BirimizKovulacak.Game
             if (_writer == null) return;
             try { _writer.WriteLine(DateTime.Now.ToString("HH:mm:ss.fff") + " " + line); }
             catch (Exception) { }
-        }
-
-        public static void Event(GameEvent e) { Write("event " + e); }
-
-        public static void WriteFile(string name, string content)
-        {
-            if (string.IsNullOrEmpty(_dir)) return;
-            try { File.WriteAllText(Path.Combine(_dir, name), content, new UTF8Encoding(false)); }
-            catch (Exception ex) { Debug.LogWarning("[MatchLog] " + ex.Message); }
         }
 
         public static void Close()

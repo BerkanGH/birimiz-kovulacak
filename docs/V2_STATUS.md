@@ -1,3 +1,5 @@
+> **This document describes v2** (open office, third-person, `MatchEngine`), which lives on branch `main` (tag `v2.3-night`). The `v3` branch no longer contains the v2 code.
+
 # v2 status (lead's log)
 
 Plan: `docs/V2_PLAN.md`. Rules: `docs/CONTRACTS_V2.md`.

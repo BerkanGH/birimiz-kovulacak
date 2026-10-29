@@ -4,9 +4,9 @@ using UnityEngine;
 namespace BirimizKovulacak.Game
 {
     /// <summary>
-    /// Office bed: air-conditioning / mains hum + distant keyboards (two 2D loops). State-driven:
-    /// ducks during the HR meeting and results, the hum winds down and stops during a power cut (the keyboards go
-    /// almost silent too), typing thins out while the internet is down. Two AudioSources, no allocations.
+    /// Office bed: air-conditioning / mains hum + distant keyboards (two 2D loops). State-driven from the week phase
+    /// (<see cref="LineClient"/>): full in the office, ducked in the meeting room and at the week results, quietest
+    /// in the menu / lobby. Two AudioSources, no allocations.
     /// </summary>
     public sealed class Ambience : MonoBehaviour
     {
@@ -17,7 +17,7 @@ namespace BirimizKovulacak.Game
         public float ResultsDuck = 0.2f;
 
         AudioSource _hum, _keys;
-        float _humGain, _keysGain, _humPitch = 1f;
+        float _humGain, _keysGain;
 
         void Start()
         {
@@ -46,25 +46,19 @@ namespace BirimizKovulacak.Game
         void Update()
         {
             if (_hum == null || _keys == null) return;
-            var view = ClientState.I != null ? ClientState.I.View : null;
+            var view = LineClient.I != null ? LineClient.I.View : null;
+            var phase = view != null ? view.Phase : LinePhase.None;
             float duck;
-            if (view == null) duck = MenuDuck;
-            else if (view.Phase >= MatchPhase.MeetingDiscussion && view.Phase <= MatchPhase.MeetingVerdict) duck = MeetingDuck;
-            else if (view.Phase == MatchPhase.Results || view.Phase == MatchPhase.Abandoned) duck = ResultsDuck;
+            if (phase == LinePhase.None) duck = MenuDuck;
+            else if (LineClient.IsMeetingPhase(phase)) duck = MeetingDuck;
+            else if (phase == LinePhase.WeekResults || phase == LinePhase.Abandoned) duck = ResultsDuck;
             else duck = 1f;
-            bool power = view != null && view.Office != null && view.Office.PowerDown;
-            bool net = view != null && view.Office != null && view.Office.InternetDown;
 
-            float humTarget = power ? 0f : HumLevel * duck;
-            float keysTarget = KeysLevel * duck * (power ? 0.1f : 1f) * (net ? 0.5f : 1f);
             float dt = Time.unscaledDeltaTime;
-            // Power cut: the hum sags in pitch while it fades ("hum stop"); it spins back up on restore.
-            _humPitch = Mathf.MoveTowards(_humPitch, power ? 0.55f : 1f, dt * (power ? 0.6f : 1.2f));
-            _humGain = Mathf.MoveTowards(_humGain, humTarget, dt * (power ? 0.35f : 0.5f));
-            _keysGain = Mathf.MoveTowards(_keysGain, keysTarget, dt * 0.6f);
+            _humGain = Mathf.MoveTowards(_humGain, HumLevel * duck, dt * 0.5f);
+            _keysGain = Mathf.MoveTowards(_keysGain, KeysLevel * duck, dt * 0.6f);
             float master = Sfx.AmbienceVolume;
             _hum.volume = _humGain * master;
-            _hum.pitch = _humPitch;
             _keys.volume = _keysGain * master;
         }
     }

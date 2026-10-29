@@ -2,7 +2,6 @@ using System;
 using System.Collections.Generic;
 using System.Globalization;
 using System.IO;
-using BirimizKovulacak.Core;
 using Newtonsoft.Json;
 using UnityEngine;
 
@@ -117,147 +116,9 @@ namespace BirimizKovulacak.Game
 
         // ---- Domain helpers -------------------------------------------------------------------------
 
-        public static string PlayerName(PlayerView v, int id)
-        {
-            if (id == PlayerIds.None) return T("common.nobody");
-            if (v != null)
-                for (int i = 0; i < v.Players.Count; i++)
-                    if (v.Players[i].Id == id) return v.Players[i].Name;
-            return T("player.default." + id);
-        }
-
-        public static string Item(string variant) { return string.IsNullOrEmpty(variant) ? T("common.nothing") : T("item." + variant); }
-        public static string Phase(MatchPhase p) { return T("phase." + p); }
-        public static string Failure(FailureCode c) { return T("fail." + c); }
-        public static string Task(TaskType t) { return T("task." + t); }
-        public static string Activity(PublicActivity a) { return T("activity." + a); }
-        public static string Desk(int index) { return F("desk.name", index + 1); }
-        public static string ObjectiveName(ObjectiveType t) { return T("objective." + t + ".name"); }
-        public static string ObjectiveDesc(ObjectiveType t) { return T("objective." + t + ".desc"); }
-
-        public static string CardName(SabotageType t) { return T("card." + t + ".name"); }
-        public static string CardDesc(SabotageType t) { return T("card." + t + ".desc"); }
-
         public static string ManagerName(string profileId) { return string.IsNullOrEmpty(profileId) ? T("manager.default.name") : T("manager." + profileId + ".name"); }
         public static string ManagerTitle(string profileId) { return string.IsNullOrEmpty(profileId) ? T("manager.default.title") : T("manager." + profileId + ".title"); }
 
         public static string DayName(int day) { return T("week.day." + day); }
-        public static string DayShort(int day) { return T("week.day_short." + day); }
-
-        /// <summary>"room.office" -> "Açık ofis".</summary>
-        public static string Room(string roomId) { return string.IsNullOrEmpty(roomId) ? "" : T(roomId); }
-
-        /// <summary>"cam.office_w" -> "Açık ofis (batı)".</summary>
-        public static string Camera(string cameraId) { return string.IsNullOrEmpty(cameraId) ? "" : T(cameraId); }
-
-        public static string Location(string id)
-        {
-            if (string.IsNullOrEmpty(id)) return "";
-            int desk = EntityIds.DeskIndexOf(id);
-            if (desk >= 0)
-            {
-                if (id.EndsWith(".drawer")) return F("loc.desk_drawer", desk + 1);
-                if (id.EndsWith(".surface")) return F("loc.desk_surface", desk + 1);
-                if (id.EndsWith(".nameplate")) return F("loc.desk_nameplate", desk + 1);
-                if (id.EndsWith(".pc")) return F("loc.desk_pc", desk + 1);
-                return Desk(desk);
-            }
-            if (id.StartsWith("item."))
-            {
-                if (id.StartsWith("item.nameplate."))
-                {
-                    int who;
-                    if (int.TryParse(id.Substring("item.nameplate.".Length), out who)) return F("loc.nameplate_of", T("player.default." + who));
-                }
-                return ItemFromId(id);
-            }
-            if (id.StartsWith("cam.") || id.StartsWith("room.")) return T(id);
-            return Has("loc." + id) ? T("loc." + id) : id;
-        }
-
-        public static string ItemFromId(string id)
-        {
-            if (string.IsNullOrEmpty(id)) return "";
-            if (id.StartsWith("item.report")) return Item(ItemVariants.Report);
-            if (id.StartsWith("item.mug")) return Item(ItemVariants.Mug);
-            if (id.StartsWith("item.nameplate")) return Item(ItemVariants.Nameplate);
-            if (id.StartsWith("item.spray")) return Item(ItemVariants.Spray);
-            if (id.StartsWith("item.clutter")) return Item(ItemVariants.ClutterPapers);
-            if (id.StartsWith("item.mail")) return Item(ItemVariants.Mail);
-            int dot = id.LastIndexOf('.');
-            return Item(dot >= 0 ? id.Substring(dot + 1) : id);
-        }
-
-        /// <summary>Match clock "mm:ss" since the briefing started (the in-world office clock).</summary>
-        public static string Time(double hostTime, PlayerView v)
-        {
-            double t = Math.Max(0, hostTime - MatchClock.MatchStart);
-            int m = (int)(t / 60), s = (int)(t % 60);
-            return m.ToString("00") + ":" + s.ToString("00");
-        }
-
-        public static string MatchSeconds(int seconds)
-        {
-            if (seconds < 0) seconds = 0;
-            return (seconds / 60).ToString("00") + ":" + (seconds % 60).ToString("00");
-        }
-    }
-
-    /// <summary>
-    /// Host time at which the current match started (= Briefing start; footage seconds and the "office clock" count
-    /// from it). Exact when this client saw the Briefing; otherwise (reconnect mid-match) derived from the current
-    /// phase start minus the configured durations of the phases before it. UIRoot calls <see cref="Update"/> every frame.
-    /// </summary>
-    public static class MatchClock
-    {
-        public static double MatchStart;
-        /// <summary>Host time the meeting (dossier freeze) started; 0 before the meeting.</summary>
-        public static double MeetingStart;
-        public static int MeetingMatchId = -1;
-
-        static int _briefingMatch = -1, _derivedMatch = -1, _derivedSerial = int.MinValue;
-        static double _briefingEpoch, _derived;
-
-        public static void Update(PlayerView v)
-        {
-            if (v == null || v.Phase == MatchPhase.None) return;
-            if (v.Phase == MatchPhase.Briefing) { _briefingMatch = v.MatchId; _briefingEpoch = v.PhaseStartTime; }
-            if (_derivedMatch != v.MatchId || _derivedSerial != v.PhaseSerial)
-            {
-                _derivedMatch = v.MatchId;
-                _derivedSerial = v.PhaseSerial;
-                _derived = v.PhaseStartTime - ElapsedBefore(v.Phase);
-            }
-            // The remembered Briefing start wins unless it obviously belongs to another session (same match id).
-            double want = _briefingMatch == v.MatchId && Math.Abs(_briefingEpoch - _derived) < 90.0 ? _briefingEpoch : _derived;
-            if (Math.Abs(MatchStart - want) > 0.001) MatchStart = want;
-        }
-
-        /// <summary>Configured seconds from the match start to the start of <paramref name="phase"/>.</summary>
-        public static double ElapsedBefore(MatchPhase phase)
-        {
-            var c = GameInfo.Config;
-            if (c == null || c.Durations == null) return 0;
-            var d = c.Durations;
-            double t = 0;
-            if (phase > MatchPhase.Briefing) t += d.Briefing;
-            if (phase > MatchPhase.Work1) t += d.Work1;
-            if (phase > MatchPhase.Raid) t += d.Raid;
-            if (phase > MatchPhase.Work2) t += d.Work2;
-            if (phase > MatchPhase.FinalInspection) t += d.FinalInspection;
-            if (phase > MatchPhase.MeetingDiscussion) t += d.MeetingDiscussion;
-            if (phase > MatchPhase.MeetingDefense1) t += d.MeetingDefense;
-            if (phase > MatchPhase.MeetingDefense2) t += d.MeetingDefense;
-            if (phase > MatchPhase.MeetingVote) t += d.MeetingVote;
-            if (phase > MatchPhase.MeetingVerdict) t += d.MeetingVerdict;
-            return t;
-        }
-
-        /// <summary>Seconds of office time (Briefing..FinalInspection): the range footage can be requested for.</summary>
-        public static int OfficeSeconds()
-        {
-            int s = (int)ElapsedBefore(MatchPhase.MeetingDiscussion);
-            return s < 1 ? 1 : s;
-        }
     }
 }

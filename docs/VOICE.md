@@ -30,9 +30,9 @@ by `GameBootstrap` and is `null` with `-novoice`.
 `VoiceSystem` no longer has to know the session objects. Each hook is optional; `null` means the built-in default.
 
 ```csharp
-VoiceSystem.ExternalHostProviders = true;                              // v3: never build the v2 HostMatchVoiceBridge
+VoiceSystem.ExternalHostProviders = true;                              // kept for compatibility (there is no automatic bridge any more)
 VoiceSystem.HostSessionActive = () => HostLineController.Current != null; // host: route voice only while the session is up
-// Optional. These defaults already read v3 first and fall back to v2:
+// Optional. These defaults already read LineClient:
 VoiceSystem.LocalSlotSource = () => LineClient.I != null ? LineClient.I.MySlot : -1;
 VoiceSystem.ServerTimeSource = () => NetworkManager.Singleton.ServerTime.Time;  // recording start times / progress (seconds)
 VoiceSystem.Instance.SlotNameResolver = slot => /* lobby name, used as the per-player volume key */;
@@ -40,15 +40,15 @@ VoiceSystem.Instance.SlotNameResolver = slot => /* lobby name, used as the per-p
 
 | Hook | Default | Notes |
 |---|---|---|
-| `static Func<int> LocalSlotSource` | `LineClient.I.MySlot` when ≥ 0, else `ClientState.I.MySlot` | −1 = not in a session (mic closed). |
-| `static Func<bool> HostSessionActive` | `true` while `SetHostProviders` providers are set, else while the v2 `HostMatchController` exists | Host only. False = route nothing and stop a running tape. |
-| `static bool ExternalHostProviders` | `false` (v2 automatic bridge) | `true` = routing uses only `SetHostProviders`. |
+| `static Func<int> LocalSlotSource` | `LineClient.I.MySlot` (−1 without a session) | −1 = not in a session (mic closed). |
+| `static Func<bool> HostSessionActive` | `true` while `SetHostProviders` providers are set | Host only. False = route nothing and stop a running tape. |
+| `static bool ExternalHostProviders` | not read any more | Routing always uses only `SetHostProviders` (the v2 automatic bridge was removed with the v2 code). |
 | `static Func<double> ServerTimeSource` | `NetworkManager.ServerTime.Time` (realtime when offline) | Set it if `LineClient.Clock` uses another clock. |
-| `Func<int,string> SlotNameResolver` (instance) | `LineClient.I.Lobby` (v3), else `ClientState.I.Lobby` | Polled every 0.5 s; a slot whose name changed re-reads its saved volume. No lobby events needed. |
+| `Func<int,string> SlotNameResolver` (instance) | `LineClient.I.Lobby` | Polled every 0.5 s; a slot whose name changed re-reads its saved volume. No lobby events needed. |
 
-The only places that still read `ClientState`, `LineClient` or `ConnectionManager` are the private `DefaultLocalSlot`,
-`DefaultSlotName` and `BindDefaultHost` methods, and every hook above replaces them. v2 keeps working unchanged with
-all hooks left `null`.
+The only places that still read `LineClient` are the private `DefaultLocalSlot` and `DefaultSlotName` methods, and
+the hooks above replace them. (The v2 defaults — `ClientState`, `HostMatchController`, `HostMatchVoiceBridge` — were
+removed from the `v3` branch; v2 lives on `main`.)
 
 ### 2. Host providers (when the host session starts)
 
@@ -198,5 +198,4 @@ and the 26 B tape messages are sent only at start and end.
 | `Scripts/Voice/VoiceSystem.cs` | binding hooks, recording/tape API, tape transport, speech levels |
 | `Scripts/Voice/VoiceEmitter.cs` | plays any `IVoicePcmSource` (6 slots + the tape) |
 | `Scripts/Voice/VoiceSettings.cs` | `PhoneEq` |
-| `Scripts/Voice/HostMatchVoiceBridge.cs` | v2 stubs only: `GetCallId` → −1, `GetTappers` → 0 (v2 records nothing) |
 | `Tools/VoiceTests/Tests/RouterV3Tests.cs`, `RecorderTests.cs`, `TapeTests.cs` | 39 new tests |
