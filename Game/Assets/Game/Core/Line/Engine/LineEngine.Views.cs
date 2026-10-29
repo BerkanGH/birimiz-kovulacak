@@ -14,11 +14,13 @@ namespace BirimizKovulacak.Core
                 WeekId = setup.WeekId, StateVersion = StateVersion, Me = player, Now = time, Phase = Phase,
                 PhaseStartTime = phaseStart, PhaseEndTime = PhaseEndTime, Day = Day, DayCount = days, Length = setup.Length,
                 FirstWeek = firstWeek, RoundIndex = InRound ? roundIndex : -1, ManagerProfileId = profile.Id, Favourite = favourite,
-                Features = new LineFeaturesView { TricksUnlocked = Unlocked, TipLineUnlocked = Unlocked,
+                Features = new LineFeaturesView { TricksUnlocked = Unlocked, TipLineUnlocked = TipUnlocked,
                     RecordingsEnabled = setup.RecordingsEnabled && c.RecordingsEnabled, IsLastDay = Day == days - 1,
                     FirstTimeRound = InRound && firstTimeRound, OnboardingDay = firstWeek && Day == 0 },
                 Mine = new LineMeView { AgendaTarget = s.Agenda, Trick = s.Trick, TrickUsedToday = s.TrickUsed,
-                    TipUsedToday = s.TipUsed, MailsSentToday = s.MailsSent, ComputerBlockedUntil = s.BlockedUntil,
+                    TipUsedToday = s.TipUsed, TricksLeftThisWeek = Math.Max(0, TrickAllowance - s.TricksUsed),
+                    TipsLeftThisWeek = Math.Max(0, c.TipsPerWeek - s.TipsUsed),
+                    MailsSentToday = s.MailsSent, ComputerBlockedUntil = s.BlockedUntil,
                     ComputerBlockedBy = s.BlockedBy, PhoneDeadUntil = s.DeadUntil, WiretapTarget = s.TapTarget,
                     WiretapUntil = s.TapUntil, Phone = s.Phone, Inbox = s.Inbox, CallLog = s.Log },
                 Result = Phase == LinePhase.WeekResults ? result : null
@@ -37,23 +39,30 @@ namespace BirimizKovulacak.Core
             if (InRound)
             {
                 var r = new LineRoundView { Type = round.Type, Index = roundIndex,
-                    PlayEndTime = Phase == LinePhase.RoundIntro ? PhaseEndTime + c.Durations.RoundPlay : Phase == LinePhase.RoundPlay ? PhaseEndTime : phaseStart,
+                    PlayEndTime = Phase == LinePhase.RoundIntro ? PhaseEndTime + RoundPlayLength : Phase == LinePhase.RoundPlay ? PhaseEndTime : phaseStart,
                     Submitted = s.Submitted, MyTarget = s.Target, MyA = s.A,
-                    AttemptsLeft = round.Type == RoundType.OrtakSifre ? Math.Max(0, c.Rounds.AttemptsPerPlayer - s.Attempts) : 0,
+                    AttemptsLeft = 0,
                     Solved = round.Solved, Reveal = Phase == LinePhase.RoundReveal ? round.Reveal : null };
                 if (round.Type == RoundType.OrtakSifre)
-                { r.CodeLength = ids.Count; r.PositionOwners.AddRange(round.Order); r.Attempts.AddRange(round.Attempts); }
+                { r.CodeLength = ids.Count; r.PositionOwners.AddRange(round.Order); }
                 if (s.BlockedUntil <= time || Phase == LinePhase.RoundReveal)
                 {
                     switch (round.Type)
                     {
-                        case RoundType.PrimHavuzu: r.Partner = round.Partners[player]; break;
+                        case RoundType.PrimHavuzu:
+                            r.Partner = round.Partners[player]; r.Partners.Add(r.Partner);
+                            if (round.SecondPartners[player] >= 0) r.Partners.Add(round.SecondPartners[player]); break;
                         case RoundType.FarkliEposta:
-                            r.TopicId = round.Topic; r.IsOdd = round.Hidden == player; r.TopicVariant = r.IsOdd ? 1 : 0;
+                            r.IsOdd = round.Hidden == player; r.TopicId = r.IsOdd ? round.OddTopic : round.Topic;
+                            r.TopicVariant = -1;
                             if (r.IsOdd) r.GuessOptions.AddRange(round.Options); break;
-                        case RoundType.KayipRapor: r.IsCulprit = round.Hidden == player; r.ClueInnocent = round.Clues[player]; break;
+                        case RoundType.KayipRapor:
+                            r.IsCulprit = round.Hidden == player; r.ClueInnocent = round.Clues[player];
+                            if (r.IsCulprit) r.NoAlibi.AddRange(round.NoAlibi); break;
                         case RoundType.OrtakSifre:
-                            r.DigitPosition = round.Order.IndexOf(player); r.Digit = round.Digits[player]; r.IsSaboteur = round.Hidden == player; break;
+                            r.DigitPosition = round.Order.IndexOf(player); r.Digit = round.Digits[player]; r.IsSaboteur = round.Hidden == player;
+                            r.NeighborPosition = (r.DigitPosition + 1) % ids.Count;
+                            r.NeighborDigit = round.Digits[round.Order[r.NeighborPosition]]; break;
                     }
                 }
                 else { r.MyTarget = -1; r.MyA = -1; }
@@ -63,7 +72,7 @@ namespace BirimizKovulacak.Core
             {
                 // Build an allow-list of public meeting facts. Candidate call ids are host-only.
                 var m = new LineMeetingView { IsFinal = meeting.IsFinal, MyVote = s.Vote, IhtarTo = meeting.IhtarTo,
-                    Dossier = meeting.Dossier, DefenseOrder = meeting.DefenseOrder,
+                    Dossier = meeting.Dossier, Shortlist = meeting.Shortlist, DefenseOrder = meeting.DefenseOrder,
                     Fired = Phase == LinePhase.FinalVerdict ? meeting.Fired : -1 };
                 if (Phase == LinePhase.MeetingVerdict || Phase == LinePhase.FinalVerdict) m.Votes.AddRange(meeting.Votes);
                 if (Phase == LinePhase.FinalVerdict) m.Scores.AddRange(meeting.Scores);

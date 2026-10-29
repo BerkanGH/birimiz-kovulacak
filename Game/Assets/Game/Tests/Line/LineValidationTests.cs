@@ -32,7 +32,7 @@ namespace BirimizKovulacak.Core.Tests
             }
         }
 
-        [TestCase("SessionPoints"), TestCase("PastManagers"), TestCase("SeenRounds"), TestCase("UsedTopics"), TestCase("TimesFired")]
+        [TestCase("SessionPoints"), TestCase("PastManagers"), TestCase("SeenRounds"), TestCase("UsedTopics"), TestCase("TimesFired"), TestCase("HiddenRoles"), TestCase("RoundUses")]
         public void NullHistoryCollectionsAreRejectedAtCreation(string field)
         {
             var setup = Setup(); setup.History = new LineSessionHistory();
@@ -49,8 +49,21 @@ namespace BirimizKovulacak.Core.Tests
             Assert.Throws<ArgumentException>(() => LineEngineFactory.Create(Setup(), config));
             config = LineConfig.CreateDefault(); config.Profiles[0].LeakChance = 1.1f;
             Assert.Throws<ArgumentException>(() => LineEngineFactory.Create(Setup(), config));
-            config = LineConfig.CreateDefault(); config.Rounds.InternShareChance = float.NaN;
+            config = LineConfig.CreateDefault(); config.RecordingFocusWeight = float.NaN;
             Assert.Throws<ArgumentException>(() => LineEngineFactory.Create(Setup(), config));
+        }
+
+        [Test]
+        public void ForcedRoundsStillRespectPlayerMinimums()
+        {
+            var setup = Setup(); var config = LineConfig.CreateDefault();
+            setup.ForceRounds = new System.Collections.Generic.List<RoundType> { RoundType.KayipRapor };
+            config.Rounds.KayipRaporMinPlayers = 3;
+            Assert.Throws<ArgumentException>(() => LineEngineFactory.Create(setup, config));
+            setup.ForceRounds[0] = RoundType.IhbarKutusu;
+            Assert.Throws<ArgumentException>(() => LineEngineFactory.Create(setup, config));
+            setup.Players.Add(new LinePlayerInfo { Id = 3 });
+            Assert.Throws<ArgumentException>(() => LineEngineFactory.Create(setup, config));
         }
 
         [Test]
@@ -76,7 +89,7 @@ namespace BirimizKovulacak.Core.Tests
             var second = engine.BuildView(0, first.DefenderEndTime).Meeting;
             Assert.AreEqual(first.DefenseOrder[1], second.Defender);
             engine.Tick(second.DefenderEndTime);
-            Assert.AreEqual(first.DefenseOrder[2], engine.BuildView(0, second.DefenderEndTime).Meeting.Defender);
+            Assert.AreEqual(LinePhase.FinalVote, engine.Phase);
         }
     }
 }

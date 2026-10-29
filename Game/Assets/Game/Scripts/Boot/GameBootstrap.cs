@@ -23,6 +23,9 @@ namespace BirimizKovulacak.Game
             MatchLog.Initialize(name);
             Loc.Load(Loc.Language);
             GameInput.Initialize();
+            // v3: the host binds voice through HostLineVoiceBridge (calls-only day, all-hear meetings, defense floor).
+            VoiceSystem.ExternalHostProviders = true;
+            VoiceSystem.HostSessionActive = () => HostLineController.Current != null;
             if (GetComponent<VoiceSystem>() == null) gameObject.AddComponent<VoiceSystem>();
             if (GetComponent<LineClient>() == null) gameObject.AddComponent<LineClient>();
             if (System.Array.IndexOf(System.Environment.GetCommandLineArgs(), "-uimock") >= 0) gameObject.AddComponent<LineMockDriver>();

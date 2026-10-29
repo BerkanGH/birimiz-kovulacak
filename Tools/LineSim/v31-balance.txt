@@ -1,0 +1,43 @@
+Default rules; 2 s host step; 10-week sessions; seeds start at 1927; bots use only recipient views (no simulated speech or shared hidden knowledge).
+3 players, both: 2000 weeks, 15.57 ms/week; 23.14 simulated minutes/week; 323991 actions, 40902 private-busy call results; 10009 recordings picked.
+  Applied blame/player/round: PrimHavuzu=-0.372 FarkliEposta=-0.104 TerfiListesi=-1.132 OrtakSifre=-0.044
+  Fired by seat: 0=691 1=674 2=635
+  Agenda hits by seat: 0=928 1=936 2=1000
+  Fired by trick: SahteEposta=426 KahveDok=410 FisCek=424 InternetKes=352 HatDinle=388 KayitSil=0
+  Strict prior-evening leader fired: 65.42% (1226/1874 strict-leader weeks).
+4 players, both: 2000 weeks, 18.26 ms/week; 23.47 simulated minutes/week; 455592 actions, 46107 private-busy call results; 9940 recordings picked.
+  Applied blame/player/round: PrimHavuzu=-0.680 FarkliEposta=-0.108 KayipRapor=-0.098 TerfiListesi=-0.871 OrtakSifre=0.212
+  Fired by seat: 0=494 1=505 2=469 3=532
+  Agenda hits by seat: 0=608 1=571 2=582 3=570
+  Fired by trick: SahteEposta=429 KahveDok=378 FisCek=395 InternetKes=393 HatDinle=405 KayitSil=0
+  Strict prior-evening leader fired: 77.60% (1434/1848 strict-leader weeks).
+5 players, both: 2000 weeks, 23.62 ms/week; 24.21 simulated minutes/week; 566194 actions, 74321 private-busy call results; 10092 recordings picked.
+  Applied blame/player/round: PrimHavuzu=-0.519 FarkliEposta=-0.124 KayipRapor=-0.097 IhbarKutusu=0.319 TerfiListesi=-0.687 OrtakSifre=0.371
+  Fired by seat: 0=416 1=404 2=395 3=436 4=349
+  Agenda hits by seat: 0=465 1=527 2=503 3=478 4=531
+  Fired by trick: SahteEposta=383 KahveDok=444 FisCek=400 InternetKes=371 HatDinle=402 KayitSil=0
+  Strict prior-evening leader fired: 77.01% (1397/1814 strict-leader weeks).
+6 players, both: 2000 weeks, 58.18 ms/week; 24.35 simulated minutes/week; 694611 actions, 85035 private-busy call results; 10069 recordings picked.
+  Applied blame/player/round: PrimHavuzu=-0.709 FarkliEposta=-0.131 KayipRapor=-0.117 IhbarKutusu=0.245 TerfiListesi=-0.529 OrtakSifre=0.479
+  Fired by seat: 0=360 1=363 2=311 3=350 4=296 5=320
+  Agenda hits by seat: 0=407 1=404 2=383 3=392 4=405 5=415
+  Fired by trick: SahteEposta=386 KahveDok=388 FisCek=429 InternetKes=411 HatDinle=386 KayitSil=0
+  Six-player mid-week view: 979 bytes.
+  Strict prior-evening leader fired: 76.36% (1363/1785 strict-leader weeks).
+
+Rank uses the final shortlist's blame, warnings, seeded tie order; lower ranks cannot be fired. Prior-evening leader includes ties.
+| Players | Weeks | Fired rank 1 | Rank 2 | Rank 3 | Ranks 4-6 | Prior-evening leader fired | Final vote changed outcome | Odd caught | Culprit caught | Password cracked |
+|---|---|---|---|---|---|---|---|---|---|---|
+| 3 | 2000 | 76.40% | 23.60% | 0.00% | 0.00% | 67.30% | 23.60% | 26.57% | n/a | 2.58% |
+| 4 | 2000 | 95.95% | 4.05% | 0.00% | 0.00% | 78.40% | 4.05% | 18.20% | 23.80% | 0.00% |
+| 5 | 2000 | 93.05% | 6.60% | 0.35% | 0.00% | 78.05% | 6.95% | 13.01% | 19.77% | 0.00% |
+| 6 | 2000 | 95.70% | 4.10% | 0.20% | 0.00% | 77.80% | 4.30% | 10.41% | 13.62% | 0.00% |
+
+Mean applied blame delta / mean absolute swing per player per round (floor and favourite included).
+| Players | Bonus Pool | Odd Email | Lost Report | Complaint Box | Promotion List | Shared Password | Tricks/player/week | Trick allowance used | Tips/player/week | Tip allowance used |
+|---|---|---|---|---|---|---|---|---|---|---|
+| 3 | -0.372 / 1.989 | -0.104 / 1.184 | n/a | n/a | -1.132 / 1.132 | -0.044 / 1.273 | 1.491 | 99.41% | 0.716 | 71.57% |
+| 4 | -0.680 / 1.921 | -0.108 / 0.868 | -0.098 / 0.933 | n/a | -0.871 / 0.871 | 0.212 / 1.192 | 1.493 | 99.53% | 0.723 | 72.31% |
+| 5 | -0.519 / 1.998 | -0.124 / 0.665 | -0.097 / 0.725 | 0.319 / 0.883 | -0.687 / 0.687 | 0.371 / 1.148 | 1.491 | 99.39% | 0.716 | 71.60% |
+| 6 | -0.709 / 1.949 | -0.131 / 0.522 | -0.117 / 0.555 | 0.245 / 0.815 | -0.529 / 0.529 | 0.479 / 1.119 | 1.490 | 99.32% | 0.722 | 72.17% |
+Six-player idle Tick: 17881091/s, 0 bytes allocated over 1000000 ticks.

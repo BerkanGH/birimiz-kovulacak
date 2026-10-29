@@ -57,6 +57,7 @@ namespace BirimizKovulacak.Game
         double _abandonedAt = -1;
         bool _resultLogged;
         int _recordingsPhaseKey = -1;
+        LinePhase _lastPhase = LinePhase.None;
 
         public ILineEngine Engine => _engine;
         public bool WeekRunning => _engine != null;
@@ -66,7 +67,18 @@ namespace BirimizKovulacak.Game
         public int WeeksPlayed => _history != null ? _history.WeeksPlayed : 0;
         public string ConfigJson { get; private set; }
 
-        public double Now => NetworkManager.Singleton != null && NetworkManager.Singleton.IsListening ? NetworkManager.Singleton.ServerTime.Time : Time.realtimeSinceStartupAsDouble;
+        /// <summary>Host time for the engine: NGO server time, clamped so it never goes backwards (the engine requires monotonic time).</summary>
+        public double Now
+        {
+            get
+            {
+                double t = NetworkManager.Singleton != null && NetworkManager.Singleton.IsListening ? NetworkManager.Singleton.ServerTime.Time : Time.realtimeSinceStartupAsDouble;
+                if (t < _clock) t = _clock;
+                _clock = t;
+                return t;
+            }
+        }
+        double _clock;
 
         public HostLineController()
         {
@@ -79,6 +91,7 @@ namespace BirimizKovulacak.Game
         public void Attach(NetSession session)
         {
             _session = session;
+            HostLineVoiceBridge.Bind(this);
             foreach (var s in _slots)
                 if (s.Occupied && !s.Virtual && s.Connected)
                     _session.SendLineWelcome(s.ClientId, new LineWelcome { Slot = s.Index, ReconnectToken = s.Token, WeekId = _weekId }, ConfigJson);
@@ -224,6 +237,7 @@ namespace BirimizKovulacak.Game
         {
             if (WeekRunning || RecordingsEnabled == on) return;
             RecordingsEnabled = on;
+            if (VoiceSystem.Instance != null) VoiceSystem.Instance.RecordingEnabled = on;
             BroadcastLobby();
         }
 
@@ -283,7 +297,7 @@ namespace BirimizKovulacak.Game
             {
                 WeekId = _weekId,
                 Seed = args.Seed != 0 ? args.Seed + _weekId - 1 : _rng.Next(1, int.MaxValue),
-                StartTime = Now + 0.5,
+                StartTime = Now, // the engine clock starts here; anything earlier would be time going backwards
                 Length = Length,
                 ManagerProfileId = args.ManagerProfile ?? "",
                 RecordingsEnabled = RecordingsEnabled,
@@ -398,6 +412,12 @@ namespace BirimizKovulacak.Game
             }
             try { _engine.Tick(now); }
             catch (Exception e) { Debug.LogException(e); }
+            if (_engine.Phase != _lastPhase)
+            {
+                // Recordings live for one day only: drop them when the next day (or the results) begins.
+                if (_engine.Phase == LinePhase.Morning || _engine.Phase == LinePhase.WeekResults) VoiceSystem.Instance?.ClearRecordings();
+                _lastPhase = _engine.Phase;
+            }
 
             if (now >= _nextBotTick) { _nextBotTick = now + BotInterval; TickBots(now); }
             TriggerRecordings(now);
@@ -528,6 +548,7 @@ namespace BirimizKovulacak.Game
         {
             if (Current == this) Current = null;
             _engine = null;
+            HostLineVoiceBridge.Unbind();
         }
     }
 }

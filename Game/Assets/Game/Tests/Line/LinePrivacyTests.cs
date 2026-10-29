@@ -72,7 +72,7 @@ namespace BirimizKovulacak.Core.Tests.Line
                 switch (e.Type)
                 {
                     case LineEventType.CallIncoming: case LineEventType.CallConnected: case LineEventType.CallEnded:
-                    case LineEventType.CallBusy: case LineEventType.MailReceived: case LineEventType.TrickHit:
+                    case LineEventType.CallBusy: case LineEventType.MissedCall: case LineEventType.MailReceived: case LineEventType.TrickHit:
                     case LineEventType.TrickUsed: case LineEventType.TipFiled: case LineEventType.Wiretap:
                         Assert.AreEqual(LineAudience.Player, e.Audience); break;
                 }
@@ -89,7 +89,7 @@ namespace BirimizKovulacak.Core.Tests.Line
         {
             var s = LineTest.MakeSetup(6);
             s.ForceRounds = new List<RoundType> { RoundType.PrimHavuzu, RoundType.IhbarKutusu, RoundType.FarkliEposta, RoundType.KayipRapor, RoundType.TerfiListesi, RoundType.OrtakSifre };
-            s.ForceTricks = new List<TrickType> { TrickType.HatDinle, TrickType.SahteEposta, TrickType.KahveDok, TrickType.FisCek, TrickType.InternetKes, TrickType.KayitSil };
+            s.ForceTricks = new List<TrickType> { TrickType.HatDinle, TrickType.SahteEposta, TrickType.KahveDok, TrickType.FisCek, TrickType.InternetKes, TrickType.HatDinle };
             var m = new LineTest(s, c => c.Profiles.ForEach(p => { p.TraceChance = 0; p.LeakChance = 0; }));
             var phases = new HashSet<LinePhase>(); var rounds = new HashSet<RoundType>();
             while (!m.Engine.IsFinished)
@@ -104,19 +104,21 @@ namespace BirimizKovulacak.Core.Tests.Line
                     if (m.Engine.Day == 1 && m.View().RoundIndex == 0)
                     {
                         m.Ok(0, LineVerb.UseTrick, 2); m.Ok(5, LineVerb.UseTrick, 1);
-                        m.Ok(1, LineVerb.UseTrick, 4, 7, 3); m.Ok(4, LineVerb.TipOff, 0); ScanAll(m);
+                        m.Ok(1, LineVerb.UseTrick, 4, 7, 3); ScanAll(m);
                     }
+                    if (m.Engine.Day == 2 && m.View().RoundIndex == 0) m.Ok(4, LineVerb.TipOff, 0);
                     for (int p = 0; p < 6; p++)
                     {
                         var r = m.View(p).Round;
-                        if (r.Type == RoundType.OrtakSifre) m.Ok(p, LineVerb.Attempt, a: 777777);
+                        if (r.Type == RoundType.OrtakSifre) m.Ok(p, LineVerb.SubmitChoice, a: 777777);
                         else m.Ok(p, LineVerb.SubmitChoice, (p + 1) % 6, r.Type == RoundType.PrimHavuzu ? p % 2 : r.Type == RoundType.IhbarKutusu ? p : r.IsOdd ? r.GuessOptions[0] : -1);
                     }
                     ScanAll(m);
                 }
                 if (m.Engine.Phase == LinePhase.MeetingVote || m.Engine.Phase == LinePhase.FinalVote)
                 {
-                    for (int p = 0; p < 6; p++) m.Ok(p, LineVerb.Vote, (p + 1) % 6);
+                    for (int p = 0; p < 6; p++) m.Ok(p, LineVerb.Vote,
+                        m.Engine.Phase == LinePhase.FinalVote ? m.View().Meeting.Shortlist.First(id => id != p) : (p + 1) % 6);
                     ScanAll(m);
                 }
                 m.Next();
@@ -132,8 +134,8 @@ namespace BirimizKovulacak.Core.Tests.Line
             var aSetup = LineTest.MakeSetup(6); var bSetup = LineTest.MakeSetup(6);
             aSetup.ForceAgendas = new List<int> { 1, 2, 0, 4, 5, 3 };
             bSetup.ForceAgendas = new List<int> { 2, 0, 1, 4, 5, 3 };
-            aSetup.ForceTricks = new List<TrickType> { TrickType.SahteEposta, TrickType.KahveDok, TrickType.FisCek, TrickType.InternetKes, TrickType.HatDinle, TrickType.KayitSil };
-            bSetup.ForceTricks = new List<TrickType> { TrickType.KahveDok, TrickType.SahteEposta, TrickType.FisCek, TrickType.InternetKes, TrickType.HatDinle, TrickType.KayitSil };
+            aSetup.ForceTricks = new List<TrickType> { TrickType.SahteEposta, TrickType.KahveDok, TrickType.FisCek, TrickType.InternetKes, TrickType.HatDinle, TrickType.HatDinle };
+            bSetup.ForceTricks = new List<TrickType> { TrickType.KahveDok, TrickType.SahteEposta, TrickType.FisCek, TrickType.InternetKes, TrickType.HatDinle, TrickType.HatDinle };
             var a = new LineTest(aSetup); var b = new LineTest(bSetup);
             while (a.Engine.Phase != LinePhase.WeekResults)
             {
@@ -160,9 +162,13 @@ namespace BirimizKovulacak.Core.Tests.Line
         public void MeetingVoteTargetCannotBeDistinguishedUntilVerdict(LinePhase phase)
         {
             var a = new LineTest(); var b = new LineTest(); a.Until(phase); b.Until(phase);
-            a.Engine.DrainEvents(); b.Engine.DrainEvents(); a.Ok(0, LineVerb.Vote, 1); b.Ok(0, LineVerb.Vote, 2);
-            CollectionAssert.AreEqual(Visible(a, 3), Visible(b, 3));
-            CollectionAssert.AreEqual(LineCodec.EncodeEvents(a.Engine.DrainEvents().Where(e => e.IsVisibleTo(3)).ToList()), LineCodec.EncodeEvents(b.Engine.DrainEvents().Where(e => e.IsVisibleTo(3)).ToList()));
+            int voter = phase == LinePhase.FinalVote ? a.View().Players.First(p => !a.View().Meeting.Shortlist.Contains(p.Id)).Id : 0;
+            int left = phase == LinePhase.FinalVote ? a.View().Meeting.Shortlist[0] : 1;
+            int right = phase == LinePhase.FinalVote ? a.View().Meeting.Shortlist[1] : 2;
+            int observer = Enumerable.Range(0, 4).First(p => p != voter);
+            a.Engine.DrainEvents(); b.Engine.DrainEvents(); a.Ok(voter, LineVerb.Vote, left); b.Ok(voter, LineVerb.Vote, right);
+            CollectionAssert.AreEqual(Visible(a, observer), Visible(b, observer));
+            CollectionAssert.AreEqual(LineCodec.EncodeEvents(a.Engine.DrainEvents().Where(e => e.IsVisibleTo(observer)).ToList()), LineCodec.EncodeEvents(b.Engine.DrainEvents().Where(e => e.IsVisibleTo(observer)).ToList()));
         }
 
         [Test]
@@ -229,7 +235,7 @@ namespace BirimizKovulacak.Core.Tests.Line
         }
 
         [Test]
-        public void PasswordCodeBytesAppearOnlyWhenAttemptedOrRevealed()
+        public void PasswordCodeBytesAppearOnlyForSubmitterUntilRevealed()
         {
             var s = LineTest.MakeSetup(6); s.ForceRounds = new List<RoundType> { RoundType.OrtakSifre, RoundType.IhbarKutusu, RoundType.PrimHavuzu, RoundType.TerfiListesi, RoundType.FarkliEposta, RoundType.KayipRapor };
             var m = new LineTest(s); m.Until(LinePhase.RoundIntro); int code = 0;
@@ -238,9 +244,39 @@ namespace BirimizKovulacak.Core.Tests.Line
             var secret = BitConverter.GetBytes(code);
             for (int p = 0; p < 6; p++) Assert.IsFalse(Contains(Visible(m, p), secret));
             m.Next(); for (int p = 0; p < 6; p++) Assert.IsFalse(Contains(Visible(m, p), secret));
-            m.Ok(0, LineVerb.Attempt, a: code);
-            for (int p = 0; p < 6; p++) Assert.IsTrue(Contains(Visible(m, p), secret), "Attempts are immediately public.");
+            m.Engine.DrainEvents(); m.Ok(0, LineVerb.SubmitChoice, a: code);
+            Assert.IsTrue(Contains(Visible(m, 0), secret));
+            for (int p = 1; p < 6; p++) Assert.IsFalse(Contains(Visible(m, p), secret), "Codes stay private until reveal.");
+            Assert.IsFalse(Contains(LineCodec.EncodeEvents(m.Engine.DrainEvents()), secret));
             m.Reveal(); for (int p = 0; p < 6; p++) Assert.IsTrue(Contains(Visible(m, p), secret));
+        }
+
+        [Test]
+        public void WeeklyAllowanceConsumptionIsPrivateBeforeDossier()
+        {
+            var a = LineTest.WithTrick(TrickType.HatDinle); var b = LineTest.WithTrick(TrickType.HatDinle);
+            a.Engine.DrainEvents(); b.Engine.DrainEvents();
+            a.Ok(0, LineVerb.UseTrick, 1); a.Ok(0, LineVerb.TipOff, 1);
+            Assert.AreEqual(0, a.View().Mine.TricksLeftThisWeek); Assert.AreEqual(0, a.View().Mine.TipsLeftThisWeek);
+            for (int p = 1; p < 4; p++) CollectionAssert.AreEqual(Visible(a, p), Visible(b, p));
+            Assert.IsEmpty(a.Engine.DrainEvents().Where(e => e.IsVisibleTo(2)));
+        }
+
+        [TestCase(RoundType.PrimHavuzu, "SecondPartners")]
+        [TestCase(RoundType.KayipRapor, "NoAlibi")]
+        [TestCase(RoundType.OrtakSifre, "Digits")]
+        public void NewRoundSecretsPassEncodedSentinelScan(RoundType type, string field)
+        {
+            const int sentinel = 0x65247A31;
+            var s = LineTest.MakeSetup(5); s.ForceRounds = new List<RoundType> { type }; s.ForceHidden = new List<int> { 0 };
+            var m = new LineTest(s); m.Until(LinePhase.RoundIntro);
+            object state = m.Engine.GetType().GetField("round", BindingFlags.NonPublic | BindingFlags.Instance).GetValue(m.Engine);
+            object value = state.GetType().GetField(field, BindingFlags.NonPublic | BindingFlags.Instance).GetValue(state);
+            if (value is int[] array) array[0] = sentinel; else ((List<int>)value).Add(sentinel);
+            int leftNeighbor = type == RoundType.OrtakSifre ? m.View().Round.PositionOwners[(m.View().Round.DigitPosition + 4) % 5] : -1;
+            byte[] secret = BitConverter.GetBytes(sentinel);
+            for (int p = 0; p < 5; p++)
+                Assert.AreEqual(p == 0 || p == leftNeighbor, Contains(Visible(m, p), secret), "Recipient " + p);
         }
     }
 }

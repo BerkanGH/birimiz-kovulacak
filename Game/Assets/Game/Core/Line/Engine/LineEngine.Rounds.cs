@@ -8,13 +8,15 @@ namespace BirimizKovulacak.Core
         private sealed class RoundState
         {
             internal RoundType Type;
-            internal int Hidden = -1, Topic = -1, Code, InternChoice, SolvedBy = -1;
+            internal int Hidden = -1, Topic = -1, OddTopic = -1, Code, SolvedBy = -1;
             internal bool Solved;
             internal readonly int[] Partners = { -1, -1, -1, -1, -1, -1 };
+            internal readonly int[] SecondPartners = { -1, -1, -1, -1, -1, -1 };
             internal readonly int[] Clues = { -1, -1, -1, -1, -1, -1 };
             internal readonly int[] Digits = new int[6];
             internal readonly List<int> Order = new List<int>();
             internal readonly List<int> Options = new List<int>();
+            internal readonly List<int> NoAlibi = new List<int>();
             internal readonly List<LineAttemptView> Attempts = new List<LineAttemptView>();
             internal LineRoundReveal Reveal;
         }
@@ -23,12 +25,15 @@ namespace BirimizKovulacak.Core
             internal int Author, Target, Reason;
         }
         private RoundState round;
+        private readonly int[] hiddenRoleUses = new int[6];
+        private readonly int[] roundUses = new int[7];
         private readonly List<Complaint> complaints = new List<Complaint>();
 
         private void StartRound(double time)
         {
             int flat = Day * c.RoundsPerDay + roundIndex;
             round = new RoundState { Type = schedule[flat] };
+            roundUses[(int)round.Type]++;
             firstTimeRound = !seen.Contains(round.Type);
             if (firstTimeRound) seen.Add(round.Type);
             foreach (int id in ids)
@@ -38,96 +43,130 @@ namespace BirimizKovulacak.Core
             round.Order.AddRange(ids); rng.Shuffle(round.Order);
             if (round.Type == RoundType.PrimHavuzu)
             {
-                for (int i = 0; i < round.Order.Count; i += 2)
+                for (int i = 0; i < round.Order.Count;)
                 {
-                    int a = round.Order[i], b = i + 1 < round.Order.Count ? round.Order[i + 1] : LineIds.Intern;
-                    round.Partners[a] = b; if (b != LineIds.Intern) round.Partners[b] = a;
+                    int size = round.Order.Count - i == 3 ? 3 : 2;
+                    for (int j = 0; j < size; j++)
+                    {
+                        int id = round.Order[i + j];
+                        round.Partners[id] = round.Order[i + (j + 1) % size];
+                        if (size == 3) round.SecondPartners[id] = round.Order[i + (j + 2) % size];
+                    }
+                    i += size;
                 }
-                round.InternChoice = rng.Unit() < c.Rounds.InternShareChance ? 0 : 1;
             }
             if (round.Type == RoundType.FarkliEposta || round.Type == RoundType.KayipRapor || round.Type == RoundType.OrtakSifre)
             {
-                round.Hidden = ids[rng.Index(ids.Count)];
+                round.Hidden = ChooseHidden();
                 if (setup.ForceHidden != null && setup.ForceHidden.Count > flat && setup.ForceHidden[flat] != -1)
                 {
                     if (!HasSeat(setup.ForceHidden[flat])) throw new ArgumentException("Invalid forced hidden player.");
                     round.Hidden = setup.ForceHidden[flat];
                 }
+                hiddenRoleUses[round.Hidden]++;
             }
             if (round.Type == RoundType.FarkliEposta)
             {
-                var available = new List<int>();
-                for (int i = 0; i < c.TopicPairs; i++) if (!usedTopics.Contains(i)) available.Add(i);
-                if (available.Count == 0) for (int i = 0; i < c.TopicPairs; i++) available.Add(i);
-                round.Topic = available[rng.Index(available.Count)];
-                if (!usedTopics.Contains(round.Topic)) usedTopics.Add(round.Topic);
-                available.Clear();
-                for (int i = 0; i < c.TopicPairs; i++) if (i != round.Topic) available.Add(i);
-                rng.Shuffle(available); round.Options.Add(round.Topic);
-                for (int i = 0; i < available.Count && round.Options.Count < c.Rounds.OddGuessOptions; i++) round.Options.Add(available[i]);
+                round.Topic = ChooseTopic(-1);
+                int category = round.Topic / c.TopicsPerCategory;
+                round.OddTopic = ChooseTopic(category);
+                for (int i = 0; i < c.TopicsPerCategory; i++) round.Options.Add(category * c.TopicsPerCategory + i);
                 rng.Shuffle(round.Options);
             }
             if (round.Type == RoundType.KayipRapor)
             {
-                for (int i = 0; i < round.Order.Count; i++)
-                {
-                    int next = (i + 1) % ids.Count;
-                    if (round.Order[next] == round.Hidden) next = (next + 1) % ids.Count;
-                    round.Clues[round.Order[i]] = round.Order[next];
-                }
+                DealSlips();
             }
             if (round.Type == RoundType.OrtakSifre)
-                for (int i = 0; i < ids.Count; i++) { int digit = rng.Index(10); round.Digits[round.Order[i]] = digit; round.Code = round.Code * 10 + digit; }
+                // Codes are integer actions with exactly N digits, so the first digit is nonzero.
+                for (int i = 0; i < ids.Count; i++) { int digit = i == 0 ? 1 + rng.Index(9) : rng.Index(10); round.Digits[round.Order[i]] = digit; round.Code = round.Code * 10 + digit; }
             Enter(LinePhase.RoundIntro, time, firstTimeRound ? c.Durations.RoundIntroFirst : c.Durations.RoundIntro);
+        }
+
+        private int ChooseHidden()
+        {
+            var options = new List<int>(); int minWeek = int.MaxValue, minSession = int.MaxValue;
+            foreach (int id in ids)
+            {
+                int session = setup.History != null && setup.History.HiddenRoles.Count > id ? setup.History.HiddenRoles[id] : 0;
+                if (hiddenRoleUses[id] < minWeek || (hiddenRoleUses[id] == minWeek && session < minSession))
+                { minWeek = hiddenRoleUses[id]; minSession = session; options.Clear(); }
+                if (hiddenRoleUses[id] == minWeek && session == minSession) options.Add(id);
+            }
+            // Normal schedules have at most N hidden rounds; forced test schedules can exhaust the seats.
+            return options[rng.Index(options.Count)];
+        }
+
+        private int ChooseTopic(int excludedCategory)
+        {
+            var options = new List<int>();
+            for (int pass = 0; pass < 2 && options.Count == 0; pass++)
+                for (int topic = 0; topic < c.TopicCategories * c.TopicsPerCategory; topic++)
+                    if (topic / c.TopicsPerCategory != excludedCategory && (pass != 0 || !usedTopics.Contains(topic))) options.Add(topic);
+            int chosen = options[rng.Index(options.Count)];
+            if (!usedTopics.Contains(chosen)) usedTopics.Add(chosen);
+            return chosen;
+        }
+
+        private void DealSlips()
+        {
+            var named = new List<int>();
+            foreach (int id in ids) if (id != round.Hidden) named.Add(id);
+            rng.Shuffle(named);
+            int missing = ids.Count == 6 ? 2 : 1;
+            for (int i = 0; i < missing; i++) { round.NoAlibi.Add(named[0]); named.RemoveAt(0); }
+            // Give each named innocent a witness first, then fill the other holders independently.
+            var holders = new List<int>(ids);
+            foreach (int innocent in named)
+            {
+                var options = new List<int>();
+                foreach (int holder in holders) if (holder != innocent && holder != round.Hidden) options.Add(holder);
+                int witness = options[rng.Index(options.Count)];
+                round.Clues[witness] = innocent; holders.Remove(witness);
+            }
+            foreach (int holder in holders)
+            {
+                var options = new List<int>();
+                foreach (int innocent in named) if (holder != innocent) options.Add(innocent);
+                round.Clues[holder] = options[rng.Index(options.Count)];
+            }
         }
 
         private LineFailure RoundAction(int id, LineAction a, double time)
         {
             if (Phase != LinePhase.RoundPlay) return LineFailure.WrongPhase;
+            // v3.1 has a changeable private entry, never a live password attempt.
+            if (a.Verb == LineVerb.Attempt) return LineFailure.BadParam;
             var s = seats[id];
             if (s.BlockedUntil > time) return LineFailure.ComputerBlocked;
-            if (a.Verb == LineVerb.Attempt)
+            if (round.Type == RoundType.OrtakSifre)
             {
-                if (round.Type != RoundType.OrtakSifre) return LineFailure.NotAvailable;
-                if (round.Solved) return LineFailure.RoundSolved;
-                if (s.Attempts >= c.Rounds.AttemptsPerPlayer) return LineFailure.NoAttemptsLeft;
-                int limit = 1; for (int i = 0; i < ids.Count; i++) limit *= 10;
-                if (a.A < 0 || a.A >= limit) return LineFailure.BadParam;
-                int correct = 0, code = a.A;
-                for (int i = ids.Count - 1; i >= 0; i--) { if (code % 10 == round.Digits[round.Order[i]]) correct++; code /= 10; }
-                s.Attempts++; s.Submitted = true; s.A = a.A;
-                round.Attempts.Add(new LineAttemptView { Player = id, Code = a.A, Correct = correct, Time = time });
-                Emit(LineEventType.AttemptMade, time, actor: id, a: correct);
-                if (correct == ids.Count) { round.Solved = true; round.SolvedBy = id; Emit(LineEventType.PasswordCracked, time, actor: id); }
+                int minimum = 1; for (int i = 1; i < ids.Count; i++) minimum *= 10;
+                if (a.A < minimum || a.A >= minimum * 10) return LineFailure.BadParam;
             }
+            else if (round.Type == RoundType.PrimHavuzu)
+            { if (a.A != 0 && a.A != 1) return LineFailure.BadParam; }
             else
             {
-                if (round.Type == RoundType.OrtakSifre) return LineFailure.NotAvailable;
-                if (round.Type == RoundType.PrimHavuzu)
-                { if (a.A != 0 && a.A != 1) return LineFailure.BadParam; }
-                else
-                {
-                    bool abstain = round.Type == RoundType.IhbarKutusu || round.Type == RoundType.TerfiListesi;
-                    var target = TargetFailure(id, a.Target, false, abstain); if (target != LineFailure.None) return target;
-                    if (round.Type == RoundType.IhbarKutusu && a.Target != -1 && (a.A < 0 || a.A >= c.Rounds.ComplaintReasons)) return LineFailure.BadParam;
-                    if (round.Type == RoundType.FarkliEposta && a.A != -1 && (round.Hidden != id || !round.Options.Contains(a.A))) return LineFailure.BadParam;
-                }
-                s.Submitted = true; s.Target = round.Type == RoundType.PrimHavuzu ? -1 : a.Target;
-                s.A = round.Type == RoundType.KayipRapor || round.Type == RoundType.TerfiListesi ? -1 : a.A;
-                Emit(LineEventType.RoundSubmitted, time, actor: id);
+                bool abstain = round.Type == RoundType.IhbarKutusu || round.Type == RoundType.TerfiListesi;
+                var target = TargetFailure(id, a.Target, false, abstain); if (target != LineFailure.None) return target;
+                if (round.Type == RoundType.IhbarKutusu && a.Target != -1 && (a.A < 0 || a.A >= c.Rounds.ComplaintReasons)) return LineFailure.BadParam;
+                if (round.Type == RoundType.FarkliEposta && a.A != -1 && (round.Hidden != id || !round.Options.Contains(a.A))) return LineFailure.BadParam;
             }
+            s.Submitted = true; s.Target = round.Type == RoundType.PrimHavuzu || round.Type == RoundType.OrtakSifre ? -1 : a.Target;
+            s.A = round.Type == RoundType.KayipRapor || round.Type == RoundType.TerfiListesi ? -1 : a.A;
+            Emit(LineEventType.RoundSubmitted, time, actor: id);
             Shorten(time); return LineFailure.None;
         }
 
         private void Shorten(double time)
         {
-            if (round.Type == RoundType.OrtakSifre) { if (!round.Solved) return; }
-            else foreach (int id in ids) if (seats[id].Connected && !seats[id].Submitted) return;
+            foreach (int id in ids) if (seats[id].Connected && !seats[id].Submitted) return;
             double end = Math.Min(PhaseEndTime, time + c.Durations.AllSubmittedRemaining);
             if (end != PhaseEndTime) { PhaseEndTime = end; Changed(); }
         }
 
-        private int Choice(int id) { return id == LineIds.Intern ? round.InternChoice : seats[id].Connected && seats[id].Submitted ? seats[id].A : 0; }
+        private int Choice(int id) { return seats[id].Connected && seats[id].Submitted ? seats[id].A : 0; }
         private int ChoiceTarget(int id) { return seats[id].Connected && seats[id].Submitted ? seats[id].Target : -1; }
         private int Plurality(int[] counts, bool blameTie = false)
         {
@@ -153,8 +192,7 @@ namespace BirimizKovulacak.Core
             if (applied != 0)
             {
                 Changed();
-                // The total is public, but the false-tip reason must not identify its confidential author.
-                Emit(LineEventType.BlameChanged, time, target: id, a: applied, b: (int)(reason == BlameReason.FalseTip ? BlameReason.None : reason));
+                Emit(LineEventType.BlameChanged, time, target: id, a: applied, b: (int)reason);
             }
             return new LineBlameDelta { Player = id, Delta = applied, Reason = reason, Round = type, Trick = trick, Day = Day };
         }
@@ -166,19 +204,37 @@ namespace BirimizKovulacak.Core
             var r = new LineRoundReveal { Type = round.Type, Index = roundIndex }; var rules = c.Rounds;
             if (round.Type == RoundType.PrimHavuzu)
             {
-                for (int i = 0; i < round.Order.Count; i += 2)
+                for (int i = 0; i < round.Order.Count;)
                 {
                     int a = round.Order[i], b = round.Partners[a], ca = Choice(a), cb = Choice(b);
+                    int third = round.SecondPartners[a];
+                    if (third >= 0)
+                    {
+                        int cc = Choice(third), takers = ca + cb + cc;
+                        r.Pairs.Add(new LinePairReveal { A = a, B = b, C = third, ChoiceA = ca, ChoiceB = cb, ChoiceC = cc });
+                        Delta(r, a, TrioDelta(ca, takers), time); Delta(r, b, TrioDelta(cb, takers), time); Delta(r, third, TrioDelta(cc, takers), time);
+                        i += 3; continue;
+                    }
                     r.Pairs.Add(new LinePairReveal { A = a, B = b, ChoiceA = ca, ChoiceB = cb });
                     int da, db;
                     if (ca == 0 && cb == 0) da = db = rules.PrimBothShare;
                     else if (ca == 1 && cb == 1) da = db = rules.PrimBothTake;
                     else { int taker = rules.PrimTakerWins - profile.GreedBonus; da = ca == 1 ? taker : rules.PrimSharerLoses; db = cb == 1 ? taker : rules.PrimSharerLoses; }
                     Delta(r, a, da, time); Delta(r, b, db, time);
+                    i += 2;
                 }
             }
             else if (round.Type == RoundType.OrtakSifre)
             {
+                int correct = 0;
+                for (int id = 0; id < seats.Length; id++)
+                {
+                    int code = HasSeat(id) && seats[id].Connected && seats[id].Submitted ? seats[id].A : -1;
+                    r.CodesByPlayer.Add(code);
+                    if (code == round.Code) correct++;
+                }
+                round.Solved = correct > ids.Count / 2;
+                if (round.Solved) Emit(LineEventType.PasswordCracked, time);
                 r.Hidden = round.Hidden; r.Code = round.Code; r.Solved = round.Solved; r.SolvedBy = round.SolvedBy;
                 foreach (int id in ids) Delta(r, id, round.Solved ? (id == round.Hidden ? rules.PasswordCrackedSaboteur : rules.PasswordCracked) :
                     (id == round.Hidden ? rules.PasswordFailedSaboteur : rules.PasswordFailed), time);
@@ -242,6 +298,14 @@ namespace BirimizKovulacak.Core
                 }
             }
             round.Reveal = r; reveals.Add(r); Changed();
+        }
+
+        private int TrioDelta(int choice, int takers)
+        {
+            if (takers == 0) return c.Rounds.PrimTrioNobodyTakes;
+            if (takers == 3) return c.Rounds.PrimTrioAllTake;
+            if (choice == 0) return c.Rounds.PrimTrioSharer;
+            return (takers == 1 ? c.Rounds.PrimTrioSoloTaker : c.Rounds.PrimTrioPairTakers) - profile.GreedBonus;
         }
     }
 }

@@ -179,7 +179,7 @@ namespace BirimizKovulacak.Core
             var v = new LineAction();
             v.WeekId = r.ReadInt32();
             v.RequestId = r.ReadUInt32();
-            v.Verb = (LineVerb)ReadEnum(r, 11);
+            v.Verb = (LineVerb)ReadEnum(r, 12);
             v.Target = r.ReadInt32();
             v.A = r.ReadInt32();
             v.B = r.ReadInt32();
@@ -223,7 +223,7 @@ namespace BirimizKovulacak.Core
         {
             if (!ReadBool(r)) return null;
             var v = new LineEvent();
-            v.Type = (LineEventType)ReadEnum(r, 21);
+            v.Type = (LineEventType)ReadEnum(r, 23);
             v.Time = r.ReadDouble();
             v.Audience = (LineAudience)ReadEnum(r, 2);
             v.AudiencePlayer = r.ReadInt32();
@@ -302,6 +302,9 @@ namespace BirimizKovulacak.Core
             WriteList(w, v.SeenRounds, (writer, item) => { writer.Write((byte)item); });
             WriteList(w, v.UsedTopics, (writer, item) => { writer.Write(item); });
             WriteList(w, v.TimesFired, (writer, item) => { writer.Write(item); });
+            WriteString(w, v.NextManager);
+            WriteList(w, v.HiddenRoles, (writer, item) => { writer.Write(item); });
+            WriteList(w, v.RoundUses, (writer, item) => { writer.Write(item); });
         }
 
         internal static LineSessionHistory ReadLineSessionHistory(BinaryReader r)
@@ -314,6 +317,9 @@ namespace BirimizKovulacak.Core
             v.SeenRounds = ReadList(r, reader => (RoundType)ReadEnum(reader, 6));
             v.UsedTopics = ReadList(r, reader => reader.ReadInt32());
             v.TimesFired = ReadList(r, reader => reader.ReadInt32());
+            v.NextManager = ReadString(r);
+            v.HiddenRoles = ReadList(r, reader => reader.ReadInt32());
+            v.RoundUses = ReadList(r, reader => reader.ReadInt32());
             return v;
         }
 
@@ -479,6 +485,11 @@ namespace BirimizKovulacak.Core
             w.Write(v.PrimSharerLoses);
             w.Write(v.PrimBothTake);
             w.Write(v.InternShareChance);
+            w.Write(v.PrimTrioNobodyTakes);
+            w.Write(v.PrimTrioSoloTaker);
+            w.Write(v.PrimTrioPairTakers);
+            w.Write(v.PrimTrioSharer);
+            w.Write(v.PrimTrioAllTake);
             w.Write(v.HiddenCaught);
             w.Write(v.OddCaughtButGuessed);
             w.Write(v.CorrectVoter);
@@ -489,6 +500,7 @@ namespace BirimizKovulacak.Core
             w.Write(v.ComplaintTop);
             w.Write(v.ComplaintNone);
             w.Write(v.ComplaintReasons);
+            w.Write(v.ComplaintMinPlayers);
             w.Write(v.PromotionWinner);
             w.Write(v.PromotionBacker);
             w.Write(v.PasswordCracked);
@@ -507,6 +519,11 @@ namespace BirimizKovulacak.Core
             v.PrimSharerLoses = r.ReadInt32();
             v.PrimBothTake = r.ReadInt32();
             v.InternShareChance = r.ReadSingle();
+            v.PrimTrioNobodyTakes = r.ReadInt32();
+            v.PrimTrioSoloTaker = r.ReadInt32();
+            v.PrimTrioPairTakers = r.ReadInt32();
+            v.PrimTrioSharer = r.ReadInt32();
+            v.PrimTrioAllTake = r.ReadInt32();
             v.HiddenCaught = r.ReadInt32();
             v.OddCaughtButGuessed = r.ReadInt32();
             v.CorrectVoter = r.ReadInt32();
@@ -517,6 +534,7 @@ namespace BirimizKovulacak.Core
             v.ComplaintTop = r.ReadInt32();
             v.ComplaintNone = r.ReadInt32();
             v.ComplaintReasons = r.ReadInt32();
+            v.ComplaintMinPlayers = r.ReadInt32();
             v.PromotionWinner = r.ReadInt32();
             v.PromotionBacker = r.ReadInt32();
             v.PasswordCracked = r.ReadInt32();
@@ -568,6 +586,20 @@ namespace BirimizKovulacak.Core
             w.Write(v.RoundsPerDay);
             w.Write(v.ShortWeekDays);
             w.Write(v.FullWeekDays);
+            w.Write(v.StartBlame);
+            w.Write(v.LeaderStartBonus);
+            w.Write(v.MaxIhtarsPerPlayerPerWeek);
+            w.Write(v.FinalShortlistSmall);
+            w.Write(v.FinalShortlistLarge);
+            WriteList(w, v.RoundPlayByPlayers, (writer, item) => { writer.Write(item); });
+            w.Write(v.TricksPerWeekShort);
+            w.Write(v.TricksPerWeekFull);
+            w.Write(v.TipsPerWeek);
+            w.Write(v.TipUnlockDayFirstWeek);
+            w.Write(v.TopicCategories);
+            w.Write(v.TopicsPerCategory);
+            w.Write(v.AgendaPointsPerIhtar);
+            w.Write(v.RecordingFocusWeight);
             w.Write(v.SurvivePoints);
             w.Write(v.AgendaPoints);
             w.Write(v.EmployeeOfWeekPoints);
@@ -598,6 +630,20 @@ namespace BirimizKovulacak.Core
             v.RoundsPerDay = r.ReadInt32();
             v.ShortWeekDays = r.ReadInt32();
             v.FullWeekDays = r.ReadInt32();
+            v.StartBlame = r.ReadInt32();
+            v.LeaderStartBonus = r.ReadInt32();
+            v.MaxIhtarsPerPlayerPerWeek = r.ReadInt32();
+            v.FinalShortlistSmall = r.ReadInt32();
+            v.FinalShortlistLarge = r.ReadInt32();
+            v.RoundPlayByPlayers = ReadList(r, reader => reader.ReadSingle());
+            v.TricksPerWeekShort = r.ReadInt32();
+            v.TricksPerWeekFull = r.ReadInt32();
+            v.TipsPerWeek = r.ReadInt32();
+            v.TipUnlockDayFirstWeek = r.ReadInt32();
+            v.TopicCategories = r.ReadInt32();
+            v.TopicsPerCategory = r.ReadInt32();
+            v.AgendaPointsPerIhtar = r.ReadInt32();
+            v.RecordingFocusWeight = r.ReadSingle();
             v.SurvivePoints = r.ReadInt32();
             v.AgendaPoints = r.ReadInt32();
             v.EmployeeOfWeekPoints = r.ReadInt32();
@@ -742,6 +788,8 @@ namespace BirimizKovulacak.Core
             w.Write((byte)v.Trick);
             w.Write(v.TrickUsedToday);
             w.Write(v.TipUsedToday);
+            w.Write(v.TricksLeftThisWeek);
+            w.Write(v.TipsLeftThisWeek);
             w.Write(v.MailsSentToday);
             w.Write(v.ComputerBlockedUntil);
             w.Write((byte)v.ComputerBlockedBy);
@@ -761,6 +809,8 @@ namespace BirimizKovulacak.Core
             v.Trick = (TrickType)ReadEnum(r, 6);
             v.TrickUsedToday = ReadBool(r);
             v.TipUsedToday = ReadBool(r);
+            v.TricksLeftThisWeek = r.ReadInt32();
+            v.TipsLeftThisWeek = r.ReadInt32();
             v.MailsSentToday = r.ReadInt32();
             v.ComputerBlockedUntil = r.ReadDouble();
             v.ComputerBlockedBy = (TrickType)ReadEnum(r, 6);
@@ -858,6 +908,10 @@ namespace BirimizKovulacak.Core
             w.Write(v.Index);
             w.Write(v.PlayEndTime);
             w.Write(v.Partner);
+            WriteList(w, v.Partners, (writer, item) => { writer.Write(item); });
+            WriteList(w, v.NoAlibi, (writer, item) => { writer.Write(item); });
+            w.Write(v.NeighborPosition);
+            w.Write(v.NeighborDigit);
             w.Write(v.TopicId);
             w.Write(v.TopicVariant);
             w.Write(v.IsOdd);
@@ -886,6 +940,10 @@ namespace BirimizKovulacak.Core
             v.Index = r.ReadInt32();
             v.PlayEndTime = r.ReadDouble();
             v.Partner = r.ReadInt32();
+            v.Partners = ReadList(r, reader => reader.ReadInt32());
+            v.NoAlibi = ReadList(r, reader => reader.ReadInt32());
+            v.NeighborPosition = r.ReadInt32();
+            v.NeighborDigit = r.ReadInt32();
             v.TopicId = r.ReadInt32();
             v.TopicVariant = r.ReadInt32();
             v.IsOdd = ReadBool(r);
@@ -947,6 +1005,7 @@ namespace BirimizKovulacak.Core
             w.Write(v.Code);
             w.Write(v.Solved);
             w.Write(v.SolvedBy);
+            WriteList(w, v.CodesByPlayer, (writer, item) => { writer.Write(item); });
             WriteList(w, v.Deltas, (writer, item) => { WriteLineBlameDelta(writer, item); });
         }
 
@@ -969,6 +1028,7 @@ namespace BirimizKovulacak.Core
             v.Code = r.ReadInt32();
             v.Solved = ReadBool(r);
             v.SolvedBy = r.ReadInt32();
+            v.CodesByPlayer = ReadList(r, reader => reader.ReadInt32());
             v.Deltas = ReadList(r, reader => ReadLineBlameDelta(reader));
             return v;
         }
@@ -981,6 +1041,8 @@ namespace BirimizKovulacak.Core
             w.Write(v.B);
             w.Write(v.ChoiceA);
             w.Write(v.ChoiceB);
+            w.Write(v.C);
+            w.Write(v.ChoiceC);
         }
 
         internal static LinePairReveal ReadLinePairReveal(BinaryReader r)
@@ -991,6 +1053,8 @@ namespace BirimizKovulacak.Core
             v.B = r.ReadInt32();
             v.ChoiceA = r.ReadInt32();
             v.ChoiceB = r.ReadInt32();
+            v.C = r.ReadInt32();
+            v.ChoiceC = r.ReadInt32();
             return v;
         }
 
@@ -1063,6 +1127,7 @@ namespace BirimizKovulacak.Core
             w.Write(v.MyVote);
             w.Write(v.IhtarTo);
             WriteList(w, v.Votes, (writer, item) => { WriteLineVoteView(writer, item); });
+            WriteList(w, v.Shortlist, (writer, item) => { writer.Write(item); });
             WriteList(w, v.DefenseOrder, (writer, item) => { writer.Write(item); });
             w.Write(v.Defender);
             w.Write(v.DefenderEndTime);
@@ -1080,6 +1145,7 @@ namespace BirimizKovulacak.Core
             v.MyVote = r.ReadInt32();
             v.IhtarTo = r.ReadInt32();
             v.Votes = ReadList(r, reader => ReadLineVoteView(reader));
+            v.Shortlist = ReadList(r, reader => reader.ReadInt32());
             v.DefenseOrder = ReadList(r, reader => reader.ReadInt32());
             v.Defender = r.ReadInt32();
             v.DefenderEndTime = r.ReadDouble();
@@ -1179,6 +1245,7 @@ namespace BirimizKovulacak.Core
             WriteString(w, v.ManagerProfileId);
             w.Write(v.Days);
             w.Write(v.Fired);
+            WriteString(w, v.NextManagerPick);
             WriteList(w, v.Players, (writer, item) => { WriteLineWeekPlayerResult(writer, item); });
             w.Write(v.ResultHash);
         }
@@ -1191,6 +1258,7 @@ namespace BirimizKovulacak.Core
             v.ManagerProfileId = ReadString(r);
             v.Days = r.ReadInt32();
             v.Fired = r.ReadInt32();
+            v.NextManagerPick = ReadString(r);
             v.Players = ReadList(r, reader => ReadLineWeekPlayerResult(reader));
             v.ResultHash = r.ReadUInt64();
             return v;
@@ -1206,6 +1274,7 @@ namespace BirimizKovulacak.Core
             w.Write(v.Survived);
             w.Write(v.AgendaTarget);
             w.Write(v.AgendaHit);
+            w.Write(v.AgendaIhtars);
             w.Write(v.EmployeeOfWeek);
             w.Write((byte)v.Trick);
             w.Write(v.TricksUsed);
@@ -1223,6 +1292,7 @@ namespace BirimizKovulacak.Core
             v.Survived = ReadBool(r);
             v.AgendaTarget = r.ReadInt32();
             v.AgendaHit = ReadBool(r);
+            v.AgendaIhtars = r.ReadInt32();
             v.EmployeeOfWeek = ReadBool(r);
             v.Trick = (TrickType)ReadEnum(r, 6);
             v.TricksUsed = r.ReadInt32();

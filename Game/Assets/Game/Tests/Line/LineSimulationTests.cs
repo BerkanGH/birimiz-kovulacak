@@ -122,7 +122,8 @@ namespace BirimizKovulacak.Core.Tests
             }
             Assert.AreEqual(LinePhase.FinalDefense, engine.Phase);
             var order = engine.BuildView(0, now).Meeting.DefenseOrder;
-            for (int i = 0; i < 6; i++)
+            Assert.AreEqual(config.FinalShortlistLarge, order.Count);
+            for (int i = 0; i < order.Count; i++)
             {
                 var view = engine.BuildView(0, now);
                 Assert.AreEqual(order[i], view.Meeting.Defender);
@@ -140,7 +141,7 @@ namespace BirimizKovulacak.Core.Tests
             {
                 WeekId = 1, Me = 0, Phase = LinePhase.RoundPlay, PhaseEndTime = 150,
                 RoundIndex = 0, Round = new LineRoundView { Type = round, Index = 0 },
-                Mine = new LineMeView { AgendaTarget = 1 },
+                Mine = new LineMeView { AgendaTarget = 1, TricksLeftThisWeek = 1, TipsLeftThisWeek = 1 },
             };
             for (int i = 0; i < 4; i++) view.Players.Add(new LinePlayerView { Id = i, Connected = true });
             return view;
@@ -159,19 +160,84 @@ namespace BirimizKovulacak.Core.Tests
         }
 
         [Test]
-        public void BotWaitsForComputerAndDoesNotReuseExhaustedPasswordAttempts()
+        public void BotWaitsForComputerAndEntersOneCodeUsingBothKnownDigits()
         {
             var bot = new LineBot(0, 1); var config = LineConfig.CreateDefault(); var view = BotView(RoundType.OrtakSifre);
             config.MailsPerDay = 0;
             view.Mine.ComputerBlockedUntil = 140; view.Mine.PhoneDeadUntil = 140;
-            view.Round.CodeLength = 4; view.Round.DigitPosition = 1; view.Round.Digit = 7; view.Round.AttemptsLeft = 2;
+            view.Round.CodeLength = 4; view.Round.DigitPosition = 1; view.Round.Digit = 7;
+            view.Round.NeighborPosition = 2; view.Round.NeighborDigit = 8;
             Assert.IsNull(bot.Next(view, config, 100));
             view.Mine.ComputerBlockedUntil = 0;
             var action = bot.Next(view, config, 101);
-            Assert.NotNull(action); Assert.AreEqual(LineVerb.Attempt, action.Verb);
+            Assert.NotNull(action); Assert.AreEqual(LineVerb.SubmitChoice, action.Verb);
             Assert.AreEqual(7, action.A / 100 % 10);
-            view.Round.AttemptsLeft = 0;
+            Assert.AreEqual(8, action.A / 10 % 10);
+            Assert.That(action.A, Is.InRange(1000, 9999));
+            view.Round.Submitted = true;
             Assert.IsNull(bot.Next(view, config, 139));
+        }
+
+        [Test]
+        public void BotFinalVotesStayInShortlistEvenWhenAgendaIsOutside()
+        {
+            var config = LineConfig.CreateDefault();
+            for (int seed = 0; seed < 100; seed++)
+            {
+                var view = BotView(); view.Phase = LinePhase.FinalVote;
+                view.Meeting = new LineMeetingView { Shortlist = new List<int> { 0, 2 } };
+                view.Players[1].Blame = 99;
+                var action = new LineBot(0, seed).Next(view, config, 1);
+                Assert.AreEqual(LineVerb.Vote, action.Verb); Assert.AreEqual(2, action.Target);
+            }
+        }
+
+        [Test]
+        public void BotPicksANewManagerOnlyWhenFiredAndNoPickYet()
+        {
+            var config = LineConfig.CreateDefault(); var view = BotView(); var bot = new LineBot(0, 51);
+            view.Phase = LinePhase.WeekResults; view.ManagerProfileId = LineManagerIds.Paragoz;
+            view.Result = new LineWeekResult { Fired = 1 };
+            Assert.IsNull(bot.Next(view, config, 1));
+            view.Result.Fired = 0;
+            var action = bot.Next(view, config, 2);
+            Assert.AreEqual(LineVerb.PickNextManager, action.Verb);
+            Assert.AreNotEqual(view.ManagerProfileId, LineManagerIds.All[action.A]);
+            view.Result.NextManagerPick = LineManagerIds.All[action.A];
+            Assert.IsNull(bot.Next(view, config, 3));
+        }
+
+        [Test]
+        public void BotRespectsWeeklyTrickAndTipAllowances()
+        {
+            var config = LineConfig.CreateDefault(); config.MailsPerDay = 0;
+            for (int seed = 0; seed < 100; seed++)
+            {
+                var view = BotView(); view.Round.Submitted = true;
+                view.Features.TricksUnlocked = view.Features.TipLineUnlocked = true;
+                view.Mine.TricksLeftThisWeek = view.Mine.TipsLeftThisWeek = 0;
+                view.Mine.Trick = TrickType.InternetKes;
+                view.Mine.Phone.Status = CallStatus.Dialing;
+                var bot = new LineBot(0, seed);
+                Assert.IsNull(bot.Next(view, config, 0));
+                Assert.IsNull(bot.Next(view, config, 120));
+            }
+        }
+
+        [Test]
+        public void BotCallsOneOfItsTrioPartners()
+        {
+            var config = LineConfig.CreateDefault(); config.MailsPerDay = 0;
+            for (int seed = 0; seed < 100; seed++)
+            {
+                var view = BotView(); view.Round.Submitted = true;
+                view.Round.Partners.AddRange(new[] { 1, 3 });
+                var bot = new LineBot(0, seed);
+                Assert.IsNull(bot.Next(view, config, 0));
+                var action = bot.Next(view, config, 20);
+                Assert.AreEqual(LineVerb.Call, action.Verb);
+                CollectionAssert.Contains(view.Round.Partners, action.Target);
+            }
         }
 
         [Test]
