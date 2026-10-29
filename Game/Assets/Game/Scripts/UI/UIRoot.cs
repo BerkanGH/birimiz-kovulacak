@@ -36,7 +36,13 @@ namespace BirimizKovulacak.Game
         EmailPicker _email;
         ConfirmDialog _confirm;
         StatusOverlay _status;
+        // v3
+        DeskUi _desk;
+        MeetingUi _meetingV3;
         bool _built;
+
+        /// <summary>Root element of the UI document (v3 screens and the UI mock attach below it).</summary>
+        public VisualElement RootElement => _root;
 
         void Awake()
         {
@@ -86,6 +92,8 @@ namespace BirimizKovulacak.Game
             _results = new ResultsScreen(_root);
             _lobby = new LobbyScreen(_root);
             _menu = new MainMenuScreen(_root);
+            _desk = new DeskUi(_root);
+            _meetingV3 = new MeetingUi(_root);
             feedLayer.style.position = Position.Absolute;
             feedLayer.style.left = 0; feedLayer.style.top = 0; feedLayer.style.right = 0; feedLayer.style.bottom = 0;
             _root.Add(feedLayer);
@@ -105,6 +113,10 @@ namespace BirimizKovulacak.Game
             var conn = ConnectionManager.I;
             var view = cs != null ? cs.View : null;
             MatchClock.Update(view);
+            var lineView = LineClient.I != null ? LineClient.I.View : null;
+            if (lineView != null) { UpdateV3(lineView, conn); return; }
+            _desk.SetVisible(false);
+            _meetingV3.SetVisible(false);
             bool online = conn != null && (conn.Current == ConnectionManager.State.Hosting || conn.Current == ConnectionManager.State.Connected || conn.Current == ConnectionManager.State.Reconnecting || conn.Current == ConnectionManager.State.Connecting);
             bool inMatch = view != null;
             MatchPhase phase = inMatch ? view.Phase : MatchPhase.None;
@@ -148,6 +160,38 @@ namespace BirimizKovulacak.Game
             UnityEngine.Cursor.lockState = wantLock ? CursorLockMode.Locked : CursorLockMode.None;
             UnityEngine.Cursor.visible = !wantLock;
             PointerOverUI = modal;
+        }
+
+        /// <summary>v3 week running: office/meeting screens over the first-person world; v2 screens stay hidden.</summary>
+        void UpdateV3(LineView v, ConnectionManager conn)
+        {
+            if (GameInput.Pause != null && GameInput.Pause.WasPressedThisFrame())
+            {
+                if (Modal.CloseTop()) { }
+                else if (_settings.Visible) _settings.Hide();
+                else if (_howTo.Visible) _howTo.Hide();
+                else _pause.Toggle();
+            }
+            bool overlay = _pause.Visible || _settings.Visible || _howTo.Visible || Modal.AnyOpen;
+            bool office = LineClient.IsOfficePhase(v.Phase);
+            bool meeting = LineClient.IsMeetingPhase(v.Phase) || v.Phase == LinePhase.WeekResults || v.Phase == LinePhase.Abandoned;
+
+            _menu.SetVisible(false); _lobby.SetVisible(false); _hud.SetVisible(false); _briefing.SetVisible(false);
+            _meeting.SetVisible(false); _results.SetVisible(false); _phone.Hide();
+            _desk.SetVisible(office);
+            _meetingV3.SetVisible(meeting);
+
+            _desk.Tick(); _meetingV3.Tick();
+            _pause.Tick(); _settings.Tick(); _howTo.Tick(); _confirm.Tick(); _status.Tick();
+
+            var rooms = Rooms.Presenter;
+            bool lookMode = rooms != null && (rooms.Mode == PovMode.Office || rooms.Mode == PovMode.Meeting);
+            bool wantsCursor = overlay || (office && _desk.WantsCursor) || (meeting && _meetingV3.WantsCursor) || !lookMode;
+            BlocksGameplay = wantsCursor;
+            bool wantLock = !wantsCursor && Application.isFocused && !LaunchArgs.Current.Bot && !LineMockDriver.Active;
+            UnityEngine.Cursor.lockState = wantLock ? CursorLockMode.Locked : CursorLockMode.None;
+            UnityEngine.Cursor.visible = !wantLock;
+            PointerOverUI = wantsCursor;
         }
     }
 }

@@ -21,9 +21,11 @@ namespace BirimizKovulacak.Game
             QualitySettings.vSyncCount = args.Bot ? 0 : 1;
             string name = !string.IsNullOrEmpty(args.Name) ? args.Name : PlayerPrefs.GetString("player.name", System.Environment.UserName);
             MatchLog.Initialize(name);
-            Loc.Load("tr");
+            Loc.Load(Loc.Language);
             GameInput.Initialize();
             if (GetComponent<VoiceSystem>() == null) gameObject.AddComponent<VoiceSystem>();
+            if (GetComponent<LineClient>() == null) gameObject.AddComponent<LineClient>();
+            if (System.Array.IndexOf(System.Environment.GetCommandLineArgs(), "-uimock") >= 0) gameObject.AddComponent<LineMockDriver>();
             if (args.Bot) gameObject.AddComponent<NetworkBotDriver>();
             if (args.Screenshots) gameObject.AddComponent<ScreenshotRecorder>();
             if (args.InputSim && !args.Bot) gameObject.AddComponent<InputSimDriver>();
