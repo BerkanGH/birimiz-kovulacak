@@ -1,5 +1,8 @@
 # Voice — notes (v2 / U5)
 
+> v3 (calls-only day, wiretaps, call recordings / meeting tape, speech levels, phone EQ, pluggable session binding):
+> see [`VOICE.md`](VOICE.md). Everything below still describes the shared pipeline and v2.
+
 Owner: Claude sub-agent `voice` (branch `v2/voice`, merged with main `67ef3dc`). Plan: `docs/V2_PLAN.md` §0, §5 U5, §8.
 In-game voice replaces Discord: proximity voice in the office, private 1:1 phone calls, everyone-hears in the
 lobby / meeting / results. Verified without Unity: `python -I Tools/scripts/compile_check.py` → `COMPILE OK` (editor and

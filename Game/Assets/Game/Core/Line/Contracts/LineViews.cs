@@ -85,6 +85,9 @@ namespace BirimizKovulacak.Core
         public TrickType Trick;
         public bool TrickUsedToday;
         public bool TipUsedToday;
+        /// <summary>v3.1 weekly allowances.</summary>
+        public int TricksLeftThisWeek;
+        public int TipsLeftThisWeek;
         public int MailsSentToday;
         /// <summary>Computer unusable until this host time (coffee or internet).</summary>
         public double ComputerBlockedUntil;
@@ -151,8 +154,15 @@ namespace BirimizKovulacak.Core
         public double PlayEndTime;
 
         // ---- private info (only the recipient's own)
-        /// <summary>Bonus Pool partner (LineIds.Intern for the NPC).</summary>
+        /// <summary>Bonus Pool partner (LineIds.Intern for the NPC in v3.0; v3.1: first partner).</summary>
         public int Partner = LineIds.None;
+        /// <summary>v3.1 Bonus Pool: every partner (1, or 2 in the trio).</summary>
+        public List<int> Partners = new List<int>();
+        /// <summary>v3.1 Lost Report, culprit only: innocents that appear on no slip (no alibi).</summary>
+        public List<int> NoAlibi = new List<int>();
+        /// <summary>v3.1 Shared Password: the right-hand colleague's position and digit (also private).</summary>
+        public int NeighborPosition = -1;
+        public int NeighborDigit = -1;
         /// <summary>Odd Email: topic pair id; TopicVariant 0 = majority text (a), 1 = odd text (b).</summary>
         public int TopicId = -1;
         public int TopicVariant = -1;
@@ -221,6 +231,8 @@ namespace BirimizKovulacak.Core
         public int Code = -1;
         public bool Solved;
         public int SolvedBy = LineIds.None;
+        /// <summary>v3.1 Shared Password: the code each player entered (index = player id, -1 none).</summary>
+        public List<int> CodesByPlayer = new List<int>();
         public List<LineBlameDelta> Deltas = new List<LineBlameDelta>();
     }
 
@@ -232,6 +244,9 @@ namespace BirimizKovulacak.Core
         /// <summary>0 = share, 1 = take.</summary>
         public int ChoiceA;
         public int ChoiceB;
+        /// <summary>v3.1 trio member (else -1).</summary>
+        public int C = LineIds.None;
+        public int ChoiceC = -1;
     }
 
     [Serializable]
@@ -272,6 +287,8 @@ namespace BirimizKovulacak.Core
         /// <summary>Revealed at MeetingVerdict / FinalVerdict.</summary>
         public List<LineVoteView> Votes = new List<LineVoteView>();
         // final
+        /// <summary>v3.1: the 2–3 players the final vote chooses between (they defend, in this order).</summary>
+        public List<int> Shortlist = new List<int>();
         public List<int> DefenseOrder = new List<int>();
         public int Defender = LineIds.None;
         public double DefenderEndTime;
@@ -328,6 +345,8 @@ namespace BirimizKovulacak.Core
         public string ManagerProfileId = "";
         public int Days;
         public int Fired = LineIds.None;
+        /// <summary>v3.1: the fired player's pick for next week's manager ("" until picked).</summary>
+        public string NextManagerPick = "";
         public List<LineWeekPlayerResult> Players = new List<LineWeekPlayerResult>();
         /// <summary>Deterministic hash of the outcome (all clients must agree; used by automated runs).</summary>
         public ulong ResultHash;
@@ -342,6 +361,8 @@ namespace BirimizKovulacak.Core
         public bool Survived;
         public int AgendaTarget = LineIds.None;
         public bool AgendaHit;
+        /// <summary>v3.1: İhtars the agenda target received this week (each pays AgendaPointsPerIhtar).</summary>
+        public int AgendaIhtars;
         public bool EmployeeOfWeek;
         public TrickType Trick;
         public int TricksUsed;

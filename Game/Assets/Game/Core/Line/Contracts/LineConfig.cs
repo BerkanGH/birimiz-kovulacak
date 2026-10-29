@@ -24,7 +24,7 @@ namespace BirimizKovulacak.Core
         public float FinalDiscussion = 60f;
         public float Vote = 25f;
         public float Verdict = 8f;
-        public float DefensePerPlayer = 20f;
+        public float DefensePerPlayer = 30f;
         public float FinalVote = 30f;
         public float FinalVerdict = 12f;
         public float WeekResults = 45f;
@@ -46,10 +46,17 @@ namespace BirimizKovulacak.Core
     {
         // Bonus Pool
         public int PrimBothShare = -1;
-        public int PrimTakerWins = -2;
+        public int PrimTakerWins = -4;
         public int PrimSharerLoses = 2;
         public int PrimBothTake = 1;
+        /// <summary>v3.0 only (v3.1 uses a trio instead of the intern).</summary>
         public float InternShareChance = 0.6f;
+        // v3.1 trio (odd player count): nobody takes / one taker / two takers / all take
+        public int PrimTrioNobodyTakes = -1;
+        public int PrimTrioSoloTaker = -4;
+        public int PrimTrioPairTakers = -2;
+        public int PrimTrioSharer = 2;
+        public int PrimTrioAllTake = 1;
         // Odd Email / Lost Report (same shape: hidden player vs. plurality vote)
         public int HiddenCaught = 3;
         public int OddCaughtButGuessed = 1;
@@ -62,6 +69,8 @@ namespace BirimizKovulacak.Core
         public int ComplaintTop = 2;
         public int ComplaintNone = -1;
         public int ComplaintReasons = 6;
+        /// <summary>v3.1: the Complaint Box is only scheduled with at least this many players.</summary>
+        public int ComplaintMinPlayers = 5;
         // Promotion List
         public int PromotionWinner = -3;
         public int PromotionBacker = -1;
@@ -70,6 +79,7 @@ namespace BirimizKovulacak.Core
         public int PasswordCrackedSaboteur = 2;
         public int PasswordFailed = 1;
         public int PasswordFailedSaboteur = -2;
+        /// <summary>v3.0 only (v3.1: one code per player, cracked when more than half entered the exact code).</summary>
         public int AttemptsPerPlayer = 2;
     }
 
@@ -79,6 +89,7 @@ namespace BirimizKovulacak.Core
     {
         public string Id = "";
         public int IhtarBlame = 3;
+        /// <summary>v3.0 only (v3.1 final = shortlist vote).</summary>
         public int FinalVoteWeight = 2;
         /// <summary>Extra (negative) blame for a Bonus Pool taker whose partner shared.</summary>
         public int GreedBonus = 0;
@@ -100,6 +111,30 @@ namespace BirimizKovulacak.Core
         public int ShortWeekDays = 3;
         public int FullWeekDays = 5;
 
+        // ---- v3.1 (design review)
+        /// <summary>Everyone starts the week with this blame (rewards are negative deltas; the floor stays 0).</summary>
+        public int StartBlame = 5;
+        /// <summary>The session points leader (strict) starts the week with this much extra blame.</summary>
+        public int LeaderStartBonus = 2;
+        public int MaxIhtarsPerPlayerPerWeek = 1;
+        /// <summary>Final shortlist size by head count: ≤ 4 players / ≥ 5 players.</summary>
+        public int FinalShortlistSmall = 2;
+        public int FinalShortlistLarge = 3;
+        /// <summary>RoundPlay seconds for 3, 4, 5, 6 players (replaces Durations.RoundPlay; scaled like every duration).</summary>
+        public List<float> RoundPlayByPlayers = new List<float> { 100f, 120f, 135f, 150f };
+        public int TricksPerWeekShort = 1;
+        public int TricksPerWeekFull = 2;
+        public int TipsPerWeek = 1;
+        /// <summary>First day (0-based) the manager line works in the first week of a session (tricks: UnlockDayFirstWeek).</summary>
+        public int TipUnlockDayFirstWeek = 2;
+        /// <summary>Odd Email topics: categories × items; text key topic.&lt;category*TopicsPerCategory+item&gt;.</summary>
+        public int TopicCategories = 6;
+        public int TopicsPerCategory = 4;
+        /// <summary>Hidden agenda: points per İhtar the target receives (plus AgendaPoints if fired).</summary>
+        public int AgendaPointsPerIhtar = 1;
+        /// <summary>Recording pick weight multiplier for calls between today's Bonus Pool partners or involving a round's hidden player.</summary>
+        public float RecordingFocusWeight = 3f;
+
         // week points
         public int SurvivePoints = 3;
         public int AgendaPoints = 2;
@@ -112,10 +147,10 @@ namespace BirimizKovulacak.Core
         public float PhoneDeadSeconds = 45f;
         public float InternetSeconds = 30f;
         public float WiretapSeconds = 60f;
-        public int FalseTipBlame = 1;
+        public int FalseTipBlame = 2;
         public int ConfirmedTipBlame = 2;
         public int MailTemplates = 8;
-        public int MailsPerDay = 4;
+        public int MailsPerDay = 1;
         /// <summary>Odd Email topic pairs: ids 0..TopicPairs-1, texts topic.&lt;id&gt;.a / topic.&lt;id&gt;.b.</summary>
         public int TopicPairs = 20;
 

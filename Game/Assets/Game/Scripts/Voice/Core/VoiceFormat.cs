@@ -37,6 +37,12 @@ namespace BirimizKovulacak.Voice
         AllHear = 8,
         /// <summary>Local mic test: the player's own voice played back to them.</summary>
         Loopback = 16,
+        /// <summary>Wiretap (v3 "Hattı Dinle"): a call stream delivered to a silent listener. Always combined with
+        /// <see cref="Call"/>; the client plays it through the phone EQ, slightly quieter.</summary>
+        Tap = 32,
+        /// <summary>Call-recording playback (v3 meeting tape). The frame's slot is the ORIGINAL speaker; the client
+        /// feeds it to the tape player (never to the live channel of that slot).</summary>
+        Recording = 64,
     }
 
     public enum VoiceMode : byte
@@ -47,6 +53,8 @@ namespace BirimizKovulacak.Voice
         AllHear = 1,
         /// <summary>Nothing is routed.</summary>
         Muted = 2,
+        /// <summary>v3 day (everyone alone in their office): connected phone calls (+ wiretaps) only, no proximity.</summary>
+        Calls = 3,
     }
 
     /// <summary>How the local player currently hears a remote speaker (for UI icons).</summary>
@@ -58,6 +66,8 @@ namespace BirimizKovulacak.Voice
         Call = 3,
         AllHear = 4,
         Loopback = 5,
+        /// <summary>Wiretap: the local player silently listens to this speaker's call.</summary>
+        Tap = 6,
     }
 
     public enum VoiceCodecBackend : byte

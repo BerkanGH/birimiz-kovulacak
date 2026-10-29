@@ -108,6 +108,12 @@ namespace BirimizKovulacak.Core
         public List<int> UsedTopics = new List<int>();
         /// <summary>Times fired per player id.</summary>
         public List<int> TimesFired = new List<int>();
+        /// <summary>v3.1: manager picked by last week's fired player ("" = none; Setup.ManagerProfileId still wins).</summary>
+        public string NextManager = "";
+        /// <summary>v3.1: hidden-role count per player id (odd one / culprit / saboteur) so roles spread across the session.</summary>
+        public List<int> HiddenRoles = new List<int>();
+        /// <summary>v3.1: how often each round type was played this session (index = (int)RoundType).</summary>
+        public List<int> RoundUses = new List<int>();
     }
 
     /// <summary>

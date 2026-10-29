@@ -12,6 +12,41 @@ Pillars
 3. **Nobody waits.** All players play every day until Friday; the firing happens only on the last day.
 4. **Clip moments.** Phone calls may be recorded; the manager plays a real 7-second snippet in the meeting.
 
+## 0. v3.1 changes (design review, 2026-10-29) — these supersede the sections below where they differ
+
+1. **Start blame 5** for everyone each week (floor stays 0); the strict session-points leader starts at 7.
+2. **One İhtar per player per week.** If the plurality lands on someone who already has one, nobody gets it.
+   **İhtar ties → nobody** (no blame tie-break).
+3. **Final = shortlist.** Top 2 by blame at 3–4 players, top 3 at 5–6 (ties: more İhtars, then seed). Only they
+   defend, 30 s each, highest blame first. Everyone (shortlisted too) votes for one shortlisted name (not yourself);
+   most votes is fired; ties → higher blame → more İhtars → seed. No fire-score formula.
+4. **Round length by head count:** RoundPlay 100 / 120 / 135 / 150 s for 3 / 4 / 5 / 6 players.
+5. **Daily pairing:** every day = one *deal* round (Bonus Pool or Shared Password) + one *vote* round (Odd Email,
+   Lost Report, Promotion List, Complaint Box). Day 1 of a session = Bonus Pool + Odd Email. Complaint Box only with
+   ≥ 5 players; Lost Report only with ≥ 4.
+6. **Hidden roles** (odd one, culprit, saboteur) are dealt without repeats inside a week and, across the session,
+   to the players who had the fewest.
+7. **Bonus Pool:** taker vs sharer: taker −4 (Paragöz −5), sharer +2. Odd head count: one **trio** instead of the
+   intern — nobody takes −1 each; one taker −4 and the sharers +2; two takers −2 each and the sharer +2; all take +1.
+8. **Lost Report slips:** each slip names a random innocent other than the holder, dealt so that exactly 1 (4–5
+   players) or 2 (6 players) innocents appear on no slip; the culprit's slip names a random innocent and the culprit
+   also sees who has no alibi. The honest pool narrows to the culprit + 1–2 alibi-less innocents → a voice read.
+9. **Shared Password:** each player sees their own digit and their right-hand colleague's digit (position owners
+   public). No live attempts: everyone enters one code before time runs out; **cracked if more than half of the
+   players entered the exact code.** Payoffs unchanged.
+10. **Odd Email topics** come in categories of 4 (6 categories): the majority's text and the 4 guess options are the
+    same category; the odd one's text is from a different category (it is no clue).
+11. **Dirty tricks:** once per week (Short Week) / twice (Full Week), any day after unlock. **Kaydı Sil is retired**
+    (it deleted the recording moment); duplicates allowed at 6 players. **Manager line:** once per week, unlocked on
+    day 3 of the first week; a false tip costs the tipper +2 and **the false tipper is named**; a true tip stays
+    anonymous. Genuine mail: 1 per day.
+12. **Missed calls:** a busy (or dead-line) callee gets a "missed call from X" notice.
+13. **Hidden agenda:** each player gets an independent random target (never themselves, at most 2 players share a
+    target); +1 point per İhtar the target receives, +2 if the target is fired.
+14. **Employee of the Week** only for a strict lowest blame (ties → nobody).
+15. **Next manager:** last week's fired player picks next week's manager during WeekResults.
+16. **Recordings:** calls between today's Bonus Pool partners or involving a round's hidden player weigh ×3.
+
 ## 1. Session, week, day
 
 - Players 3–6 (bots fill seats for tests). One **week** = `DayCount` days: Short Week 3 (Mon–Wed), Full Week 5.
