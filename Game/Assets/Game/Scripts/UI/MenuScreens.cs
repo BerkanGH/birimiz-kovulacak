@@ -10,53 +10,55 @@ using static BirimizKovulacak.Game.UiKit;
 
 namespace BirimizKovulacak.Game
 {
-    /// <summary>Main menu (logo, Lobi Kur / Lobiye Katıl / Ayarlar / Nasıl Oynanır / Çıkış) with the join page.</summary>
+    /// <summary>
+    /// Main menu on the empty left of <c>backgrounds/menu_bg</c>: logo (per language), tagline, one card with the name,
+    /// Host (primary) / Join, then three equal secondary buttons (Settings · How to play · Quit); a TR/EN switch in the
+    /// corner; the join page with recent hosts; the first-launch language picker.
+    /// </summary>
     public sealed class MainMenuScreen : UiKit.Screen
     {
         const string RecentKey = "join.recent";
+        static MainMenuScreen _i;
         readonly TextField _name, _address, _port;
         readonly Button _rejoin;
         readonly Label _error, _joinError;
-        readonly VisualElement _main, _join, _recent;
+        readonly VisualElement _col, _logo, _main, _join, _recent, _picker, _tagline;
         bool _joinOpen;
 
         public bool JoinOpen => _joinOpen;
 
         public MainMenuScreen(VisualElement parent) : base(parent, "menu-bg")
         {
+            _i = this;
             var layout = Box("menu-layout").AddTo(Root);
-            var col = Box("col", "center").AddTo(layout);
+            _col = Box("menu-col").AddTo(layout);
 
-            var logo = Box("menu-logo").AddTo(col);
-            if (!UiArt.Apply(logo, "logo/logo"))
-            {
-                logo.RemoveFromClassList("menu-logo");
-                Title(Loc.T("game.title_1"), "menu-title").AddTo(logo);
-                Title(Loc.T("game.title_2"), "menu-title-red").AddTo(logo);
-            }
-            Bold(Loc.T("game.tagline"), "menu-tagline").AddTo(col);
+            _logo = Box("menu-logo").AddTo(_col);
+            BuildLogo(_logo);
+            _tagline = Bold(Loc.T("game.tagline"), "menu-tagline").AddTo(_col);
 
             // ---- main card
-            _main = Panel("panel", "menu-card").AddTo(col);
-            _name = new TextField(Loc.T("menu.name")) { value = PlayerPrefs.GetString("player.name", DefaultName()), maxLength = 16 }.Cls("field").AddTo(_main);
-            IconBtn("host", Loc.T("menu.host"), Host, "btn-primary", "menu-btn").AddTo(_main);
-            IconBtn("contacts", Loc.T("menu.join"), () => ShowJoin(true), "menu-btn").AddTo(_main);
-            _rejoin = IconBtn("call", Loc.T("menu.rejoin"), Rejoin, "btn-primary", "menu-btn").AddTo(_main);
+            _main = Panel("panel", "menu-card").AddTo(_col);
+            _name = new TextField(Loc.T("menu.name")) { value = PlayerPrefs.GetString("player.name", DefaultName()), maxLength = 16 }.Cls("field", "menu-field").AddTo(_main);
+            IconBtn("host", Loc.T("menu.host"), Host, "btn-primary", "menu-btn", "menu-btn-main").AddTo(_main);
+            IconBtn("contacts", Loc.T("menu.join"), () => ShowJoin(true), "btn-secondary", "menu-btn").AddTo(_main);
+            _rejoin = IconBtn("call", Loc.T("menu.rejoin"), Rejoin, "btn-secondary", "menu-btn").AddTo(_main);
             _rejoin.Show(false);
-            var row = Box("row").AddTo(_main);
-            IconBtn("settings", Loc.T("menu.settings"), SettingsScreen.Open, "btn-small", "grow").AddTo(row);
-            IconBtn("info", Loc.T("menu.how_to"), HowToPlayScreen.Open, "btn-small", "grow").AddTo(row);
-            Btn(Loc.T("menu.quit"), Application.Quit, "btn-small", "btn-danger").AddTo(row);
+            var row = Box("menu-row").AddTo(_main);
+            Btn(Loc.T("menu.settings"), () => SettingsScreen.Open(), "btn-ghost", "menu-small").AddTo(row);
+            Btn(Loc.T("menu.how_to"), HowToPlayScreen.Open, "btn-ghost", "menu-small").AddTo(row);
+            Btn(Loc.T("menu.quit"), () => ConfirmDialog.Show(Loc.T("menu.quit"), Loc.T("menu.quit_confirm"), Loc.T("menu.quit"), Application.Quit, true), "btn-ghost", "menu-small").AddTo(row);
             _error = Text("", "error-line").AddTo(_main);
 
             // ---- join card
-            _join = Panel("panel", "menu-card").AddTo(col);
-            Title(Loc.T("join.title"), "h2").AddTo(_join);
+            _join = Panel("panel", "menu-card").AddTo(_col);
+            var jh = Box("row").AddTo(_join);
+            Title(Loc.T("join.title"), "h2", "grow").AddTo(jh);
             var jr = Box("row").AddTo(_join);
-            _address = new TextField(Loc.T("menu.address")) { value = PlayerPrefs.GetString("join.address", "127.0.0.1") }.Cls("field", "grow").AddTo(jr);
-            _port = new TextField(Loc.T("menu.port")) { value = PlayerPrefs.GetString("join.port", "7777"), maxLength = 5 }.Cls("field").AddTo(_join);
+            _address = new TextField(Loc.T("menu.address")) { value = PlayerPrefs.GetString("join.address", "127.0.0.1") }.Cls("field", "grow", "join-address").AddTo(jr);
+            _port = new TextField(Loc.T("menu.port")) { value = PlayerPrefs.GetString("join.port", "7777"), maxLength = 5 }.Cls("field", "join-port").AddTo(jr);
             Text(Loc.T("join.port_help"), "t-tiny", "t-muted").AddTo(_join);
-            var ja = Box("row").AddTo(_join);
+            var ja = Box("row", "mt-s").AddTo(_join);
             Btn(Loc.T("common.back"), () => ShowJoin(false), "btn-ghost").AddTo(ja);
             IconBtn("call", Loc.T("join.connect"), Join, "btn-primary", "grow").AddTo(ja);
             _joinError = Text("", "error-line").AddTo(_join);
@@ -64,8 +66,77 @@ namespace BirimizKovulacak.Game
             _recent = Box("col").AddTo(_join);
             _join.Show(false);
 
+            // ---- corner: language switch + version line
+            var lang = Box("lang-switch").AddTo(Root);
+            LangButton(lang, "tr", "TR");
+            LangButton(lang, "en", "EN");
             Text(Loc.F("menu.version", GameConfig.BuildId), "version").AddTo(Root);
+
+            // ---- first-launch language picker (over everything on this screen)
+            _picker = Box("lang-picker").AddTo(Root);
+            BuildPicker(_picker);
+            _picker.Show(false);
+
             _address.RegisterCallback<KeyDownEvent>(e => { if (e.keyCode == KeyCode.Return || e.keyCode == KeyCode.KeypadEnter) Join(); });
+        }
+
+        /// <summary>Logo art per language (logo/logo, logo_en/logo_en); text fallback in the same layout.</summary>
+        static void BuildLogo(VisualElement logo)
+        {
+            bool en = Loc.Language == "en";
+            if (UiArt.Apply(logo, en ? "logo_en/logo_en" : "logo/logo")) return;
+            logo.AddToClassList("menu-logo-fallback");
+            var card = Box("logo-card").AddTo(logo);
+            var mark = Box("logo-mark").AddTo(card);
+            UiArt.Apply(mark, "logo/logo_mark");
+            var col = Box("col", "grow").AddTo(card);
+            Title(Loc.T("game.title_1"), "logo-line1").AddTo(col);
+            var stamp = Box("logo-stamp").AddTo(col);
+            Title(Loc.T("game.title_2"), "logo-line2").AddTo(stamp);
+        }
+
+        static void LangButton(VisualElement parent, string lang, string label)
+        {
+            var b = Btn(label, () => { if (Loc.Language != lang) Loc.SetLanguage(lang); }, "btn-small", "lang-btn").AddTo(parent);
+            b.RemoveFromClassList("btn-secondary");
+            b.EnableInClassList("lang-btn-on", Loc.Language == lang);
+        }
+
+        void BuildPicker(VisualElement layer)
+        {
+            var card = Panel("panel", "picker-card").AddTo(layer);
+            var icon = Box("icon", "icon-xl").AddTo(card);
+            MeetingText.ApplyIcon(icon, "icons_v3/language");
+            Title("Dil seç  ·  Choose a language", "picker-title").AddTo(card);
+            var row = Box("picker-row").AddTo(card);
+            PickerOption(row, "tr", "Türkçe", "Oyunu Türkçe oyna");
+            PickerOption(row, "en", "English", "Play the game in English");
+            Text("Ayarlar'dan her zaman değiştirebilirsin  ·  You can change it any time in Settings", "picker-note").AddTo(card);
+        }
+
+        static void PickerOption(VisualElement row, string lang, string name, string sub)
+        {
+            var b = Btn("", () => Loc.SetLanguage(lang), "btn-secondary", "picker-option").AddTo(row);
+            Title(name, "picker-name").NoPick().AddTo(b);
+            Text(sub, "picker-sub").NoPick().AddTo(b);
+        }
+
+        /// <summary>True on the very first launch (no saved language) of an interactive client.</summary>
+        static bool NeedsLanguage()
+        {
+            if (PlayerPrefs.HasKey(Loc.PrefKey)) return false;
+            var a = LaunchArgs.Current;
+            return !(a.Bot || a.AutoHost || LineMockDriver.Active || !string.IsNullOrEmpty(a.AutoJoinAddress));
+        }
+
+        /// <summary>Opens the language picker (first launch; mocks call it directly).</summary>
+        public static void ShowLanguagePicker()
+        {
+            if (_i == null) return;
+            _i._picker.Show(true);
+            _i._picker.BringToFront();
+            UiMotion.FadeIn(_i._picker, 0.25f);
+            UiMotion.PopIn(_i._picker[0], 0.35f, 0.05f, 0.85f);
         }
 
         static string DefaultName()
@@ -79,8 +150,9 @@ namespace BirimizKovulacak.Game
             _joinOpen = on;
             _main.Show(!on);
             _join.Show(on);
-            if (on) { BuildRecent(); Pop(_join); }
-            else Pop(_main);
+            var card = on ? _join : _main;
+            if (on) BuildRecent();
+            UiMotion.SlideIn(card, new Vector2(on ? 50f : -50f, 0f), 0.28f);
         }
 
         void BuildRecent()
@@ -92,7 +164,8 @@ namespace BirimizKovulacak.Game
             {
                 string entry = hp;
                 var r = Box("recent-row").AddTo(_recent);
-                Bold(entry, "grow").AddTo(r);
+                Icon("contacts", "icon-s").AddTo(r);
+                Bold(entry, "recent-host", "grow").AddTo(r);
                 Btn(Loc.T("join.use"), () =>
                 {
                     int colon = entry.LastIndexOf(':');
@@ -100,6 +173,7 @@ namespace BirimizKovulacak.Game
                     if (colon > 0) _port.value = entry.Substring(colon + 1);
                     Join();
                 }, "btn-small", "btn-primary").AddTo(r);
+                Btn("×", () => { ForgetHost(entry); BuildRecent(); }, "btn-small", "btn-ghost", "recent-x").AddTo(r);
             }
         }
 
@@ -121,6 +195,14 @@ namespace BirimizKovulacak.Game
             PlayerPrefs.SetString(RecentKey, string.Join("|", list));
         }
 
+        static void ForgetHost(string entry)
+        {
+            var list = RecentHosts();
+            list.Remove(entry);
+            PlayerPrefs.SetString(RecentKey, string.Join("|", list));
+            PlayerPrefs.Save();
+        }
+
         void Save()
         {
             PlayerPrefs.SetString("player.name", _name.value);
@@ -137,7 +219,7 @@ namespace BirimizKovulacak.Game
 
         void Join()
         {
-            if (string.IsNullOrWhiteSpace(_address.value)) { _joinError.text = Loc.T("join.need_address"); return; }
+            if (string.IsNullOrWhiteSpace(_address.value)) { _joinError.text = Loc.T("join.need_address"); UiMotion.Shake(_join, 8f); return; }
             Save();
             RememberHost(_address.value, Port());
             ConnectionManager.I.StartClient(PlayerName(), _address.value, Port());
@@ -150,7 +232,29 @@ namespace BirimizKovulacak.Game
                 ConnectionManager.I.StartClient(PlayerName(), address, port, token);
         }
 
-        protected override void OnShow() { ShowJoin(false); UiArt.Apply(Root, "backgrounds/menu_bg"); }
+        protected override void OnShow()
+        {
+            _joinOpen = false;
+            _main.Show(true);
+            _join.Show(false);
+            UiArt.Apply(Root, "backgrounds/menu_bg");
+            // entrance: logo drops in and settles, tagline fades, card slides from the left, buttons follow
+            UiMotion.Tween(_logo, 0.55f, t =>
+            {
+                _logo.style.translate = new Translate(0f, Mathf.LerpUnclamped(-90f, 0f, t));
+                _logo.style.rotate = new Rotate(new Angle(Mathf.LerpUnclamped(-6f, 0f, t), AngleUnit.Degree));
+                _logo.style.opacity = Mathf.Clamp01(t * 3f);
+            }, UiMotion.Ease.OutBack, null, 0.05f, "drop");
+            _logo.style.opacity = 0f;
+            UiMotion.FadeIn(_tagline, 0.35f, 0.35f);
+            UiMotion.SlideIn(_main, new Vector2(-70f, 0f), 0.4f, 0.3f);
+            float d = 0.42f;
+            foreach (var child in _main.Children())
+            {
+                if (child is Button || child.ClassListContains("menu-row")) { UiMotion.SlideIn(child, new Vector2(-24f, 0f), 0.25f, d); d += 0.05f; }
+            }
+            if (NeedsLanguage()) ShowLanguagePicker();
+        }
 
         // A hidden field must not keep keyboard focus (feel suppresses Y/N/T while a text field is focused).
         protected override void OnHide()
@@ -170,63 +274,97 @@ namespace BirimizKovulacak.Game
             _rejoin.Show(!_joinOpen && ConnectionManager.TryGetRecentSession(out tk, out ad, out po));
             string err = c != null && c.Current == ConnectionManager.State.Failed && !string.IsNullOrEmpty(c.LastErrorKey) ? Loc.T(c.LastErrorKey) : "";
             _error.SetText(err);
-            _joinError.SetText(err);
+            if (!string.IsNullOrEmpty(err) || _joinError.text != Loc.T("join.need_address")) _joinError.SetText(err);
         }
     }
 
-    /// <summary>Lobby: 3–6 seats with badges and ready stamps, host controls (mode, bots, start), week board.</summary>
+    /// <summary>
+    /// v3 lobby (<see cref="LineClient.Lobby"/>): 3–6 seats pinned on the cork board (badge, name, tags, ready stamp,
+    /// session points); below, the host desk: week length, call recordings with the consent line, add bot, start;
+    /// clients get "Ready". How-to and leave in the corner; the host's addresses at the bottom.
+    /// </summary>
     public sealed class LobbyScreen : UiKit.Screen
     {
-        readonly VisualElement _grid, _modeHost, _week;
-        readonly Label _modeClient, _status, _addresses;
-        readonly Button _ready, _start, _addBot, _quick, _weekBtn;
+        readonly VisualElement _board, _grid, _desk, _lengthHost, _recHost, _week, _ticket;
+        readonly Label _count, _status, _addresses, _lengthClient, _consent, _session;
+        readonly Button _ready, _start, _addBot, _short, _full;
+        readonly Toggle _rec;
         readonly List<SlotCard> _cards = new List<SlotCard>();
         int _lastHash = int.MinValue;
         float _nextStatus;
+        bool _entered;
 
-        public LobbyScreen(VisualElement parent) : base(parent, "menu-bg", "center")
+        public LobbyScreen(VisualElement parent) : base(parent, "menu-bg", "lobby-screen")
         {
-            var card = Panel("panel-folder", "lobby").AddTo(Root);
-            var head = Box("lobby-head").AddTo(card);
-            Title(Loc.T("lobby.title"), "h1").AddTo(head);
-            Box("spacer").AddTo(head);
-            _modeHost = Box("mode-switch").AddTo(head);
-            _quick = Btn(Loc.T("mode.QuickPlay"), () => SetMode(GameMode.QuickPlay), "btn-small", "mode-btn").AddTo(_modeHost);
-            _weekBtn = Btn(Loc.T("mode.Week"), () => SetMode(GameMode.Week), "btn-small", "mode-btn").AddTo(_modeHost);
-            _modeClient = Bold("", "mode-label").AddTo(head);
-            _addresses = Text("", "address-line").AddTo(card);
+            // ---- title note (top left)
+            _ticket = Box("lobby-ticket").AddTo(Root);
+            Title(Loc.T("lobby.title"), "lobby-title").AddTo(_ticket);
+            _count = Bold("", "lobby-count").AddTo(_ticket);
+            _session = Text("", "lobby-session").AddTo(_ticket);
+            var tr = Box("row", "mt-s").AddTo(_ticket);
+            Btn(Loc.T("menu.how_to"), HowToPlayScreen.Open, "btn-small", "btn-ghost").AddTo(tr);
+            Btn(Loc.T("lobby.leave"), ConfirmLeave, "btn-small", "btn-ghost").AddTo(tr);
 
-            _grid = Box("slot-grid").AddTo(card);
-            for (int i = 0; i < Protocol.MaxPlayers; i++) _cards.Add(new SlotCard(_grid, i));
-            _week = Box("col").AddTo(card);
+            // ---- the cork board: seats
+            _board = Box("lobby-board").AddTo(Root);
+            _grid = Box("lobby-grid").AddTo(_board);
+            for (int i = 0; i < LineProtocol.MaxPlayers; i++) _cards.Add(new SlotCard(_grid, i));
 
-            _status = Bold("", "lobby-status").AddTo(card);
-            var actions = Box("lobby-actions").AddTo(card);
-            Btn(Loc.T("lobby.leave"), ConfirmLeave, "btn-ghost").AddTo(actions);
-            _addBot = IconBtn("bot", Loc.T("lobby.add_bot"), () => ConnectionManager.I.HostController?.AddBot(), "btn-secondary").AddTo(actions);
-            _ready = IconBtn("ready", Loc.T("lobby.ready"), ToggleReady, "btn-primary", "btn-big").AddTo(actions);
-            _start = IconBtn("ready", Loc.T("lobby.start"), () => ConnectionManager.I.HostController?.StartMatch(), "btn-primary", "btn-big").AddTo(actions);
-            Text(Loc.T(UiServices.Voice.Available ? "lobby.voice_hint" : "lobby.voice_hint_discord"), "t-small", "t-muted", "t-center").AddTo(card);
+            // ---- the desk: week settings + primary action
+            _desk = Panel("panel", "lobby-desk").AddTo(Root);
+            var cols = Box("lobby-desk-cols").AddTo(_desk);
+            _week = Box("lobby-week").AddTo(cols);
+            Bold(Loc.T("lobby.week_length"), "lobby-label").AddTo(_week);
+            _lengthHost = Box("seg-switch").AddTo(_week);
+            _short = SegButton(_lengthHost, Loc.T("lobby.short_week"), Loc.T("lobby.short_week_sub"), () => HostLineController.Current?.SetLength(WeekLength.Short));
+            _full = SegButton(_lengthHost, Loc.T("lobby.full_week"), Loc.T("lobby.full_week_sub"), () => HostLineController.Current?.SetLength(WeekLength.Full));
+            _lengthClient = Title("", "lobby-length-client").AddTo(_week);
+            Bold(Loc.T("lobby.recordings"), "lobby-label", "mt-m").AddTo(_week);
+            _recHost = Box("row").AddTo(_week);
+            _rec = new Toggle(Loc.T("lobby.recordings_toggle")).Cls("toggle", "lobby-rec-toggle").AddTo(_recHost);
+            _rec.RegisterValueChangedCallback(e => HostLineController.Current?.SetRecordings(e.newValue));
+            _consent = Text("", "lobby-consent").AddTo(_week);
+
+            var act = Box("lobby-act").AddTo(cols);
+            _status = Bold("", "lobby-status").AddTo(act);
+            _start = IconBtn("ready", Loc.T("lobby.start_week"), () => HostLineController.Current?.StartWeek(), "btn-primary", "btn-big", "lobby-primary").AddTo(act);
+            _ready = IconBtn("ready", Loc.T("lobby.ready"), ToggleReady, "btn-primary", "btn-big", "lobby-primary").AddTo(act);
+            _addBot = IconBtn("bot", Loc.T("lobby.add_bot"), () => HostLineController.Current?.AddBot(), "btn-ghost", "btn-small").AddTo(act);
+            Text(Loc.T("lobby.voice_hint_v3"), "lobby-voice").AddTo(act);
+
+            _addresses = Text("", "lobby-addresses").AddTo(Root);
         }
 
-        static void SetMode(GameMode m) { ConnectionManager.I.HostController?.SetMode(m); }
+        static Button SegButton(VisualElement parent, string title, string sub, Action onClick)
+        {
+            var b = Btn("", onClick, "btn-secondary", "seg-btn").AddTo(parent);
+            Title(title, "seg-title").NoPick().AddTo(b);
+            Text(sub, "seg-sub").NoPick().AddTo(b);
+            return b;
+        }
 
         static void ConfirmLeave()
         {
-            bool host = ConnectionManager.I.HostController != null;
-            ConfirmDialog.Show(Loc.T("lobby.leave"), Loc.T(host ? "lobby.leave_host_confirm" : "lobby.leave_confirm"), Loc.T("lobby.leave"), () => ConnectionManager.I.Leave(), true);
+            bool host = HostLineController.Current != null;
+            ConfirmDialog.Show(Loc.T("lobby.leave"), Loc.T(host ? "lobby.leave_host_confirm" : "lobby.leave_confirm"), Loc.T("lobby.leave"), () => ConnectionManager.I?.Leave(), true);
         }
 
         void ToggleReady()
         {
-            var lobby = ClientState.I.Lobby;
-            if (lobby == null || NetSession.Instance == null) return;
-            LobbySlot mine = null;
-            foreach (var s in lobby.Slots) if (s.Slot == ClientState.I.MySlot) mine = s;
-            NetSession.Instance.SetReady(mine == null || !mine.Ready);
+            var c = LineClient.I;
+            var lobby = c != null ? c.Lobby : null;
+            if (lobby == null) return;
+            LineLobbySlot mine = null;
+            foreach (var s in lobby.Slots) if (s.Slot == c.MySlot) mine = s;
+            c.SetReady(mine == null || !mine.Ready);
         }
 
-        protected override void OnShow() { _lastHash = int.MinValue; UiArt.Apply(Root, "backgrounds/lobby_bg"); }
+        protected override void OnShow()
+        {
+            _lastHash = int.MinValue;
+            _entered = false;
+            UiArt.Apply(Root, "backgrounds/lobby_bg");
+        }
 
         protected override void OnHide()
         {
@@ -237,9 +375,9 @@ namespace BirimizKovulacak.Game
         public override void Tick()
         {
             if (!Visible) return;
-            var cs = ClientState.I;
-            var lobby = cs.Lobby;
-            var hc = ConnectionManager.I.HostController;
+            var c = LineClient.I;
+            var lobby = c != null ? c.Lobby : null;
+            var hc = HostLineController.Current;
             bool isHost = hc != null;
             if (lobby == null)
             {
@@ -248,13 +386,13 @@ namespace BirimizKovulacak.Game
             }
             int hash = 17;
             foreach (var s in lobby.Slots)
-                hash = hash * 31 + (s.Occupied ? 1 : 0) + (s.Ready ? 2 : 0) + (s.Connected ? 4 : 0) + (s.IsBot ? 8 : 0) + (s.IsHost ? 16 : 0) + (s.Name ?? "").GetHashCode();
-            hash = hash * 31 + (int)lobby.Mode * 7 + lobby.WeekDay * 131 + cs.MySlot * 17 + (isHost ? 1 : 0);
-            foreach (int p in lobby.CareerPoints) hash = hash * 31 + p;
+                hash = hash * 31 + (s.Occupied ? 1 : 0) + (s.Ready ? 2 : 0) + (s.Connected ? 4 : 0) + (s.IsBot ? 8 : 0) + (s.IsHost ? 16 : 0) + s.SessionPoints * 64 + (s.Name ?? "").GetHashCode();
+            hash = hash * 31 + (int)lobby.Length * 7 + (lobby.RecordingsEnabled ? 3 : 0) + lobby.WeeksPlayed * 131 + c.MySlot * 17 + (isHost ? 1 : 0) + (lobby.WeekRunning ? 5 : 0);
             if (hash != _lastHash)
             {
                 _lastHash = hash;
-                Rebuild(lobby, isHost, cs.MySlot);
+                Rebuild(lobby, isHost, c.MySlot);
+                if (!_entered) { _entered = true; Enter(); }
             }
             if (Time.unscaledTime >= _nextStatus)
             {
@@ -262,107 +400,139 @@ namespace BirimizKovulacak.Game
                 string reason = lobby.StatusKey;
                 bool can = isHost && hc.CanStart(out reason);
                 _start.SetEnabled(can);
-                _status.SetText(Loc.T(string.IsNullOrEmpty(reason) ? "lobby.waiting" : reason));
-                _status.EnableInClassList("t-good", can);
-                _addresses.SetText(isHost ? Loc.F("lobby.host_addresses", LocalAddresses(), ConnectionManager.I.Port) : Loc.F("lobby.connected_to", ConnectionManager.I.Address));
-                if (isHost && LaunchArgs.Current.AutoStart && can) hc.StartMatch();
+                _status.SetText(Loc.T(string.IsNullOrEmpty(reason) ? (can ? "lobby.ready_to_start" : "lobby.waiting") : reason));
+                _status.EnableInClassList("lobby-status-go", can);
+                var cm = ConnectionManager.I;
+                _addresses.SetText(isHost ? Loc.F("lobby.host_addresses", LocalAddresses(), cm != null ? cm.Port : (ushort)7777) : (cm != null && cm.Current == ConnectionManager.State.Connected ? Loc.F("lobby.connected_to", cm.Address) : ""));
+                if (isHost && LaunchArgs.Current.AutoStart && can) hc.StartWeek();
             }
         }
 
-        void Rebuild(LobbyView lobby, bool isHost, int mySlot)
+        void Enter()
         {
-            int occupied = 0;
-            LobbySlot mine = null;
+            UiMotion.SlideIn(_ticket, new Vector2(-60f, 0f), 0.35f);
+            UiMotion.SlideIn(_desk, new Vector2(0f, 80f), 0.4f, 0.15f);
+            float d = 0.1f;
+            foreach (var card in _cards) { card.Pin(d); d += 0.07f; }
+        }
+
+        void Rebuild(LineLobbyView lobby, bool isHost, int mySlot)
+        {
+            int occupied = 0, ready = 0;
+            LineLobbySlot mine = null;
             for (int i = 0; i < _cards.Count; i++)
             {
-                LobbySlot s = null;
+                LineLobbySlot s = null;
                 foreach (var x in lobby.Slots) if (x.Slot == i) s = x;
                 _cards[i].Set(s, lobby, isHost, mySlot);
-                if (s != null && s.Occupied) occupied++;
+                if (s != null && s.Occupied) { occupied++; if (s.Ready || s.IsHost) ready++; }
                 if (s != null && s.Slot == mySlot) mine = s;
             }
-            _modeHost.Show(isHost);
-            _modeClient.Show(!isHost);
-            _modeClient.text = Loc.T("mode." + lobby.Mode) + (lobby.Mode == GameMode.Week ? " · " + Loc.DayName(lobby.WeekDay) : "");
-            _quick.EnableInClassList("btn-selected", lobby.Mode == GameMode.QuickPlay);
-            _weekBtn.EnableInClassList("btn-selected", lobby.Mode == GameMode.Week);
+            _count.text = Loc.F("lobby.count", occupied, LineProtocol.MaxPlayers);
+            _session.text = lobby.WeeksPlayed > 0 ? Loc.F("lobby.session_weeks", lobby.WeeksPlayed) : Loc.T("lobby.session_new");
+            _lengthHost.Show(isHost);
+            _lengthClient.Show(!isHost);
+            _lengthClient.text = Loc.T(lobby.Length == WeekLength.Full ? "lobby.full_week" : "lobby.short_week") + " · " + Loc.T(lobby.Length == WeekLength.Full ? "lobby.full_week_sub" : "lobby.short_week_sub");
+            _short.EnableInClassList("seg-on", lobby.Length == WeekLength.Short);
+            _full.EnableInClassList("seg-on", lobby.Length == WeekLength.Full);
+            _recHost.Show(isHost);
+            _rec.SetValueWithoutNotify(lobby.RecordingsEnabled);
+            _consent.text = Loc.T(lobby.RecordingsEnabled ? "lobby.recordings_consent" : "lobby.recordings_off");
+            _consent.EnableInClassList("lobby-consent-off", !lobby.RecordingsEnabled);
             _start.Show(isHost);
             _ready.Show(!isHost);
-            _addBot.Show(isHost && occupied < Protocol.MaxPlayers);
+            _addBot.Show(isHost && occupied < LineProtocol.MaxPlayers && !lobby.WeekRunning);
             var readyLabel = _ready.Q<Label>(className: "btn-label");
-            if (readyLabel != null) readyLabel.text = mine != null && mine.Ready ? Loc.T("lobby.unready") : Loc.T("lobby.ready");
-            _ready.EnableInClassList("btn-primary", mine == null || !mine.Ready);
-            _ready.EnableInClassList("btn-secondary", mine != null && mine.Ready);
-
-            _week.Clear();
-            if (lobby.Mode == GameMode.Week)
-            {
-                var rows = new List<WeekBoard.Standing>();
-                foreach (var s in lobby.Slots)
-                {
-                    if (!s.Occupied) continue;
-                    int pts = s.Slot < lobby.CareerPoints.Count ? lobby.CareerPoints[s.Slot] : 0;
-                    rows.Add(new WeekBoard.Standing { Player = s.Slot, Name = s.Name, Points = pts });
-                }
-                WeekBoard.Build(_week, lobby.WeekDay, false, lobby.CareerPoints.Count > 0 ? rows : null, false);
-            }
+            bool imReady = mine != null && mine.Ready;
+            if (readyLabel != null) readyLabel.text = imReady ? Loc.T("lobby.unready") : Loc.T("lobby.ready");
+            _ready.EnableInClassList("btn-primary", !imReady);
+            _ready.EnableInClassList("btn-secondary", imReady);
         }
 
         sealed class SlotCard
         {
             readonly int _slot;
-            readonly VisualElement _root, _badge, _tags, _stamp, _actions;
+            readonly VisualElement _root, _badge, _tags, _stamp, _actions, _pin;
             readonly Label _name, _sub, _pts;
+            readonly float _tilt;
 
             public SlotCard(VisualElement parent, int slot)
             {
                 _slot = slot;
+                _tilt = ((slot * 37) % 5 - 2) * 0.9f;
                 _root = Box("slot").AddTo(parent);
-                _badge = Badge(slot, "badge-l").AddTo(_root);
-                var col = Box("col", "grow").AddTo(_root);
+                _root.style.rotate = new Rotate(new Angle(_tilt, AngleUnit.Degree));
+                _pin = Box("slot-pin").NoPick().AddTo(_root);
+                _pin.style.backgroundColor = PlayerColor(slot);
+                var top = Box("slot-top").AddTo(_root);
+                _badge = Badge(slot, "badge-l").AddTo(top);
+                var col = Box("col", "grow").AddTo(top);
                 _name = Title("", "slot-name").AddTo(col);
                 _sub = Text("", "slot-sub").AddTo(col);
                 _tags = Box("slot-tags").AddTo(col);
-                _pts = Bold("", "slot-pts").AddTo(col);
-                var right = Box("col", "center").AddTo(_root);
-                _stamp = Box("slot-status").AddTo(right);
-                _actions = Box("col").AddTo(right);
+                var bottom = Box("slot-bottom").AddTo(_root);
+                _pts = Bold("", "slot-pts").AddTo(bottom);
+                Box("spacer").AddTo(bottom);
+                _actions = Box("row").AddTo(bottom);
+                _stamp = Box("slot-stamp").NoPick().AddTo(_root);
             }
 
-            public void Set(LobbySlot s, LobbyView lobby, bool isHost, int mySlot)
+            public void Pin(float delay)
+            {
+                UiMotion.Tween(_root, 0.32f, t =>
+                {
+                    _root.style.translate = new Translate(0f, Mathf.LerpUnclamped(-40f, 0f, t));
+                    _root.style.opacity = Mathf.Clamp01(t * 2.5f);
+                }, UiMotion.Ease.OutBack, null, delay, "pin");
+                _root.style.opacity = 0f;
+            }
+
+            public void Set(LineLobbySlot s, LineLobbyView lobby, bool isHost, int mySlot)
             {
                 bool occ = s != null && s.Occupied;
+                bool wasReady = _root.ClassListContains("slot-ready");
                 _root.EnableInClassList("slot-empty", !occ);
                 _root.EnableInClassList("slot-ready", occ && s.Ready);
                 _root.EnableInClassList("slot-me", occ && s.Slot == mySlot);
-                _badge.style.opacity = occ ? 1f : 0.35f;
+                _badge.style.opacity = occ ? 1f : 0.3f;
                 SetBadge(_badge, _slot, occ ? s.Name : null);
                 _name.text = occ ? s.Name : Loc.T("lobby.empty");
                 _sub.text = Loc.F("lobby.look", Loc.T("player.default." + _slot));
                 _tags.Clear();
                 _actions.Clear();
                 _stamp.Clear();
+                _stamp.RemoveFromClassList("stamp-text");
                 _stamp.style.backgroundImage = StyleKeyword.Null;
-                _pts.text = lobby.Mode == GameMode.Week && occ && _slot < lobby.CareerPoints.Count ? Loc.F("week.points", lobby.CareerPoints[_slot]) : "";
+                _pts.text = occ && lobby.WeeksPlayed > 0 ? Loc.F("lobby.points", s.SessionPoints) : "";
                 if (!occ)
                 {
-                    if (isHost && !lobby.MatchRunning)
-                        IconBtn("bot", Loc.T("lobby.add_bot_here"), () => ConnectionManager.I.HostController?.AddBot(), "btn-small", "btn-ghost").AddTo(_actions);
+                    if (isHost && !lobby.WeekRunning)
+                        IconBtn("bot", Loc.T("lobby.add_bot_here"), () => HostLineController.Current?.AddBot(), "btn-small", "btn-ghost").AddTo(_actions);
                     return;
                 }
                 if (s.IsHost) Tag(Loc.T("lobby.host_tag"), "tag-teal").AddTo(_tags);
                 if (s.Slot == mySlot) Tag(Loc.T("lobby.you_tag"), "tag-sticky").AddTo(_tags);
                 if (s.IsBot) Tag(Loc.T("lobby.bot_tag"), "tag-grey").AddTo(_tags);
                 if (!s.Connected) Tag(Loc.T("lobby.offline_tag"), "tag-red").AddTo(_tags);
-                if (s.Ready)
+                if (s.Ready || s.IsHost)
                 {
-                    if (!UiArt.Apply(_stamp, "stamps/stamp_onaylandi")) Bold(Loc.T("lobby.is_ready"), "t-good").AddTo(_stamp);
+                    if (!MeetingText.ApplyStamp(_stamp, "stamps/stamp_onaylandi", "stamps_v3/stamp_approved"))
+                    {
+                        _stamp.AddToClassList("stamp-text");
+                        StampText(Loc.T("lobby.is_ready"), "stamp-text-label").NoPick().AddTo(_stamp);
+                    }
+                    if (!wasReady && s.Ready) UiMotion.Stamp(_stamp, -8f, 0.2f);
+                    else _stamp.style.opacity = 1f;
                 }
-                else Bold(Loc.T("lobby.not_ready"), "t-muted").AddTo(_stamp);
-                if (isHost && s.IsBot && !lobby.MatchRunning)
+                else
+                {
+                    _stamp.style.opacity = 1f;
+                    Bold(Loc.T("lobby.not_ready"), "slot-waiting").NoPick().AddTo(_stamp);
+                }
+                if (isHost && s.IsBot && !lobby.WeekRunning)
                 {
                     int slot = s.Slot;
-                    IconBtn("kick", Loc.T("lobby.remove_bot"), () => ConnectionManager.I.HostController?.RemoveBot(slot), "btn-small", "btn-ghost").AddTo(_actions);
+                    Btn("×", () => HostLineController.Current?.RemoveBot(slot), "btn-small", "btn-ghost", "slot-remove").AddTo(_actions);
                 }
             }
         }
@@ -410,30 +580,55 @@ namespace BirimizKovulacak.Game
                 if (c.Current == ConnectionManager.State.Connecting) s = Loc.T("net.connecting");
                 else if (c.Current == ConnectionManager.State.Reconnecting) s = Loc.F("net.reconnecting_s", Mathf.CeilToInt(c.ReconnectRemaining));
             }
+            var lc = LineClient.I;
+            if (s == null && lc != null && !string.IsNullOrEmpty(lc.StatusKey)) s = Loc.T(lc.StatusKey);
             if (s == null && ClientState.I != null && !string.IsNullOrEmpty(ClientState.I.StatusKey)) s = Loc.T(ClientState.I.StatusKey);
-            _root.Show(s != null);
+            bool show = s != null;
+            if (show != _root.IsShown()) { _root.Show(show); if (show) UiMotion.PopIn(_root[0], 0.25f); }
             if (s != null && s != _last) { _last = s; _text.text = s; }
         }
     }
 
-    /// <summary>Esc menu during a session.</summary>
+    /// <summary>Esc menu during a session: resume, settings, how to play, the v3 controls, back to lobby (host), leave, quit.</summary>
     public sealed class PauseMenu : UiKit.Screen
     {
+        readonly VisualElement _card;
         readonly Button _returnLobby;
 
         public PauseMenu(VisualElement parent) : base(parent, "dim", "center")
         {
-            var card = Panel("panel", "pause").AddTo(Root);
-            Title(Loc.T("pause.title"), "h1").AddTo(card);
-            Btn(Loc.T("pause.resume"), Hide, "btn-primary", "menu-btn").AddTo(card);
-            IconBtn("settings", Loc.T("menu.settings"), SettingsScreen.Open, "menu-btn").AddTo(card);
-            IconBtn("info", Loc.T("menu.how_to"), HowToPlayScreen.Open, "menu-btn").AddTo(card);
-            BriefingScreen.ControlsStrip(card);
+            _card = Panel("panel", "pause").AddTo(Root);
+            var head = Box("row").AddTo(_card);
+            Title(Loc.T("pause.title"), "h1", "grow").AddTo(head);
+            Box("pause-mug").AddTo(head);
+            Btn(Loc.T("pause.resume"), Hide, "btn-primary", "menu-btn").AddTo(_card);
+            var row = Box("menu-row").AddTo(_card);
+            Btn(Loc.T("menu.settings"), () => SettingsScreen.Open(), "btn-ghost", "menu-small").AddTo(row);
+            Btn(Loc.T("menu.how_to"), HowToPlayScreen.Open, "btn-ghost", "menu-small").AddTo(row);
+            ControlsStrip(_card);
             _returnLobby = Btn(Loc.T("pause.return_lobby"), () => ConfirmDialog.Show(Loc.T("pause.return_lobby"), Loc.T("pause.return_lobby_confirm"), Loc.T("pause.return_lobby"),
-                () => { ConnectionManager.I.HostController?.ReturnToLobby(); Hide(); }, true), "btn-small", "btn-ghost").AddTo(card);
-            var row = Box("row").AddTo(card);
-            Btn(Loc.T("pause.leave"), () => ConfirmDialog.Show(Loc.T("pause.leave"), Loc.T("pause.leave_confirm"), Loc.T("pause.leave"), () => { ConnectionManager.I.Leave(); Hide(); }, true), "btn-danger", "grow").AddTo(row);
-            Btn(Loc.T("menu.quit"), () => ConfirmDialog.Show(Loc.T("menu.quit"), Loc.T("menu.quit_confirm"), Loc.T("menu.quit"), Application.Quit, true), "btn-danger", "btn-small").AddTo(row);
+                () => { HostLineController.Current?.ReturnToLobby(); Hide(); }, true), "btn-ghost", "menu-btn").AddTo(_card);
+            var bottom = Box("menu-row").AddTo(_card);
+            Btn(Loc.T("pause.leave"), () => ConfirmDialog.Show(Loc.T("pause.leave"), Loc.T("pause.leave_confirm"), Loc.T("pause.leave"), () => { ConnectionManager.I?.Leave(); Hide(); }, true), "btn-danger", "menu-small").AddTo(bottom);
+            Btn(Loc.T("menu.quit"), () => ConfirmDialog.Show(Loc.T("menu.quit"), Loc.T("menu.quit_confirm"), Loc.T("menu.quit"), Application.Quit, true), "btn-danger", "menu-small").AddTo(bottom);
+        }
+
+        /// <summary>v3 controls: mouse look, click, Tab phone, V talk, Esc.</summary>
+        public static void ControlsStrip(VisualElement parent)
+        {
+            var s = Box("controls-strip", "controls-v3").AddTo(parent);
+            Ctl(s, Loc.T("ctl.mouse_key"), "ctl.v3.look");
+            Ctl(s, Loc.T("ctl.click_key"), "ctl.v3.click");
+            Ctl(s, GameInput.KeyLabel(GameInput.Phone), "ctl.v3.phone");
+            Ctl(s, GameInput.KeyLabel(GameInput.PushToTalk), "ctl.v3.talk");
+            Ctl(s, "Esc", "ctl.v3.menu");
+        }
+
+        static void Ctl(VisualElement parent, string key, string labelKey)
+        {
+            var c = Box("ctl").AddTo(parent);
+            KeyCap(key).AddTo(c);
+            Text(Loc.T(labelKey), "ctl-text").AddTo(c);
         }
 
         public void Toggle() { SetVisible(!Visible); }
@@ -441,8 +636,9 @@ namespace BirimizKovulacak.Game
 
         protected override void OnShow()
         {
-            var hc = ConnectionManager.I != null ? ConnectionManager.I.HostController : null;
-            _returnLobby.Show(hc != null && hc.MatchRunning);
+            var lc = LineClient.I;
+            _returnLobby.Show(HostLineController.Current != null && lc != null && lc.InWeek);
+            UiMotion.PopIn(_card, 0.26f, 0f, 0.92f);
         }
     }
 }
