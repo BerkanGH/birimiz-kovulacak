@@ -50,6 +50,9 @@ namespace BirimizKovulacak.Game
         readonly float[] _level = new float[MaxSlots];
         readonly float[] _talkUntil = new float[MaxSlots];
         readonly bool[] _connected = new bool[MaxSlots];
+        readonly float[] _glanceUntil = new float[6];
+        readonly int[] _glance = new int[6];
+        uint _rng = 0x9E3779B9u;
         SeatedBean _manager;
         string _managerId;
         int _local = -1;
@@ -238,6 +241,12 @@ namespace BirimizKovulacak.Game
             _lang = Loc.Language;
         }
 
+        float Rand()
+        {
+            _rng ^= _rng << 13; _rng ^= _rng >> 17; _rng ^= _rng << 5;
+            return (_rng & 0xFFFFFF) / 16777216f;
+        }
+
         SeatedBean BeanOf(int slot)
         {
             int s = slot >= 0 && slot < MaxSlots ? _seatOfSlot[slot] : -1;
@@ -272,8 +281,18 @@ namespace BirimizKovulacak.Game
                 bool talking = slot >= 0 && now < _talkUntil[slot];
                 b.SetTalking(talking, slot >= 0 ? _level[slot] : 0f);
                 b.SetSpotlit(slot == _spot && slot >= 0);
-                if (hasFocus && focusSlot != slot) b.LookAt(focus);
-                else if (_manager != null && !talking) b.LookAt(_manager.transform.position + Vector3.up * 1.6f);
+                if (hasFocus && focusSlot != slot) { b.LookAt(focus); continue; }
+                // nobody has the floor: mostly face the table, now and then glance at the manager, at you or at a neighbour
+                if (now >= _glanceUntil[s])
+                {
+                    float r = Rand();
+                    _glance[s] = r < 0.5f ? 0 : r < 0.68f ? 1 : r < 0.86f ? 2 : 3;
+                    _glanceUntil[s] = now + 1.6f + Rand() * 3.2f;
+                }
+                Vector3 g;
+                if (_glance[s] == 1 && _manager != null) b.LookAt(_manager.transform.position + Vector3.up * 1.4f);
+                else if (_glance[s] == 2) b.LookAt(localEye);
+                else if (_glance[s] == 3 && TryGetHead(_slotOfSeat[(s + 2) % 6], localEye, out g)) b.LookAt(g);
                 else b.ClearLook();
             }
             if (_manager != null)
@@ -303,7 +322,7 @@ namespace BirimizKovulacak.Game
             }
             bool visible = _spotBlend > 0.01f;
             if (Spot.enabled != visible) Spot.enabled = visible;
-            Spot.intensity = 14f * _spotBlend;
+            Spot.intensity = 20f * _spotBlend;
             if (SpotCone != null && SpotCone.enabled != visible) SpotCone.enabled = visible;
         }
     }

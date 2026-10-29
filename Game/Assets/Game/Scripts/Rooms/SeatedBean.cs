@@ -201,13 +201,13 @@ namespace BirimizKovulacak.Game
             BeanFace face = RestFace;
             bool flap = false;
             if (_fired) { want = Animator.StringToHash(IsManager ? "Angry" : "SitBox"); face = BeanFace.Sad; }
-            else if (reacting) { want = _stateShown; face = ReactionFace(_reaction); }
+            else if (reacting) { want = _stateShown; face = IsManager ? (_talking ? BeanFace.Talking : RestFace) : ReactionFace(_reaction); flap = IsManager && _talking; }
             else if (_away) { want = Animator.StringToHash(IsManager ? IdleState : "SitSlump"); face = BeanFace.Asleep; }
             else if (_talking)
             {
                 want = _talkHash;
                 flap = true;
-                face = _spot ? BeanFace.Nervous : BeanFace.Talking;
+                face = _spot ? BeanFace.Nervous : (IsManager ? RestFace : BeanFace.Talking);
                 if (IsManager && now > _nextGesture)
                 {
                     // the manager punctuates his monologue now and then

@@ -228,8 +228,8 @@ namespace BirimizKovulacak.Game
             Rig.SetCrosshair(_entered && LookMode && (ForceLookInput || !Cursor.visible), _hover != null, dt);
             if (HoverMat != null && _hover != null)
             {
-                var c = _hoverBase;
-                c.a = _hoverBase.a * (0.65f + 0.35f * Mathf.Sin(Time.time * 6f));
+                var c = _hoverBase * (0.78f + 0.22f * Mathf.Sin(Time.time * 6f));
+                c.a = 1f;
                 HoverMat.SetColor("_BaseColor", c);
             }
         }
@@ -321,15 +321,16 @@ namespace BirimizKovulacak.Game
                 // the manager, framed from the table in front of him (head and shoulders)
                 if (Meeting.Manager == null) return false;
                 var mt = Meeting.Manager.transform;
-                focus = mt.position + Vector3.up * 1.05f;
+                focus = mt.position + Vector3.up * 1.15f;
                 Vector3 fwd = Vector3.ProjectOnPlane(mt.forward, Vector3.up).normalized;
-                pos = focus + fwd * 1.55f + Vector3.up * 0.12f + Vector3.Cross(Vector3.up, fwd) * 0.25f;
-                rot = Quaternion.LookRotation(focus + Vector3.up * 0.08f - pos, Vector3.up);
+                pos = focus + fwd * 2.3f + Vector3.up * 0.02f + Vector3.Cross(Vector3.up, fwd) * 0.35f;
+                rot = Quaternion.LookRotation(focus - pos, Vector3.up);
                 fov = 38f;
                 return true;
             }
             Meeting.TryGetHead(subject, eye, out focus);
-            pos = eye + (focus - eye) * 0.4f + Vector3.up * 0.04f;
+            focus += Vector3.down * 0.22f;
+            pos = eye + (focus - eye) * 0.3f + Vector3.up * 0.04f;
             rot = Quaternion.LookRotation(focus - pos, Vector3.up);
             fov = 40f;
             return true;

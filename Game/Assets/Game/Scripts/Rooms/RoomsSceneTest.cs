@@ -77,6 +77,8 @@ namespace BirimizKovulacak.Game
             var p = RoomsPresenter.Instance;
             if (p == null) { Debug.LogError("[SceneTest] no RoomsPresenter"); Application.Quit(2); yield break; }
             IRoomPresenter rooms = p;
+            Rooms.DeskClicked += t => Debug.Log("[SceneTest] DeskClicked " + t);
+            Rooms.SeatClicked += s => Debug.Log("[SceneTest] SeatClicked " + s);
             RoomsPresenter.ForceLookInput = true;
             yield return new WaitForSeconds(1.5f);
 
@@ -91,8 +93,11 @@ namespace BirimizKovulacak.Game
             p.SetLook(-72f, 4f);
             yield return Shot("office_window_morning");
             p.SetLook(96f, 4f);
-            p.Office.PassBy(0.4f, 1f);
+            p.Office.PassBy(0.3f, 1f);
             yield return Shot("office_door_passerby", 0.35f);
+            var sil = p.Office.Silhouette;
+            Debug.Log("[SceneTest] silhouette active=" + (sil != null && sil.gameObject.activeInHierarchy) + " pos=" + (sil != null ? sil.position.ToString("F2") : "-")
+                      + " visible=" + (sil != null && sil.GetComponent<Renderer>().isVisible));
             p.SetLook(0f, 13f);
             rooms.SetPhoneState(PhoneLineState.Ringing);
             yield return new WaitForSeconds(0.6f);
@@ -100,6 +105,8 @@ namespace BirimizKovulacak.Game
             yield return Shot("office_ringing", 0.0f);
             p.AimAt(p.Office.Phone.position + Vector3.up * 0.05f);
             yield return Shot("office_hover_phone", 0.8f);
+            Debug.Log("[SceneTest] hovered " + Rooms.Hovered);
+            p.ClickHovered();
             rooms.SetPhoneState(PhoneLineState.InCall);
             p.SetLook(0f, 13f);
             yield return Shot("office_in_call", 1.4f);
@@ -121,7 +128,7 @@ namespace BirimizKovulacak.Game
             yield return Shot("office_hover_mug", 0.8f);
             p.ClickHovered();
             yield return Shot("office_click_mug_sip", 0.6f);
-            p.AimAt(p.Office.Drawer.position);
+            p.AimAt(p.Office.Drawer.position + p.Office.Drawer.rotation * new Vector3(0f, 0f, -0.29f));
             yield return new WaitForSeconds(0.6f);
             p.ClickHovered();
             yield return Shot("office_click_drawer", 0.7f);
@@ -179,6 +186,8 @@ namespace BirimizKovulacak.Game
             yield return Shot("meeting_slump", 1.0f);
             p.AimAt(SeatHead(p, 1));
             yield return Shot("meeting_hover_seat", 1.0f);
+            Debug.Log("[SceneTest] hovered seat " + Rooms.HoveredSeat);
+            p.ClickHovered();
             rooms.SetSpotlight(3);
             p.SetLook(0f, 6f);
             t0 = Time.time;

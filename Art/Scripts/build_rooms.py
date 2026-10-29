@@ -26,7 +26,7 @@ for _m in ("room_props", "room_textures"):
     sys.modules.pop(_m, None)
 import bmesh  # noqa: E402
 import bpy  # noqa: E402
-from mathutils import Vector  # noqa: E402
+from mathutils import Matrix, Vector  # noqa: E402
 
 import bk_common as bk  # noqa: E402
 import map_kit  # noqa: E402
@@ -84,10 +84,10 @@ OFFICE_PROPS = [
     ("cactus", "RmCactus", (-1.66, 0.87, 0.15), 0),
 ]
 OFFICE_ANCHORS = {
-    "eye": (0.0, 1.24, 0.42), "eyeYaw": 0.0, "eyePitch": 13.0,
+    "eye": (0.0, 1.24, 0.42), "eyeYaw": 0.0, "eyePitch": 15.0,
     "yawLimit": 115.0, "pitchUp": 40.0, "pitchDown": 65.0,
-    "corridor": {"x": 2.45, "z0": -4.0, "z1": 3.0},
-    "handL": (-0.2, 0.775, 0.9), "handR": (0.3, 0.775, 0.95),
+    "corridor": {"x": 2.25, "z0": -4.0, "z1": 3.0},
+    "handL": (-0.21, 0.775, 0.97), "handR": (0.32, 0.785, 1.0),
 }
 OFFICE_DECALS = [
     {"id": "poster", "p": (-1.27, 1.6, 1.6), "r": 0, "size": (0.5, 0.75),
@@ -525,10 +525,13 @@ def flatten(root):
         o = queue.pop(0)
         order.append(o)
         queue.extend(o.children)
+    def world_pts(o):
+        mw = o.matrix_world
+        return [mw @ v.co for v in o.data.vertices] or [mw.to_translation()]
     before = {}
     for o in order:
         if o.type == "MESH":
-            before[o.name] = [o.matrix_world @ Vector(c) for c in o.bound_box]
+            before[o.name] = world_pts(o)
     for o in order:
         if o is root:
             continue
@@ -542,7 +545,7 @@ def flatten(root):
     bad = 0
     for o in order:
         if o.type == "MESH" and o.name in before:
-            now = [o.matrix_world @ Vector(c) for c in o.bound_box]
+            now = world_pts(o)
             lo0 = Vector([min(p[i] for p in before[o.name]) for i in range(3)])
             hi0 = Vector([max(p[i] for p in before[o.name]) for i in range(3)])
             lo1 = Vector([min(p[i] for p in now) for i in range(3)])
@@ -551,6 +554,72 @@ def flatten(root):
                 bad += 1
                 print("FLATTEN MOVED", root.name, o.name)
     return bad
+
+
+def hoist(root):
+    """Keep every exported node a direct child of the prop root. The FBX exporter (bake_space_transform, which the
+    Unity side relies on for identity node rotations) mis-converts nodes nested under another node: a mesh under the
+    driven empty 'Handset' came out rotated 90 degrees. Driven empties become their own body mesh with the origin at
+    the pivot (same name); other nested nodes are re-parented to the root, keeping their world transform."""
+    bpy.context.view_layer.update()
+    for e in [o for o in hierarchy(root) if o is not root and o.type == "EMPTY" and map_kit.base_name(o) in map_kit.DRIVEN]:
+        bodies = [c for c in e.children if c.type == "MESH"]
+        if not bodies:
+            continue
+        body = bodies[0]
+        pivot = e.matrix_world.to_translation()
+        others = [c for c in e.children if c is not body]
+        keep = {c: c.matrix_world.copy() for c in others}
+        mw = body.matrix_world.copy()
+        body.parent = None
+        body.matrix_world = mw
+        body.data.transform(Matrix.Translation(mw.to_translation() - pivot) @ mw.to_3x3().to_4x4())
+        body.matrix_world = Matrix.Translation(pivot)
+        name = e.name
+        e.name = name + "__hoisted"
+        body.name = name
+        body.data.name = name
+        for c, m in keep.items():
+            c.parent = root
+            c.matrix_world = m
+        body.parent = root
+        body.matrix_world = Matrix.Translation(pivot)
+        bpy.data.objects.remove(e)
+    bpy.context.view_layer.update()
+    for o in hierarchy(root):
+        if o is not root and o.parent is not root:
+            m = o.matrix_world.copy()
+            o.parent = root
+            o.matrix_world = m
+    bpy.context.view_layer.update()
+
+
+def export_room(r, path):
+    """FBX export with exact driven names (like map_kit.export_prop) but WITHOUT bake_space_transform: the exporter
+    mis-converts meshes nested under empties (root > Handset > HandsetBody came out rotated 90 degrees). Unity's
+    importer converts every node instead (ModelImporter.bakeAxisConversion, set by ProjectBuilder.ConfigureModelImports)."""
+    swaps = []
+    for o in hierarchy(r):
+        b = map_kit.base_name(o)
+        if b != o.name and b in map_kit.DRIVEN:
+            holder = bpy.data.objects.get(b)
+            if holder is not None:
+                holder.name = b + "__swap"
+                swaps.append((holder, b))
+            old = o.name
+            o.name = b
+            swaps.append((o, old))
+    try:
+        os.makedirs(os.path.dirname(path), exist_ok=True)
+        bk.select_hierarchy(r)
+        bpy.ops.export_scene.fbx(
+            filepath=path, use_selection=True, object_types={"EMPTY", "MESH"}, use_mesh_modifiers=True,
+            mesh_smooth_type="FACE", use_tspace=False, apply_unit_scale=True, apply_scale_options="FBX_SCALE_ALL",
+            axis_forward="-Z", axis_up="Y", add_leaf_bones=False, bake_space_transform=False, bake_anim=False,
+            path_mode="STRIP")
+    finally:
+        for obj, name in reversed(swaps):
+            obj.name = name
 
 
 def hierarchy(root):
@@ -625,6 +694,7 @@ def main():
         if not r.name.endswith("Shell") and r.name != "RmSkyline":
             map_kit.merge_prop(r)
         flatten(r)
+        hoist(r)
         uv_all(r)
         stats.append((r.name, map_kit.tri_count(r)))
     for r in roots:

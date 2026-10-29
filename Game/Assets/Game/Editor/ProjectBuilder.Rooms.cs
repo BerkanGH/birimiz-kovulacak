@@ -115,9 +115,12 @@ namespace BirimizKovulacak.EditorTools
                 var c = Hex(RoomPlayerHex[i]);
                 CreateLit("M_RmSeatColor" + i, lit, new Color(c.r * 0.82f, c.g * 0.82f, c.b * 0.82f), 0.42f, 0f, 0f, 1f);
             }
+            // hover = gold outline (inverted hull: back faces of a slightly grown copy), like the beans' hover outline
             var hover = GetOrCreate("M_RmHover", unlit);
-            hover.SetColor("_BaseColor", new Color(1f, 0.82f, 0.38f, 0.34f));
-            SetAdditive(hover);
+            hover.SetColor("_BaseColor", Hex("#FFC93C"));
+            SetOpaque(hover);
+            hover.SetFloat("_Cull", 1f); // render front faces culled
+            hover.SetShaderPassEnabled("ShadowCaster", false);
             EditorUtility.SetDirty(hover);
             var sil = GetOrCreate("M_RmSilhouette", unlit);
             sil.SetTexture("_BaseMap", AssetDatabase.LoadAssetAtPath<Texture2D>(RoomsTexDir + "/Silhouette.png"));
@@ -674,6 +677,7 @@ namespace BirimizKovulacak.EditorTools
                 if (mf == null || mf.sharedMesh == null) continue;
                 var go = new GameObject("Hover");
                 go.transform.SetParent(r.transform, false);
+                GrowAboutCenter(go.transform, mf.sharedMesh.bounds, r.transform.lossyScale);
                 go.AddComponent<MeshFilter>().sharedMesh = mf.sharedMesh;
                 var mr = go.AddComponent<MeshRenderer>();
                 mr.sharedMaterials = Enumerable.Repeat(hover, mf.sharedMesh.subMeshCount).ToArray();
@@ -688,6 +692,18 @@ namespace BirimizKovulacak.EditorTools
             rb.Targets++;
             rb.Overlays += overlays.Count;
             return t;
+        }
+
+        /// <summary>Scales an outline copy about the mesh's bounds centre so it sticks out ~7 mm on every side.</summary>
+        static void GrowAboutCenter(Transform t, Bounds b, Vector3 lossy)
+        {
+            const float grow = 0.007f;
+            Vector3 size = Vector3.Scale(b.size, lossy);
+            var s = new Vector3((Mathf.Max(size.x, 0.004f) + 2 * grow) / Mathf.Max(size.x, 0.004f),
+                                (Mathf.Max(size.y, 0.004f) + 2 * grow) / Mathf.Max(size.y, 0.004f),
+                                (Mathf.Max(size.z, 0.004f) + 2 * grow) / Mathf.Max(size.z, 0.004f));
+            t.localScale = s;
+            t.localPosition = b.center - Vector3.Scale(b.center, s);
         }
 
         static Renderer RoomDecal(Transform parent, string name, Vector3 p, float yaw, Vector2 size, Material mat)
@@ -782,6 +798,16 @@ namespace BirimizKovulacak.EditorTools
                 lr.useWorldSpace = true;
                 lr.positionCount = 2;
                 office.Cord = lr;
+                var glow = new GameObject("RingGlow").AddComponent<Light>();
+                glow.transform.SetParent(g.transform, false);
+                glow.transform.localPosition = new Vector3(0.08f, 0.16f, 0.02f);
+                glow.type = LightType.Point;
+                glow.color = Hex("#FF4A3A");
+                glow.range = 0.75f;
+                glow.intensity = 0f;
+                glow.shadows = LightShadows.None;
+                glow.enabled = false;
+                office.RingGlow = glow;
                 var targetRenderers = g.GetComponentsInChildren<Renderer>(true).Where(r => office.Plug == null || !r.transform.IsChildOf(office.Plug.transform));
                 MakeTarget(g, targetRenderers, DeskTarget.Phone, rb, 0.03f);
             }
@@ -842,6 +868,7 @@ namespace BirimizKovulacak.EditorTools
                 var fr = frame.GetComponent<MeshRenderer>();
                 var ovGo = new GameObject("Hover");
                 ovGo.transform.SetParent(frame, false);
+                GrowAboutCenter(ovGo.transform, frame.GetComponent<MeshFilter>().sharedMesh.bounds, frame.lossyScale);
                 ovGo.AddComponent<MeshFilter>().sharedMesh = frame.GetComponent<MeshFilter>().sharedMesh;
                 var omr = ovGo.AddComponent<MeshRenderer>();
                 omr.sharedMaterials = Enumerable.Repeat(Mat("M_RmHover"), fr.sharedMaterials.Length).ToArray();
@@ -869,6 +896,8 @@ namespace BirimizKovulacak.EditorTools
             office.Decals = slots.ToArray();
             // first-person hands (bean mittens, skin = the player's look)
             var hl = RoomProp(root, "RmHandL", RV(a["handL"]), 0, "HandL", rb);
+            var mitten = hl.GetComponentInChildren<MeshFilter>(true);
+            if (mitten != null) Log("ROOMS hand check: mesh bounds " + mitten.sharedMesh.bounds.size.ToString("F3") + " (arm along local Z expected), node rot " + mitten.transform.localEulerAngles.ToString("F1"));
             var hr = RoomProp(root, "RmHandR", RV(a["handR"]), 0, "HandR", rb);
             hl.transform.localRotation = Quaternion.LookRotation(new Vector3(-0.1f, 0.22f, -1f).normalized, Vector3.up);
             hr.transform.localRotation = Quaternion.LookRotation(new Vector3(0.14f, 0.22f, -1f).normalized, Vector3.up);

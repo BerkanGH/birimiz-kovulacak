@@ -40,8 +40,10 @@ namespace BirimizKovulacak.Game
         public GameObject Plug;
         public Transform CordBase, CordEnd;
         public LineRenderer Cord;
+        /// <summary>Small red glow on the desk that pulses with the ring bursts.</summary>
+        public Light RingGlow;
         /// <summary>Handset "at your ear" in camera space: shown in the lower right corner of the view (the ear end up/back).</summary>
-        public Vector3 EarOffset = new Vector3(0.19f, -0.135f, 0.34f);
+        public Vector3 EarOffset = new Vector3(0.25f, -0.17f, 0.4f);
         public Vector3 EarForward = new Vector3(0.32f, 0.78f, -0.55f);
         public Vector3 EarUp = new Vector3(-1f, 0.25f, -0.1f);
 
@@ -75,7 +77,7 @@ namespace BirimizKovulacak.Game
         PhoneLineState _phone;
         MonitorState _monitor;
         Material _screenShown;
-        Vector3 _handsetRestPos;
+        Vector3 _handsetRestPos, _cordEndLocal;
         Quaternion _handsetRestRot;
         float _lift;
         Vector3 _mugRestPos;
@@ -108,6 +110,8 @@ namespace BirimizKovulacak.Game
             if (_awake) return;
             _awake = true;
             if (Handset != null) { _handsetRestPos = Handset.localPosition; _handsetRestRot = Handset.localRotation; }
+            // CordEnd is exported as a sibling of the handset (flat hierarchy): keep its offset in handset space
+            if (Handset != null && CordEnd != null) _cordEndLocal = Handset.InverseTransformPoint(CordEnd.position);
             if (Mug != null) { _mugRestPos = Mug.localPosition; _mugRestRot = Mug.localRotation; }
             if (Drawer != null) _drawerRest = Drawer.localPosition;
             if (Nameplate != null) _nameRest = Nameplate.localRotation;
@@ -211,7 +215,7 @@ namespace BirimizKovulacak.Game
             TickPhone(cam, now, dt);
             TickDesk(cam, now, dt);
             TickHands(cam, mode, now, dt);
-            TickSilhouette(now, dt);
+            TickSilhouette(cam, now, dt);
         }
 
         void TickMonitor(float now, float dt)
@@ -282,6 +286,13 @@ namespace BirimizKovulacak.Game
         {
             bool burst = _phone == PhoneLineState.Ringing && RingBurst(now);
             ApplyPhoneLook(_phone, burst);
+            if (RingGlow != null)
+            {
+                float want = burst ? 1.4f : 0f;
+                RingGlow.intensity = Mathf.MoveTowards(RingGlow.intensity, want, dt * 12f);
+                bool on = RingGlow.intensity > 0.01f;
+                if (RingGlow.enabled != on) RingGlow.enabled = on;
+            }
             if (Handset == null) return;
             bool up = _phone == PhoneLineState.InCall || _phone == PhoneLineState.Dialing;
             _lift = Mathf.MoveTowards(_lift, up ? 1f : 0f, dt * (up ? 2.4f : 2.0f));
@@ -292,8 +303,8 @@ namespace BirimizKovulacak.Game
             {
                 // the handset rattles in its cradle
                 float k = now * 1.0f;
-                restPos += Vector3.up * (Mathf.Abs(Mathf.Sin(k * 52f)) * 0.007f);
-                restRot = restRot * Quaternion.Euler(Mathf.Sin(k * 61f) * 3.5f, Mathf.Sin(k * 47f) * 4f, Mathf.Sin(k * 57f) * 3f);
+                restPos += Vector3.up * (Mathf.Abs(Mathf.Sin(k * 52f)) * 0.013f);
+                restRot = restRot * Quaternion.Euler(Mathf.Sin(k * 61f) * 6f, Mathf.Sin(k * 47f) * 5f, Mathf.Sin(k * 57f) * 5f);
             }
             if (_lift <= 0.0001f || cam == null)
             {
@@ -313,8 +324,8 @@ namespace BirimizKovulacak.Game
 
         void UpdateCord()
         {
-            if (Cord == null || CordBase == null || CordEnd == null) return;
-            Vector3 a = CordBase.position, b = CordEnd.position;
+            if (Cord == null || CordBase == null || Handset == null) return;
+            Vector3 a = CordBase.position, b = Handset.TransformPoint(_cordEndLocal);
             float floorY = Phone != null ? Phone.position.y + 0.004f : a.y - 0.02f;
             float dist = Vector3.Distance(a, b);
             float sag = 0.035f + dist * 0.35f;
@@ -405,7 +416,7 @@ namespace BirimizKovulacak.Game
             HandR.SetPositionAndRotation(p, r);
         }
 
-        void TickSilhouette(float now, float dt)
+        void TickSilhouette(Camera cam, float now, float dt)
         {
             if (Silhouette == null) return;
             if (_silT < 0f)
@@ -430,6 +441,13 @@ namespace BirimizKovulacak.Game
             Vector3 world = parent != null ? parent.TransformPoint(local) : local;
             world.y = _silBaseY + bob;
             Silhouette.position = world;
+            if (cam != null)
+            {
+                // face the seat: through the frosted glass it reads as a soft shape, never as a thin card
+                Vector3 d = world - cam.transform.position;
+                d.y = 0f;
+                if (d.sqrMagnitude > 1e-4f) Silhouette.rotation = Quaternion.LookRotation(d, Vector3.up);
+            }
         }
     }
 }
