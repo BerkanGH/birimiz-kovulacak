@@ -2,14 +2,14 @@
   "ConfigVersion": 2,
   "PlayerCount": 4,
   "QuotaTarget": 22.0,
-  "ShuffleDesks": false,
+  "ShuffleDesks": true,
   "Durations": {
     "Briefing": 30.0,
     "Work1": 180.0,
-    "Raid": 30.0,
+    "Raid": 40.0,
     "RaidWarning": 8.0,
     "Work2": 90.0,
-    "FinalInspection": 30.0,
+    "FinalInspection": 40.0,
     "FinalWarning": 5.0,
     "MeetingDiscussion": 45.0,
     "MeetingDefense": 20.0,
@@ -203,7 +203,7 @@
       "BaseMisconduct": 3.0,
       "ConsequenceMisconduct": 0.0,
       "MaxActivePerDesk": 99,
-      "EffectSeconds": 40.0,
+      "EffectSeconds": 20.0,
       "ReverseSeconds": 6.0,
       "Basic": false,
       "MaxPerMatch": 2
@@ -233,11 +233,11 @@
     "Range": 8.0,
     "HalfAngle": 120.0,
     "RequireLineOfSight": true,
-    "CrouchRangeFactor": 0.6,
-    "DarkRange": 2.5
+    "CrouchRangeFactor": 0.8,
+    "DarkRange": 4.0
   },
   "Manager": {
-    "WalkSpeed": 2.6,
+    "WalkSpeed": 3.5,
     "VisionRange": 10.0,
     "VisionHalfAngle": 70.0,
     "AtDeskRadius": 2.5,
@@ -249,7 +249,9 @@
     "DarkVisionRange": 3.0,
     "TipDwellBonus": 2.5,
     "SurpriseAtFraction": 0.45,
-    "SurpriseSeconds": 20.0
+    "SurpriseSeconds": 30.0,
+    "SurpriseMinFraction": 0.2,
+    "SurpriseMaxFraction": 0.7
   },
   "Risk": {
     "SuspiciousItem": 3.0,
@@ -334,7 +336,7 @@
       "Id": "CHAOS_COORDINATOR",
       "Type": "ChaosCoordinator",
       "RequiresTarget": false,
-      "Count": 3,
+      "Count": 2,
       "Count2": 0,
       "Enabled": true
     },
@@ -350,7 +352,7 @@
       "Id": "OFFICE_ALL_ROUNDER",
       "Type": "OfficeAllRounder",
       "RequiresTarget": false,
-      "Count": 4,
+      "Count": 5,
       "Count2": 0,
       "Enabled": true
     },
@@ -412,8 +414,9 @@
     "RingSeconds": 10.0,
     "MaxCallSeconds": 45.0,
     "CooldownSeconds": 8.0,
+    "DeclineBlockSeconds": 30.0,
     "TipLineEnabled": true,
-    "TipSeconds": 3.0,
+    "TipSeconds": 0.0,
     "TipsPerPlayer": 1
   },
   "Footage": {
@@ -434,9 +437,9 @@
     {
       "Id": "paragoz",
       "QuotaDelta": 2.0,
-      "VoteWeight": 0.4,
+      "VoteWeight": 0.5,
       "RiskWeight": 0.2,
-      "PerformanceWeight": 0.4,
+      "PerformanceWeight": 0.3,
       "FavorWeight": -1.0,
       "ObservationFactors": [
         {
@@ -505,7 +508,7 @@
       "VoteWeight": -1.0,
       "RiskWeight": -1.0,
       "PerformanceWeight": -1.0,
-      "FavorWeight": 0.2,
+      "FavorWeight": 0.1,
       "ObservationFactors": [],
       "EvidenceFactor": 1.0,
       "EmailFactor": 1.0,
