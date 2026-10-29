@@ -72,6 +72,7 @@ namespace BirimizKovulacak.Core
         FisCek = 3,
         InternetKes = 4,
         HatDinle = 5,
+        /// <summary>Retired in v3.1 (it deleted the meeting's best moment); never dealt.</summary>
         KayitSil = 6,
     }
 
@@ -113,6 +114,8 @@ namespace BirimizKovulacak.Core
         SendMail = 10,
         /// <summary>Host only, WeekResults: end the week now.</summary>
         HostContinue = 11,
+        /// <summary>v3.1: the fired player, during WeekResults, picks next week's manager (A = index into LineManagerIds.All).</summary>
+        PickNextManager = 12,
     }
 
     public enum LineFailure : byte
@@ -187,6 +190,10 @@ namespace BirimizKovulacak.Core
         PasswordCracked = 20,
         /// <summary>To the tapper: wiretap on Target started (A = 1) or ended (A = 0).</summary>
         Wiretap = 21,
+        /// <summary>v3.1: to a busy (or dead-line) player: Actor tried to call you.</summary>
+        MissedCall = 22,
+        /// <summary>v3.1: public: Actor (the fired player) picked next week's manager; A = index into LineManagerIds.All.</summary>
+        NextManagerPicked = 23,
     }
 
     public enum BlameReason : byte
