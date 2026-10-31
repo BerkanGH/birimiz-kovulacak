@@ -98,7 +98,8 @@ namespace BirimizKovulacak.Game
         public static Label Hand(string text, params string[] classes) { var l = Text(text, classes).Cls("t-hand"); UseFont(l, HandFont); return l; }
         public static Label Memo(string text, params string[] classes) { var l = Text(text, classes).Cls("t-mono"); UseFont(l, MonoFont); return l; }
         public static Label MemoBold(string text, params string[] classes) { var l = Text(text, classes).Cls("t-mono"); UseFont(l, MonoBoldFont); return l; }
-        public static Label StampText(string text, params string[] classes) { var l = Text(text, classes).Cls("t-stamp"); UseFont(l, StampFont); return l; }
+        /// <summary>Stamp lettering. Bebas Neue is caps-only: upper-case with the UI culture first so Turkish i/ı become İ/I.</summary>
+        public static Label StampText(string text, params string[] classes) { var l = Text(Loc.Upper(text), classes).Cls("t-stamp"); UseFont(l, StampFont); return l; }
 
         /// <summary>Turns markup off on a field's built-in label (Slider/Toggle/TextField/Dropdown labels that show player names).</summary>
         public static T PlainLabel<T>(this T f) where T : BaseField<float>
