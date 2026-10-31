@@ -13,6 +13,8 @@ namespace BirimizKovulacak.Telemetry
         readonly Dictionary<int, double[]> _picks = new Dictionary<int, double[]>(); // pick index -> candidates, selection
         readonly Dictionary<int, int> _exposures = new Dictionary<int, int>();
         readonly Dictionary<int, int> _playingByCall = new Dictionary<int, int>();
+        readonly Dictionary<int, int> _playingMeeting = new Dictionary<int, int>();
+        int _meetingSeq;
         int _defender = LineIds.None;
         double _defenderStart, _nextDefensePoll;
         int _defenderIndex;
@@ -21,6 +23,7 @@ namespace BirimizKovulacak.Telemetry
 
         void BeginMeeting(double t, LineView v)
         {
+            _meetingSeq++;
             _meetingStart = t;
             _meetingIsFinal = v != null && v.Meeting != null && v.Meeting.IsFinal;
             _voteQueue.Clear();
@@ -161,12 +164,14 @@ namespace BirimizKovulacak.Telemetry
 
         // ---- economy -----------------------------------------------------------------------------
 
+        int _incomeSeq;
+
         void OnHostIncome(LineEvent e)
         {
             int p = e.Actor;
             if (!Valid(p)) return;
             _blockIncome[p] += e.A;
-            B("income_credited", e.Time, "inc|" + p + "|" + Ms(e.Time) + "|" + e.B).Slot("player", p).Int("amount", e.A).Int("raw_amount", e.C >= 0 ? e.C : e.A)
+            B("income_credited", e.Time, "inc|" + (++_incomeSeq)).Slot("player", p).Int("amount", e.A).Int("raw_amount", e.C >= 0 ? e.C : e.A)
                 .Enum("reason", (MoneyReason)e.B).Int("block_total", _blockIncome[p]).Emit();
         }
 
@@ -208,9 +213,7 @@ namespace BirimizKovulacak.Telemetry
         void OnHostObjective(LineEvent e)
         {
             if (!Valid(e.Actor)) return;
-            var kind = (ObjectiveKind)e.A;
-            if (kind == ObjectiveKind.None) return;
-            B("objective_completed", e.Time, "obj|" + e.Actor).Slot("player", e.Actor).Enum("kind", kind).Bool("completed", e.B == 1).Emit();
+            // Objective categories are secret until results: the FinalVerdict evaluation is written by EmitResults (WeekResults).
         }
 
         // ---- results -----------------------------------------------------------------------------
@@ -289,7 +292,7 @@ namespace BirimizKovulacak.Telemetry
                 if (chosenCallId < 0 || info.ChosenRank < 0)
                 {
                     string f = failure == "no_candidates" || failure == "no_speech" || failure == "disabled" || failure == "voice_unavailable" ? failure : (pick.CandidateCallIds.Count == 0 ? "no_candidates" : "no_speech");
-                    B("recording_playback_finished", now, "recfin|" + pick.Index).Int("pick_index", pick.Index).Bool("played", false).Enum("failure", f).Emit();
+                    B("recording_playback_finished", now, "recfin|" + _meetingSeq + "|" + pick.Index).Int("pick_index", pick.Index).Bool("played", false).Enum("failure", f).Emit();
                     return;
                 }
                 int caller = pick.Caller, callee = pick.Callee;
@@ -299,13 +302,14 @@ namespace BirimizKovulacak.Telemetry
                 _exposures.TryGetValue(chosenCallId, out prior);
                 _exposures[chosenCallId] = prior + 1;
                 _playingByCall[chosenCallId] = pick.Index;
+                _playingMeeting[chosenCallId] = _meetingSeq;
                 bool same = false;
                 int[] masks;
                 if (Valid(caller) && Valid(callee) && _groupsByKind.TryGetValue((int)pick.Context, out masks)) same = (masks[caller] & (1 << callee)) != 0;
                 double[] meta;
                 int selection = _picks.TryGetValue(pick.Index, out meta) ? (int)meta[1] : 0;
                 int candidates = info.Candidates > 0 ? info.Candidates : pick.CandidateCallIds.Count;
-                var b = B("recording_playback_started", now, "recstart|" + pick.Index).Int("pick_index", pick.Index).Int("candidates", candidates).Int("chosen_rank", info.ChosenRank)
+                var b = B("recording_playback_started", now, "recstart|" + _meetingSeq + "|" + pick.Index).Int("pick_index", pick.Index).Int("candidates", candidates).Int("chosen_rank", info.ChosenRank)
                     .Int("speech_ms", info.SpeechMs).Int("snippet_ms", info.SnippetMs).Int("call_length_ms", info.CallLengthMs)
                     .Slot("caller", caller).Slot("callee", callee).Bool("same_group", same).Int("prior_exposures", prior)
                     .Enum("selection", selection == (int)RecordingSelection.Context ? "context" : "legacy");
@@ -323,7 +327,10 @@ namespace BirimizKovulacak.Telemetry
                 int pickIndex;
                 if (!_playingByCall.TryGetValue(callId, out pickIndex)) return;
                 _playingByCall.Remove(callId);
-                B("recording_playback_finished", now, "recfin|" + pickIndex).Int("pick_index", pickIndex).Bool("played", true).Float("actual_duration_seconds", Math.Max(0, actualSeconds))
+                int meetingSeq;
+                if (!_playingMeeting.TryGetValue(callId, out meetingSeq)) meetingSeq = _meetingSeq;
+                _playingMeeting.Remove(callId);
+                B("recording_playback_finished", now, "recfin|" + meetingSeq + "|" + pickIndex).Int("pick_index", pickIndex).Bool("played", true).Float("actual_duration_seconds", Math.Max(0, actualSeconds))
                     .Enum("failure", stoppedEarly ? "stopped" : "none").Emit();
             }
             catch (Exception ex) { Fail(ex); }

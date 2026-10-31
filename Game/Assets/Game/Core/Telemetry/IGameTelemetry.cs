@@ -16,6 +16,8 @@ namespace BirimizKovulacak.Telemetry
         TelemetrySinkKind Kind { get; }
         void Write(IReadOnlyList<TelemetryEvent> batch);
         void Flush();
+        /// <summary>Local consent was lowered: drop anything this sink still holds (cloud hand-off queues).</summary>
+        void OnConsentWithdrawn() { }
     }
 
     /// <summary>Counters for the debug overlay and the end-of-session report.</summary>
@@ -44,6 +46,8 @@ namespace BirimizKovulacak.Telemetry
         void SetParticipant(int slot, int consent, string anonymousId, bool isBot);
         void RemoveParticipant(int slot);
         int ConsentOfSlot(int slot);
+        /// <summary>Changes whenever the slot's observed state (consent >= 2) flips.</summary>
+        int ConsentVersion(int slot);
         string AnonymousIdOfSlot(int slot);
 
         /// <summary>Moves the host's private_until_match_end buffer into the queue (results / abandon).</summary>

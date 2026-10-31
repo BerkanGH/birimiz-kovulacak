@@ -261,3 +261,12 @@ private_until_match_end. Consent: S self, A all_participants, V voter, H host_ag
 3. `LineConnectionPayload.TelemetryConsent/AnonymousPlayerId` must be filled by `ConnectionManager.BuildPayload` (it currently is not) and re-sent through a NetSession RPC on `TelemetryConsentStore.ConsentChanged`.
 4. A `ConnectionManager` event or call for the join kind (`rejoin`) would replace the `-autojoin` inference; `ClientTelemetry.NoteJoinKind("rejoin")` is the hook.
 5. `HostCall` timing: engine events should carry the call id on `CallEnded` for calls that never connected (currently handled by pair matching).
+
+**Review fixes (v4 integration review).**
+- *Sensitivity audit*: phone_call_* (all six), phone_round_summary, remedial_requested/resolved and objective_completed are now `private_until_match_end`. Public host events with a slot are limited to facts every participant sees (presence, blame, warnings, votes at verdict, presented evidence, defenses, firing, exposure, played recordings, career at results). A test pins this list. Objective evaluations (HostObjective at FinalVerdict) are not written early; they come from the results at WeekResults.
+- *Consent at delivery*: `Flush` re-evaluates consent and routing for every detached event (and again before each sink if consent was lowered meanwhile); revoked events are dropped and counted as `consent_withdrawn`. `ITelemetrySink.OnConsentWithdrawn()` lets cloud sinks drop their own queues.
+- *No retroactive measurement*: `ConsentVersion(slot)` changes when a seat's observed state flips; a round window in which it changed yields no per-player summary and the player is excluded from the aggregate; calls that started while a participant was not consenting never produce `phone_call_finished`.
+- *Ids*: income events use a per-match sequence; recording keys include the meeting; host events outside a match are scoped by session id.
+- *Order independence*: HostTaskOutcome and TaskResolved are joined in either order.
+- *Host mode* ends when `ConnectionManager` leaves Hosting (`ClientConnectionTelemetry`).
+- *Bounds*: `ReleasePrivate` obeys `QueueBound`; overflow is counted and reported.

@@ -118,6 +118,7 @@ namespace BirimizKovulacak.Telemetry.Tests
         public void Phone_CallLifecycleEvents_AreEmittedOncePerCall()
         {
             var rig = InRound();
+            rig.AutoRelease = true;
             ScriptedCalls(rig);
             Assert.AreEqual(4, rig.Named("phone_call_requested").Count());
             var c = One(rig, "phone_call_connected");
@@ -182,6 +183,7 @@ namespace BirimizKovulacak.Telemetry.Tests
         public void Phone_ParticipationRateOmittedWhenNobodyObserved()
         {
             var rig = InRound(3, new[] { 1, 0, 1 });
+            rig.AutoRelease = true;
             rig.Go(1099, LinePhase.RoundReveal, 10);
             var s = One(rig, "phone_round_summary");
             Assert.AreEqual(0, s.GetInt("observed"));
@@ -193,6 +195,7 @@ namespace BirimizKovulacak.Telemetry.Tests
         public void Phone_ConsentGatesCallsWithAnUnconsentingParticipant()
         {
             var rig = InRound(4, new[] { 3, 3, 1, 3 });
+            rig.AutoRelease = true;
             rig.Feed(Ev.Incoming(1030, 0, 2));
             rig.Feed(Ev.Connected(1032, 0, 2, 9, 0), Ev.Connected(1032, 0, 2, 9, 2));
             rig.Feed(Ev.Ended(1050, 0, 2, CallEndReason.HungUp, 9));
@@ -217,6 +220,7 @@ namespace BirimizKovulacak.Telemetry.Tests
         public void Phone_DisconnectCensorsOpenCallsOnce()
         {
             var rig = InRound();
+            rig.AutoRelease = true;
             rig.Feed(Ev.Incoming(1030, 0, 1));
             rig.Feed(Ev.Connected(1032, 0, 1, 5, 0), Ev.Connected(1032, 0, 1, 5, 1));
             rig.Engine.Disconnected[1] = true;
@@ -270,6 +274,7 @@ namespace BirimizKovulacak.Telemetry.Tests
         public void Phone_RetriesOfTheSameEngineEventsAreIdempotent()
         {
             var rig = InRound();
+            rig.AutoRelease = true;
             ScriptedCalls(rig);
             ScriptedCalls(rig);
             Assert.AreEqual(1, rig.Named("phone_call_connected").Count());
@@ -636,6 +641,7 @@ namespace BirimizKovulacak.Telemetry.Tests
         public void Recordings_StartAndFinishAreLinked()
         {
             var rig = InRound();
+            rig.AutoRelease = true;
             rig.Feed(Ev.Connected(1030, 0, 1, 7, 0));
             rig.Feed(Ev.Ended(1050, 0, 1, CallEndReason.HungUp, 7));
             rig.Feed(Ev.Host(LineEventType.HostRecordingPick, 1130, a: 0, b: 2, c: (int)RecordingSelection.Context));

@@ -177,6 +177,7 @@ namespace BirimizKovulacak.Telemetry.Tests
             Assert.IsFalse(reversed);
             Assert.IsTrue(both);
             Assert.IsFalse(self);
+            h.Service.ReleasePrivate();
             var ev = h.Flushed();
             Assert.AreEqual(1, ev.Count);
             Assert.AreEqual(2, h.Service.GetStats().Suppressed - 1, "two phone calls + one blame suppressed (one extra counted for aggregate)");
