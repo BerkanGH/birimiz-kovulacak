@@ -373,6 +373,9 @@ if __name__=='__main__':
     parser.add_argument('--strict',action='store_true')
     parser.add_argument('--legacy',action='store_true',help='Run the original 205-asset archive audit (requires ignored historical _sources and sheets).')
     args=parser.parse_args()
+    if (ROOT/'_tools/v4_baseline.json').exists() and not args.legacy:
+        from v4_validate import main as validate_v4
+        raise SystemExit(validate_v4(args.strict))
     if (ROOT/'_tools/v3_baseline.json').exists() and not args.legacy:
         from v3_validate import main as validate_v3
         raise SystemExit(validate_v3(args.strict))

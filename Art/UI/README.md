@@ -1,6 +1,23 @@
 # Birimiz Kovulacak — 2D UI art kit
 
-The kit contains **307 final PNG assets plus one multi-resolution ICO**. The **v3 Office Line run adds 103 PNGs** for private offices, desk-phone conversations, computer rounds and the daily meeting. All 205 previous PNG/ICO assets are preserved byte-for-byte. [manifest.json](manifest.json) retains the original nine-field schema; [validation.json](validation.json) records the current file audit. Review sheets, source records and finishing scripts are excluded from the final asset count.
+The kit contains **330 final PNG assets plus one multi-resolution ICO**. The **v4 run adds 23 PNGs** for twelve office tasks, six evidence sources, three intro scenes and two company outcomes. All 308 pre-v4 PNG/ICO assets are preserved byte-for-byte. [manifest.json](manifest.json) retains the original nine-field schema; [v4_validation.json](v4_validation.json) records the current delivery audit. The historical v3 audit remains in [validation.json](validation.json). Review sheets, source records and finishing scripts are excluded from the final asset count.
+
+## V4 delivery — 23 new PNGs
+
+The [v4 brief](../../docs/codex/ART_V4_BRIEF.md) and [gameplay redesign](../../docs/GAMEPLAY_REDESIGN.md) govern this delivery. See [V4_DELIVERY.md](V4_DELIVERY.md) for every filename, provenance, retries and integration notes. All illustrations were produced with the built-in `image_gen.imagegen` tool; its output did **not report a model identifier**, so none is inferred. There were 26 successful image calls: 23 initial candidates and three targeted corrections. All raw candidates, including rejected versions, are archived locally in `_tools/v4_sources/`; [_tools/v4_generation.json](_tools/v4_generation.json) records prompts, references, tool output, hashes, date, retries and finishing for every asset.
+
+| Folder | Count | Canvas | Review sheet |
+| --- | ---: | --- | --- |
+| `tasks/` | 12 | 512×716 | [180px cards](_sheets/v4_tasks.png) |
+| `evidence/` | 6 | 512×716 | [180px cards](_sheets/v4_evidence.png) |
+| `onboarding_v4/` | 3 | 1280×720 | [Wide scenes](_sheets/v4_wide.png) |
+| `results_v4/` | 2 | 1280×720 | [Wide scenes](_sheets/v4_wide.png) |
+
+Cards reuse `v3_cards_finish.frame()` exactly: rounded manila edges, transparent outside silhouette, illustration area `[40,44,428,474]`, and an empty paper title/body safe area **`[52,552,408,104]`** in top-left `[x,y,width,height]` source pixels. Wide scenes are fully opaque. The only lettering is the illustrative **4 1 7 2** on the server-code cards; this is not a fixed gameplay code. The task-system window and HR props contain no literal OS/HR labels. Localized titles, descriptions, dates, amounts and record contents belong in the runtime UI.
+
+Finished PNGs are copied byte-for-byte to `Game/Assets/Game/UI/Resources/ui/{tasks,evidence,onboarding_v4,results_v4}/`. No `.meta` files were created. Use unsliced sprites at their native aspect ratios. Prefer cards at **256×358 or larger** for focused display; **129×180** works as a compact overview, with visitor-badge, ledger and toner details becoming small. Wide illustrations suit **640×360 to 1280×720** display. Closure art is intentionally dimmer and needs a contrast check in the final layout. Unity import, platform compression and in-game appearance have not been exercised here.
+
+Rebuild with `python -B Art/UI/_tools/v4_finish.py` using a Pillow-capable interpreter. Rebuilding altered art requires renewed visual review before updating [_tools/v4_review.json](_tools/v4_review.json). Run `python -B Art/UI/_tools/validate_kit.py --strict` or `v4_validate.py --strict`; the standard entry point now selects the v4 audit when its baseline exists and preserves the appended manifest entries. The checked result is **23/23 v4 assets, 331 manifest entries, 1,501 checks, zero errors and zero warnings**, including original final-asset/metadata preservation, prior Unity-file preservation, exact frames, blank safe areas, alpha, nine-field metadata, source/review hashes and all 23 Resources copies. Ignored historical v1–v3 raw archives remain absent; this audit verifies their existing final files against the v4 baseline without claiming to recover those archives.
 
 ## V3 delivery — 103 new PNGs
 
