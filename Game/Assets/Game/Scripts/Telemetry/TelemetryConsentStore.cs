@@ -29,10 +29,45 @@ namespace BirimizKovulacak.Game
         public string LogDirectory { get { return TelemetryBootstrap.LogDirectory; } }
         public bool MomentMarkerAvailable { get { return Consent >= 2 && _svc != null && _svc.IsEnabled; } }
 
+        /// <summary>Automation (-telemetryconsent N with -bot/-autohost/-autojoin): consent for this process only, never persisted.</summary>
+        public bool Ephemeral { get; private set; }
+
         public TelemetryConsentStore()
         {
+            int automation = AutomationConsent();
+            if (automation >= 0)
+            {
+                // Several local test processes share PlayerPrefs: give each its own in-memory consent and id.
+                Ephemeral = true;
+                Consent = automation;
+                AnonymousId = Consent >= 2 ? NewId() : "";
+                return;
+            }
             try { Consent = Mathf.Clamp(PlayerPrefs.GetInt(ConsentKey, 0), 0, 3); } catch (Exception) { Consent = 0; }
             if (Consent >= 2) AnonymousId = LoadOrCreateId(); else DeleteStoredId();
+        }
+
+        static int AutomationConsent()
+        {
+            var a = LaunchArgs.Current;
+            if (a == null || !(a.Bot || a.AutoHost || !string.IsNullOrEmpty(a.AutoJoinAddress))) return -1;
+            var args = Environment.GetCommandLineArgs();
+            for (int i = 0; i + 1 < args.Length; i++)
+                if (string.Equals(args[i], "-telemetryconsent", StringComparison.OrdinalIgnoreCase))
+                {
+                    int v;
+                    if (int.TryParse(args[i + 1], out v)) return Mathf.Clamp(v, 0, 3);
+                }
+            return -1;
+        }
+
+        static string NewId()
+        {
+            var b = new byte[16];
+            using (var rng = RandomNumberGenerator.Create()) rng.GetBytes(b);
+            var sb = new StringBuilder("p-");
+            foreach (var x in b) sb.Append(x.ToString("x2"));
+            return sb.ToString();
         }
 
         internal void Bind(GameTelemetryService svc, TelemetryConfiguration cfg)
@@ -47,6 +82,13 @@ namespace BirimizKovulacak.Game
             level = Mathf.Clamp(level, 0, 3);
             int old = Consent;
             Consent = level;
+            if (Ephemeral)
+            {
+                if (level >= 2) { if (AnonymousId.Length == 0) AnonymousId = NewId(); }
+                else AnonymousId = "";
+                Apply(old != level);
+                return;
+            }
             try { PlayerPrefs.SetInt(ConsentKey, level); PlayerPrefs.Save(); } catch (Exception) { }
             if (level >= 2) { if (AnonymousId.Length == 0) AnonymousId = LoadOrCreateId(); }
             else { AnonymousId = ""; DeleteStoredId(); }

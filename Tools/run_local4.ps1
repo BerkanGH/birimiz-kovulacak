@@ -20,7 +20,10 @@ param(
     [int]$Players = 4,
     [switch]$Week,
     [string]$Manager = "",
-    [string]$VoiceTest = ""
+    [string]$VoiceTest = "",
+    # Analytics for automated runs: per-process in-memory consent, events under <LogDir>	elemetry, cohort bot_sim.
+    [switch]$NoTelemetry,
+    [string]$Cohort = "bot_sim"
 )
 $root = Split-Path -Parent $PSScriptRoot
 if (-not $Exe) { $Exe = Join-Path $root "Builds\BirimizKovulacak-Windows\BirimizKovulacak.exe" }
@@ -30,6 +33,7 @@ $inv = [Globalization.CultureInfo]::InvariantCulture
 $common = @("-screen-fullscreen", "0", "-screen-width", "960", "-screen-height", "540", "-durationscale", $DurationScale.ToString($inv),
             "-logdir", $LogDir, "-screenshots", "-mute", "-port", $Port.ToString(), "-rematches", ($Matches - 1).ToString(), "-quitaftermatches", $Matches.ToString(), "-expectplayers", $Players.ToString())
 if ($Seed -ne 0) { $common += @("-seed", $Seed.ToString()) }
+if (-not $NoTelemetry) { $common += @("-telemetry", "local", "-telemetryconsent", "2", "-telemetrydir", (Join-Path $LogDir "telemetry"), "-telemetryenv", "development", "-cohort", $Cohort) }
 if ($ExtraAll) { $common += $ExtraAll.Split(" ") }
 if ($VoiceTest) { $common += @("-voicetest", $VoiceTest) }
 $names = @("Mavi", "Sari", "Pembe", "Yesil", "Turuncu", "Mor")

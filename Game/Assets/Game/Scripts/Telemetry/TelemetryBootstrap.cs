@@ -48,6 +48,9 @@ namespace BirimizKovulacak.Game
                     return;
                 }
                 string dir = Path.Combine(Application.persistentDataPath, "telemetry", cfg.Environment);
+                // Automated multi-process runs keep their events next to the run's logs (Tools/run_local4.ps1).
+                string overrideDir = ArgValue("-telemetrydir");
+                if (!string.IsNullOrEmpty(overrideDir)) dir = Path.Combine(overrideDir, cfg.Environment);
                 LogDirectory = dir;
                 var ctx = new TelemetrySessionContext { GameVersion = Application.version, BuildVersion = SafeBuildId(), RulesetVersion = LineProtocol.RulesetVersion };
                 Service = new GameTelemetryService(cfg, ctx);
@@ -82,6 +85,13 @@ namespace BirimizKovulacak.Game
                 Debug.LogWarning("[Telemetry] install failed: " + e.GetType().Name);
                 Service = null;
             }
+        }
+
+        static string ArgValue(string key)
+        {
+            var args = Environment.GetCommandLineArgs();
+            for (int i = 0; i + 1 < args.Length; i++) if (string.Equals(args[i], key, StringComparison.OrdinalIgnoreCase)) return args[i + 1];
+            return null;
         }
 
         static string SafeBuildId() { try { return GameConfig.BuildId; } catch (Exception) { return ""; } }
