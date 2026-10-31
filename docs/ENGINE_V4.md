@@ -297,3 +297,12 @@ Final result aggregate hash: **`2719C182636CE5E2`**; six-player block-2 maximum 
 ## Contract requests
 
 Recommended default change in the lead-owned config: `ArchivistRecords` 6 -> **4**. No schema change is needed.
+
+## Lead changes after the Codex runs (2026-11-01)
+
+Review fixes applied by the lead (each with a regression test in `LineReviewFixTests.cs` / `LineRoundTests.cs`):
+phishing real account drawn once (was per player), EotM cooperation term in the quality scale, T4 waiting decision not
+missed, T10 overtime only for a shift's sole volunteer + random listing order, T6 HR-file subject seeded, submissions
+before a disconnect stand, symmetric customer-spec catalogue (public majority revealed the answer), `ArchivistRecords`
+default 4. The tables above describe the Codex runs; the final-engine rerun of the same matrix is
+`Tools/LineSim/v4-sim.txt` (synthetic: Talk 98.9 % / NoComm 61.7 % / Talk + one Greedy 90.0 % mean productivity).
