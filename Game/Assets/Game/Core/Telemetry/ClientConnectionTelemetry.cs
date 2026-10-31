@@ -57,8 +57,9 @@ namespace BirimizKovulacak.Telemetry
         void Handle(ClientConnState state, string error, LinePhase phase, bool midMatch)
         {
             double now = _clock();
-            if (phase != LinePhase.None || state != ClientConnState.Failed) _phase = phase;
-            _midMatch = midMatch;
+            // the reconnect loop resets the client session (no view), so remember the last phase / mid-match flag seen
+            if (phase != LinePhase.None) _phase = phase;
+            if (midMatch) _midMatch = true;
             var prev = _state;
             _state = state;
             switch (state)
@@ -70,6 +71,8 @@ namespace BirimizKovulacak.Telemetry
                     {
                         _attemptStart = now;
                         _rejectReason = null;
+                        _phase = LinePhase.None;
+                        _midMatch = false;
                         _t.Begin("lobby_join_attempted").Enum("kind", _joinKind).Emit();
                     }
                     break;
@@ -107,6 +110,7 @@ namespace BirimizKovulacak.Telemetry
                     _joined = true; _hosting = true; _joinedAt = now; _chain = false; _pendingError = null;
                     break;
                 case ClientConnState.Failed:
+                    if (error == "net.host_failed") return; // StartHost failed: not a join outcome
                     if (_hosting && !_joined) return;
                     if (_hosting) { _hosting = false; _joined = false; return; } // host-side failures are not join outcomes
                     if (error.StartsWith("reject.") ) _rejectReason = error;
@@ -116,7 +120,8 @@ namespace BirimizKovulacak.Telemetry
                     break;
                 case ClientConnState.Offline:
                     if (_pendingError != null) Finalize(now);
-                    if (_joined) EmitLeft(_hosting ? "user" : "user", now);
+                    if (_joined) EmitLeft("user", now);
+                    _phase = LinePhase.None; _midMatch = false;
                     _joined = false; _hosting = false; _chain = false; _pendingError = null; _rejectReason = null;
                     break;
             }

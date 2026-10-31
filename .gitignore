@@ -43,3 +43,6 @@ Art/UI/_sheets/
 Art/UI/_tools/*_sources/
 Tools/LineSim/bin/
 Tools/LineSim/obj/
+
+Tools/TelemetryTests/bin/
+Tools/TelemetryTests/obj/
