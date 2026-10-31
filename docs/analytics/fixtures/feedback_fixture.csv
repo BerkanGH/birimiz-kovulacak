@@ -1,0 +1,13 @@
+anonymous_group_id,anonymous_player_id,match_id,player_count,ruleset_version,build_version,q_contact_helped,q_reach_people,q_too_much_waiting,q_recording_awareness,q_accusations_game_events,q_recover_bad_start,q_play_again,q_wanted_to_share,q_hear_over_music
+G01,,m-g01-1,4,v4.0-hybrid,202611012000-a1b2c3,Somewhat,No,Not sure,Somewhat,Somewhat,Yes,Yes,Somewhat,Somewhat
+G01,,m-g01-1,4,v4.0-hybrid,202611012000-a1b2c3,Somewhat,Not sure,Yes,Not sure,Not sure,Not sure,Not sure,Not sure,Somewhat
+G01,,m-g01-1,4,v4.0-hybrid,202611012000-a1b2c3,Not sure,Yes,Not sure,Somewhat,Yes,No,Not sure,Not sure,Not sure
+G01,,m-g01-1,4,v4.0-hybrid,202611012000-a1b2c3,Yes,No,Yes,Yes,Not sure,Not sure,Yes,Yes,No
+G03,,m-g03-1,5,v4.0-hybrid,202611012000-a1b2c3,Somewhat,Yes,Not sure,Somewhat,Somewhat,Yes,Yes,Not sure,Somewhat
+G03,,m-g03-1,5,v4.0-hybrid,202611012000-a1b2c3,Somewhat,Not sure,Not sure,No,No,Not sure,Somewhat,Somewhat,Yes
+G03,,m-g03-1,5,v4.0-hybrid,202611012000-a1b2c3,No,No,Not sure,Somewhat,No,Somewhat,No,No,Yes
+G03,,m-g03-1,5,v4.0-hybrid,202611012000-a1b2c3,Somewhat,No,Somewhat,Yes,No,No,Somewhat,No,Yes
+G04,,m-g04-1,6,v4.1-hybrid,202611021200-d4e5f6,Not sure,No,Not sure,No,Not sure,Somewhat,Not sure,Yes,Somewhat
+G04,,m-g04-1,6,v4.1-hybrid,202611021200-d4e5f6,Yes,Somewhat,Somewhat,No,Yes,Yes,Not sure,No,Somewhat
+G04,,m-g04-1,6,v4.1-hybrid,202611021200-d4e5f6,Not sure,Somewhat,Somewhat,Not sure,Not sure,Not sure,Not sure,Yes,Yes
+G04,,m-g04-1,6,v4.1-hybrid,202611021200-d4e5f6,No,Yes,Yes,Yes,Yes,No,Somewhat,Not sure,Somewhat

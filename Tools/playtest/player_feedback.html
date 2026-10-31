@@ -1,0 +1,151 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Birimiz Kovulacak - player feedback</title>
+<style>
+  :root { --bg:#f7f7f5; --fg:#1f2937; --muted:#5b6472; --card:#ffffff; --line:#d9dce1; --accent:#2457c5; --accent-fg:#ffffff; --ok:#1d7a46; }
+  @media (prefers-color-scheme: dark) {
+    :root { --bg:#16181d; --fg:#e8eaee; --muted:#a2a9b5; --card:#20242b; --line:#363c46; --accent:#7aa2ff; --accent-fg:#0d1320; --ok:#5fd08d; }
+  }
+  * { box-sizing: border-box; }
+  body { margin:0; background:var(--bg); color:var(--fg); font:16px/1.45 "Segoe UI", system-ui, Arial, sans-serif; }
+  main { max-width:760px; margin:0 auto; padding:20px 16px 60px; }
+  h1 { font-size:22px; margin:0 0 4px; }
+  p.lead { color:var(--muted); margin:0 0 16px; }
+  fieldset { border:1px solid var(--line); background:var(--card); border-radius:10px; margin:0 0 12px; padding:12px 14px; }
+  legend { padding:0 6px; font-weight:600; }
+  .q { margin:0 0 12px; padding:10px 12px; background:var(--card); border:1px solid var(--line); border-radius:10px; }
+  .q p { margin:0 0 6px; font-weight:600; }
+  .q p small { display:block; color:var(--muted); font-weight:400; }
+  .opts { display:flex; flex-wrap:wrap; gap:8px 16px; }
+  label.o { display:inline-flex; align-items:center; gap:6px; cursor:pointer; padding:4px 2px; }
+  .grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(200px,1fr)); gap:10px; }
+  .grid label { display:flex; flex-direction:column; font-size:14px; color:var(--muted); }
+  input[type=text], input[type=number], select { font:inherit; padding:7px 8px; border:1px solid var(--line); border-radius:6px; background:var(--bg); color:var(--fg); }
+  .bar { display:flex; flex-wrap:wrap; gap:10px; margin:16px 0 8px; }
+  button { font:inherit; padding:9px 14px; border-radius:8px; border:1px solid var(--line); background:var(--card); color:var(--fg); cursor:pointer; }
+  button.primary { background:var(--accent); color:var(--accent-fg); border-color:var(--accent); font-weight:600; }
+  #status { color:var(--ok); min-height:1.4em; }
+  .note { font-size:13px; color:var(--muted); }
+  table { border-collapse:collapse; width:100%; font-size:13px; margin-top:8px; }
+  td, th { border-bottom:1px solid var(--line); padding:4px 6px; text-align:left; }
+</style>
+</head>
+<body>
+<main>
+  <h1>Player feedback <span class="note">/ Oyuncu geri bildirimi</span></h1>
+  <p class="lead">Nine short questions, fixed answers only. No names, no free text. Nothing leaves this page except the CSV you
+  save yourself (no network). / Dokuz kisa soru, sadece hazir cevaplar. Ad ve serbest metin yok; sayfa aga baglanmaz.</p>
+
+  <fieldset>
+    <legend>Session (facilitator fills once)</legend>
+    <div class="grid">
+      <label>anonymous_group_id (e.g. G07)<input type="text" id="anonymous_group_id" maxlength="16" autocomplete="off"></label>
+      <label>match_id (optional, m-...)<input type="text" id="match_id" maxlength="40" autocomplete="off"></label>
+      <label>player_count
+        <select id="player_count"><option value=""></option><option>3</option><option>4</option><option>5</option><option>6</option></select>
+      </label>
+      <label>ruleset_version (e.g. v4.0-hybrid)<input type="text" id="ruleset_version" maxlength="32" autocomplete="off"></label>
+      <label>build_version (optional)<input type="text" id="build_version" maxlength="40" autocomplete="off"></label>
+      <label>anonymous_player_id (optional, p-...)<input type="text" id="anonymous_player_id" maxlength="40" autocomplete="off"></label>
+    </div>
+    <p class="note">The player id is optional. Leave it empty unless the player chose to link the answers to their log id; never type a name.</p>
+  </fieldset>
+
+  <form id="form" autocomplete="off"></form>
+
+  <div class="bar">
+    <button class="primary" id="add" type="button">Add this response</button>
+    <button id="download" type="button">Download CSV (all responses)</button>
+    <button id="clear" type="button">Clear answers</button>
+    <button id="reset" type="button">Delete all stored responses</button>
+  </div>
+  <div id="status" role="status"></div>
+  <p class="note">Responses are kept only in this browser tab's local storage until you download them. Send the CSV to the facilitator;
+  it is read by <code>analyze_playtests.py --feedback</code>.</p>
+  <table id="list" aria-label="stored responses"></table>
+</main>
+
+<script>
+(function () {
+  "use strict";
+  var QUESTIONS = [
+    ["q_contact_helped", "Did contacting others help you decide?", "Başkalarıyla iletişim kurmak karar vermenize yardımcı oldu mu?"],
+    ["q_reach_people", "Could you reach the people you needed?", "İhtiyaç duyduğunuz kişilere ulaşabildiniz mi?"],
+    ["q_too_much_waiting", "Did you spend too much time waiting?", "Çok fazla beklediniz mi?"],
+    ["q_recording_awareness", "Did recording awareness affect your negotiation?", "Kayıt olduğunu bilmek pazarlığınızı etkiledi mi?"],
+    ["q_accusations_game_events", "Did accusations relate to game events?", "Suçlamalar oyundaki olaylarla ilgili miydi?"],
+    ["q_recover_bad_start", "Could you recover from a bad start?", "Kötü bir başlangıçtan toparlanabildiniz mi?"],
+    ["q_play_again", "Would you voluntarily play again?", "Gönüllü olarak tekrar oynar mıydınız?"],
+    ["q_wanted_to_share", "Was there a moment you wanted to share?", "Paylaşmak istediğiniz bir an oldu mu?"],
+    ["q_hear_over_music", "Could you clearly hear calls and recording reveals over the music?", "Müziğin üzerinden aramaları ve kayıt gösterimlerini net duyabildiniz mi?"]
+  ];
+  var ANSWERS = [["Yes", "Evet"], ["Somewhat", "Kısmen"], ["No", "Hayır"], ["Not sure", "Emin değilim"]];
+  var SESSION = ["anonymous_group_id", "match_id", "player_count", "ruleset_version", "build_version", "anonymous_player_id"];
+  var COLUMNS = ["anonymous_group_id", "anonymous_player_id", "match_id", "player_count", "ruleset_version", "build_version"].concat(QUESTIONS.map(function (q) { return q[0]; }));
+  var KEY = "bk_feedback_responses_v1";
+  var form = document.getElementById("form");
+  var status = document.getElementById("status");
+
+  QUESTIONS.forEach(function (q, i) {
+    var div = document.createElement("div"); div.className = "q";
+    var p = document.createElement("p"); p.textContent = (i + 1) + ". " + q[1];
+    var sm = document.createElement("small"); sm.textContent = q[2]; p.appendChild(sm); div.appendChild(p);
+    var opts = document.createElement("div"); opts.className = "opts";
+    ANSWERS.forEach(function (a) {
+      var l = document.createElement("label"); l.className = "o";
+      var r = document.createElement("input"); r.type = "radio"; r.name = q[0]; r.value = a[0];
+      l.appendChild(r); l.appendChild(document.createTextNode(a[0] + " / " + a[1])); opts.appendChild(l);
+    });
+    div.appendChild(opts); form.appendChild(div);
+  });
+
+  function load() { try { return JSON.parse(localStorage.getItem(KEY) || "[]"); } catch (e) { return memory; } }
+  var memory = [];
+  function save(rows) { memory = rows; try { localStorage.setItem(KEY, JSON.stringify(rows)); } catch (e) { /* private mode: keep in memory only */ } }
+  function sessionValues() { var o = {}; SESSION.forEach(function (k) { o[k] = (document.getElementById(k).value || "").trim(); }); return o; }
+  function answers() { var o = {}; QUESTIONS.forEach(function (q) { var c = form.querySelector('input[name="' + q[0] + '"]:checked'); o[q[0]] = c ? c.value : ""; }); return o; }
+  function csvCell(v) { v = String(v == null ? "" : v); return /[",\n\r]/.test(v) ? '"' + v.replace(/"/g, '""') + '"' : v; }
+  function toCsv(rows) {
+    var out = [COLUMNS.join(",")];
+    rows.forEach(function (r) { out.push(COLUMNS.map(function (c) { return csvCell(r[c]); }).join(",")); });
+    return out.join("\r\n") + "\r\n";
+  }
+  function render() {
+    var rows = load(), t = document.getElementById("list");
+    t.innerHTML = "";
+    if (!rows.length) { return; }
+    var h = t.insertRow(); ["#", "group", "match", "answered"].forEach(function (x) { var c = document.createElement("th"); c.textContent = x; h.appendChild(c); });
+    rows.forEach(function (r, i) {
+      var tr = t.insertRow(); var n = QUESTIONS.filter(function (q) { return r[q[0]]; }).length;
+      [i + 1, r.anonymous_group_id, r.match_id, n + " / " + QUESTIONS.length].forEach(function (x) { tr.insertCell().textContent = x; });
+    });
+  }
+  function say(t) { status.textContent = t; }
+
+  document.getElementById("add").onclick = function () {
+    var a = answers(), s = sessionValues();
+    var answered = QUESTIONS.filter(function (q) { return a[q[0]]; }).length;
+    if (!answered) { say("Answer at least one question first."); return; }
+    var row = {}; COLUMNS.forEach(function (c) { row[c] = a[c] !== undefined ? a[c] : (s[c] || ""); });
+    var rows = load(); rows.push(row); save(rows); render();
+    document.getElementById("clear").click();
+    say("Saved response " + rows.length + " (" + answered + " answered; blank answers stay blank = missing).");
+  };
+  document.getElementById("clear").onclick = function () { form.querySelectorAll("input[type=radio]").forEach(function (r) { r.checked = false; }); };
+  document.getElementById("download").onclick = function () {
+    var rows = load(); if (!rows.length) { say("Nothing to download yet."); return; }
+    var g = (rows[0].anonymous_group_id || "group").replace(/[^A-Za-z0-9_-]/g, "");
+    var blob = new Blob(["﻿" + toCsv(rows)], { type: "text/csv;charset=utf-8" });
+    var a = document.createElement("a"); a.href = URL.createObjectURL(blob); a.download = "feedback_" + g + ".csv";
+    document.body.appendChild(a); a.click(); document.body.removeChild(a); setTimeout(function () { URL.revokeObjectURL(a.href); }, 1000);
+    say("CSV downloaded (" + rows.length + " responses).");
+  };
+  document.getElementById("reset").onclick = function () { if (confirm("Delete all stored responses on this page?")) { save([]); render(); say("Stored responses deleted."); } };
+  render();
+})();
+</script>
+</body>
+</html>
