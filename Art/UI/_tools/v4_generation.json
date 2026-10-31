@@ -1,0 +1,1561 @@
+{
+  "tool": "image_gen.imagegen",
+  "model": "Not reported by built-in tool",
+  "date": "2026-11-01",
+  "referenceInputNote": "Wide scene initial invocation rejected before generation: tool accepts at most five reference paths. Six portraits combined into an inspected reference contact sheet; no candidate was produced or billed as a retry.",
+  "postProcessingPolicy": "Explicitly requested v3 deterministic finishing only: existing frame, alpha trim, proportion-preserving fit/resize, PNG encoding, contact sheets. No scene painted by code.",
+  "records": [
+    {
+      "id": "task_invoice_reconcile",
+      "refs": [
+        "Art/UI/rounds/round_prim_havuzu.png",
+        "Art/UI/portraits/player_0.png",
+        "Art/UI/portraits/player_1.png"
+      ],
+      "prompt": "Use case: stylized-concept. Asset type: office-comedy game task/record card illustration for Birimiz Kovulacak. Create ONE new illustration, not a sheet. Reference images are locked style/bean identity inputs, not edit targets. Match their rounded bean silhouettes, large cream eyes, medium navy contours, white collars, simple bottom-right shading, upper-left highlights, restrained paper grain, warm stationery aesthetic. Palette from Art/palette.json: paper #F1E9D8, manila #E9D8A6, office green #3E7D5A, navy #2B3A5C, blue #4A90E2, yellow #F5C842, pink #F28AB2, orange #FF8C1A, purple #8E44AD; align locked UI paper #F4EFE3, manila #E8C98A, navy #1F2A44. Source canvas 1024x1024; the FINAL runtime card is exactly 512x716. Generate ONLY the fully contained isolated scene cutout with real transparent surroundings, generous 7% padding, compact composition, NO card frame, NO background rectangle. Deterministic v3 finishing places this art in the existing rounded manila frame above y=522 and reserves the blank title/body rectangle [52,552,408,104]. Keep silhouettes distinct at 180px card height. No letters, words, signatures, watermark, fake writing, logos, or numeric labels unless specifically requested. Papers use simple lines/diagrams only. Scene: exactly two beans, tall blue with green tie on the left and round yellow with glasses on the right, each holding one jagged HALF of the SAME torn invoice. The halves visibly match along a central tear with a small gap. Both look intently at each other's half, mildly perplexed. Invoice shows a few horizontal accounting rules and small coin pictograms, NO text or digits. One shared small desk below, the torn invoice is the largest clearest prop. Both halves fully visible.",
+      "output_hint": "Generated images are saved to C:\\Users\\agdem\\.codex\\generated_images\\01a193e3-d2a7-7e51-9c11-51321d415947 as C:\\Users\\agdem\\.codex\\generated_images\\01a193e3-d2a7-7e51-9c11-51321d415947\\exec-1d56ad95-5aa3-4648-b61c-bad0be09f7e8.png by default.\nIf you need to use a generated image at another path, copy it and leave the original in place unless the user explicitly asks you to delete it.\nThe generated image is already displayed to the user. There is no need to render it in the final response as a Markdown image or file link.",
+      "retries": 0,
+      "review": "Accepted: two on-model beans, complementary torn invoice halves, no text.",
+      "category": "tasks",
+      "source": "Art/UI/_tools/v4_sources/task_invoice_reconcile.png",
+      "tool": "image_gen.imagegen",
+      "model": "Not reported by built-in tool",
+      "date": "2026-11-01",
+      "sourceSha256": "8d2a1d122d7eda8bc7d3f1849a33e01edd1c364866bd2819ccc883ce543503c3",
+      "sourceSize": [
+        1333,
+        1180
+      ],
+      "sourceAlphaExtrema": [
+        0,
+        255
+      ],
+      "referenceSha256": {
+        "Art/UI/rounds/round_prim_havuzu.png": "c2336c3747b3514c22a4dc5ae0421b2ded3f9ea0e89d19fd7a9578035d99ef95",
+        "Art/UI/portraits/player_0.png": "05ebca8b01fd54392ce94b7f6f8c402bd19d068516ec4768f41e3cac05adc1e7",
+        "Art/UI/portraits/player_1.png": "f2d78d3929d5c17d3fc5c4273d10edb629775fdd03f8f53549244a343ac39d79"
+      },
+      "referenceArchive": {},
+      "postProcessing": {
+        "pipeline": "v3_cards_finish.frame + v4_finish.py",
+        "alphaBelow24Cleared": true,
+        "trimBounds": [
+          83,
+          119,
+          1252,
+          1091
+        ],
+        "maxIllustrationSize": [
+          410,
+          448
+        ],
+        "placedSize": [
+          410,
+          341
+        ],
+        "offset": [
+          51,
+          115
+        ],
+        "safeArea": [
+          52,
+          552,
+          408,
+          104
+        ],
+        "canvas": [
+          512,
+          716
+        ],
+        "sceneContentAltered": false,
+        "encoding": "lossless RGBA PNG, optimize=True"
+      },
+      "finalPath": "Art/UI/tasks/task_invoice_reconcile.png",
+      "finalSha256": "efbf2ef2fba438b8f97da007b1680bf31ea90696ba3053ff943ca325934992a5",
+      "resourcesPath": "Game/Assets/Game/UI/Resources/ui/tasks/task_invoice_reconcile.png"
+    },
+    {
+      "id": "task_budget_split",
+      "category": "tasks",
+      "prompt": "Use case: stylized-concept. Asset type: office-comedy game task/record card illustration for Birimiz Kovulacak. Create ONE new illustration, not a sheet. Reference images are locked style/bean identity inputs, not edit targets. Match their rounded bean silhouettes, large cream eyes, medium navy contours, white collars, simple bottom-right shading, upper-left highlights, restrained paper grain, warm stationery aesthetic. Palette from Art/palette.json: paper #F1E9D8, manila #E9D8A6, office green #3E7D5A, navy #2B3A5C, blue #4A90E2, yellow #F5C842, pink #F28AB2, orange #FF8C1A, purple #8E44AD; align locked UI paper #F4EFE3, manila #E8C98A, navy #1F2A44. Source canvas 1024x1024; the FINAL runtime card is exactly 512x716. Generate ONLY the fully contained isolated scene cutout with real transparent surroundings, generous 7% padding, compact composition, NO card frame, NO background rectangle. Deterministic v3 finishing places this art in the existing rounded manila frame above y=522 and reserves the blank title/body rectangle [52,552,408,104]. Keep silhouettes distinct at 180px card height. No letters, words, signatures, watermark, fake writing, logos, or numeric labels unless specifically requested. Papers use simple lines/diagrams only. Exactly three beans: blue tie, pink hair bun, orange navy beanie, around a small round meeting table. At center ONE comically small golden budget PIE with four clearly cut wedge slices, a coin pictogram on its top. All three reach eagerly toward the SAME pie with different hands, worried competitive faces. No extra pies or money envelopes.",
+      "refs": [
+        "Art/UI/rounds/round_prim_havuzu.png",
+        "Art/UI/portraits/player_0.png",
+        "Art/UI/portraits/player_2.png",
+        "Art/UI/portraits/player_4.png"
+      ],
+      "output_hint": "Generated images are saved to C:\\Users\\agdem\\.codex\\generated_images\\01a193e3-d2a7-7e51-9c11-51321d415947 as C:\\Users\\agdem\\.codex\\generated_images\\01a193e3-d2a7-7e51-9c11-51321d415947\\exec-63142c36-3a6c-46e6-9798-455b75d86098.png by default.\nIf you need to use a generated image at another path, copy it and leave the original in place unless the user explicitly asks you to delete it.\nThe generated image is already displayed to the user. There is no need to render it in the final response as a Markdown image or file link.",
+      "source": "Art/UI/_tools/v4_sources/task_budget_split.png",
+      "tool": "image_gen.imagegen",
+      "model": "Not reported by built-in tool",
+      "date": "2026-11-01",
+      "retries": 0,
+      "review": "Accepted: three distinct beans reach for one small sliced coin pie.",
+      "sourceSha256": "36a9977b30d6a808fd56de285a05ee1fa61268dddd4e49d0629f4e09ed8f5d2b",
+      "sourceSize": [
+        1233,
+        1275
+      ],
+      "sourceAlphaExtrema": [
+        0,
+        255
+      ],
+      "referenceSha256": {
+        "Art/UI/rounds/round_prim_havuzu.png": "c2336c3747b3514c22a4dc5ae0421b2ded3f9ea0e89d19fd7a9578035d99ef95",
+        "Art/UI/portraits/player_0.png": "05ebca8b01fd54392ce94b7f6f8c402bd19d068516ec4768f41e3cac05adc1e7",
+        "Art/UI/portraits/player_2.png": "c00168654ebc84c68b831c156f7fcfa64a00454e165efee30be07e78953b0fbf",
+        "Art/UI/portraits/player_4.png": "09a8c7eae019d728db6d208d097804df4ae9bfa4dfba407001a0e3c3fdec87d5"
+      },
+      "referenceArchive": {},
+      "postProcessing": {
+        "pipeline": "v3_cards_finish.frame + v4_finish.py",
+        "alphaBelow24Cleared": true,
+        "trimBounds": [
+          48,
+          235,
+          1191,
+          1106
+        ],
+        "maxIllustrationSize": [
+          410,
+          448
+        ],
+        "placedSize": [
+          410,
+          312
+        ],
+        "offset": [
+          51,
+          130
+        ],
+        "safeArea": [
+          52,
+          552,
+          408,
+          104
+        ],
+        "canvas": [
+          512,
+          716
+        ],
+        "sceneContentAltered": false,
+        "encoding": "lossless RGBA PNG, optimize=True"
+      },
+      "finalPath": "Art/UI/tasks/task_budget_split.png",
+      "finalSha256": "6d293ebc421f1bddbe33a9a7818495e60a2699dd3dbccf71efff3268e4c45f90",
+      "resourcesPath": "Game/Assets/Game/UI/Resources/ui/tasks/task_budget_split.png"
+    },
+    {
+      "id": "task_customer_spec",
+      "category": "tasks",
+      "prompt": "Use case: stylized-concept. Asset type: office-comedy game task/record card illustration for Birimiz Kovulacak. Create ONE new illustration, not a sheet. Reference images are locked style/bean identity inputs, not edit targets. Match their rounded bean silhouettes, large cream eyes, medium navy contours, white collars, simple bottom-right shading, upper-left highlights, restrained paper grain, warm stationery aesthetic. Palette from Art/palette.json: paper #F1E9D8, manila #E9D8A6, office green #3E7D5A, navy #2B3A5C, blue #4A90E2, yellow #F5C842, pink #F28AB2, orange #FF8C1A, purple #8E44AD; align locked UI paper #F4EFE3, manila #E8C98A, navy #1F2A44. Source canvas 1024x1024; the FINAL runtime card is exactly 512x716. Generate ONLY the fully contained isolated scene cutout with real transparent surroundings, generous 7% padding, compact composition, NO card frame, NO background rectangle. Deterministic v3 finishing places this art in the existing rounded manila frame above y=522 and reserves the blank title/body rectangle [52,552,408,104]. Keep silhouettes distinct at 180px card height. No letters, words, signatures, watermark, fake writing, logos, or numeric labels unless specifically requested. Papers use simple lines/diagrams only. Blue tie bean and pink hair bun bean stand beside three product BOXES: small red box, medium blue box, large green box. Behind them a neutral navy CUSTOMER silhouette. Two separate thought bubbles from the customer split the specification between the two beans: left bubble contains a red paint swatch and small box; right bubble contains a calendar with one check mark. Clear readable boxes and bubbles, no writing.",
+      "refs": [
+        "Art/UI/rounds/round_prim_havuzu.png",
+        "Art/UI/portraits/player_0.png",
+        "Art/UI/portraits/player_2.png"
+      ],
+      "output_hint": "Generated images are saved to C:\\Users\\agdem\\.codex\\generated_images\\01a193e3-d2a7-7e51-9c11-51321d415947 as C:\\Users\\agdem\\.codex\\generated_images\\01a193e3-d2a7-7e51-9c11-51321d415947\\exec-668103c9-65f8-45b1-82e7-c310380e99f4.png by default.\nIf you need to use a generated image at another path, copy it and leave the original in place unless the user explicitly asks you to delete it.\nThe generated image is already displayed to the user. There is no need to render it in the final response as a Markdown image or file link.",
+      "source": "Art/UI/_tools/v4_sources/task_customer_spec.png",
+      "tool": "image_gen.imagegen",
+      "model": "Not reported by built-in tool",
+      "date": "2026-11-01",
+      "retries": 0,
+      "review": "Accepted: three box colors/sizes, neutral customer, split specification bubbles, on-model blue/pink.",
+      "sourceSha256": "a7ba09b08507ff2d43005c08b28b66f792cf770a57f36496099e6868397c8cfc",
+      "sourceSize": [
+        1206,
+        1305
+      ],
+      "sourceAlphaExtrema": [
+        0,
+        255
+      ],
+      "referenceSha256": {
+        "Art/UI/rounds/round_prim_havuzu.png": "c2336c3747b3514c22a4dc5ae0421b2ded3f9ea0e89d19fd7a9578035d99ef95",
+        "Art/UI/portraits/player_0.png": "05ebca8b01fd54392ce94b7f6f8c402bd19d068516ec4768f41e3cac05adc1e7",
+        "Art/UI/portraits/player_2.png": "c00168654ebc84c68b831c156f7fcfa64a00454e165efee30be07e78953b0fbf"
+      },
+      "referenceArchive": {},
+      "postProcessing": {
+        "pipeline": "v3_cards_finish.frame + v4_finish.py",
+        "alphaBelow24Cleared": true,
+        "trimBounds": [
+          98,
+          150,
+          1156,
+          1144
+        ],
+        "maxIllustrationSize": [
+          410,
+          448
+        ],
+        "placedSize": [
+          410,
+          385
+        ],
+        "offset": [
+          51,
+          93
+        ],
+        "safeArea": [
+          52,
+          552,
+          408,
+          104
+        ],
+        "canvas": [
+          512,
+          716
+        ],
+        "sceneContentAltered": false,
+        "encoding": "lossless RGBA PNG, optimize=True"
+      },
+      "finalPath": "Art/UI/tasks/task_customer_spec.png",
+      "finalSha256": "8b18b26e697bbfdad48df3b0cb1bd81cad1312ddee775aa5c56e6cbdcace25b4",
+      "resourcesPath": "Game/Assets/Game/UI/Resources/ui/tasks/task_customer_spec.png"
+    },
+    {
+      "id": "task_report_review",
+      "category": "tasks",
+      "prompt": "Use case: stylized-concept. Asset type: office-comedy game task/record card illustration for Birimiz Kovulacak. Create ONE new illustration, not a sheet. Reference images are locked style/bean identity inputs, not edit targets. Match their rounded bean silhouettes, large cream eyes, medium navy contours, white collars, simple bottom-right shading, upper-left highlights, restrained paper grain, warm stationery aesthetic. Palette from Art/palette.json: paper #F1E9D8, manila #E9D8A6, office green #3E7D5A, navy #2B3A5C, blue #4A90E2, yellow #F5C842, pink #F28AB2, orange #FF8C1A, purple #8E44AD; align locked UI paper #F4EFE3, manila #E8C98A, navy #1F2A44. Source canvas 1024x1024; the FINAL runtime card is exactly 512x716. Generate ONLY the fully contained isolated scene cutout with real transparent surroundings, generous 7% padding, compact composition, NO card frame, NO background rectangle. Deterministic v3 finishing places this art in the existing rounded manila frame above y=522 and reserves the blank title/body rectangle [52,552,408,104]. Keep silhouettes distinct at 180px card height. No letters, words, signatures, watermark, fake writing, logos, or numeric labels unless specifically requested. Papers use simple lines/diagrams only. Yellow glasses bean holds a large magnifier over a paper report with a bar chart: two short bars and one suspiciously absurd TALL red bar protruding upward. Across the desk pink hair bun bean holds a PAIR of rubber stamps, one green round CHECK symbol, one red round CROSS symbol, NO letters. Both stamps visible, puzzled yellow bean, skeptical pink bean.",
+      "refs": [
+        "Art/UI/rounds/round_prim_havuzu.png",
+        "Art/UI/portraits/player_1.png",
+        "Art/UI/portraits/player_2.png"
+      ],
+      "output_hint": "Generated images are saved to C:\\Users\\agdem\\.codex\\generated_images\\01a193e3-d2a7-7e51-9c11-51321d415947 as C:\\Users\\agdem\\.codex\\generated_images\\01a193e3-d2a7-7e51-9c11-51321d415947\\exec-498c912f-bca4-40ea-a7c5-4d534a0a1fbe.png by default.\nIf you need to use a generated image at another path, copy it and leave the original in place unless the user explicitly asks you to delete it.\nThe generated image is already displayed to the user. There is no need to render it in the final response as a Markdown image or file link.",
+      "source": "Art/UI/_tools/v4_sources/task_report_review.png",
+      "tool": "image_gen.imagegen",
+      "model": "Not reported by built-in tool",
+      "date": "2026-11-01",
+      "retries": 0,
+      "review": "Accepted: absurd tall report bar, magnifier and symbol-only green/red rubber stamps.",
+      "sourceSha256": "1cd3857cdc621111f2928ee4c17ae594555e87074b3e41a16da9f39d6a0d8b01",
+      "sourceSize": [
+        1227,
+        1282
+      ],
+      "sourceAlphaExtrema": [
+        0,
+        255
+      ],
+      "referenceSha256": {
+        "Art/UI/rounds/round_prim_havuzu.png": "c2336c3747b3514c22a4dc5ae0421b2ded3f9ea0e89d19fd7a9578035d99ef95",
+        "Art/UI/portraits/player_1.png": "f2d78d3929d5c17d3fc5c4273d10edb629775fdd03f8f53549244a343ac39d79",
+        "Art/UI/portraits/player_2.png": "c00168654ebc84c68b831c156f7fcfa64a00454e165efee30be07e78953b0fbf"
+      },
+      "referenceArchive": {},
+      "postProcessing": {
+        "pipeline": "v3_cards_finish.frame + v4_finish.py",
+        "alphaBelow24Cleared": true,
+        "trimBounds": [
+          64,
+          233,
+          1171,
+          1111
+        ],
+        "maxIllustrationSize": [
+          410,
+          448
+        ],
+        "placedSize": [
+          410,
+          325
+        ],
+        "offset": [
+          51,
+          123
+        ],
+        "safeArea": [
+          52,
+          552,
+          408,
+          104
+        ],
+        "canvas": [
+          512,
+          716
+        ],
+        "sceneContentAltered": false,
+        "encoding": "lossless RGBA PNG, optimize=True"
+      },
+      "finalPath": "Art/UI/tasks/task_report_review.png",
+      "finalSha256": "20ef09e75fb17bcd57a9a2801dc014c8344c7acdd147edee9249e0038363f305",
+      "resourcesPath": "Game/Assets/Game/UI/Resources/ui/tasks/task_report_review.png"
+    },
+    {
+      "id": "task_room_booking",
+      "category": "tasks",
+      "prompt": "Use case: stylized-concept. Asset type: office-comedy game task/record card illustration for Birimiz Kovulacak. Create ONE new illustration, not a sheet. Reference images are locked style/bean identity inputs, not edit targets. Match their rounded bean silhouettes, large cream eyes, medium navy contours, white collars, simple bottom-right shading, upper-left highlights, restrained paper grain, warm stationery aesthetic. Palette from Art/palette.json: paper #F1E9D8, manila #E9D8A6, office green #3E7D5A, navy #2B3A5C, blue #4A90E2, yellow #F5C842, pink #F28AB2, orange #FF8C1A, purple #8E44AD; align locked UI paper #F4EFE3, manila #E8C98A, navy #1F2A44. Source canvas 1024x1024; the FINAL runtime card is exactly 512x716. Generate ONLY the fully contained isolated scene cutout with real transparent surroundings, generous 7% padding, compact composition, NO card frame, NO background rectangle. Deterministic v3 finishing places this art in the existing rounded manila frame above y=522 and reserves the blank title/body rectangle [52,552,408,104]. Keep silhouettes distinct at 180px card height. No letters, words, signatures, watermark, fake writing, logos, or numeric labels unless specifically requested. Papers use simple lines/diagrams only. Blue tie bean and orange navy beanie bean collide shoulder-to-shoulder trying to squeeze simultaneously through ONE narrow green meeting room doorway. Motion star between their shoulders, comically startled faces, folders tucked under arms. A wall calendar hangs clearly beside the door with a simple empty grid and two colored squares on SAME slot, no digits or text. Entire door isolated as vignette.",
+      "refs": [
+        "Art/UI/rounds/round_prim_havuzu.png",
+        "Art/UI/portraits/player_0.png",
+        "Art/UI/portraits/player_4.png"
+      ],
+      "output_hint": "Generated images are saved to C:\\Users\\agdem\\.codex\\generated_images\\01a193e3-d2a7-7e51-9c11-51321d415947 as C:\\Users\\agdem\\.codex\\generated_images\\01a193e3-d2a7-7e51-9c11-51321d415947\\exec-74cc901a-0af1-46de-95f1-b32b8428f644.png by default.\nIf you need to use a generated image at another path, copy it and leave the original in place unless the user explicitly asks you to delete it.\nThe generated image is already displayed to the user. There is no need to render it in the final response as a Markdown image or file link.",
+      "source": "Art/UI/_tools/v4_sources/task_room_booking.png",
+      "tool": "image_gen.imagegen",
+      "model": "Not reported by built-in tool",
+      "date": "2026-11-01",
+      "retries": 0,
+      "review": "Accepted: collision at one meeting-room doorway, readable wall calendar, on-model blue/orange.",
+      "sourceSha256": "029b2f498ecb2ce17696265dd962c3b136e4e912f929c2faca1605da7e7df8f2",
+      "sourceSize": [
+        1297,
+        1213
+      ],
+      "sourceAlphaExtrema": [
+        0,
+        255
+      ],
+      "referenceSha256": {
+        "Art/UI/rounds/round_prim_havuzu.png": "c2336c3747b3514c22a4dc5ae0421b2ded3f9ea0e89d19fd7a9578035d99ef95",
+        "Art/UI/portraits/player_0.png": "05ebca8b01fd54392ce94b7f6f8c402bd19d068516ec4768f41e3cac05adc1e7",
+        "Art/UI/portraits/player_4.png": "09a8c7eae019d728db6d208d097804df4ae9bfa4dfba407001a0e3c3fdec87d5"
+      },
+      "referenceArchive": {},
+      "postProcessing": {
+        "pipeline": "v3_cards_finish.frame + v4_finish.py",
+        "alphaBelow24Cleared": true,
+        "trimBounds": [
+          152,
+          56,
+          1263,
+          1105
+        ],
+        "maxIllustrationSize": [
+          410,
+          448
+        ],
+        "placedSize": [
+          410,
+          387
+        ],
+        "offset": [
+          51,
+          92
+        ],
+        "safeArea": [
+          52,
+          552,
+          408,
+          104
+        ],
+        "canvas": [
+          512,
+          716
+        ],
+        "sceneContentAltered": false,
+        "encoding": "lossless RGBA PNG, optimize=True"
+      },
+      "finalPath": "Art/UI/tasks/task_room_booking.png",
+      "finalSha256": "ad4a466b88dedef59e7bf38314ce9c06b863714d12670c07364547950f7586a1",
+      "resourcesPath": "Game/Assets/Game/UI/Resources/ui/tasks/task_room_booking.png"
+    },
+    {
+      "id": "task_archive_visitor",
+      "category": "tasks",
+      "prompt": "Use case: stylized-concept. Asset type: office-comedy game task/record card illustration for Birimiz Kovulacak. Create ONE new illustration, not a sheet. Reference images are locked style/bean identity inputs, not edit targets. Match their rounded bean silhouettes, large cream eyes, medium navy contours, white collars, simple bottom-right shading, upper-left highlights, restrained paper grain, warm stationery aesthetic. Palette from Art/palette.json: paper #F1E9D8, manila #E9D8A6, office green #3E7D5A, navy #2B3A5C, blue #4A90E2, yellow #F5C842, pink #F28AB2, orange #FF8C1A, purple #8E44AD; align locked UI paper #F4EFE3, manila #E8C98A, navy #1F2A44. Source canvas 1024x1024; the FINAL runtime card is exactly 512x716. Generate ONLY the fully contained isolated scene cutout with real transparent surroundings, generous 7% padding, compact composition, NO card frame, NO background rectangle. Deterministic v3 finishing places this art in the existing rounded manila frame above y=522 and reserves the blank title/body rectangle [52,552,408,104]. Keep silhouettes distinct at 180px card height. No letters, words, signatures, watermark, fake writing, logos, or numeric labels unless specifically requested. Papers use simple lines/diagrams only. Short green headset bean wearing a prominent VISITOR LANYARD with blank badge in an archive aisle between two short manila-folder shelves. The visitor carries only TWO manila folders, clearly a limited small stack. Outside the archive threshold blue tie and pink bun beans wave to attract the busy visitor. Archive shelves and doorway visible as isolated compact vignette.",
+      "refs": [
+        "Art/UI/rounds/round_prim_havuzu.png",
+        "Art/UI/portraits/player_3.png",
+        "Art/UI/portraits/player_0.png",
+        "Art/UI/portraits/player_2.png"
+      ],
+      "output_hint": "Generated images are saved to C:\\Users\\agdem\\.codex\\generated_images\\01a193e3-d2a7-7e51-9c11-51321d415947 as C:\\Users\\agdem\\.codex\\generated_images\\01a193e3-d2a7-7e51-9c11-51321d415947\\exec-9c3994f2-ff63-4230-a496-4aa3587a23f2.png by default.\nIf you need to use a generated image at another path, copy it and leave the original in place unless the user explicitly asks you to delete it.\nThe generated image is already displayed to the user. There is no need to render it in the final response as a Markdown image or file link.",
+      "source": "Art/UI/_tools/v4_sources/task_archive_visitor.png",
+      "tool": "image_gen.imagegen",
+      "model": "Not reported by built-in tool",
+      "date": "2026-11-01",
+      "retries": 0,
+      "review": "Accepted: visitor lanyard, limited folder stack, archive shelves, coworkers waving outside threshold.",
+      "sourceSha256": "fb884ead83408d5e5975d9539126e6f0a54f7d7be7d6fa57130a03dd1e5cea5b",
+      "sourceSize": [
+        1425,
+        1104
+      ],
+      "sourceAlphaExtrema": [
+        0,
+        255
+      ],
+      "referenceSha256": {
+        "Art/UI/rounds/round_prim_havuzu.png": "c2336c3747b3514c22a4dc5ae0421b2ded3f9ea0e89d19fd7a9578035d99ef95",
+        "Art/UI/portraits/player_3.png": "712fb095c6edea9916b046426c8333c91c80ee35487159c660233b7d119241d4",
+        "Art/UI/portraits/player_0.png": "05ebca8b01fd54392ce94b7f6f8c402bd19d068516ec4768f41e3cac05adc1e7",
+        "Art/UI/portraits/player_2.png": "c00168654ebc84c68b831c156f7fcfa64a00454e165efee30be07e78953b0fbf"
+      },
+      "referenceArchive": {},
+      "postProcessing": {
+        "pipeline": "v3_cards_finish.frame + v4_finish.py",
+        "alphaBelow24Cleared": true,
+        "trimBounds": [
+          62,
+          64,
+          1377,
+          1026
+        ],
+        "maxIllustrationSize": [
+          410,
+          448
+        ],
+        "placedSize": [
+          410,
+          300
+        ],
+        "offset": [
+          51,
+          136
+        ],
+        "safeArea": [
+          52,
+          552,
+          408,
+          104
+        ],
+        "canvas": [
+          512,
+          716
+        ],
+        "sceneContentAltered": false,
+        "encoding": "lossless RGBA PNG, optimize=True"
+      },
+      "finalPath": "Art/UI/tasks/task_archive_visitor.png",
+      "finalSha256": "7b7d51740164122c070438f65ca9d00fccca5234db07c6e6009d3e47184f274f",
+      "resourcesPath": "Game/Assets/Game/UI/Resources/ui/tasks/task_archive_visitor.png"
+    },
+    {
+      "id": "task_bonus_pool",
+      "category": "tasks",
+      "prompt": "Use case: stylized-concept. Asset type: office-comedy game task/record card illustration for Birimiz Kovulacak. Create ONE new illustration, not a sheet. Reference images are locked style/bean identity inputs, not edit targets. Match their rounded bean silhouettes, large cream eyes, medium navy contours, white collars, simple bottom-right shading, upper-left highlights, restrained paper grain, warm stationery aesthetic. Palette from Art/palette.json: paper #F1E9D8, manila #E9D8A6, office green #3E7D5A, navy #2B3A5C, blue #4A90E2, yellow #F5C842, pink #F28AB2, orange #FF8C1A, purple #8E44AD; align locked UI paper #F4EFE3, manila #E8C98A, navy #1F2A44. Source canvas 1024x1024; the FINAL runtime card is exactly 512x716. Generate ONLY the fully contained isolated scene cutout with real transparent surroundings, generous 7% padding, compact composition, NO card frame, NO background rectangle. Deterministic v3 finishing places this art in the existing rounded manila frame above y=522 and reserves the blank title/body rectangle [52,552,408,104]. Keep silhouettes distinct at 180px card height. No letters, words, signatures, watermark, fake writing, logos, or numeric labels unless specifically requested. Papers use simple lines/diagrams only. FRESH overhead-diagonal composition, not the reference bonus card layout. Pink hair bun bean on left and purple curly-haired teal-scarf bean on right at a narrow meeting table. ONE oversized open bonus envelope with visible banknotes at center. Purple bean leans backward and grabs the ENTIRE envelope in both hands toward their chest; pink bean has empty outstretched palms and an incredulous face. No orange bean, no seated side-by-side pose, no duplicate envelopes.",
+      "refs": [
+        "Art/UI/rounds/round_prim_havuzu.png",
+        "Art/UI/portraits/player_2.png",
+        "Art/UI/portraits/player_5.png"
+      ],
+      "output_hint": "Generated images are saved to C:\\Users\\agdem\\.codex\\generated_images\\01a193e3-d2a7-7e51-9c11-51321d415947 as C:\\Users\\agdem\\.codex\\generated_images\\01a193e3-d2a7-7e51-9c11-51321d415947\\exec-eba2a7fb-acaf-4846-9552-37ea11d6fcec.png by default.\nIf you need to use a generated image at another path, copy it and leave the original in place unless the user explicitly asks you to delete it.\nThe generated image is already displayed to the user. There is no need to render it in the final response as a Markdown image or file link.",
+      "source": "Art/UI/_tools/v4_sources/task_bonus_pool.png",
+      "tool": "image_gen.imagegen",
+      "model": "Not reported by built-in tool",
+      "date": "2026-11-01",
+      "retries": 0,
+      "review": "Accepted: fresh diagonal table, purple takes whole envelope, pink empty-handed; distinct from v3.",
+      "sourceSha256": "99568fb0d777a1dfa2204df2bbdda64e4e0b1c377284e1032a4b9cc2e836ad0e",
+      "sourceSize": [
+        1245,
+        1263
+      ],
+      "sourceAlphaExtrema": [
+        0,
+        255
+      ],
+      "referenceSha256": {
+        "Art/UI/rounds/round_prim_havuzu.png": "c2336c3747b3514c22a4dc5ae0421b2ded3f9ea0e89d19fd7a9578035d99ef95",
+        "Art/UI/portraits/player_2.png": "c00168654ebc84c68b831c156f7fcfa64a00454e165efee30be07e78953b0fbf",
+        "Art/UI/portraits/player_5.png": "9a8b8d01e07e3d2a1bbf2d4f6ef46e1e84f6473f92ff6a17010cc6ecba26bfa2"
+      },
+      "referenceArchive": {},
+      "postProcessing": {
+        "pipeline": "v3_cards_finish.frame + v4_finish.py",
+        "alphaBelow24Cleared": true,
+        "trimBounds": [
+          49,
+          133,
+          1223,
+          1185
+        ],
+        "maxIllustrationSize": [
+          410,
+          448
+        ],
+        "placedSize": [
+          410,
+          367
+        ],
+        "offset": [
+          51,
+          102
+        ],
+        "safeArea": [
+          52,
+          552,
+          408,
+          104
+        ],
+        "canvas": [
+          512,
+          716
+        ],
+        "sceneContentAltered": false,
+        "encoding": "lossless RGBA PNG, optimize=True"
+      },
+      "finalPath": "Art/UI/tasks/task_bonus_pool.png",
+      "finalSha256": "6e13d70b62bb4c308a03a1d0815b0ab36e247728a322584edfb321d02a519b62",
+      "resourcesPath": "Game/Assets/Game/UI/Resources/ui/tasks/task_bonus_pool.png"
+    },
+    {
+      "id": "task_server_code",
+      "category": "tasks",
+      "prompt": "Use case: stylized-concept. Asset type: office-comedy game task/record card illustration for Birimiz Kovulacak. Create ONE new illustration, not a sheet. Reference images are locked style/bean identity inputs, not edit targets. Match their rounded bean silhouettes, large cream eyes, medium navy contours, white collars, simple bottom-right shading, upper-left highlights, restrained paper grain, warm stationery aesthetic. Palette from Art/palette.json: paper #F1E9D8, manila #E9D8A6, office green #3E7D5A, navy #2B3A5C, blue #4A90E2, yellow #F5C842, pink #F28AB2, orange #FF8C1A, purple #8E44AD; align locked UI paper #F4EFE3, manila #E8C98A, navy #1F2A44. Source canvas 1024x1024; the FINAL runtime card is exactly 512x716. Generate ONLY the fully contained isolated scene cutout with real transparent surroundings, generous 7% padding, compact composition, NO card frame, NO background rectangle. Deterministic v3 finishing places this art in the existing rounded manila frame above y=522 and reserves the blank title/body rectangle [52,552,408,104]. Keep silhouettes distinct at 180px card height. No letters, words, signatures, watermark, fake writing, logos, or numeric labels unless specifically requested. Papers use simple lines/diagrams only. A compact office-green SERVER RACK at upper center, its attached large numeric KEYPAD visible using blank square keys. In foreground exactly FOUR separate navy cartoon hands each hold one separate cream digit card in an arcing fan. Cards from left to right each have ONE large clear single digit: 4, 1, 7, 2. The server, keypad, four hands and four digit cards all fully visible. These four digits are the ONLY permitted text.",
+      "refs": [
+        "Art/UI/rounds/round_prim_havuzu.png",
+        "Art/UI/rounds/round_ortak_sifre.png"
+      ],
+      "output_hint": "Generated images are saved to C:\\Users\\agdem\\.codex\\generated_images\\01a193e3-d2a7-7e51-9c11-51321d415947 as C:\\Users\\agdem\\.codex\\generated_images\\01a193e3-d2a7-7e51-9c11-51321d415947\\exec-91c7cf06-238c-44b9-862f-ea312104e18b.png by default.\nIf you need to use a generated image at another path, copy it and leave the original in place unless the user explicitly asks you to delete it.\nThe generated image is already displayed to the user. There is no need to render it in the final response as a Markdown image or file link.",
+      "source": "Art/UI/_tools/v4_sources/task_server_code.png",
+      "tool": "image_gen.imagegen",
+      "model": "Not reported by built-in tool",
+      "date": "2026-11-01",
+      "retries": 1,
+      "attempts": [
+        {
+          "prompt": "Use case: stylized-concept. Asset type: office-comedy game task/record card illustration for Birimiz Kovulacak. Create ONE new illustration, not a sheet. Reference images are locked style/bean identity inputs, not edit targets. Match their rounded bean silhouettes, large cream eyes, medium navy contours, white collars, simple bottom-right shading, upper-left highlights, restrained paper grain, warm stationery aesthetic. Palette from Art/palette.json: paper #F1E9D8, manila #E9D8A6, office green #3E7D5A, navy #2B3A5C, blue #4A90E2, yellow #F5C842, pink #F28AB2, orange #FF8C1A, purple #8E44AD; align locked UI paper #F4EFE3, manila #E8C98A, navy #1F2A44. Source canvas 1024x1024; the FINAL runtime card is exactly 512x716. Generate ONLY the fully contained isolated scene cutout with real transparent surroundings, generous 7% padding, compact composition, NO card frame, NO background rectangle. Deterministic v3 finishing places this art in the existing rounded manila frame above y=522 and reserves the blank title/body rectangle [52,552,408,104]. Keep silhouettes distinct at 180px card height. No letters, words, signatures, watermark, fake writing, logos, or numeric labels unless specifically requested. Papers use simple lines/diagrams only. A compact office-green SERVER RACK at upper center, its attached large numeric KEYPAD visible using blank square keys. In foreground exactly FOUR separate navy cartoon hands each hold one separate cream digit card in an arcing fan. Cards from left to right each have ONE large clear single digit: 4, 1, 7, 2. The server, keypad, four hands and four digit cards all fully visible. These four digits are the ONLY permitted text.",
+          "refs": [
+            "Art/UI/rounds/round_prim_havuzu.png",
+            "Art/UI/rounds/round_ortak_sifre.png"
+          ],
+          "source": "Art/UI/_tools/v4_sources/task_server_code_attempt0.png",
+          "reason": "Yellow lacked round glasses; pink hair was brown/red.",
+          "output_hint": "Generated images are saved to C:\\Users\\agdem\\.codex\\generated_images\\01a193e3-d2a7-7e51-9c11-51321d415947 as C:\\Users\\agdem\\.codex\\generated_images\\01a193e3-d2a7-7e51-9c11-51321d415947\\exec-0fecbd45-598b-4cca-ac77-fce9fe70bb4c.png by default.\nIf you need to use a generated image at another path, copy it and leave the original in place unless the user explicitly asks you to delete it.\nThe generated image is already displayed to the user. There is no need to render it in the final response as a Markdown image or file link.",
+          "sourceSha256": "0f2792e0e05088ede73ed88fcb967dfb8ba00404a846cf8a3852278cdfe2ab5e"
+        }
+      ],
+      "retryPrompt": "Use case: identity-preserve. Edit target: Image 1 (server code game-card illustration). Supporting identity references: Image 2 yellow bean, Image 3 pink bean. Fix ONLY these identity defects: yellow bean MUST wear the same thin round navy glasses around BOTH eyes as Image 2; pink bean's hair MUST be the same solid NAVY hair and NAVY bun as Image 3, not brown or red. Preserve all other composition, server rack, keypad, four cards and exact digits 4 1 7 2, blue tie, green headset, faces and positions, transparent cutout surroundings. Keep warm paper/navy outline flat illustration style. No new text, no frame, no background. Final use 512x716 rounded manila runtime card with blank [52,552,408,104] title/body area supplied by deterministic v3 framing; source cutout 1024x1024. Palette paper #F4EFE3, manila #E8C98A, navy #1F2A44.",
+      "retryRefs": [
+        "Art/UI/_tools/v4_sources/task_server_code.png",
+        "Art/UI/portraits/player_1.png",
+        "Art/UI/portraits/player_2.png"
+      ],
+      "review": "Accepted after one identity correction: yellow glasses and navy pink bun restored; digits 4 1 7 2 clear.",
+      "sourceSha256": "34c8537b5cbccd601756cd05655e8861c49749c75cf150a8253abd4df42aef70",
+      "sourceSize": [
+        1346,
+        1168
+      ],
+      "sourceAlphaExtrema": [
+        0,
+        255
+      ],
+      "referenceSha256": {
+        "Art/UI/rounds/round_prim_havuzu.png": "c2336c3747b3514c22a4dc5ae0421b2ded3f9ea0e89d19fd7a9578035d99ef95",
+        "Art/UI/rounds/round_ortak_sifre.png": "177c0b0f08b62a186e7932880d90edbd0ab378d3d2c21a57db9c532a3e6eef40"
+      },
+      "referenceArchive": {},
+      "postProcessing": {
+        "pipeline": "v3_cards_finish.frame + v4_finish.py",
+        "alphaBelow24Cleared": true,
+        "trimBounds": [
+          28,
+          61,
+          1328,
+          1152
+        ],
+        "maxIllustrationSize": [
+          410,
+          448
+        ],
+        "placedSize": [
+          410,
+          344
+        ],
+        "offset": [
+          51,
+          114
+        ],
+        "safeArea": [
+          52,
+          552,
+          408,
+          104
+        ],
+        "canvas": [
+          512,
+          716
+        ],
+        "sceneContentAltered": false,
+        "encoding": "lossless RGBA PNG, optimize=True"
+      },
+      "finalPath": "Art/UI/tasks/task_server_code.png",
+      "finalSha256": "e02e4baf24cd95653d81c8a4f419cadb676789fb02cf3c7979815eed8e64acb7",
+      "resourcesPath": "Game/Assets/Game/UI/Resources/ui/tasks/task_server_code.png",
+      "retryReferenceSha256": {
+        "Art/UI/_tools/v4_sources/task_server_code.png": "0f2792e0e05088ede73ed88fcb967dfb8ba00404a846cf8a3852278cdfe2ab5e",
+        "Art/UI/portraits/player_1.png": "f2d78d3929d5c17d3fc5c4273d10edb629775fdd03f8f53549244a343ac39d79",
+        "Art/UI/portraits/player_2.png": "c00168654ebc84c68b831c156f7fcfa64a00454e165efee30be07e78953b0fbf"
+      },
+      "retryReferenceArchive": {
+        "Art/UI/_tools/v4_sources/task_server_code.png": "Art/UI/_tools/v4_sources/task_server_code_attempt0.png"
+      }
+    },
+    {
+      "id": "task_phishing_check",
+      "category": "tasks",
+      "prompt": "Use case: stylized-concept. Asset type: office-comedy game task/record card illustration for Birimiz Kovulacak. Create ONE new illustration, not a sheet. Reference images are locked style/bean identity inputs, not edit targets. Match their rounded bean silhouettes, large cream eyes, medium navy contours, white collars, simple bottom-right shading, upper-left highlights, restrained paper grain, warm stationery aesthetic. Palette from Art/palette.json: paper #F1E9D8, manila #E9D8A6, office green #3E7D5A, navy #2B3A5C, blue #4A90E2, yellow #F5C842, pink #F28AB2, orange #FF8C1A, purple #8E44AD; align locked UI paper #F4EFE3, manila #E8C98A, navy #1F2A44. Source canvas 1024x1024; the FINAL runtime card is exactly 512x716. Generate ONLY the fully contained isolated scene cutout with real transparent surroundings, generous 7% padding, compact composition, NO card frame, NO background rectangle. Deterministic v3 finishing places this art in the existing rounded manila frame above y=522 and reserves the blank title/body rectangle [52,552,408,104]. Keep silhouettes distinct at 180px card height. No letters, words, signatures, watermark, fake writing, logos, or numeric labels unless specifically requested. Papers use simple lines/diagrams only. A green desktop MONITOR on a small desk displays one large payment email, represented by a cream open envelope and gold coin pictogram, minimal plain line rules. A very obvious curved metal FISHING HOOK passes THROUGH the email envelope on screen, fishing line runs upward. A short green headset bean recoils and points at the hook with suspicious narrowed eyes. No letters, no account numbers, no actual fish.",
+      "refs": [
+        "Art/UI/rounds/round_prim_havuzu.png",
+        "Art/UI/portraits/player_3.png"
+      ],
+      "output_hint": "Generated images are saved to C:\\Users\\agdem\\.codex\\generated_images\\01a193e3-d2a7-7e51-9c11-51321d415947 as C:\\Users\\agdem\\.codex\\generated_images\\01a193e3-d2a7-7e51-9c11-51321d415947\\exec-1c698b55-4d44-4a27-b61d-65037a21ae91.png by default.\nIf you need to use a generated image at another path, copy it and leave the original in place unless the user explicitly asks you to delete it.\nThe generated image is already displayed to the user. There is no need to render it in the final response as a Markdown image or file link.",
+      "source": "Art/UI/_tools/v4_sources/task_phishing_check.png",
+      "tool": "image_gen.imagegen",
+      "model": "Not reported by built-in tool",
+      "date": "2026-11-01",
+      "retries": 1,
+      "attempts": [
+        {
+          "prompt": "Use case: stylized-concept. Asset type: office-comedy game task/record card illustration for Birimiz Kovulacak. Create ONE new illustration, not a sheet. Reference images are locked style/bean identity inputs, not edit targets. Match their rounded bean silhouettes, large cream eyes, medium navy contours, white collars, simple bottom-right shading, upper-left highlights, restrained paper grain, warm stationery aesthetic. Palette from Art/palette.json: paper #F1E9D8, manila #E9D8A6, office green #3E7D5A, navy #2B3A5C, blue #4A90E2, yellow #F5C842, pink #F28AB2, orange #FF8C1A, purple #8E44AD; align locked UI paper #F4EFE3, manila #E8C98A, navy #1F2A44. Source canvas 1024x1024; the FINAL runtime card is exactly 512x716. Generate ONLY the fully contained isolated scene cutout with real transparent surroundings, generous 7% padding, compact composition, NO card frame, NO background rectangle. Deterministic v3 finishing places this art in the existing rounded manila frame above y=522 and reserves the blank title/body rectangle [52,552,408,104]. Keep silhouettes distinct at 180px card height. No letters, words, signatures, watermark, fake writing, logos, or numeric labels unless specifically requested. Papers use simple lines/diagrams only. A green desktop MONITOR on a small desk displays one large payment email, represented by a cream open envelope and gold coin pictogram, minimal plain line rules. A very obvious curved metal FISHING HOOK passes THROUGH the email envelope on screen, fishing line runs upward. A short green headset bean recoils and points at the hook with suspicious narrowed eyes. No letters, no account numbers, no actual fish.",
+          "refs": [
+            "Art/UI/rounds/round_prim_havuzu.png",
+            "Art/UI/portraits/player_3.png"
+          ],
+          "source": "Art/UI/_tools/v4_sources/task_phishing_check_attempt0.png",
+          "reason": "Unrequested dollar glyph violated no-baked-text policy.",
+          "output_hint": "Generated images are saved to C:\\Users\\agdem\\.codex\\generated_images\\01a193e3-d2a7-7e51-9c11-51321d415947 as C:\\Users\\agdem\\.codex\\generated_images\\01a193e3-d2a7-7e51-9c11-51321d415947\\exec-eb2532f2-4fd0-4b9a-90cf-dbae05835a5a.png by default.\nIf you need to use a generated image at another path, copy it and leave the original in place unless the user explicitly asks you to delete it.\nThe generated image is already displayed to the user. There is no need to render it in the final response as a Markdown image or file link.",
+          "sourceSha256": "39b7740987b7cf8a1ea79d3b6f867d3bc6bd6ae9d8901bbe60074d6d65c3e306"
+        }
+      ],
+      "retryPrompt": "Use case: precise-object-edit. Image 1 is the edit target, Image 2 locks green bean identity. Change ONLY the gold coin in the monitor email: REMOVE the dollar-sign lettering completely, replace it with a plain blank gold coin face with a simple inner circular rim. NO currency symbol, no glyph, no letter, no digit. Preserve hook pierced through email, fishing line, monitor, green headset bean, desk and every other element exactly. Preserve real transparent surroundings, flat stationery style, navy #1F2A44 outlines, paper #F4EFE3, green #2F6B4F, manila #E8C98A. Final use 512x716 game task card with exact v3 rounded manila frame and blank runtime text region [52,552,408,104] added separately; source scene cutout only, no frame. Do not add any text.",
+      "retryRefs": [
+        "Art/UI/_tools/v4_sources/task_phishing_check.png",
+        "Art/UI/portraits/player_3.png"
+      ],
+      "review": "Accepted after one text correction: blank coin, hook through payment email, green headset identity preserved.",
+      "sourceSha256": "75c6d93130716e3259adb1515e28595e878d5f1bc52256d9419e392a730970c3",
+      "sourceSize": [
+        1390,
+        1132
+      ],
+      "sourceAlphaExtrema": [
+        0,
+        255
+      ],
+      "referenceSha256": {
+        "Art/UI/rounds/round_prim_havuzu.png": "c2336c3747b3514c22a4dc5ae0421b2ded3f9ea0e89d19fd7a9578035d99ef95",
+        "Art/UI/portraits/player_3.png": "712fb095c6edea9916b046426c8333c91c80ee35487159c660233b7d119241d4"
+      },
+      "referenceArchive": {},
+      "postProcessing": {
+        "pipeline": "v3_cards_finish.frame + v4_finish.py",
+        "alphaBelow24Cleared": true,
+        "trimBounds": [
+          79,
+          0,
+          1321,
+          1108
+        ],
+        "maxIllustrationSize": [
+          410,
+          448
+        ],
+        "placedSize": [
+          410,
+          366
+        ],
+        "offset": [
+          51,
+          103
+        ],
+        "safeArea": [
+          52,
+          552,
+          408,
+          104
+        ],
+        "canvas": [
+          512,
+          716
+        ],
+        "sceneContentAltered": false,
+        "encoding": "lossless RGBA PNG, optimize=True"
+      },
+      "finalPath": "Art/UI/tasks/task_phishing_check.png",
+      "finalSha256": "0154f168b85fc5f379c5bd88cad26c5a707c35f784d57b5ade68cfb1a467d2a3",
+      "resourcesPath": "Game/Assets/Game/UI/Resources/ui/tasks/task_phishing_check.png",
+      "retryReferenceSha256": {
+        "Art/UI/_tools/v4_sources/task_phishing_check.png": "39b7740987b7cf8a1ea79d3b6f867d3bc6bd6ae9d8901bbe60074d6d65c3e306",
+        "Art/UI/portraits/player_3.png": "712fb095c6edea9916b046426c8333c91c80ee35487159c660233b7d119241d4"
+      },
+      "retryReferenceArchive": {
+        "Art/UI/_tools/v4_sources/task_phishing_check.png": "Art/UI/_tools/v4_sources/task_phishing_check_attempt0.png"
+      }
+    },
+    {
+      "id": "task_shift_cover",
+      "category": "tasks",
+      "prompt": "Use case: stylized-concept. Asset type: office-comedy game task/record card illustration for Birimiz Kovulacak. Create ONE new illustration, not a sheet. Reference images are locked style/bean identity inputs, not edit targets. Match their rounded bean silhouettes, large cream eyes, medium navy contours, white collars, simple bottom-right shading, upper-left highlights, restrained paper grain, warm stationery aesthetic. Palette from Art/palette.json: paper #F1E9D8, manila #E9D8A6, office green #3E7D5A, navy #2B3A5C, blue #4A90E2, yellow #F5C842, pink #F28AB2, orange #FF8C1A, purple #8E44AD; align locked UI paper #F4EFE3, manila #E8C98A, navy #1F2A44. Source canvas 1024x1024; the FINAL runtime card is exactly 512x716. Generate ONLY the fully contained isolated scene cutout with real transparent surroundings, generous 7% padding, compact composition, NO card frame, NO background rectangle. Deterministic v3 finishing places this art in the existing rounded manila frame above y=522 and reserves the blank title/body rectangle [52,552,408,104]. Keep silhouettes distinct at 180px card height. No letters, words, signatures, watermark, fake writing, logos, or numeric labels unless specifically requested. Papers use simple lines/diagrams only. A large weekend calendar with TWO prominent weekend columns and three EMPTY shift slots, no dates, no text, no numbers. Beneath it blue tie bean pretends to be busy on a phone disconnected from its base; orange navy beanie bean conspicuously hides behind an UPSIDE DOWN folder; purple curly hair teal scarf bean gazes innocently away while holding a coffee mug. Comical shirking, calendar remains readable. Strictly no currency glyphs or dollar signs.",
+      "refs": [
+        "Art/UI/rounds/round_prim_havuzu.png",
+        "Art/UI/portraits/player_0.png",
+        "Art/UI/portraits/player_4.png",
+        "Art/UI/portraits/player_5.png"
+      ],
+      "output_hint": "Generated images are saved to C:\\Users\\agdem\\.codex\\generated_images\\01a193e3-d2a7-7e51-9c11-51321d415947 as C:\\Users\\agdem\\.codex\\generated_images\\01a193e3-d2a7-7e51-9c11-51321d415947\\exec-5ea7bef6-e550-4fb5-98f3-025e6f6af4d6.png by default.\nIf you need to use a generated image at another path, copy it and leave the original in place unless the user explicitly asks you to delete it.\nThe generated image is already displayed to the user. There is no need to render it in the final response as a Markdown image or file link.",
+      "source": "Art/UI/_tools/v4_sources/task_shift_cover.png",
+      "tool": "image_gen.imagegen",
+      "model": "Not reported by built-in tool",
+      "date": "2026-11-01",
+      "retries": 0,
+      "review": "Accepted: empty weekend slots, blue phone, orange hiding behind folder, purple mug and averted gaze.",
+      "sourceSha256": "21df5270c0619edb226e6b92f7d98d0b18dd938852d1c58f2331d694d1a59148",
+      "sourceSize": [
+        1239,
+        1270
+      ],
+      "sourceAlphaExtrema": [
+        0,
+        255
+      ],
+      "referenceSha256": {
+        "Art/UI/rounds/round_prim_havuzu.png": "c2336c3747b3514c22a4dc5ae0421b2ded3f9ea0e89d19fd7a9578035d99ef95",
+        "Art/UI/portraits/player_0.png": "05ebca8b01fd54392ce94b7f6f8c402bd19d068516ec4768f41e3cac05adc1e7",
+        "Art/UI/portraits/player_4.png": "09a8c7eae019d728db6d208d097804df4ae9bfa4dfba407001a0e3c3fdec87d5",
+        "Art/UI/portraits/player_5.png": "9a8b8d01e07e3d2a1bbf2d4f6ef46e1e84f6473f92ff6a17010cc6ecba26bfa2"
+      },
+      "referenceArchive": {},
+      "postProcessing": {
+        "pipeline": "v3_cards_finish.frame + v4_finish.py",
+        "alphaBelow24Cleared": true,
+        "trimBounds": [
+          45,
+          116,
+          1196,
+          1196
+        ],
+        "maxIllustrationSize": [
+          410,
+          448
+        ],
+        "placedSize": [
+          410,
+          385
+        ],
+        "offset": [
+          51,
+          93
+        ],
+        "safeArea": [
+          52,
+          552,
+          408,
+          104
+        ],
+        "canvas": [
+          512,
+          716
+        ],
+        "sceneContentAltered": false,
+        "encoding": "lossless RGBA PNG, optimize=True"
+      },
+      "finalPath": "Art/UI/tasks/task_shift_cover.png",
+      "finalSha256": "4b0c936379d76d26db16e17cf20c505ee734570f5a661727db2b8e19ba0da2d4",
+      "resourcesPath": "Game/Assets/Game/UI/Resources/ui/tasks/task_shift_cover.png"
+    },
+    {
+      "id": "task_vendor_pick",
+      "category": "tasks",
+      "prompt": "Use case: stylized-concept. Asset type: office-comedy game task/record card illustration for Birimiz Kovulacak. Create ONE new illustration, not a sheet. Reference images are locked style/bean identity inputs, not edit targets. Match their rounded bean silhouettes, large cream eyes, medium navy contours, white collars, simple bottom-right shading, upper-left highlights, restrained paper grain, warm stationery aesthetic. Palette from Art/palette.json: paper #F1E9D8, manila #E9D8A6, office green #3E7D5A, navy #2B3A5C, blue #4A90E2, yellow #F5C842, pink #F28AB2, orange #FF8C1A, purple #8E44AD; align locked UI paper #F4EFE3, manila #E8C98A, navy #1F2A44. Source canvas 1024x1024; the FINAL runtime card is exactly 512x716. Generate ONLY the fully contained isolated scene cutout with real transparent surroundings, generous 7% padding, compact composition, NO card frame, NO background rectangle. Deterministic v3 finishing places this art in the existing rounded manila frame above y=522 and reserves the blank title/body rectangle [52,552,408,104]. Keep silhouettes distinct at 180px card height. No letters, words, signatures, watermark, fake writing, logos, or numeric labels unless specifically requested. Papers use simple lines/diagrams only. A small meeting table presents exactly FOUR clearly different supplier PRODUCT SAMPLES: red stapler, green stapler, blue stapler, yellow stapler, in a tidy left-to-right row. In front of EACH one is one FACE-DOWN cream score card with a simple identical navy diamond back, no scores visible. Yellow round-glasses bean inspects them thoughtfully behind table. Four samples and four hidden score cards must be visible. Strictly no currency glyphs or dollar signs.",
+      "refs": [
+        "Art/UI/rounds/round_prim_havuzu.png",
+        "Art/UI/portraits/player_1.png"
+      ],
+      "output_hint": "Generated images are saved to C:\\Users\\agdem\\.codex\\generated_images\\01a193e3-d2a7-7e51-9c11-51321d415947 as C:\\Users\\agdem\\.codex\\generated_images\\01a193e3-d2a7-7e51-9c11-51321d415947\\exec-765ec080-0424-4c62-afc2-d89a6b05815c.png by default.\nIf you need to use a generated image at another path, copy it and leave the original in place unless the user explicitly asks you to delete it.\nThe generated image is already displayed to the user. There is no need to render it in the final response as a Markdown image or file link.",
+      "source": "Art/UI/_tools/v4_sources/task_vendor_pick.png",
+      "tool": "image_gen.imagegen",
+      "model": "Not reported by built-in tool",
+      "date": "2026-11-01",
+      "retries": 0,
+      "review": "Accepted: exactly four colored supplier samples and four face-down diamond-back score cards; yellow glasses retained.",
+      "sourceSha256": "0d375eacf7470b37a0ab488c56eca424a74bc3be993b2d16f84e1a6073330f22",
+      "sourceSize": [
+        1499,
+        1049
+      ],
+      "sourceAlphaExtrema": [
+        0,
+        255
+      ],
+      "referenceSha256": {
+        "Art/UI/rounds/round_prim_havuzu.png": "c2336c3747b3514c22a4dc5ae0421b2ded3f9ea0e89d19fd7a9578035d99ef95",
+        "Art/UI/portraits/player_1.png": "f2d78d3929d5c17d3fc5c4273d10edb629775fdd03f8f53549244a343ac39d79"
+      },
+      "referenceArchive": {},
+      "postProcessing": {
+        "pipeline": "v3_cards_finish.frame + v4_finish.py",
+        "alphaBelow24Cleared": true,
+        "trimBounds": [
+          106,
+          76,
+          1394,
+          984
+        ],
+        "maxIllustrationSize": [
+          410,
+          448
+        ],
+        "placedSize": [
+          410,
+          289
+        ],
+        "offset": [
+          51,
+          141
+        ],
+        "safeArea": [
+          52,
+          552,
+          408,
+          104
+        ],
+        "canvas": [
+          512,
+          716
+        ],
+        "sceneContentAltered": false,
+        "encoding": "lossless RGBA PNG, optimize=True"
+      },
+      "finalPath": "Art/UI/tasks/task_vendor_pick.png",
+      "finalSha256": "5254db53514fe1972426de68c3101111695b8cc2025d1d5a4b1d9d5efbbf141c",
+      "resourcesPath": "Game/Assets/Game/UI/Resources/ui/tasks/task_vendor_pick.png"
+    },
+    {
+      "id": "task_supply_swap",
+      "category": "tasks",
+      "prompt": "Use case: stylized-concept. Asset type: office-comedy game task/record card illustration for Birimiz Kovulacak. Create ONE new illustration, not a sheet. Reference images are locked style/bean identity inputs, not edit targets. Match their rounded bean silhouettes, large cream eyes, medium navy contours, white collars, simple bottom-right shading, upper-left highlights, restrained paper grain, warm stationery aesthetic. Palette from Art/palette.json: paper #F1E9D8, manila #E9D8A6, office green #3E7D5A, navy #2B3A5C, blue #4A90E2, yellow #F5C842, pink #F28AB2, orange #FF8C1A, purple #8E44AD; align locked UI paper #F4EFE3, manila #E8C98A, navy #1F2A44. Source canvas 1024x1024; the FINAL runtime card is exactly 512x716. Generate ONLY the fully contained isolated scene cutout with real transparent surroundings, generous 7% padding, compact composition, NO card frame, NO background rectangle. Deterministic v3 finishing places this art in the existing rounded manila frame above y=522 and reserves the blank title/body rectangle [52,552,408,104]. Keep silhouettes distinct at 180px card height. No letters, words, signatures, watermark, fake writing, logos, or numeric labels unless specifically requested. Papers use simple lines/diagrams only. Three beans trade office supplies across TWO adjoining desks: blue tie bean passes a red STAPLER to pink hair bun bean, pink bean passes a chunky dark TONER CARTRIDGE toward orange navy beanie bean, orange bean pushes a green swivel CHAIR toward blue. A clear triangular exchange, hands connect to the proper objects, each prop visually distinct. Compact simple office vignette, no arrows needed. Strictly no currency glyphs or dollar signs.",
+      "refs": [
+        "Art/UI/rounds/round_prim_havuzu.png",
+        "Art/UI/portraits/player_0.png",
+        "Art/UI/portraits/player_2.png",
+        "Art/UI/portraits/player_4.png"
+      ],
+      "output_hint": "Generated images are saved to C:\\Users\\agdem\\.codex\\generated_images\\01a193e3-d2a7-7e51-9c11-51321d415947 as C:\\Users\\agdem\\.codex\\generated_images\\01a193e3-d2a7-7e51-9c11-51321d415947\\exec-1765cba3-d462-4654-a652-7b20d3a9ae05.png by default.\nIf you need to use a generated image at another path, copy it and leave the original in place unless the user explicitly asks you to delete it.\nThe generated image is already displayed to the user. There is no need to render it in the final response as a Markdown image or file link.",
+      "source": "Art/UI/_tools/v4_sources/task_supply_swap.png",
+      "tool": "image_gen.imagegen",
+      "model": "Not reported by built-in tool",
+      "date": "2026-11-01",
+      "retries": 0,
+      "review": "Accepted: stapler, toner and chair clearly traded across adjoining desks; blue/pink/orange identities retained.",
+      "sourceSha256": "18c4ed4994b60decc01f6010111782c8da8e5d2989ed067faf26a75b92e7ebf9",
+      "sourceSize": [
+        1430,
+        1100
+      ],
+      "sourceAlphaExtrema": [
+        0,
+        255
+      ],
+      "referenceSha256": {
+        "Art/UI/rounds/round_prim_havuzu.png": "c2336c3747b3514c22a4dc5ae0421b2ded3f9ea0e89d19fd7a9578035d99ef95",
+        "Art/UI/portraits/player_0.png": "05ebca8b01fd54392ce94b7f6f8c402bd19d068516ec4768f41e3cac05adc1e7",
+        "Art/UI/portraits/player_2.png": "c00168654ebc84c68b831c156f7fcfa64a00454e165efee30be07e78953b0fbf",
+        "Art/UI/portraits/player_4.png": "09a8c7eae019d728db6d208d097804df4ae9bfa4dfba407001a0e3c3fdec87d5"
+      },
+      "referenceArchive": {},
+      "postProcessing": {
+        "pipeline": "v3_cards_finish.frame + v4_finish.py",
+        "alphaBelow24Cleared": true,
+        "trimBounds": [
+          67,
+          147,
+          1360,
+          945
+        ],
+        "maxIllustrationSize": [
+          410,
+          448
+        ],
+        "placedSize": [
+          410,
+          253
+        ],
+        "offset": [
+          51,
+          159
+        ],
+        "safeArea": [
+          52,
+          552,
+          408,
+          104
+        ],
+        "canvas": [
+          512,
+          716
+        ],
+        "sceneContentAltered": false,
+        "encoding": "lossless RGBA PNG, optimize=True"
+      },
+      "finalPath": "Art/UI/tasks/task_supply_swap.png",
+      "finalSha256": "1e8872b4ae00aebac550db889b124cd4a984336e82110a4e440f77e6876a7923",
+      "resourcesPath": "Game/Assets/Game/UI/Resources/ui/tasks/task_supply_swap.png"
+    },
+    {
+      "id": "evidence_phone_log",
+      "category": "evidence",
+      "prompt": "Use case: stylized-concept. Asset type: office-comedy game task/record card illustration for Birimiz Kovulacak. Create ONE new illustration, not a sheet. Reference images are locked style/bean identity inputs, not edit targets. Match their rounded bean silhouettes, large cream eyes, medium navy contours, white collars, simple bottom-right shading, upper-left highlights, restrained paper grain, warm stationery aesthetic. Palette from Art/palette.json: paper #F1E9D8, manila #E9D8A6, office green #3E7D5A, navy #2B3A5C, blue #4A90E2, yellow #F5C842, pink #F28AB2, orange #FF8C1A, purple #8E44AD; align locked UI paper #F4EFE3, manila #E8C98A, navy #1F2A44. Source canvas 1024x1024; the FINAL runtime card is exactly 512x716. Generate ONLY the fully contained isolated scene cutout with real transparent surroundings, generous 7% padding, compact composition, NO card frame, NO background rectangle. Deterministic v3 finishing places this art in the existing rounded manila frame above y=522 and reserves the blank title/body rectangle [52,552,408,104]. Keep silhouettes distinct at 180px card height. No letters, words, signatures, watermark, fake writing, logos, or numeric labels unless specifically requested. Papers use simple lines/diagrams only. Record source still life, no characters: office-green DESK TELEPHONE with handset on cradle and curly cord, beside an unrolled printed CALL LOG slip. Slip shows orderly horizontal lines, small phone handset pictograms and three clock-face symbols without numbers. Clear bold readable phone silhouette, quiet official stationery mood, no letters, no digits. Strictly no currency glyphs or dollar signs.",
+      "refs": [
+        "Art/UI/rounds/round_farkli_eposta.png",
+        "Art/UI/style/style_sheet.png"
+      ],
+      "output_hint": "Generated images are saved to C:\\Users\\agdem\\.codex\\generated_images\\01a193e3-d2a7-7e51-9c11-51321d415947 as C:\\Users\\agdem\\.codex\\generated_images\\01a193e3-d2a7-7e51-9c11-51321d415947\\exec-143bb9b5-0a52-4f4c-b9ef-0845e9c4386a.png by default.\nIf you need to use a generated image at another path, copy it and leave the original in place unless the user explicitly asks you to delete it.\nThe generated image is already displayed to the user. There is no need to render it in the final response as a Markdown image or file link.",
+      "source": "Art/UI/_tools/v4_sources/evidence_phone_log.png",
+      "tool": "image_gen.imagegen",
+      "model": "Not reported by built-in tool",
+      "date": "2026-11-01",
+      "retries": 0,
+      "review": "Accepted: desk phone and three-row call log with phone/clock pictograms, no lettering.",
+      "sourceSha256": "44fe02748e2d2276b80390130fc0548aa15624a1b26003e0e080efd168ae620b",
+      "sourceSize": [
+        1243,
+        1265
+      ],
+      "sourceAlphaExtrema": [
+        0,
+        255
+      ],
+      "referenceSha256": {
+        "Art/UI/rounds/round_farkli_eposta.png": "1a9695286e0dc5f9d108ef2052d7ba44bff6fb3dd98519602510a64646a06d0f",
+        "Art/UI/style/style_sheet.png": "27c08849342cf673035db4d232ab7574828d26e7d5f4f4d076937dd9387e8f33"
+      },
+      "referenceArchive": {},
+      "postProcessing": {
+        "pipeline": "v3_cards_finish.frame + v4_finish.py",
+        "alphaBelow24Cleared": true,
+        "trimBounds": [
+          63,
+          156,
+          1196,
+          1159
+        ],
+        "maxIllustrationSize": [
+          410,
+          448
+        ],
+        "placedSize": [
+          410,
+          363
+        ],
+        "offset": [
+          51,
+          104
+        ],
+        "safeArea": [
+          52,
+          552,
+          408,
+          104
+        ],
+        "canvas": [
+          512,
+          716
+        ],
+        "sceneContentAltered": false,
+        "encoding": "lossless RGBA PNG, optimize=True"
+      },
+      "finalPath": "Art/UI/evidence/evidence_phone_log.png",
+      "finalSha256": "9f33754183f89d897b366f9e49e304cfe71c9b4c3f18967acb026e9a65fee2dd",
+      "resourcesPath": "Game/Assets/Game/UI/Resources/ui/evidence/evidence_phone_log.png"
+    },
+    {
+      "id": "evidence_bank",
+      "category": "evidence",
+      "prompt": "Use case: stylized-concept. Asset type: office-comedy game task/record card illustration for Birimiz Kovulacak. Create ONE new illustration, not a sheet. Reference images are locked style/bean identity inputs, not edit targets. Match their rounded bean silhouettes, large cream eyes, medium navy contours, white collars, simple bottom-right shading, upper-left highlights, restrained paper grain, warm stationery aesthetic. Palette from Art/palette.json: paper #F1E9D8, manila #E9D8A6, office green #3E7D5A, navy #2B3A5C, blue #4A90E2, yellow #F5C842, pink #F28AB2, orange #FF8C1A, purple #8E44AD; align locked UI paper #F4EFE3, manila #E8C98A, navy #1F2A44. Source canvas 1024x1024; the FINAL runtime card is exactly 512x716. Generate ONLY the fully contained isolated scene cutout with real transparent surroundings, generous 7% padding, compact composition, NO card frame, NO background rectangle. Deterministic v3 finishing places this art in the existing rounded manila frame above y=522 and reserves the blank title/body rectangle [52,552,408,104]. Keep silhouettes distinct at 180px card height. No letters, words, signatures, watermark, fake writing, logos, or numeric labels unless specifically requested. Papers use simple lines/diagrams only. Record source still life, no characters: an OPEN manila LEDGER BOOK with tidy ruled accounting columns and simple geometric marks, next to three modest stacks of gold COINS. One coin rests on the ledger, green binding and navy outline. No letters, no currency symbols, no digits. Strictly no currency glyphs or dollar signs. Coin faces are blank circles only.",
+      "refs": [
+        "Art/UI/rounds/round_farkli_eposta.png",
+        "Art/UI/style/style_sheet.png"
+      ],
+      "output_hint": "Generated images are saved to C:\\Users\\agdem\\.codex\\generated_images\\01a193e3-d2a7-7e51-9c11-51321d415947 as C:\\Users\\agdem\\.codex\\generated_images\\01a193e3-d2a7-7e51-9c11-51321d415947\\exec-6d5b8982-e56c-4bf4-acf0-afd82943f730.png by default.\nIf you need to use a generated image at another path, copy it and leave the original in place unless the user explicitly asks you to delete it.\nThe generated image is already displayed to the user. There is no need to render it in the final response as a Markdown image or file link.",
+      "source": "Art/UI/_tools/v4_sources/evidence_bank.png",
+      "tool": "image_gen.imagegen",
+      "model": "Not reported by built-in tool",
+      "date": "2026-11-01",
+      "retries": 0,
+      "review": "Accepted: ruled ledger and blank gold coins, no text or currency glyphs.",
+      "sourceSha256": "dab01fc0bf3ab2204278fcbf5c5e715a59bba814146c994f4251ae09da7b10c6",
+      "sourceSize": [
+        1454,
+        1082
+      ],
+      "sourceAlphaExtrema": [
+        0,
+        255
+      ],
+      "referenceSha256": {
+        "Art/UI/rounds/round_farkli_eposta.png": "1a9695286e0dc5f9d108ef2052d7ba44bff6fb3dd98519602510a64646a06d0f",
+        "Art/UI/style/style_sheet.png": "27c08849342cf673035db4d232ab7574828d26e7d5f4f4d076937dd9387e8f33"
+      },
+      "referenceArchive": {},
+      "postProcessing": {
+        "pipeline": "v3_cards_finish.frame + v4_finish.py",
+        "alphaBelow24Cleared": true,
+        "trimBounds": [
+          64,
+          110,
+          1417,
+          1028
+        ],
+        "maxIllustrationSize": [
+          410,
+          448
+        ],
+        "placedSize": [
+          410,
+          278
+        ],
+        "offset": [
+          51,
+          147
+        ],
+        "safeArea": [
+          52,
+          552,
+          408,
+          104
+        ],
+        "canvas": [
+          512,
+          716
+        ],
+        "sceneContentAltered": false,
+        "encoding": "lossless RGBA PNG, optimize=True"
+      },
+      "finalPath": "Art/UI/evidence/evidence_bank.png",
+      "finalSha256": "1c21077b0df4d9c1994808fd3765461d025da47627b5dca241291e2378fe2062",
+      "resourcesPath": "Game/Assets/Game/UI/Resources/ui/evidence/evidence_bank.png"
+    },
+    {
+      "id": "evidence_task_system",
+      "category": "evidence",
+      "prompt": "Use case: stylized-concept. Asset type: office-comedy game task/record card illustration for Birimiz Kovulacak. Create ONE new illustration, not a sheet. Reference images are locked style/bean identity inputs, not edit targets. Match their rounded bean silhouettes, large cream eyes, medium navy contours, white collars, simple bottom-right shading, upper-left highlights, restrained paper grain, warm stationery aesthetic. Palette from Art/palette.json: paper #F1E9D8, manila #E9D8A6, office green #3E7D5A, navy #2B3A5C, blue #4A90E2, yellow #F5C842, pink #F28AB2, orange #FF8C1A, purple #8E44AD; align locked UI paper #F4EFE3, manila #E8C98A, navy #1F2A44. Source canvas 1024x1024; the FINAL runtime card is exactly 512x716. Generate ONLY the fully contained isolated scene cutout with real transparent surroundings, generous 7% padding, compact composition, NO card frame, NO background rectangle. Deterministic v3 finishing places this art in the existing rounded manila frame above y=522 and reserves the blank title/body rectangle [52,552,408,104]. Keep silhouettes distinct at 180px card height. No letters, words, signatures, watermark, fake writing, logos, or numeric labels unless specifically requested. Papers use simple lines/diagrams only. Record source still life, no characters: an office-green desktop monitor showing a SINGLE retro KOVA operating-system WINDOW, represented only by a navy title bar with three circular controls and a large CHECKLIST of four checkbox rows, three green checks and one empty checkbox. No literal KOVA or OS text or other lettering. Simple blank cream interface, manila window edging, a small mouse alongside. Strictly no currency glyphs or dollar signs.",
+      "refs": [
+        "Art/UI/rounds/round_farkli_eposta.png",
+        "Art/UI/style/style_sheet.png",
+        "Art/UI/onboarding/ob_3_rounds.png"
+      ],
+      "output_hint": "Generated images are saved to C:\\Users\\agdem\\.codex\\generated_images\\01a193e3-d2a7-7e51-9c11-51321d415947 as C:\\Users\\agdem\\.codex\\generated_images\\01a193e3-d2a7-7e51-9c11-51321d415947\\exec-95413d53-593e-42b2-838d-f28f04df6074.png by default.\nIf you need to use a generated image at another path, copy it and leave the original in place unless the user explicitly asks you to delete it.\nThe generated image is already displayed to the user. There is no need to render it in the final response as a Markdown image or file link.",
+      "source": "Art/UI/_tools/v4_sources/evidence_task_system.png",
+      "tool": "image_gen.imagegen",
+      "model": "Not reported by built-in tool",
+      "date": "2026-11-01",
+      "retries": 0,
+      "review": "Accepted: retro checklist window, three checked rows and one empty row, no OS lettering.",
+      "sourceSha256": "8b1078039a971490c48337a570964d23919eb669a384b35be606c320691590fb",
+      "sourceSize": [
+        1199,
+        1312
+      ],
+      "sourceAlphaExtrema": [
+        0,
+        255
+      ],
+      "referenceSha256": {
+        "Art/UI/rounds/round_farkli_eposta.png": "1a9695286e0dc5f9d108ef2052d7ba44bff6fb3dd98519602510a64646a06d0f",
+        "Art/UI/style/style_sheet.png": "27c08849342cf673035db4d232ab7574828d26e7d5f4f4d076937dd9387e8f33",
+        "Art/UI/onboarding/ob_3_rounds.png": "9e6222d3cb6b128ebcbad65114580c1b6ae559bbe36a0a48ef827894eb8d58fe"
+      },
+      "referenceArchive": {},
+      "postProcessing": {
+        "pipeline": "v3_cards_finish.frame + v4_finish.py",
+        "alphaBelow24Cleared": true,
+        "trimBounds": [
+          54,
+          128,
+          1153,
+          1235
+        ],
+        "maxIllustrationSize": [
+          410,
+          448
+        ],
+        "placedSize": [
+          410,
+          413
+        ],
+        "offset": [
+          51,
+          79
+        ],
+        "safeArea": [
+          52,
+          552,
+          408,
+          104
+        ],
+        "canvas": [
+          512,
+          716
+        ],
+        "sceneContentAltered": false,
+        "encoding": "lossless RGBA PNG, optimize=True"
+      },
+      "finalPath": "Art/UI/evidence/evidence_task_system.png",
+      "finalSha256": "af25bd70adebb48d65b619190cf580e9ade8bc4449e739b0e98b3b8de96f8d32",
+      "resourcesPath": "Game/Assets/Game/UI/Resources/ui/evidence/evidence_task_system.png"
+    },
+    {
+      "id": "evidence_it_log",
+      "category": "evidence",
+      "prompt": "Use case: stylized-concept. Asset type: office-comedy game task/record card illustration for Birimiz Kovulacak. Create ONE new illustration, not a sheet. Reference images are locked style/bean identity inputs, not edit targets. Match their rounded bean silhouettes, large cream eyes, medium navy contours, white collars, simple bottom-right shading, upper-left highlights, restrained paper grain, warm stationery aesthetic. Palette from Art/palette.json: paper #F1E9D8, manila #E9D8A6, office green #3E7D5A, navy #2B3A5C, blue #4A90E2, yellow #F5C842, pink #F28AB2, orange #FF8C1A, purple #8E44AD; align locked UI paper #F4EFE3, manila #E8C98A, navy #1F2A44. Source canvas 1024x1024; the FINAL runtime card is exactly 512x716. Generate ONLY the fully contained isolated scene cutout with real transparent surroundings, generous 7% padding, compact composition, NO card frame, NO background rectangle. Deterministic v3 finishing places this art in the existing rounded manila frame above y=522 and reserves the blank title/body rectangle [52,552,408,104]. Keep silhouettes distinct at 180px card height. No letters, words, signatures, watermark, fake writing, logos, or numeric labels unless specifically requested. Papers use simple lines/diagrams only. Record source still life, no characters: a fanfold SERVER PRINTOUT with perforated edges and orderly log lines, emerging beside a small server box; foreground a chunky office-green KEYBOARD with blank keycaps and a clearly visible brown circular COFFEE STAIN and small coffee splash over several keys. Keep printout and stained keyboard equally readable, no letters or digits. Strictly no currency glyphs or dollar signs.",
+      "refs": [
+        "Art/UI/rounds/round_farkli_eposta.png",
+        "Art/UI/style/style_sheet.png"
+      ],
+      "output_hint": "Generated images are saved to C:\\Users\\agdem\\.codex\\generated_images\\01a193e3-d2a7-7e51-9c11-51321d415947 as C:\\Users\\agdem\\.codex\\generated_images\\01a193e3-d2a7-7e51-9c11-51321d415947\\exec-abf4a21b-a1fe-40b6-be5b-f970a1ae2262.png by default.\nIf you need to use a generated image at another path, copy it and leave the original in place unless the user explicitly asks you to delete it.\nThe generated image is already displayed to the user. There is no need to render it in the final response as a Markdown image or file link.",
+      "source": "Art/UI/_tools/v4_sources/evidence_it_log.png",
+      "tool": "image_gen.imagegen",
+      "model": "Not reported by built-in tool",
+      "date": "2026-11-01",
+      "retries": 0,
+      "review": "Accepted: server fanfold printout and blank-key keyboard with clear coffee ring/stains, no text.",
+      "sourceSha256": "c363d0bb795f5bea0a90472df9d559ad3ddb983e2896740f8479c54c5d5ff08a",
+      "sourceSize": [
+        1061,
+        1483
+      ],
+      "sourceAlphaExtrema": [
+        0,
+        255
+      ],
+      "referenceSha256": {
+        "Art/UI/rounds/round_farkli_eposta.png": "1a9695286e0dc5f9d108ef2052d7ba44bff6fb3dd98519602510a64646a06d0f",
+        "Art/UI/style/style_sheet.png": "27c08849342cf673035db4d232ab7574828d26e7d5f4f4d076937dd9387e8f33"
+      },
+      "referenceArchive": {},
+      "postProcessing": {
+        "pipeline": "v3_cards_finish.frame + v4_finish.py",
+        "alphaBelow24Cleared": true,
+        "trimBounds": [
+          23,
+          136,
+          1033,
+          1369
+        ],
+        "maxIllustrationSize": [
+          410,
+          448
+        ],
+        "placedSize": [
+          367,
+          448
+        ],
+        "offset": [
+          72,
+          62
+        ],
+        "safeArea": [
+          52,
+          552,
+          408,
+          104
+        ],
+        "canvas": [
+          512,
+          716
+        ],
+        "sceneContentAltered": false,
+        "encoding": "lossless RGBA PNG, optimize=True"
+      },
+      "finalPath": "Art/UI/evidence/evidence_it_log.png",
+      "finalSha256": "91ea4043f92f90dacbaef5495ce902c3fe2f7db2960d912a74ce8170eb5f0b4d",
+      "resourcesPath": "Game/Assets/Game/UI/Resources/ui/evidence/evidence_it_log.png"
+    },
+    {
+      "id": "evidence_badge_log",
+      "category": "evidence",
+      "prompt": "Use case: stylized-concept. Asset type: office-comedy game task/record card illustration for Birimiz Kovulacak. Create ONE new illustration, not a sheet. Reference images are locked style/bean identity inputs, not edit targets. Match their rounded bean silhouettes, large cream eyes, medium navy contours, white collars, simple bottom-right shading, upper-left highlights, restrained paper grain, warm stationery aesthetic. Palette from Art/palette.json: paper #F1E9D8, manila #E9D8A6, office green #3E7D5A, navy #2B3A5C, blue #4A90E2, yellow #F5C842, pink #F28AB2, orange #FF8C1A, purple #8E44AD; align locked UI paper #F4EFE3, manila #E8C98A, navy #1F2A44. Source canvas 1024x1024; the FINAL runtime card is exactly 512x716. Generate ONLY the fully contained isolated scene cutout with real transparent surroundings, generous 7% padding, compact composition, NO card frame, NO background rectangle. Deterministic v3 finishing places this art in the existing rounded manila frame above y=522 and reserves the blank title/body rectangle [52,552,408,104]. Keep silhouettes distinct at 180px card height. No letters, words, signatures, watermark, fake writing, logos, or numeric labels unless specifically requested. Papers use simple lines/diagrams only. Record source still life, no characters: an office-green BADGE READER pedestal with a small green indicator and contactless curved-wave icon, beside a navy LANYARD with manila employee badge. Badge has a simple blue bean silhouette portrait, no writing. Behind reader one small printed ruled access slip with clock-face icons without numerals. Bold reader and lanyard are primary. Strictly no currency glyphs or dollar signs.",
+      "refs": [
+        "Art/UI/rounds/round_farkli_eposta.png",
+        "Art/UI/style/style_sheet.png"
+      ],
+      "output_hint": "Generated images are saved to C:\\Users\\agdem\\.codex\\generated_images\\01a193e3-d2a7-7e51-9c11-51321d415947 as C:\\Users\\agdem\\.codex\\generated_images\\01a193e3-d2a7-7e51-9c11-51321d415947\\exec-a62b331e-30b0-4940-9b0b-c29702db29d0.png by default.\nIf you need to use a generated image at another path, copy it and leave the original in place unless the user explicitly asks you to delete it.\nThe generated image is already displayed to the user. There is no need to render it in the final response as a Markdown image or file link.",
+      "source": "Art/UI/_tools/v4_sources/evidence_badge_log.png",
+      "tool": "image_gen.imagegen",
+      "model": "Not reported by built-in tool",
+      "date": "2026-11-01",
+      "retries": 0,
+      "review": "Accepted: contactless reader, lanyard/portrait badge and clock access slip, no text.",
+      "sourceSha256": "e6a433397e909c1cc012abb2dabce92aad20861c2663de409b3df6ed04143350",
+      "sourceSize": [
+        1061,
+        1483
+      ],
+      "sourceAlphaExtrema": [
+        0,
+        255
+      ],
+      "referenceSha256": {
+        "Art/UI/rounds/round_farkli_eposta.png": "1a9695286e0dc5f9d108ef2052d7ba44bff6fb3dd98519602510a64646a06d0f",
+        "Art/UI/style/style_sheet.png": "27c08849342cf673035db4d232ab7574828d26e7d5f4f4d076937dd9387e8f33"
+      },
+      "referenceArchive": {},
+      "postProcessing": {
+        "pipeline": "v3_cards_finish.frame + v4_finish.py",
+        "alphaBelow24Cleared": true,
+        "trimBounds": [
+          67,
+          241,
+          1030,
+          1284
+        ],
+        "maxIllustrationSize": [
+          410,
+          448
+        ],
+        "placedSize": [
+          410,
+          444
+        ],
+        "offset": [
+          51,
+          64
+        ],
+        "safeArea": [
+          52,
+          552,
+          408,
+          104
+        ],
+        "canvas": [
+          512,
+          716
+        ],
+        "sceneContentAltered": false,
+        "encoding": "lossless RGBA PNG, optimize=True"
+      },
+      "finalPath": "Art/UI/evidence/evidence_badge_log.png",
+      "finalSha256": "cd4d1c4a81edf694f4efec2dc0a4fce81724f45bfc1529dedbcd2f88bc4ad28d",
+      "resourcesPath": "Game/Assets/Game/UI/Resources/ui/evidence/evidence_badge_log.png"
+    },
+    {
+      "id": "evidence_hr",
+      "category": "evidence",
+      "prompt": "Use case: stylized-concept. Asset type: office-comedy game task/record card illustration for Birimiz Kovulacak. Create ONE new illustration, not a sheet. Reference images are locked style/bean identity inputs, not edit targets. Match their rounded bean silhouettes, large cream eyes, medium navy contours, white collars, simple bottom-right shading, upper-left highlights, restrained paper grain, warm stationery aesthetic. Palette from Art/palette.json: paper #F1E9D8, manila #E9D8A6, office green #3E7D5A, navy #2B3A5C, blue #4A90E2, yellow #F5C842, pink #F28AB2, orange #FF8C1A, purple #8E44AD; align locked UI paper #F4EFE3, manila #E8C98A, navy #1F2A44. Source canvas 1024x1024; the FINAL runtime card is exactly 512x716. Generate ONLY the fully contained isolated scene cutout with real transparent surroundings, generous 7% padding, compact composition, NO card frame, NO background rectangle. Deterministic v3 finishing places this art in the existing rounded manila frame above y=522 and reserves the blank title/body rectangle [52,552,408,104]. Keep silhouettes distinct at 180px card height. No letters, words, signatures, watermark, fake writing, logos, or numeric labels unless specifically requested. Papers use simple lines/diagrams only. Record source still life, no characters: a manila HUMAN RESOURCES personnel FOLDER with a small teal bean-head silhouette tab, cream paper edges peeking out. Beside it a large wooden-handled red RUBBER STAMP with a simple check-symbol impression on a small paper. Personnel folder and rubber stamp clearly readable. No HR letters or any other text, no numeric labels. Strictly no currency glyphs or dollar signs.",
+      "refs": [
+        "Art/UI/rounds/round_farkli_eposta.png",
+        "Art/UI/style/style_sheet.png"
+      ],
+      "output_hint": "Generated images are saved to C:\\Users\\agdem\\.codex\\generated_images\\01a193e3-d2a7-7e51-9c11-51321d415947 as C:\\Users\\agdem\\.codex\\generated_images\\01a193e3-d2a7-7e51-9c11-51321d415947\\exec-2a3264ff-dcd6-4e84-95fe-993b49170614.png by default.\nIf you need to use a generated image at another path, copy it and leave the original in place unless the user explicitly asks you to delete it.\nThe generated image is already displayed to the user. There is no need to render it in the final response as a Markdown image or file link.",
+      "source": "Art/UI/_tools/v4_sources/evidence_hr.png",
+      "tool": "image_gen.imagegen",
+      "model": "Not reported by built-in tool",
+      "date": "2026-11-01",
+      "retries": 0,
+      "review": "Accepted: personnel folder with teal silhouette tab, wooden stamp, symbol-only impression.",
+      "sourceSha256": "202de81adb5694a1b13f48d9f9ee58659f2122e51d49995cc1a76c672f8517d9",
+      "sourceSize": [
+        1191,
+        1321
+      ],
+      "sourceAlphaExtrema": [
+        0,
+        255
+      ],
+      "referenceSha256": {
+        "Art/UI/rounds/round_farkli_eposta.png": "1a9695286e0dc5f9d108ef2052d7ba44bff6fb3dd98519602510a64646a06d0f",
+        "Art/UI/style/style_sheet.png": "27c08849342cf673035db4d232ab7574828d26e7d5f4f4d076937dd9387e8f33"
+      },
+      "referenceArchive": {},
+      "postProcessing": {
+        "pipeline": "v3_cards_finish.frame + v4_finish.py",
+        "alphaBelow24Cleared": true,
+        "trimBounds": [
+          64,
+          133,
+          1149,
+          1234
+        ],
+        "maxIllustrationSize": [
+          410,
+          448
+        ],
+        "placedSize": [
+          410,
+          416
+        ],
+        "offset": [
+          51,
+          78
+        ],
+        "safeArea": [
+          52,
+          552,
+          408,
+          104
+        ],
+        "canvas": [
+          512,
+          716
+        ],
+        "sceneContentAltered": false,
+        "encoding": "lossless RGBA PNG, optimize=True"
+      },
+      "finalPath": "Art/UI/evidence/evidence_hr.png",
+      "finalSha256": "f24e5d03cd5982938e7a6461ff0241c3b75cee36daa00cd148ba1e1cbbbc2aad",
+      "resourcesPath": "Game/Assets/Game/UI/Resources/ui/evidence/evidence_hr.png"
+    },
+    {
+      "id": "intro_1_company",
+      "category": "onboarding_v4",
+      "prompt": "Use case: illustration-story. Asset type: wide office-comedy game onboarding/result illustration for Birimiz Kovulacak. ONE opaque wide illustration, exact final canvas 1280x720, 16:9 composition with all essential faces/props safely inset 6%. Reference images lock style and identities, not edit targets. Rounded bean bodies, big cream eyes, navy #1F2A44 contours, white collars, simple shading, top-left highlight, subtle paper grain; flat warm office stationery. Opaque warm paper background #F4EFE3; manila #E8C98A, office green #2F6B4F. Materials from Art/palette.json paper #F1E9D8, manila #E9D8A6, wood #C99A6B, navy #2B3A5C. Six identities when requested: tall blue #4A90E2 green tie; round yellow #F5C842 round glasses; pink #F28AB2 navy hair bun; short green headset; orange #FF8C1A navy beanie; purple #8E44AD navy curly hair teal scarf. Match reference faces/accessories exactly. NO baked text anywhere: no letters, words, numbers, signatures, watermark, fake writing or logos. Papers/screens use diagram lines only. Scene: all SIX distinct reference bean employees work together pushing ONE huge productivity GAUGE needle upward toward the green zone. The gauge is a large freestanding semicircular dial on office desks, red low zone on left, green high zone on right, blank tick marks with no numbers. Blue tie, yellow glasses, pink bun, green headset, orange beanie, purple curls teal scarf each visibly contribute with their hands under the SINGLE needle, some standing on desk stools. Teamwork, comic effort, warm hopeful office setting. EXACTLY six employees, no manager. Image 2 is an identity reference sheet: use its six bean portraits, ignore its filenames/grey sheet background. Strictly no currency glyphs or dollar signs.",
+      "refs": [
+        "Art/UI/onboarding/ob_3_rounds.png",
+        "Art/UI/_sheets/v4_bean_references.png"
+      ],
+      "output_hint": "Generated images are saved to C:\\Users\\agdem\\.codex\\generated_images\\01a193e3-d2a7-7e51-9c11-51321d415947 as C:\\Users\\agdem\\.codex\\generated_images\\01a193e3-d2a7-7e51-9c11-51321d415947\\exec-87752891-def6-4a8c-bf00-a3e3a1544b0f.png by default.\nIf you need to use a generated image at another path, copy it and leave the original in place unless the user explicitly asks you to delete it.\nThe generated image is already displayed to the user. There is no need to render it in the final response as a Markdown image or file link.",
+      "source": "Art/UI/_tools/v4_sources/intro_1_company.png",
+      "tool": "image_gen.imagegen",
+      "model": "Not reported by built-in tool",
+      "date": "2026-11-01",
+      "retries": 1,
+      "attempts": [
+        {
+          "prompt": "Use case: illustration-story. Asset type: wide office-comedy game onboarding/result illustration for Birimiz Kovulacak. ONE opaque wide illustration, exact final canvas 1280x720, 16:9 composition with all essential faces/props safely inset 6%. Reference images lock style and identities, not edit targets. Rounded bean bodies, big cream eyes, navy #1F2A44 contours, white collars, simple shading, top-left highlight, subtle paper grain; flat warm office stationery. Opaque warm paper background #F4EFE3; manila #E8C98A, office green #2F6B4F. Materials from Art/palette.json paper #F1E9D8, manila #E9D8A6, wood #C99A6B, navy #2B3A5C. Six identities when requested: tall blue #4A90E2 green tie; round yellow #F5C842 round glasses; pink #F28AB2 navy hair bun; short green headset; orange #FF8C1A navy beanie; purple #8E44AD navy curly hair teal scarf. Match reference faces/accessories exactly. NO baked text anywhere: no letters, words, numbers, signatures, watermark, fake writing or logos. Papers/screens use diagram lines only. Scene: all SIX distinct reference bean employees work together pushing ONE huge productivity GAUGE needle upward toward the green zone. The gauge is a large freestanding semicircular dial on office desks, red low zone on left, green high zone on right, blank tick marks with no numbers. Blue tie, yellow glasses, pink bun, green headset, orange beanie, purple curls teal scarf each visibly contribute with their hands under the SINGLE needle, some standing on desk stools. Teamwork, comic effort, warm hopeful office setting. EXACTLY six employees, no manager. Image 2 is an identity reference sheet: use its six bean portraits, ignore its filenames/grey sheet background. Strictly no currency glyphs or dollar signs.",
+          "refs": [
+            "Art/UI/onboarding/ob_3_rounds.png",
+            "Art/UI/_sheets/v4_bean_references.png"
+          ],
+          "source": "Art/UI/_tools/v4_sources/intro_1_company_attempt0.png",
+          "reason": "Pink hair bun was brown rather than locked navy.",
+          "output_hint": "Generated images are saved to C:\\Users\\agdem\\.codex\\generated_images\\01a193e3-d2a7-7e51-9c11-51321d415947 as C:\\Users\\agdem\\.codex\\generated_images\\01a193e3-d2a7-7e51-9c11-51321d415947\\exec-20fabd99-0a58-4967-a738-bf41b802a9bc.png by default.\nIf you need to use a generated image at another path, copy it and leave the original in place unless the user explicitly asks you to delete it.\nThe generated image is already displayed to the user. There is no need to render it in the final response as a Markdown image or file link.",
+          "sourceSha256": "016a96dcdc87ad15348c5a4dde6816cb97b6b2ba7ec8f2b1b8b698bfe2aa406f"
+        }
+      ],
+      "retryPrompt": "Use case: identity-preserve. Image 1 is the edit target, Image 2 is pink bean identity reference. Change ONLY pink bean's hair bun at center-bottom: replace its brown hair with solid NAVY #1F2A44 hair matching Image 2, with subtle blue-grey highlight. Keep everything else exactly: all SIX beans, their positions, accessories, expressions, single gauge/needle, warm office, opaque paper background. No text, no digits. Final 1280x720 opaque onboarding illustration, 16:9 composition, warm paper #F4EFE3, manila #E8C98A, green #2F6B4F, navy outlines. Do not recolor the other beans.",
+      "retryRefs": [
+        "Art/UI/_tools/v4_sources/intro_1_company.png",
+        "Art/UI/portraits/player_2.png"
+      ],
+      "review": "Accepted after navy-bun correction: exactly six identities collaborate at one upward gauge, no text.",
+      "sourceSha256": "c74b89649b31186420348a5cfaa65e1ed7076c846eda38723dd2ee9bdf150950",
+      "sourceSize": [
+        1672,
+        941
+      ],
+      "sourceAlphaExtrema": [
+        255,
+        255
+      ],
+      "referenceSha256": {
+        "Art/UI/onboarding/ob_3_rounds.png": "9e6222d3cb6b128ebcbad65114580c1b6ae559bbe36a0a48ef827894eb8d58fe",
+        "Art/UI/_sheets/v4_bean_references.png": "e96289cfd94b9be2d4d0fbf15587c5792ed6921675145e9916261e73d014878d"
+      },
+      "referenceArchive": {
+        "Art/UI/_sheets/v4_bean_references.png": "Art/UI/_tools/v4_sources/bean_references.png"
+      },
+      "postProcessing": {
+        "pipeline": "v4_finish.py",
+        "proportionalFit": [
+          1280,
+          720
+        ],
+        "sourceAspect": 1.7768331562167907,
+        "canvas": [
+          1280,
+          720
+        ],
+        "sceneContentAltered": false,
+        "encoding": "lossless RGBA PNG, optimize=True"
+      },
+      "finalPath": "Art/UI/onboarding_v4/intro_1_company.png",
+      "finalSha256": "552ed0778306daa8d91c92f2d00811891eb48a5e26c4a20f878765a919846fd3",
+      "resourcesPath": "Game/Assets/Game/UI/Resources/ui/onboarding_v4/intro_1_company.png",
+      "retryReferenceSha256": {
+        "Art/UI/_tools/v4_sources/intro_1_company.png": "016a96dcdc87ad15348c5a4dde6816cb97b6b2ba7ec8f2b1b8b698bfe2aa406f",
+        "Art/UI/portraits/player_2.png": "c00168654ebc84c68b831c156f7fcfa64a00454e165efee30be07e78953b0fbf"
+      },
+      "retryReferenceArchive": {
+        "Art/UI/_tools/v4_sources/intro_1_company.png": "Art/UI/_tools/v4_sources/intro_1_company_attempt0.png"
+      }
+    },
+    {
+      "id": "intro_2_secret",
+      "category": "onboarding_v4",
+      "prompt": "Use case: illustration-story. Asset type: wide office-comedy game onboarding/result illustration for Birimiz Kovulacak. ONE opaque wide illustration, exact final canvas 1280x720, 16:9 composition with all essential faces/props safely inset 6%. Reference images lock style and identities, not edit targets. Rounded bean bodies, big cream eyes, navy #1F2A44 contours, white collars, simple shading, top-left highlight, subtle paper grain; flat warm office stationery. Opaque warm paper background #F4EFE3; manila #E8C98A, office green #2F6B4F. Materials from Art/palette.json paper #F1E9D8, manila #E9D8A6, wood #C99A6B, navy #2B3A5C. Six identities when requested: tall blue #4A90E2 green tie; round yellow #F5C842 round glasses; pink #F28AB2 navy hair bun; short green headset; orange #FF8C1A navy beanie; purple #8E44AD navy curly hair teal scarf. Match reference faces/accessories exactly. NO baked text anywhere: no letters, words, numbers, signatures, watermark, fake writing or logos. Papers/screens use diagram lines only. Scene: ONE tall BLUE tie bean seated at an office desk, holding green corded PHONE handset at one ear above the desktop, while SECRETLY peeking into a freshly unsealed manila envelope below the desktop. Open flap and red broken seal clearly visible; one corner of a blank secret sheet peeks out, contents hidden. Side three-quarter cutaway view lets viewer see under desk. Bean looks sideways furtively; small lamp, monitor and plant keep ordinary desk life above. No second bean. Strictly no currency glyphs or dollar signs.",
+      "refs": [
+        "Art/UI/onboarding/ob_3_rounds.png",
+        "Art/UI/portraits/player_0.png"
+      ],
+      "output_hint": "Generated images are saved to C:\\Users\\agdem\\.codex\\generated_images\\01a193e3-d2a7-7e51-9c11-51321d415947 as C:\\Users\\agdem\\.codex\\generated_images\\01a193e3-d2a7-7e51-9c11-51321d415947\\exec-9df9a413-5674-4b27-aab8-83a4b4efd56f.png by default.\nIf you need to use a generated image at another path, copy it and leave the original in place unless the user explicitly asks you to delete it.\nThe generated image is already displayed to the user. There is no need to render it in the final response as a Markdown image or file link.",
+      "source": "Art/UI/_tools/v4_sources/intro_2_secret.png",
+      "tool": "image_gen.imagegen",
+      "model": "Not reported by built-in tool",
+      "date": "2026-11-01",
+      "retries": 0,
+      "review": "Accepted: single blue tie bean on phone, broken envelope seal and hidden blank sheet below desk, no text.",
+      "sourceSha256": "e52baf6237fa487f18c801df11cf0a53fb1c059097fd87d419414deb6ba92298",
+      "sourceSize": [
+        1672,
+        941
+      ],
+      "sourceAlphaExtrema": [
+        255,
+        255
+      ],
+      "referenceSha256": {
+        "Art/UI/onboarding/ob_3_rounds.png": "9e6222d3cb6b128ebcbad65114580c1b6ae559bbe36a0a48ef827894eb8d58fe",
+        "Art/UI/portraits/player_0.png": "05ebca8b01fd54392ce94b7f6f8c402bd19d068516ec4768f41e3cac05adc1e7"
+      },
+      "referenceArchive": {},
+      "postProcessing": {
+        "pipeline": "v4_finish.py",
+        "proportionalFit": [
+          1280,
+          720
+        ],
+        "sourceAspect": 1.7768331562167907,
+        "canvas": [
+          1280,
+          720
+        ],
+        "sceneContentAltered": false,
+        "encoding": "lossless RGBA PNG, optimize=True"
+      },
+      "finalPath": "Art/UI/onboarding_v4/intro_2_secret.png",
+      "finalSha256": "e8c6eeb7e5499906123c342d5d0bfb863116d203833b3444ff59d767766ee3ea",
+      "resourcesPath": "Game/Assets/Game/UI/Resources/ui/onboarding_v4/intro_2_secret.png"
+    },
+    {
+      "id": "intro_3_meeting",
+      "category": "onboarding_v4",
+      "prompt": "Use case: illustration-story. Asset type: wide office-comedy game onboarding/result illustration for Birimiz Kovulacak. ONE opaque wide illustration, exact final canvas 1280x720, 16:9 composition with all essential faces/props safely inset 6%. Reference images lock style and identities, not edit targets. Rounded bean bodies, big cream eyes, navy #1F2A44 contours, white collars, simple shading, top-left highlight, subtle paper grain; flat warm office stationery. Opaque warm paper background #F4EFE3; manila #E8C98A, office green #2F6B4F. Materials from Art/palette.json paper #F1E9D8, manila #E9D8A6, wood #C99A6B, navy #2B3A5C. Six identities when requested: tall blue #4A90E2 green tie; round yellow #F5C842 round glasses; pink #F28AB2 navy hair bun; short green headset; orange #FF8C1A navy beanie; purple #8E44AD navy curly hair teal scarf. Match reference faces/accessories exactly. NO baked text anywhere: no letters, words, numbers, signatures, watermark, fake writing or logos. Papers/screens use diagram lines only. Scene: daily meeting around one broad manila conference table, exactly SIX beans with the six locked identities. A record is PROJECTED on the wall behind them: large paper rectangle with a call-log phone icon and diagram lines, no letters or digits. Blue tie and orange beanie point at each other across table; yellow glasses points toward record; pink bun, short green headset and purple curls teal scarf react skeptically. Mild comic accusations, record not CCTV footage, no culprit revealed. Keep projected record and six faces fully visible. Image 2 is identity reference sheet; ignore filenames and grey background. Pink bun MUST be navy #1F2A44, not brown. Strictly no currency glyphs or dollar signs.",
+      "refs": [
+        "Art/UI/onboarding/ob_3_rounds.png",
+        "Art/UI/_sheets/v4_bean_references.png"
+      ],
+      "output_hint": "Generated images are saved to C:\\Users\\agdem\\.codex\\generated_images\\01a193e3-d2a7-7e51-9c11-51321d415947 as C:\\Users\\agdem\\.codex\\generated_images\\01a193e3-d2a7-7e51-9c11-51321d415947\\exec-c096fed4-199f-4e09-a937-19953f0b5f15.png by default.\nIf you need to use a generated image at another path, copy it and leave the original in place unless the user explicitly asks you to delete it.\nThe generated image is already displayed to the user. There is no need to render it in the final response as a Markdown image or file link.",
+      "source": "Art/UI/_tools/v4_sources/intro_3_meeting.png",
+      "tool": "image_gen.imagegen",
+      "model": "Not reported by built-in tool",
+      "date": "2026-11-01",
+      "retries": 0,
+      "review": "Accepted: six locked identities, mutual pointing, projected pictorial call record, no baked text.",
+      "sourceSha256": "618899a48f667f396b845c8c21e18cae54517f74b6bb20c8d9242d5843d26378",
+      "sourceSize": [
+        1672,
+        941
+      ],
+      "sourceAlphaExtrema": [
+        255,
+        255
+      ],
+      "referenceSha256": {
+        "Art/UI/onboarding/ob_3_rounds.png": "9e6222d3cb6b128ebcbad65114580c1b6ae559bbe36a0a48ef827894eb8d58fe",
+        "Art/UI/_sheets/v4_bean_references.png": "e96289cfd94b9be2d4d0fbf15587c5792ed6921675145e9916261e73d014878d"
+      },
+      "referenceArchive": {
+        "Art/UI/_sheets/v4_bean_references.png": "Art/UI/_tools/v4_sources/bean_references.png"
+      },
+      "postProcessing": {
+        "pipeline": "v4_finish.py",
+        "proportionalFit": [
+          1280,
+          720
+        ],
+        "sourceAspect": 1.7768331562167907,
+        "canvas": [
+          1280,
+          720
+        ],
+        "sceneContentAltered": false,
+        "encoding": "lossless RGBA PNG, optimize=True"
+      },
+      "finalPath": "Art/UI/onboarding_v4/intro_3_meeting.png",
+      "finalSha256": "f06aa6691af7886a45054799d571ecce92dbbf4c23844d82e01c3f69ba40d439",
+      "resourcesPath": "Game/Assets/Game/UI/Resources/ui/onboarding_v4/intro_3_meeting.png"
+    },
+    {
+      "id": "company_survived",
+      "category": "results_v4",
+      "prompt": "Use case: illustration-story. Asset type: wide office-comedy game onboarding/result illustration for Birimiz Kovulacak. ONE opaque wide illustration, exact final canvas 1280x720, 16:9 composition with all essential faces/props safely inset 6%. Reference images lock style and identities, not edit targets. Rounded bean bodies, big cream eyes, navy #1F2A44 contours, white collars, simple shading, top-left highlight, subtle paper grain; flat warm office stationery. Opaque warm paper background #F4EFE3; manila #E8C98A, office green #2F6B4F. Materials from Art/palette.json paper #F1E9D8, manila #E9D8A6, wood #C99A6B, navy #2B3A5C. Six identities when requested: tall blue #4A90E2 green tie; round yellow #F5C842 round glasses; pink #F28AB2 navy hair bun; short green headset; orange #FF8C1A navy beanie; purple #8E44AD navy curly hair teal scarf. Match reference faces/accessories exactly. NO baked text anywhere: no letters, words, numbers, signatures, watermark, fake writing or logos. Papers/screens use diagram lines only. Scene: company SURVIVED. Five employees celebrate among warm office desks: blue tie, yellow glasses, pink bun, short green headset and purple curly hair teal scarf. Modest paper confetti, happy high-five, monitor showing only green upward chart. At foreground right ONE EMPTY green office chair with a cardboard packing BOX on its seat holding a mug and plant, bittersweet reminder someone may be fired. Orange bean is absent; exactly five celebrating beans, no extra empty chairs as focal props. Box and empty chair clearly visible, no trophy, no individual winner, no text. Image 2 is identity reference sheet; ignore filenames and grey background. Pink bun MUST be navy #1F2A44, not brown. Strictly no currency glyphs or dollar signs.",
+      "refs": [
+        "Art/UI/onboarding/ob_3_rounds.png",
+        "Art/UI/_sheets/v4_bean_references.png"
+      ],
+      "output_hint": "Generated images are saved to C:\\Users\\agdem\\.codex\\generated_images\\01a193e3-d2a7-7e51-9c11-51321d415947 as C:\\Users\\agdem\\.codex\\generated_images\\01a193e3-d2a7-7e51-9c11-51321d415947\\exec-54335538-d0bc-4373-92f3-63079b35fc02.png by default.\nIf you need to use a generated image at another path, copy it and leave the original in place unless the user explicitly asks you to delete it.\nThe generated image is already displayed to the user. There is no need to render it in the final response as a Markdown image or file link.",
+      "source": "Art/UI/_tools/v4_sources/company_survived.png",
+      "tool": "image_gen.imagegen",
+      "model": "Not reported by built-in tool",
+      "date": "2026-11-01",
+      "retries": 0,
+      "review": "Accepted: five celebrating identities, green output chart, foreground empty chair/packing box; no orange or winner trophy.",
+      "sourceSha256": "1e6ba47f52ebcdc80c5ddcb1a870f44fd01c996eadf65d707809eae7ffe39523",
+      "sourceSize": [
+        1672,
+        941
+      ],
+      "sourceAlphaExtrema": [
+        255,
+        255
+      ],
+      "referenceSha256": {
+        "Art/UI/onboarding/ob_3_rounds.png": "9e6222d3cb6b128ebcbad65114580c1b6ae559bbe36a0a48ef827894eb8d58fe",
+        "Art/UI/_sheets/v4_bean_references.png": "e96289cfd94b9be2d4d0fbf15587c5792ed6921675145e9916261e73d014878d"
+      },
+      "referenceArchive": {
+        "Art/UI/_sheets/v4_bean_references.png": "Art/UI/_tools/v4_sources/bean_references.png"
+      },
+      "postProcessing": {
+        "pipeline": "v4_finish.py",
+        "proportionalFit": [
+          1280,
+          720
+        ],
+        "sourceAspect": 1.7768331562167907,
+        "canvas": [
+          1280,
+          720
+        ],
+        "sceneContentAltered": false,
+        "encoding": "lossless RGBA PNG, optimize=True"
+      },
+      "finalPath": "Art/UI/results_v4/company_survived.png",
+      "finalSha256": "f19d8aad0ff63688e76d735d8787488754dfe9c519cb30eb3f4123a7147dc915",
+      "resourcesPath": "Game/Assets/Game/UI/Resources/ui/results_v4/company_survived.png"
+    },
+    {
+      "id": "company_closed",
+      "category": "results_v4",
+      "prompt": "Use case: illustration-story. Asset type: wide office-comedy game onboarding/result illustration for Birimiz Kovulacak. ONE opaque wide illustration, exact final canvas 1280x720, 16:9 composition with all essential faces/props safely inset 6%. Reference images lock style and identities, not edit targets. Rounded bean bodies, big cream eyes, navy #1F2A44 contours, white collars, simple shading, top-left highlight, subtle paper grain; flat warm office stationery. Opaque warm paper background #F4EFE3; manila #E8C98A, office green #2F6B4F. Materials from Art/palette.json paper #F1E9D8, manila #E9D8A6, wood #C99A6B, navy #2B3A5C. Six identities when requested: tall blue #4A90E2 green tie; round yellow #F5C842 round glasses; pink #F28AB2 navy hair bun; short green headset; orange #FF8C1A navy beanie; purple #8E44AD navy curly hair teal scarf. Match reference faces/accessories exactly. NO baked text anywhere: no letters, words, numbers, signatures, watermark, fake writing or logos. Papers/screens use diagram lines only. Scene: shared company DEFEAT, completely EMPTY OFFICE after closing, NO characters. Cardboard packing boxes clustered by vacated desks, two chairs upside down on desks, all overhead LIGHTS OFF, monitors dark, one loose telephone cord drooping, a wilting desk plant. Opaque warm paper environment with muted navy/slate dusk shading, still gently comic and readable: one abandoned half-eaten biscuit beside an empty mug. Preserve warm manila/green stationery style, no celebratory confetti, no readable closure sign, no text. Strictly no currency glyphs or dollar signs.",
+      "refs": [
+        "Art/UI/onboarding/ob_3_rounds.png",
+        "Art/UI/style/style_sheet.png"
+      ],
+      "output_hint": "Generated images are saved to C:\\Users\\agdem\\.codex\\generated_images\\01a193e3-d2a7-7e51-9c11-51321d415947 as C:\\Users\\agdem\\.codex\\generated_images\\01a193e3-d2a7-7e51-9c11-51321d415947\\exec-69be8965-2fbf-4637-b967-6fdbec9cd75d.png by default.\nIf you need to use a generated image at another path, copy it and leave the original in place unless the user explicitly asks you to delete it.\nThe generated image is already displayed to the user. There is no need to render it in the final response as a Markdown image or file link.",
+      "source": "Art/UI/_tools/v4_sources/company_closed.png",
+      "tool": "image_gen.imagegen",
+      "model": "Not reported by built-in tool",
+      "date": "2026-11-01",
+      "retries": 0,
+      "review": "Accepted: empty office, two chairs on desks, dark monitors and ceiling lights, packing boxes, drooping cord, wilted plant/biscuit comic detail.",
+      "sourceSha256": "ad73927f920a7276faae14a7364fcaf8836fdf9e58d0269268ab06a4e2d6f47e",
+      "sourceSize": [
+        1672,
+        941
+      ],
+      "sourceAlphaExtrema": [
+        255,
+        255
+      ],
+      "referenceSha256": {
+        "Art/UI/onboarding/ob_3_rounds.png": "9e6222d3cb6b128ebcbad65114580c1b6ae559bbe36a0a48ef827894eb8d58fe",
+        "Art/UI/style/style_sheet.png": "27c08849342cf673035db4d232ab7574828d26e7d5f4f4d076937dd9387e8f33"
+      },
+      "referenceArchive": {},
+      "postProcessing": {
+        "pipeline": "v4_finish.py",
+        "proportionalFit": [
+          1280,
+          720
+        ],
+        "sourceAspect": 1.7768331562167907,
+        "canvas": [
+          1280,
+          720
+        ],
+        "sceneContentAltered": false,
+        "encoding": "lossless RGBA PNG, optimize=True"
+      },
+      "finalPath": "Art/UI/results_v4/company_closed.png",
+      "finalSha256": "1e71696e15a0dbb3a52e313e62e04fb6848c6ae2fb2a0e0951b5527c67972fb7",
+      "resourcesPath": "Game/Assets/Game/UI/Resources/ui/results_v4/company_closed.png"
+    }
+  ]
+}

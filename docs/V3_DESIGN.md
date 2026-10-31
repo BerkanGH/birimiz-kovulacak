@@ -1,5 +1,7 @@
 # v3 "Ofis Hattı" — design (normative)
 
+> **Superseded (2026-11-01).** The current rules are v4 "Hybrid Office": `docs/GAMEPLAY_REDESIGN.md` (ruleset `v4.0-hybrid`). This file documents v3.1 for history only — shortlist firing, forced daily İhtar plurality, hidden agendas, the manager tip line, trace naming, complaint leaks and the six rounds are **not** current rules.
+
 Producer decisions (2026-10-29, after the first look at v2): the game was too busy and the lying never took centre
 stage. v3 separates the players: **everyone sits alone in their own office (first-person, seated), the only channel is
 the desk phone, and the week ends with one firing.** Pitch: *"Rooms like Scam Line, a table like Liar's Bar, and a

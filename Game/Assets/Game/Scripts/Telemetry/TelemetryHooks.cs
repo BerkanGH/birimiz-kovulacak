@@ -33,6 +33,8 @@ namespace BirimizKovulacak.Game
         /// <summary>Deletes this machine's analytics files and queue; returns false if something could not be deleted.</summary>
         bool DeleteLocalData();
         void ResetAnonymousId();
+        /// <summary>Pseudonymous id to send to the host (empty unless consent ≥ 2).</summary>
+        string AnonymousId { get; }
         string LogDirectory { get; }
         /// <summary>Opens the log folder in the OS file browser (no-op when there is none).</summary>
         void OpenLogFolder();

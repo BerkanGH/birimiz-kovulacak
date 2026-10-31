@@ -93,11 +93,12 @@ namespace BirimizKovulacak.EditorTools
         {
             PlayerSettings.companyName = "Leonidas Studio";
             PlayerSettings.productName = "Birimiz Kovulacak";
-            PlayerSettings.bundleVersion = "0.1.0";
+            PlayerSettings.bundleVersion = "0.4.0"; // v4 hybrid ruleset (analytics game_version)
             PlayerSettings.runInBackground = true;
             PlayerSettings.resizableWindow = true;
             PlayerSettings.visibleInBackground = true;
-            PlayerSettings.fullScreenMode = FullScreenMode.Windowed;
+            // First launch is fullscreen; afterwards DisplaySettings (PlayerPrefs) restores the player's choice.
+            PlayerSettings.fullScreenMode = FullScreenMode.FullScreenWindow;
             PlayerSettings.defaultScreenWidth = 1600;
             PlayerSettings.defaultScreenHeight = 900;
             PlayerSettings.usePlayerLog = true;

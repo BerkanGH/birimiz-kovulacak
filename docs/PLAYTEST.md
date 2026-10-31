@@ -1,5 +1,7 @@
 # Closed Playtest Protocol (4 friends)
 
+> **Superseded.** This is the v1/v2 playtest sheet (Discord voice, informant, raid). For v4 playtests use `docs/PLAYTEST_KPI_GUIDE.md` (H1–H9 plan, KPIs) and `Tools/playtest/` (observer template, player feedback form, facilitator checklist).
+
 Human playtest results are **not** produced by bots or automated tests; record them only from real sessions.
 Technical verification lives in `docs/VERIFICATION.md`.
 

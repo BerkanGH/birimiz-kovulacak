@@ -88,21 +88,21 @@ namespace BirimizKovulacak.Game
     }
 
     /// <summary>
-    /// The manager's slide deck for one meeting: cover, call recordings, today's rounds, incidents (trick traces, tips,
-    /// complaint leak, favourite), and the blame board. Built for the 1600×900 projector panel.
+    /// The manager's slide deck for one meeting (v4): cover, company productivity and task outcomes, the office log
+    /// (observable incident effects, missed inputs, remedial reports), anonymous complaints, call recordings, presented
+    /// records, and the blame board. Never names a culprit. Built for the 1600x900 projector panel.
     /// </summary>
     public sealed class DossierDeck
     {
-        public enum Kind : byte { Cover, Recording, Rounds, Incidents, Board, Shortlist }
+        public enum Kind : byte { Cover, Company, Log, Complaints, Recording, Records, Board }
 
         struct Slide { public Kind Kind; public int Arg; }
 
         readonly List<Slide> _slides = new List<Slide>();
-        readonly List<string> _tmp = new List<string>();
         readonly VisualElement _root, _page, _dots;
         readonly Label _brand, _meta, _footer;
         TapeDeck _deck;
-        int _shown = -1, _listKey = int.MinValue, _boardKey = int.MinValue;
+        int _shown = -1, _listKey = int.MinValue, _pageKey = int.MinValue;
         LineRecordingPick _deckPick;
 
         public int Count => _slides.Count;
@@ -134,12 +134,9 @@ namespace BirimizKovulacak.Game
         }
 
         public int BoardIndex => Mathf.Max(0, IndexOf(Kind.Board));
-
-        /// <summary>The slide shown after the dossier: the shortlist in the final, else the blame record.</summary>
-        public int RestIndex
-        {
-            get { int s = IndexOf(Kind.Shortlist); return s >= 0 ? s : BoardIndex; }
-        }
+        public int RecordsIndex => IndexOf(Kind.Records);
+        /// <summary>The slide shown after the dossier: the blame record.</summary>
+        public int RestIndex => BoardIndex;
 
         public int RecordingIndex(int pick)
         {
@@ -147,10 +144,6 @@ namespace BirimizKovulacak.Game
             return -1;
         }
 
-        /// <summary>
-        /// True when the engine plays the tapes right at the start of the dossier (v3.0: PlayAt = start + 4 s); then the
-        /// tapes come straight after the cover. Otherwise they are the climax, after rounds and incidents.
-        /// </summary>
         static bool RecordingsEarly(LineView v)
         {
             var m = v.Meeting;
@@ -158,22 +151,32 @@ namespace BirimizKovulacak.Game
             return m.Recordings[0].PlayAt - MeetingText.DossierStart(v) < 8.0;
         }
 
+        static bool HasLog(LineView v)
+        {
+            if (v.Meeting == null) return false;
+            foreach (var e in v.Meeting.Dossier)
+                if (e.Kind == DossierKind.IncidentEffect || e.Kind == DossierKind.MissedTask || e.Kind == DossierKind.Remedial) return true;
+            return false;
+        }
+
         /// <summary>Recomputes the slide list for this meeting; returns true when it changed (the caller re-shows).</summary>
         public bool SetView(LineView v)
         {
             var m = v.Meeting;
-            int key = v.WeekId * 1000003 + v.Day * 101 + (m != null ? m.Dossier.Count * 7 + m.Recordings.Count * 3 + m.Shortlist.Count * 1009 : -1) + (m != null && m.IsFinal ? 50000 : 0);
+            int key = v.WeekId * 1000003 + v.Day * 101 + (m != null ? m.Dossier.Count * 7 + m.Recordings.Count * 3 + m.Complaints.Count * 1009 + m.Presentations.Count * 4001 : -1)
+                + (m != null && m.IsFinal ? 50000 : 0) + (v.Company.Closed ? 70001 : 0);
             if (key == _listKey) return false;
             _listKey = key;
             _slides.Clear();
             bool early = RecordingsEarly(v);
             _slides.Add(new Slide { Kind = Kind.Cover });
+            _slides.Add(new Slide { Kind = Kind.Company });
             if (early) AddRecordings(m);
-            if (v.TodayReveals.Count > 0) _slides.Add(new Slide { Kind = Kind.Rounds });
-            if (HasIncidents(v)) _slides.Add(new Slide { Kind = Kind.Incidents });
+            if (HasLog(v)) _slides.Add(new Slide { Kind = Kind.Log });
+            if (m != null && m.Complaints.Count > 0) _slides.Add(new Slide { Kind = Kind.Complaints });
             if (!early) AddRecordings(m);
+            if (m != null && m.Presentations.Count > 0) _slides.Add(new Slide { Kind = Kind.Records });
             _slides.Add(new Slide { Kind = Kind.Board });
-            if (m != null && m.IsFinal && m.Shortlist.Count > 0) _slides.Add(new Slide { Kind = Kind.Shortlist });
             _dots.Clear();
             for (int i = 0; i < _slides.Count; i++) Box("slide-dot").NoPick().AddTo(_dots);
             _shown = -1;
@@ -186,17 +189,9 @@ namespace BirimizKovulacak.Game
             for (int i = 0; i < m.Recordings.Count; i++) _slides.Add(new Slide { Kind = Kind.Recording, Arg = m.Recordings[i].Index });
         }
 
-        static bool HasIncidents(LineView v)
-        {
-            if (v.Meeting == null) return false;
-            foreach (var e in v.Meeting.Dossier)
-                if (e.Kind != DossierKind.RoundOutcome && e.Kind != DossierKind.Recording && e.Kind != DossierKind.None) return true;
-            return false;
-        }
-
         /// <summary>
         /// The slide the manager shows right now: every tape exactly while it plays (from its PlayAt), the other slides
-        /// share the remaining dossier time in list order. Outside the dossier: the shortlist (final) or the record.
+        /// share the remaining dossier time in list order. Outside the dossier: the blame record.
         /// </summary>
         public int AutoIndex(LineView v, double now)
         {
@@ -218,8 +213,9 @@ namespace BirimizKovulacak.Game
                 recTime += per;
                 if (now >= b) recBefore += per; else if (now > a) recBefore += now - a;
             }
-            // the non-tape slides, in order, share the free time
-            int others = _slides.Count - recs;
+            // the timed slides (not tapes, not presented records) in order share the free time
+            int others = 0;
+            for (int i = 0; i < _slides.Count; i++) if (Timed(_slides[i].Kind)) others++;
             if (others <= 0) return 0;
             double free = System.Math.Max(1.0, (end - start) - recTime);
             double elapsed = System.Math.Max(0.0, (now - start) - recBefore);
@@ -229,15 +225,16 @@ namespace BirimizKovulacak.Game
             if (elapsed < coverShare) k = 0;
             else k = 1 + (int)((elapsed - coverShare) / System.Math.Max(1.0, (free - coverShare) / System.Math.Max(1, others - 1)));
             k = Mathf.Clamp(k, 0, others - 1);
-            // map the k-th non-tape slide back to its list index
             for (int i = 0, n = 0; i < _slides.Count; i++)
             {
-                if (_slides[i].Kind == Kind.Recording) continue;
+                if (!Timed(_slides[i].Kind)) continue;
                 if (n == k) return i;
                 n++;
             }
             return RestIndex;
         }
+
+        static bool Timed(Kind k) { return k != Kind.Recording && k != Kind.Records; }
 
         public string TitleOf(int i)
         {
@@ -245,10 +242,11 @@ namespace BirimizKovulacak.Game
             switch (_slides[i].Kind)
             {
                 case Kind.Cover: return Loc.T("dossier.slide.cover");
+                case Kind.Company: return Loc.T("dossier.slide.company");
+                case Kind.Log: return Loc.T("dossier.slide.log");
+                case Kind.Complaints: return Loc.T("dossier.slide.complaints");
                 case Kind.Recording: return Loc.T("dossier.slide.recording");
-                case Kind.Rounds: return Loc.T("dossier.slide.rounds");
-                case Kind.Incidents: return Loc.T("dossier.slide.incidents");
-                case Kind.Shortlist: return Loc.T("dossier.slide.shortlist");
+                case Kind.Records: return Loc.T("dossier.slide.records");
                 default: return Loc.T("dossier.slide.board");
             }
         }
@@ -263,24 +261,46 @@ namespace BirimizKovulacak.Game
             _page.Clear();
             _deck = null;
             _deckPick = null;
-            _boardKey = int.MinValue;
+            _pageKey = PageKey(v);
             _meta.text = Loc.F("dossier.meta", MeetingText.Day(v.Day), i + 1, _slides.Count);
             for (int d = 0; d < _dots.childCount; d++) _dots[d].EnableInClassList("slide-dot-on", d == i);
             var s = _slides[i];
             switch (s.Kind)
             {
                 case Kind.Cover: BuildCover(v); break;
+                case Kind.Company: BuildCompany(v); break;
+                case Kind.Log: BuildLog(v); break;
+                case Kind.Complaints: BuildComplaints(v); break;
                 case Kind.Recording: BuildRecording(v, s.Arg); break;
-                case Kind.Rounds: BuildRounds(v); break;
-                case Kind.Incidents: BuildIncidents(v); break;
-                case Kind.Shortlist: BuildShortlist(v); break;
+                case Kind.Records: BuildRecords(v); break;
                 default: BuildBoard(v); break;
             }
-            // slide transition: the new page slides in from the right like a clicker advance
             UiMotion.SlideIn(_page, new Vector2(60f, 0f), 0.32f);
         }
 
-        /// <summary>New view inside the same meeting: refresh what can change (recording speakers, blame board).</summary>
+        /// <summary>Hash of what the current slide displays (rebuilt when it changes).</summary>
+        int PageKey(LineView v)
+        {
+            if (_shown < 0 || _shown >= _slides.Count) return 0;
+            var m = v.Meeting;
+            int k = 17;
+            switch (_slides[_shown].Kind)
+            {
+                case Kind.Board:
+                    foreach (var p in v.Players) k = k * 31 + p.Blame * 7 + p.Warnings + (p.Connected ? 1 : 0) * 3;
+                    break;
+                case Kind.Company:
+                    k = k * 31 + v.Company.ProvisionalPermille + v.Company.FinalPermille * 7 + v.Company.TasksResolved + (v.Company.Closed ? 99 : 0);
+                    break;
+                case Kind.Records:
+                    k = k * 31 + (m != null ? m.Presentations.Count : 0);
+                    if (m != null) foreach (var p in m.Presentations) k = k * 31 + p.ExposedIncident;
+                    break;
+            }
+            return k;
+        }
+
+        /// <summary>New view inside the same meeting: refresh what can change (recording speakers, board, presentations).</summary>
         public void Refresh(LineView v)
         {
             if (_shown < 0 || _shown >= _slides.Count) return;
@@ -291,7 +311,7 @@ namespace BirimizKovulacak.Game
                 _deckPick = p;
                 _deck.Set(p, v);
             }
-            else if ((s.Kind == Kind.Board || s.Kind == Kind.Shortlist) && BoardKey(v) != _boardKey) Show(_shown, v, true);
+            else if (PageKey(v) != _pageKey) Show(_shown, v, true);
         }
 
         public void Tick(double now, float dt)
@@ -311,8 +331,9 @@ namespace BirimizKovulacak.Game
         void BuildCover(LineView v)
         {
             bool final = v.Meeting != null && v.Meeting.IsFinal;
+            bool closed = v.Company.Closed || (v.Meeting != null && v.Meeting.CompanyClosed);
             var col = Box("cover").NoPick().AddTo(_page);
-            Title(Loc.T(final ? "dossier.cover.final" : "dossier.cover.daily"), "cover-title").NoPick().AddTo(col);
+            Title(Loc.T(closed && final ? "dossier.cover.postmortem" : final ? "dossier.cover.final" : "dossier.cover.daily"), "cover-title").NoPick().AddTo(col);
             Bold(Loc.F("dossier.cover.day", MeetingText.Day(v.Day), v.Day + 1, v.DayCount), "cover-sub").NoPick().AddTo(col);
             var row = Box("cover-row").NoPick().AddTo(col);
             var mgr = Box("cover-mgr").NoPick().AddTo(row);
@@ -325,13 +346,15 @@ namespace BirimizKovulacak.Game
             var agenda = Box("cover-agenda").NoPick().AddTo(row);
             Bold(Loc.T("dossier.cover.agenda"), "cover-label").NoPick().AddTo(agenda);
             int n = 1;
-            int recs = v.Meeting != null ? v.Meeting.Recordings.Count : 0;
+            var m = v.Meeting;
+            AgendaLine(agenda, n++, Loc.T("dossier.cover.item_company"));
+            if (HasLog(v)) AgendaLine(agenda, n++, Loc.T("dossier.cover.item_log"));
+            if (m != null && m.Complaints.Count > 0) AgendaLine(agenda, n++, Loc.F("dossier.cover.item_complaints", m.Complaints.Count));
+            int recs = m != null ? m.Recordings.Count : 0;
             if (recs > 0) AgendaLine(agenda, n++, Loc.F("dossier.cover.item_recordings", recs));
-            if (v.TodayReveals.Count > 0) AgendaLine(agenda, n++, Loc.T("dossier.cover.item_rounds"));
-            if (HasIncidents(v)) AgendaLine(agenda, n++, Loc.T("dossier.cover.item_incidents"));
             AgendaLine(agenda, n++, Loc.T("dossier.cover.item_board"));
-            AgendaLine(agenda, n, Loc.T(final ? "dossier.cover.item_firing" : "dossier.cover.item_vote"));
-            if (final) Bold(Loc.T("dossier.cover.final_note"), "cover-final").NoPick().AddTo(col);
+            AgendaLine(agenda, n, Loc.T(closed && final ? "dossier.cover.item_closed" : final ? "dossier.cover.item_firing" : "dossier.cover.item_vote"));
+            if (v.Features.PresentationOpen) Bold(Loc.T("dossier.cover.present_note"), "cover-final").NoPick().AddTo(col);
         }
 
         static void AgendaLine(VisualElement parent, int n, string text)
@@ -339,6 +362,163 @@ namespace BirimizKovulacak.Game
             var r = Box("agenda-line").NoPick().AddTo(parent);
             Title(n + ".", "agenda-num").NoPick().AddTo(r);
             Text(text, "agenda-text").NoPick().AddTo(r);
+        }
+
+        /// <summary>Productivity gauge: fill = percent, marker = company target. Used on the projector and in results.</summary>
+        public static VisualElement Gauge(VisualElement parent, int permille, int targetPercent, bool closed, params string[] classes)
+        {
+            var wrap = Box("gauge-wrap").Cls(classes).NoPick().AddTo(parent);
+            var bar = Box("gauge").NoPick().AddTo(wrap);
+            var fill = Box("gauge-fill").NoPick().AddTo(bar);
+            bool ok = permille >= targetPercent * 10;
+            fill.AddToClassList(permille < 0 ? "gauge-measuring" : ok && !closed ? "gauge-ok" : "gauge-low");
+            fill.style.width = Length.Percent(Mathf.Clamp(permille / 10f, 0f, 100f));
+            var mark = Box("gauge-target").NoPick().AddTo(bar);
+            mark.style.left = Length.Percent(Mathf.Clamp(targetPercent, 0, 100));
+            var lbl = Box("gauge-target-label").NoPick().AddTo(wrap);
+            lbl.style.left = Length.Percent(Mathf.Clamp(targetPercent, 0, 100));
+            Bold(Loc.F("company.target_mark", targetPercent), "gauge-target-text").NoPick().AddTo(lbl);
+            return wrap;
+        }
+
+        void BuildCompany(LineView v)
+        {
+            var c = v.Company;
+            bool final = v.Meeting != null && v.Meeting.IsFinal;
+            int perm = final && c.FinalPermille >= 0 ? c.FinalPermille : c.ProvisionalPermille;
+            int target = c.TargetPercent > 0 ? c.TargetPercent : MeetingText.Config.CompanyTargetPercent;
+            bool closed = c.Closed || (v.Meeting != null && v.Meeting.CompanyClosed);
+            var head = Box("sl-head").NoPick().AddTo(_page);
+            Title(Loc.T("dossier.slide.company"), "sl-title").NoPick().AddTo(head);
+            Box("spacer").NoPick().AddTo(head);
+            Memo(Loc.T(final && c.FinalPermille >= 0 ? "company.final" : "company.provisional"), "rec-notice").NoPick().AddTo(head);
+
+            var top = Box("company-top").NoPick().AddTo(_page);
+            Title(MeetingText.Percent(perm), "company-big").NoPick().AddTo(top);
+            var side = Box("col", "grow").NoPick().AddTo(top);
+            Bold(Loc.F("company.vs_target", target), "company-target").NoPick().AddTo(side);
+            string verdict = perm < 0 ? Loc.T("company.measuring_long")
+                : closed ? Loc.T("company.closed_line")
+                : perm >= target * 10 ? Loc.T("company.on_track") : Loc.T("company.below");
+            Text(verdict, "company-verdict", closed || (perm >= 0 && perm < target * 10) ? "company-bad" : "company-good").NoPick().AddTo(side);
+            if (c.LastChange != CompanyChange.None && c.LastTask != TaskKind.None)
+                Text(Loc.F(c.LastChange == CompanyChange.Remedial ? "company.last_remedial" : "company.last_task", MeetingText.Task(c.LastTask), MeetingText.Signed(c.LastDelta)), "company-last").NoPick().AddTo(side);
+            Gauge(_page, perm, target, closed, "company-gauge");
+
+            // task outcomes of this block
+            var row = Box("rounds-row").NoPick().AddTo(_page);
+            int i = 0;
+            foreach (var e in v.Meeting.Dossier)
+            {
+                if (e.Kind != DossierKind.TaskOutcome) continue;
+                var card = Box("round-card").NoPick().AddTo(row);
+                var h = Box("round-card-head").NoPick().AddTo(card);
+                MeetingText.ApplyIcon(Box("icon", "icon-l").NoPick().AddTo(h), MeetingText.TaskIcon(e.Task));
+                var hc = Box("col", "grow").NoPick().AddTo(h);
+                Memo(Loc.F("dossier.task_n", e.TaskNumber + 1), "round-card-n").NoPick().AddTo(hc);
+                Title(MeetingText.Task(e.Task), "round-card-name").NoPick().AddTo(hc);
+                int max = e.N2 > 0 ? e.N2 : 100;
+                int pct = Mathf.Clamp(Mathf.RoundToInt(100f * Mathf.Max(0, e.N1) / max), 0, 100);
+                Title(Loc.F("dossier.task_output", Mathf.Max(0, e.N1), max), "round-card-headline", pct >= 65 ? "task-good" : "task-bad").NoPick().AddTo(card);
+                VisualElement fill;
+                Bar(pct / 100f, out fill, pct >= 65 ? "bar-good" : "bar-bad").NoPick().AddTo(card);
+                UiMotion.PopIn(card, 0.3f, 0.12f + i * 0.12f, 0.92f);
+                i++;
+            }
+            if (i == 0) Text(Loc.T("dossier.no_tasks"), "incident-empty").NoPick().AddTo(row);
+            // favourite (Kayirmaci) and the "nothing observed" line
+            foreach (var e in v.Meeting.Dossier)
+            {
+                if (e.Kind != DossierKind.Favourite) continue;
+                var f = Box("incident", "incident-good").NoPick().AddTo(_page);
+                MeetingText.ApplyIcon(Box("icon", "icon-l").NoPick().AddTo(f), "icons/favor_heart");
+                var col = Box("col", "grow").NoPick().AddTo(f);
+                Bold(Loc.T("dossier.favourite"), "incident-title").NoPick().AddTo(col);
+                Text(Loc.F("dossier.favourite_detail", MeetingText.Name(e.Player)), "incident-detail").NoPick().AddTo(col);
+                Badge(e.Player, "badge-m").AddTo(f);
+                break;
+            }
+            if (!HasLog(v)) Text(Loc.T("dossier.no_incidents"), "incident-empty").NoPick().AddTo(_page);
+        }
+
+        void BuildLog(LineView v)
+        {
+            var head = Box("sl-head").NoPick().AddTo(_page);
+            Title(Loc.T("dossier.slide.log"), "sl-title").NoPick().AddTo(head);
+            Box("spacer").NoPick().AddTo(head);
+            Memo(Loc.T("effect.header_note"), "rec-notice").NoPick().AddTo(head);
+            var list = Box("incident-list").NoPick().AddTo(_page);
+            int n = 0;
+            foreach (var e in v.Meeting.Dossier)
+            {
+                MeetingText.Line line;
+                if (e.Kind == DossierKind.IncidentEffect) line = MeetingText.Effect(e, v);
+                else if (e.Kind == DossierKind.MissedTask)
+                {
+                    line = new MeetingText.Line
+                    {
+                        Icon = "icons/warning", Who = e.Player, Tone = MeetingText.Tone.Neutral,
+                        Title = Loc.F("dossier.missed", MeetingText.Name(e.Player)),
+                        Detail = Loc.F("dossier.missed_detail", e.TaskNumber + 1),
+                    };
+                }
+                else if (e.Kind == DossierKind.Remedial)
+                {
+                    line = new MeetingText.Line
+                    {
+                        Icon = "icons_v3/warning_letter", Who = e.Player, Tone = MeetingText.Tone.Good,
+                        Title = Loc.F("dossier.remedial", MeetingText.Name(e.Player), MeetingText.Name(e.Victim)),
+                        Detail = Loc.F("dossier.remedial_detail", e.TaskNumber + 1, Mathf.Max(0, e.N1)),
+                    };
+                }
+                else continue;
+                var row = Box("incident", "incident-" + line.Tone.ToString().ToLowerInvariant()).NoPick().AddTo(list);
+                MeetingText.ApplyIcon(Box("icon", "icon-l").NoPick().AddTo(row), line.Icon);
+                var col = Box("col", "grow").NoPick().AddTo(row);
+                Bold(line.Title, "incident-title").NoPick().AddTo(col);
+                Text(line.Detail, "incident-detail").NoPick().AddTo(col);
+                if (line.Who >= 0) Badge(line.Who, "badge-m").AddTo(row);
+                else Box("icon", "icon-m", "incident-all").NoPick().AddTo(row);
+                UiMotion.SlideIn(row, new Vector2(0f, 18f), 0.26f, 0.1f + n * 0.09f);
+                n++;
+                if (n >= 7) break;
+            }
+            if (n == 0) Text(Loc.T("dossier.no_incidents"), "incident-empty").NoPick().AddTo(list);
+        }
+
+        /// <summary>Preset sentence, or the free text (plain label), of one anonymous complaint.</summary>
+        public static string ComplaintText(LineComplaintView c)
+        {
+            if (c.Preset >= 0)
+            {
+                string key = "complaint.preset." + c.Preset;
+                return Loc.Has(key) ? Loc.T(key) : Loc.F("complaint.preset_n", c.Preset + 1);
+            }
+            return c.Text ?? "";
+        }
+
+        void BuildComplaints(LineView v)
+        {
+            var head = Box("sl-head").NoPick().AddTo(_page);
+            Title(Loc.T("dossier.slide.complaints"), "sl-title").NoPick().AddTo(head);
+            Box("spacer").NoPick().AddTo(head);
+            Tag(Loc.T("complaint.label"), "tag-red", "complaint-label").AddTo(head);
+            var list = Box("incident-list").NoPick().AddTo(_page);
+            int n = 0;
+            foreach (var c in v.Meeting.Complaints)
+            {
+                var row = Box("incident", "complaint-row").NoPick().AddTo(list);
+                MeetingText.ApplyIcon(Box("icon", "icon-l").NoPick().AddTo(row), "icons_v3/complaint");
+                var col = Box("col", "grow").NoPick().AddTo(row);
+                Bold(Loc.F("complaint.about", MeetingText.Name(c.Target)), "incident-title").NoPick().AddTo(col);
+                Hand("“" + ComplaintText(c) + "”", "complaint-text").NoPick().AddTo(col);
+                Badge(c.Target, "badge-m").AddTo(row);
+                UiMotion.SlideIn(row, new Vector2(0f, 18f), 0.26f, 0.1f + n * 0.09f);
+                n++;
+                if (n >= 6) break;
+            }
+            if (v.Meeting.Complaints.Count > n) Text(Loc.F("complaint.more", v.Meeting.Complaints.Count - n), "incident-empty").NoPick().AddTo(list);
+            Text(Loc.T("complaint.not_evidence"), "complaint-foot").NoPick().AddTo(_page);
         }
 
         void BuildRecording(LineView v, int pickIndex)
@@ -354,90 +534,33 @@ namespace BirimizKovulacak.Game
             _deck.Set(p, v);
         }
 
-        void BuildRounds(LineView v)
+        void BuildRecords(LineView v)
         {
-            Title(Loc.T("dossier.slide.rounds"), "sl-title").NoPick().AddTo(_page);
-            var row = Box("rounds-row").NoPick().AddTo(_page);
-            for (int i = 0; i < v.TodayReveals.Count; i++)
+            var head = Box("sl-head").NoPick().AddTo(_page);
+            Title(Loc.T("dossier.slide.records"), "sl-title").NoPick().AddTo(head);
+            Box("spacer").NoPick().AddTo(head);
+            Memo(Loc.T("present.header_note"), "rec-notice").NoPick().AddTo(head);
+            var grid = Box("pc-grid").NoPick().AddTo(_page);
+            var list = v.Meeting.Presentations;
+            int start = Mathf.Max(0, list.Count - 4);
+            for (int i = start; i < list.Count; i++)
             {
-                var r = v.TodayReveals[i];
-                var card = Box("round-card").NoPick().AddTo(row);
-                var h = Box("round-card-head").NoPick().AddTo(card);
-                MeetingText.ApplyIcon(Box("icon", "icon-l").NoPick().AddTo(h), MeetingText.RoundIcon(r.Type));
-                var hc = Box("col", "grow").NoPick().AddTo(h);
-                Memo(Loc.F("dossier.round_n", r.Index + 1), "round-card-n").NoPick().AddTo(hc);
-                Title(MeetingText.Round(r.Type), "round-card-name").NoPick().AddTo(hc);
-                Bold(MeetingText.RoundHeadline(r), "round-card-headline").NoPick().AddTo(card);
-                MeetingText.RoundDetails(r, _tmp, 3);
-                foreach (var line in _tmp) Text(line, "round-card-line").NoPick().AddTo(card);
-                Box("spacer").NoPick().AddTo(card);
-                var chips = Box("delta-row").NoPick().AddTo(card);
-                foreach (var d in r.Deltas)
-                {
-                    if (d.Delta == 0) continue;
-                    DeltaChip(chips, d.Player, d.Delta);
-                }
-                if (chips.childCount == 0) Text(Loc.T("dossier.no_change"), "round-card-line", "t-muted").NoPick().AddTo(chips);
-                UiMotion.PopIn(card, 0.3f, 0.12f + i * 0.12f, 0.92f);
+                var card = RecordCards.Presentation(grid, list[i], v);
+                UiMotion.PopIn(card, 0.3f, 0.1f + (i - start) * 0.1f, 0.9f);
             }
-        }
-
-        public static void DeltaChip(VisualElement parent, int player, int delta)
-        {
-            var c = Box("delta-chip", delta > 0 ? "delta-bad" : "delta-good").NoPick().AddTo(parent);
-            Badge(player, "badge-xs").AddTo(c);
-            Bold(MeetingText.Name(player), "delta-name").NoPick().AddTo(c);
-            Title(MeetingText.Signed(delta), "delta-num").NoPick().AddTo(c);
-        }
-
-        void BuildIncidents(LineView v)
-        {
-            Title(Loc.T("dossier.slide.incidents"), "sl-title").NoPick().AddTo(_page);
-            var list = Box("incident-list").NoPick().AddTo(_page);
-            int n = 0;
-            foreach (var e in v.Meeting.Dossier)
-            {
-                if (e.Kind == DossierKind.RoundOutcome || e.Kind == DossierKind.Recording) continue;
-                MeetingText.Line line;
-                if (!MeetingText.Describe(e, v, out line)) continue;
-                var row = Box("incident", "incident-" + line.Tone.ToString().ToLowerInvariant()).NoPick().AddTo(list);
-                MeetingText.ApplyIcon(Box("icon", "icon-l").NoPick().AddTo(row), line.Icon);
-                var col = Box("col", "grow").NoPick().AddTo(row);
-                Bold(line.Title, "incident-title").NoPick().AddTo(col);
-                Text(line.Detail, "incident-detail").NoPick().AddTo(col);
-                if (line.Who >= 0) Badge(line.Who, "badge-m").AddTo(row);
-                else
-                {
-                    var unknown = Badge(-1, "badge-m").AddTo(row);
-                    unknown.AddToClassList("incident-unknown");
-                }
-                UiMotion.SlideIn(row, new Vector2(0f, 18f), 0.26f, 0.1f + n * 0.09f);
-                n++;
-                if (n >= 7) break;
-            }
-            if (n == 0) Text(Loc.T("dossier.no_incidents"), "incident-empty").NoPick().AddTo(list);
-        }
-
-        static int BoardKey(LineView v)
-        {
-            int k = 17;
-            foreach (var p in v.Players) k = k * 31 + p.Blame * 7 + p.Ihtars + (p.Connected ? 1 : 0) * 3;
-            if (v.Meeting != null) k = k * 31 + v.Meeting.Defender + (v.Phase == LinePhase.FinalDefense ? 977 : 0);
-            return k;
         }
 
         void BuildBoard(LineView v)
         {
-            _boardKey = BoardKey(v);
             bool final = v.Meeting != null && v.Meeting.IsFinal;
             var head = Box("sl-head").NoPick().AddTo(_page);
             Title(Loc.T("dossier.slide.board"), "sl-title").NoPick().AddTo(head);
             Box("spacer").NoPick().AddTo(head);
             var prof = MeetingText.Profile(v);
-            Memo(final ? Loc.F("dossier.board.final_rule", v.Meeting.Shortlist.Count > 0 ? v.Meeting.Shortlist.Count : ShortlistSize(v)) : Loc.F("dossier.board.daily_rule", prof.IhtarBlame), "rec-notice").NoPick().AddTo(head);
+            Memo(final ? Loc.T("dossier.board.final_rule") : Loc.F("dossier.board.daily_rule", prof.WarningBlame, MeetingText.Config.WarningMinVotes), "rec-notice").NoPick().AddTo(head);
 
             var rows = new List<LinePlayerView>(v.Players);
-            rows.Sort((a, b) => b.Blame != a.Blame ? b.Blame.CompareTo(a.Blame) : b.Ihtars != a.Ihtars ? b.Ihtars.CompareTo(a.Ihtars) : a.Id.CompareTo(b.Id));
+            rows.Sort((a, b) => b.Blame != a.Blame ? b.Blame.CompareTo(a.Blame) : b.Warnings != a.Warnings ? b.Warnings.CompareTo(a.Warnings) : a.Id.CompareTo(b.Id));
             int max = 1;
             foreach (var p in rows) if (p.Blame > max) max = p.Blame;
             var table = Box("board").NoPick().AddTo(_page);
@@ -451,7 +574,6 @@ namespace BirimizKovulacak.Game
                 var nc = Box("board-name-col").NoPick().AddTo(row);
                 Title(p.Name, "board-name").NoPick().AddTo(nc);
                 if (p.Id == v.Favourite) Bold(Loc.T("dossier.board.favourite"), "board-fav").NoPick().AddTo(nc);
-                if (final && v.Meeting.Shortlist.Contains(p.Id)) { row.AddToClassList("board-short"); Tag(Loc.T("dossier.shortlist.tag"), "tag-red", "board-short-tag").AddTo(nc); }
                 var barWrap = Box("board-bar").NoPick().AddTo(row);
                 var fill = Box("board-fill").NoPick().AddTo(barWrap);
                 if (n == 0 && p.Blame > 0) fill.AddToClassList("board-fill-top");
@@ -459,7 +581,7 @@ namespace BirimizKovulacak.Game
                 fill.style.width = Length.Percent(Mathf.Max(2f, frac * 100f));
                 Title(p.Blame.ToString(), "board-num").NoPick().AddTo(row);
                 var marks = Box("board-marks").NoPick().AddTo(row);
-                for (int i = 0; i < p.Ihtars; i++) IhtarMark(marks);
+                for (int i = 0; i < p.Warnings; i++) WarningMark(marks);
                 float delay = 0.08f + n * 0.07f;
                 UiMotion.SlideIn(row, new Vector2(-30f, 0f), 0.26f, delay);
                 UiMotion.Tween(fill, 0.6f, t => fill.style.width = Length.Percent(Mathf.Max(2f, frac * 100f * t)), UiMotion.Ease.OutCubic, null, delay + 0.1f, "grow");
@@ -467,59 +589,11 @@ namespace BirimizKovulacak.Game
             }
         }
 
-        public static int ShortlistSize(LineView v)
-        {
-            var c = MeetingText.Config;
-            return v.Players.Count >= 5 ? c.FinalShortlistLarge : c.FinalShortlistSmall;
-        }
-
-        /// <summary>Final: the 2–3 personnel files the final vote chooses between, in defense order.</summary>
-        void BuildShortlist(LineView v)
-        {
-            var m = v.Meeting;
-            _boardKey = BoardKey(v);
-            var head = Box("sl-head").NoPick().AddTo(_page);
-            Title(Loc.T("dossier.slide.shortlist"), "sl-title").NoPick().AddTo(head);
-            Box("spacer").NoPick().AddTo(head);
-            Memo(Loc.F("dossier.shortlist.rule", m.Shortlist.Count), "rec-notice").NoPick().AddTo(head);
-            var row = Box("short-row").NoPick().AddTo(_page);
-            int n = 0;
-            foreach (int id in m.Shortlist)
-            {
-                var p = Player(v, id);
-                var card = Box("short-card").NoPick().AddTo(row);
-                if (id == m.Defender && v.Phase == LinePhase.FinalDefense) card.AddToClassList("short-card-now");
-                Memo(Loc.F("dossier.shortlist.order", n + 1), "short-order").NoPick().AddTo(card);
-                Badge(id, "badge-xl").AddTo(card);
-                Title(MeetingText.Name(id), "short-name").NoPick().AddTo(card);
-                var line = Box("row").NoPick().AddTo(card);
-                Bold(Loc.F("meeting.blame_n", p != null ? p.Blame : 0), "short-blame").NoPick().AddTo(line);
-                if (p != null) for (int k = 0; k < p.Ihtars; k++) IhtarMark(line);
-                var clip = Box("short-clip").NoPick().AddTo(card);
-                UiMotion.PopIn(card, 0.32f, 0.15f + n * 0.15f, 0.85f);
-                n++;
-            }
-            var safe = new System.Text.StringBuilder();
-            foreach (var p in v.Players)
-            {
-                if (m.Shortlist.Contains(p.Id)) continue;
-                if (safe.Length > 0) safe.Append(", ");
-                safe.Append(p.Name);
-            }
-            if (safe.Length > 0) Text(Loc.F("dossier.shortlist.safe", safe.ToString()), "short-safe").NoPick().AddTo(_page);
-        }
-
-        static LinePlayerView Player(LineView v, int id)
-        {
-            foreach (var p in v.Players) if (p.Id == id) return p;
-            return null;
-        }
-
-        /// <summary>Small red "İ"/"W" warning mark (one per İhtar).</summary>
-        public static VisualElement IhtarMark(VisualElement parent)
+        /// <summary>Small red warning-letter mark (one per warning).</summary>
+        public static VisualElement WarningMark(VisualElement parent)
         {
             var m = Box("ihtar-mark").NoPick().AddTo(parent);
-            if (!UiArt.Apply(m, "icons_v3/warning_letter")) Title(Loc.T("meeting.ihtar_mark"), "ihtar-mark-text").NoPick().AddTo(m);
+            if (!UiArt.Apply(m, "icons_v3/warning_letter")) Title(Loc.T("meeting.warning_mark"), "ihtar-mark-text").NoPick().AddTo(m);
             else m.AddToClassList("ihtar-mark-art");
             return m;
         }

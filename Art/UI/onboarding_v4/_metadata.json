@@ -1,0 +1,35 @@
+[
+  {
+    "id": "intro_1_company",
+    "path": "Art/UI/onboarding_v4/intro_1_company.png",
+    "w": 1280,
+    "h": 720,
+    "category": "onboarding_v4",
+    "nineSlice": null,
+    "screenRect": null,
+    "hasText": false,
+    "description": "All six bean identities help raise one shared productivity gauge needle."
+  },
+  {
+    "id": "intro_2_secret",
+    "path": "Art/UI/onboarding_v4/intro_2_secret.png",
+    "w": 1280,
+    "h": 720,
+    "category": "onboarding_v4",
+    "nineSlice": null,
+    "screenRect": null,
+    "hasText": false,
+    "description": "Blue secretly reads an unsealed envelope below the desk during a phone call."
+  },
+  {
+    "id": "intro_3_meeting",
+    "path": "Art/UI/onboarding_v4/intro_3_meeting.png",
+    "w": 1280,
+    "h": 720,
+    "category": "onboarding_v4",
+    "nineSlice": null,
+    "screenRect": null,
+    "hasText": false,
+    "description": "Six beans discuss a projected call record and point at each other around a meeting table."
+  }
+]

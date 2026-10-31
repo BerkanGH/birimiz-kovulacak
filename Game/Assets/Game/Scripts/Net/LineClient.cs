@@ -42,6 +42,11 @@ namespace BirimizKovulacak.Game
         public static Action<long> MessageResyncTransport;
         /// <summary>Set by the network adapter: "Play again" intent on the results screen.</summary>
         public static Action<bool> RematchTransport;
+        /// <summary>Set by the network adapter: my analytics consent (0..3) and pseudonymous id changed.</summary>
+        public static Action<int, string> TelemetryConsentTransport;
+
+        /// <summary>Tell the host my analytics consent changed (telemetry track calls this; no-op offline).</summary>
+        public static void SendTelemetryConsent(int consent, string anonymousId) { TelemetryConsentTransport?.Invoke(consent, anonymousId ?? ""); }
 
         public void SetReady(bool ready) { ReadyTransport?.Invoke(ready); }
 
@@ -135,7 +140,8 @@ namespace BirimizKovulacak.Game
                 ConnectionManager.RememberSession(ReconnectToken, cm.Address, cm.Port);
             }
             if (v.Phase == LinePhase.WeekResults && v.Result != null && (old == null || old.Phase != LinePhase.WeekResults))
-                MatchLog.Write("results week=" + v.WeekId + " hash=" + v.Result.ResultHash + " fired=" + v.Result.Fired + " manager=" + v.Result.ManagerProfileId + " days=" + v.Result.Days);
+                MatchLog.Write("results week=" + v.WeekId + " hash=" + v.Result.ResultHash + " fired=" + v.Result.Fired + " manager=" + v.Result.ManagerProfileId + " days=" + v.Result.Days
+                    + " closed=" + v.Result.CompanyClosed + " productivity=" + v.Result.FinalProductivityPermille);
             ViewChanged?.Invoke(old, v);
             LinePhase oldPhase = old == null || old.WeekId != v.WeekId ? LinePhase.None : old.Phase;
             if (oldPhase != v.Phase || (old != null && (old.Day != v.Day || old.RoundIndex != v.RoundIndex) && v.Phase == LinePhase.RoundIntro))

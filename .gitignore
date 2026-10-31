@@ -43,3 +43,9 @@ Art/UI/_sheets/
 Art/UI/_tools/*_sources/
 Tools/LineSim/bin/
 Tools/LineSim/obj/
+# Every dotnet tool/test project under Tools
+Tools/**/bin/
+Tools/**/obj/
+Tools/**/TestResults/
+# Python caches
+__pycache__/

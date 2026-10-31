@@ -1,5 +1,7 @@
 # v3 status (lead's log)
 
+> v3 history. v4 status and model/tool usage: `docs/V4_EXECUTION_RECORD.md`.
+
 Design: `docs/V3_DESIGN.md`. Contract: `docs/CONTRACTS_V3.md`. Branch `v3` (v2 stays on `main`, tag `v2.3-night`).
 
 ## Tracks (started 2026-10-29 morning, after the producer's go)

@@ -1,0 +1,468 @@
+{
+  "generatedAtUtc": "2026-10-31T22:00:56.620135+00:00",
+  "passed": true,
+  "expectedV4Count": 23,
+  "presentV4Count": 23,
+  "manifestAssetCount": 331,
+  "countsByCategory": {
+    "tasks": 12,
+    "evidence": 6,
+    "onboarding_v4": 3,
+    "results_v4": 2
+  },
+  "checkCount": 1501,
+  "priorFilesVerified": {
+    "assetSha256": 308,
+    "metadataSha256": 26,
+    "unitySha256": 488
+  },
+  "retries": 3,
+  "errorCount": 0,
+  "errors": [],
+  "warnings": [],
+  "assets": [
+    {
+      "path": "Art/UI/tasks/task_invoice_reconcile.png",
+      "w": 512,
+      "h": 716,
+      "bytes": 200618,
+      "alphaExtrema": [
+        0,
+        255
+      ],
+      "cornerAlpha": [
+        0,
+        0,
+        0,
+        0
+      ],
+      "sha256": "efbf2ef2fba438b8f97da007b1680bf31ea90696ba3053ff943ca325934992a5",
+      "safeAreaBlank": true,
+      "resourcesCopyMatches": true
+    },
+    {
+      "path": "Art/UI/tasks/task_budget_split.png",
+      "w": 512,
+      "h": 716,
+      "bytes": 204022,
+      "alphaExtrema": [
+        0,
+        255
+      ],
+      "cornerAlpha": [
+        0,
+        0,
+        0,
+        0
+      ],
+      "sha256": "6d293ebc421f1bddbe33a9a7818495e60a2699dd3dbccf71efff3268e4c45f90",
+      "safeAreaBlank": true,
+      "resourcesCopyMatches": true
+    },
+    {
+      "path": "Art/UI/tasks/task_customer_spec.png",
+      "w": 512,
+      "h": 716,
+      "bytes": 229606,
+      "alphaExtrema": [
+        0,
+        255
+      ],
+      "cornerAlpha": [
+        0,
+        0,
+        0,
+        0
+      ],
+      "sha256": "8b18b26e697bbfdad48df3b0cb1bd81cad1312ddee775aa5c56e6cbdcace25b4",
+      "safeAreaBlank": true,
+      "resourcesCopyMatches": true
+    },
+    {
+      "path": "Art/UI/tasks/task_report_review.png",
+      "w": 512,
+      "h": 716,
+      "bytes": 214449,
+      "alphaExtrema": [
+        0,
+        255
+      ],
+      "cornerAlpha": [
+        0,
+        0,
+        0,
+        0
+      ],
+      "sha256": "20ef09e75fb17bcd57a9a2801dc014c8344c7acdd147edee9249e0038363f305",
+      "safeAreaBlank": true,
+      "resourcesCopyMatches": true
+    },
+    {
+      "path": "Art/UI/tasks/task_room_booking.png",
+      "w": 512,
+      "h": 716,
+      "bytes": 217335,
+      "alphaExtrema": [
+        0,
+        255
+      ],
+      "cornerAlpha": [
+        0,
+        0,
+        0,
+        0
+      ],
+      "sha256": "ad4a466b88dedef59e7bf38314ce9c06b863714d12670c07364547950f7586a1",
+      "safeAreaBlank": true,
+      "resourcesCopyMatches": true
+    },
+    {
+      "path": "Art/UI/tasks/task_archive_visitor.png",
+      "w": 512,
+      "h": 716,
+      "bytes": 205714,
+      "alphaExtrema": [
+        0,
+        255
+      ],
+      "cornerAlpha": [
+        0,
+        0,
+        0,
+        0
+      ],
+      "sha256": "7b7d51740164122c070438f65ca9d00fccca5234db07c6e6009d3e47184f274f",
+      "safeAreaBlank": true,
+      "resourcesCopyMatches": true
+    },
+    {
+      "path": "Art/UI/tasks/task_bonus_pool.png",
+      "w": 512,
+      "h": 716,
+      "bytes": 222119,
+      "alphaExtrema": [
+        0,
+        255
+      ],
+      "cornerAlpha": [
+        0,
+        0,
+        0,
+        0
+      ],
+      "sha256": "6e13d70b62bb4c308a03a1d0815b0ab36e247728a322584edfb321d02a519b62",
+      "safeAreaBlank": true,
+      "resourcesCopyMatches": true
+    },
+    {
+      "path": "Art/UI/tasks/task_server_code.png",
+      "w": 512,
+      "h": 716,
+      "bytes": 207059,
+      "alphaExtrema": [
+        0,
+        255
+      ],
+      "cornerAlpha": [
+        0,
+        0,
+        0,
+        0
+      ],
+      "sha256": "e02e4baf24cd95653d81c8a4f419cadb676789fb02cf3c7979815eed8e64acb7",
+      "safeAreaBlank": true,
+      "resourcesCopyMatches": true
+    },
+    {
+      "path": "Art/UI/tasks/task_phishing_check.png",
+      "w": 512,
+      "h": 716,
+      "bytes": 182220,
+      "alphaExtrema": [
+        0,
+        255
+      ],
+      "cornerAlpha": [
+        0,
+        0,
+        0,
+        0
+      ],
+      "sha256": "0154f168b85fc5f379c5bd88cad26c5a707c35f784d57b5ade68cfb1a467d2a3",
+      "safeAreaBlank": true,
+      "resourcesCopyMatches": true
+    },
+    {
+      "path": "Art/UI/tasks/task_shift_cover.png",
+      "w": 512,
+      "h": 716,
+      "bytes": 259075,
+      "alphaExtrema": [
+        0,
+        255
+      ],
+      "cornerAlpha": [
+        0,
+        0,
+        0,
+        0
+      ],
+      "sha256": "4b0c936379d76d26db16e17cf20c505ee734570f5a661727db2b8e19ba0da2d4",
+      "safeAreaBlank": true,
+      "resourcesCopyMatches": true
+    },
+    {
+      "path": "Art/UI/tasks/task_vendor_pick.png",
+      "w": 512,
+      "h": 716,
+      "bytes": 136262,
+      "alphaExtrema": [
+        0,
+        255
+      ],
+      "cornerAlpha": [
+        0,
+        0,
+        0,
+        0
+      ],
+      "sha256": "5254db53514fe1972426de68c3101111695b8cc2025d1d5a4b1d9d5efbbf141c",
+      "safeAreaBlank": true,
+      "resourcesCopyMatches": true
+    },
+    {
+      "path": "Art/UI/tasks/task_supply_swap.png",
+      "w": 512,
+      "h": 716,
+      "bytes": 173053,
+      "alphaExtrema": [
+        0,
+        255
+      ],
+      "cornerAlpha": [
+        0,
+        0,
+        0,
+        0
+      ],
+      "sha256": "1e8872b4ae00aebac550db889b124cd4a984336e82110a4e440f77e6876a7923",
+      "safeAreaBlank": true,
+      "resourcesCopyMatches": true
+    },
+    {
+      "path": "Art/UI/evidence/evidence_phone_log.png",
+      "w": 512,
+      "h": 716,
+      "bytes": 214780,
+      "alphaExtrema": [
+        0,
+        255
+      ],
+      "cornerAlpha": [
+        0,
+        0,
+        0,
+        0
+      ],
+      "sha256": "9f33754183f89d897b366f9e49e304cfe71c9b4c3f18967acb026e9a65fee2dd",
+      "safeAreaBlank": true,
+      "resourcesCopyMatches": true
+    },
+    {
+      "path": "Art/UI/evidence/evidence_bank.png",
+      "w": 512,
+      "h": 716,
+      "bytes": 173841,
+      "alphaExtrema": [
+        0,
+        255
+      ],
+      "cornerAlpha": [
+        0,
+        0,
+        0,
+        0
+      ],
+      "sha256": "1c21077b0df4d9c1994808fd3765461d025da47627b5dca241291e2378fe2062",
+      "safeAreaBlank": true,
+      "resourcesCopyMatches": true
+    },
+    {
+      "path": "Art/UI/evidence/evidence_task_system.png",
+      "w": 512,
+      "h": 716,
+      "bytes": 220923,
+      "alphaExtrema": [
+        0,
+        255
+      ],
+      "cornerAlpha": [
+        0,
+        0,
+        0,
+        0
+      ],
+      "sha256": "af25bd70adebb48d65b619190cf580e9ade8bc4449e739b0e98b3b8de96f8d32",
+      "safeAreaBlank": true,
+      "resourcesCopyMatches": true
+    },
+    {
+      "path": "Art/UI/evidence/evidence_it_log.png",
+      "w": 512,
+      "h": 716,
+      "bytes": 238149,
+      "alphaExtrema": [
+        0,
+        255
+      ],
+      "cornerAlpha": [
+        0,
+        0,
+        0,
+        0
+      ],
+      "sha256": "91ea4043f92f90dacbaef5495ce902c3fe2f7db2960d912a74ce8170eb5f0b4d",
+      "safeAreaBlank": true,
+      "resourcesCopyMatches": true
+    },
+    {
+      "path": "Art/UI/evidence/evidence_badge_log.png",
+      "w": 512,
+      "h": 716,
+      "bytes": 273156,
+      "alphaExtrema": [
+        0,
+        255
+      ],
+      "cornerAlpha": [
+        0,
+        0,
+        0,
+        0
+      ],
+      "sha256": "cd4d1c4a81edf694f4efec2dc0a4fce81724f45bfc1529dedbcd2f88bc4ad28d",
+      "safeAreaBlank": true,
+      "resourcesCopyMatches": true
+    },
+    {
+      "path": "Art/UI/evidence/evidence_hr.png",
+      "w": 512,
+      "h": 716,
+      "bytes": 242672,
+      "alphaExtrema": [
+        0,
+        255
+      ],
+      "cornerAlpha": [
+        0,
+        0,
+        0,
+        0
+      ],
+      "sha256": "f24e5d03cd5982938e7a6461ff0241c3b75cee36daa00cd148ba1e1cbbbc2aad",
+      "safeAreaBlank": true,
+      "resourcesCopyMatches": true
+    },
+    {
+      "path": "Art/UI/onboarding_v4/intro_1_company.png",
+      "w": 1280,
+      "h": 720,
+      "bytes": 1491075,
+      "alphaExtrema": [
+        255,
+        255
+      ],
+      "cornerAlpha": [
+        255,
+        255,
+        255,
+        255
+      ],
+      "sha256": "552ed0778306daa8d91c92f2d00811891eb48a5e26c4a20f878765a919846fd3",
+      "safeAreaBlank": null,
+      "resourcesCopyMatches": true
+    },
+    {
+      "path": "Art/UI/onboarding_v4/intro_2_secret.png",
+      "w": 1280,
+      "h": 720,
+      "bytes": 1413468,
+      "alphaExtrema": [
+        255,
+        255
+      ],
+      "cornerAlpha": [
+        255,
+        255,
+        255,
+        255
+      ],
+      "sha256": "e8c6eeb7e5499906123c342d5d0bfb863116d203833b3444ff59d767766ee3ea",
+      "safeAreaBlank": null,
+      "resourcesCopyMatches": true
+    },
+    {
+      "path": "Art/UI/onboarding_v4/intro_3_meeting.png",
+      "w": 1280,
+      "h": 720,
+      "bytes": 1495796,
+      "alphaExtrema": [
+        255,
+        255
+      ],
+      "cornerAlpha": [
+        255,
+        255,
+        255,
+        255
+      ],
+      "sha256": "f06aa6691af7886a45054799d571ecce92dbbf4c23844d82e01c3f69ba40d439",
+      "safeAreaBlank": null,
+      "resourcesCopyMatches": true
+    },
+    {
+      "path": "Art/UI/results_v4/company_survived.png",
+      "w": 1280,
+      "h": 720,
+      "bytes": 1361710,
+      "alphaExtrema": [
+        255,
+        255
+      ],
+      "cornerAlpha": [
+        255,
+        255,
+        255,
+        255
+      ],
+      "sha256": "f19d8aad0ff63688e76d735d8787488754dfe9c519cb30eb3f4123a7147dc915",
+      "safeAreaBlank": null,
+      "resourcesCopyMatches": true
+    },
+    {
+      "path": "Art/UI/results_v4/company_closed.png",
+      "w": 1280,
+      "h": 720,
+      "bytes": 1390546,
+      "alphaExtrema": [
+        255,
+        255
+      ],
+      "cornerAlpha": [
+        255,
+        255,
+        255,
+        255
+      ],
+      "sha256": "1e71696e15a0dbb3a52e313e62e04fb6848c6ae2fb2a0e0951b5527c67972fb7",
+      "safeAreaBlank": null,
+      "resourcesCopyMatches": true
+    }
+  ],
+  "unityIntegrationTested": false,
+  "limitations": [
+    "Unity editor import and in-game camera/compression checks require integration.",
+    "Text absence and scene/identity semantics are visually reviewed, not OCR assertions.",
+    "Historical ignored v1-v3 raw archives are unavailable; all 308 prior final assets and prior metadata are hash-checked."
+  ]
+}

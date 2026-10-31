@@ -1,0 +1,24 @@
+[
+  {
+    "id": "company_closed",
+    "path": "Art/UI/results_v4/company_closed.png",
+    "w": 1280,
+    "h": 720,
+    "category": "results_v4",
+    "nineSlice": null,
+    "screenRect": null,
+    "hasText": false,
+    "description": "Empty dark office with packing boxes, chairs on desks, dark monitors and a dangling phone cord; shared defeat."
+  },
+  {
+    "id": "company_survived",
+    "path": "Art/UI/results_v4/company_survived.png",
+    "w": 1280,
+    "h": 720,
+    "category": "results_v4",
+    "nineSlice": null,
+    "screenRect": null,
+    "hasText": false,
+    "description": "Five beans celebrate among desks; a foreground empty chair holds a cardboard packing box."
+  }
+]

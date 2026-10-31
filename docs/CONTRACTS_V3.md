@@ -1,5 +1,7 @@
 # v3 contract (engine ↔ host ↔ clients)
 
+> **Superseded (2026-11-01)** by `docs/CONTRACTS_V4.md` (protocol 4). Kept for history.
+
 Rules and numbers: `docs/V3_DESIGN.md` (normative). Types: `Game/Assets/Game/Core/Line/Contracts/*.cs` (owned by the
 lead; ask before changing). Engine, codec and bot: `Game/Assets/Game/Core/Line/Engine/**` (engine track). Tests:
 `Game/Assets/Game/Tests/Line/**`, run with the .NET project under `Tools/CoreTests` (add the folder to its includes).

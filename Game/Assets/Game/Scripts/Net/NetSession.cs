@@ -23,6 +23,9 @@ namespace BirimizKovulacak.Game
             // v3 client plumbing (the host's own client goes through the same path).
             LineClient.Transport = req => SubmitLineRpc(LineCodec.EncodeAction(req));
             LineClient.ReadyTransport = SetReady;
+            LineClient.MessageResyncTransport = seq => RequestMessagesRpc(seq);
+            LineClient.RematchTransport = want => SetRematchRpc(want);
+            LineClient.TelemetryConsentTransport = (consent, id) => SetTelemetryConsentRpc(consent, id ?? "");
             LineClient.Clock = () => NetworkManager != null && NetworkManager.IsListening ? NetworkManager.ServerTime.Time : Time.realtimeSinceStartupAsDouble;
             if (IsServer)
             {
@@ -38,6 +41,9 @@ namespace BirimizKovulacak.Game
                 Instance = null;
                 LineClient.Transport = null;
                 LineClient.ReadyTransport = null;
+                LineClient.MessageResyncTransport = null;
+                LineClient.RematchTransport = null;
+                LineClient.TelemetryConsentTransport = null;
             }
         }
 
@@ -57,6 +63,25 @@ namespace BirimizKovulacak.Game
             LineHost?.OnClientRequest(rpcParams.Receive.SenderClientId, payload);
         }
 
+        [Rpc(SendTo.Server, RequireOwnership = false)]
+        void RequestMessagesRpc(long afterSeq, RpcParams rpcParams = default)
+        {
+            LineHost?.ResyncMessages(rpcParams.Receive.SenderClientId, afterSeq);
+        }
+
+        [Rpc(SendTo.Server, RequireOwnership = false)]
+        void SetRematchRpc(bool want, RpcParams rpcParams = default)
+        {
+            LineHost?.SetRematch(rpcParams.Receive.SenderClientId, want);
+        }
+
+        /// <summary>Analytics consent (0..3) and pseudonymous id of the sender; never names or device ids.</summary>
+        [Rpc(SendTo.Server, RequireOwnership = false)]
+        void SetTelemetryConsentRpc(int consent, string anonymousId, RpcParams rpcParams = default)
+        {
+            LineHost?.OnTelemetryConsent(rpcParams.Receive.SenderClientId, consent, anonymousId);
+        }
+
         // ---------------------------------------------------------------- host -> client(s)
 
         public void SendLineWelcome(ulong clientId, LineWelcome welcome, string configJson)
@@ -72,6 +97,13 @@ namespace BirimizKovulacak.Game
         {
             if (events.Count == 0) return;
             LineEventsRpc(LineCodec.EncodeEvents(events), RpcTarget.Single(clientId, RpcTargetUse.Temp));
+        }
+
+        /// <summary>Free-text messages for one client (their own; never broadcast as a shared snapshot).</summary>
+        public void SendLineMessages(ulong clientId, int weekId, List<LineMessage> messages)
+        {
+            if (messages == null || messages.Count == 0) return;
+            LineMessagesRpc(weekId, LineCodec.EncodeMessages(messages), RpcTarget.Single(clientId, RpcTargetUse.Temp));
         }
 
         public void SendLineResult(ulong clientId, LineActionResult result)
@@ -104,6 +136,12 @@ namespace BirimizKovulacak.Game
         }
 
         [Rpc(SendTo.SpecifiedInParams, InvokePermission = RpcInvokePermission.Server)]
+        void LineMessagesRpc(int weekId, byte[] payload, RpcParams rpcParams)
+        {
+            Safe(() => LineClient.I.ApplyMessages(weekId, LineCodec.DecodeMessages(payload)), "messages");
+        }
+
+        [Rpc(SendTo.SpecifiedInParams, InvokePermission = RpcInvokePermission.Server)]
         void LineResultRpc(byte[] payload, RpcParams rpcParams)
         {
             Safe(() => LineClient.I.ApplyResult(LineCodec.DecodeResult(payload)), "result");
@@ -114,10 +152,10 @@ namespace BirimizKovulacak.Game
             try { a(); }
             catch (FormatException e)
             {
-                Debug.LogError("[Net] Incompatible " + what + " payload: " + e.Message);
+                Debug.LogError("[Net] Incompatible " + what + " payload: " + e.GetType().Name);
                 if (LineClient.I != null) LineClient.I.StatusKey = "net.incompatible";
             }
-            catch (Exception e) { Debug.LogException(e); }
+            catch (Exception e) { Debug.LogException(e); HostTelemetryBridge.TechnicalFailure("rpc_decode", e); }
         }
     }
 }

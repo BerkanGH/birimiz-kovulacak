@@ -15,6 +15,14 @@ namespace BirimizKovulacak.Game
             LaunchArgs.Initialize();
             var args = LaunchArgs.Current;
             Application.runInBackground = true;
+            DisplaySettings.ApplyAtBoot();
+            LobbyScreen.GroupCodeSetter = code => HostLineController.Current?.SetGroupCode(code);
+            // Consent changes reach the host at once (the connection payload only carries the value at join time).
+            TelemetryConsentStore.ConsentChanged += () =>
+            {
+                var p = TelemetryHooks.Privacy;
+                if (p != null) LineClient.SendTelemetryConsent(p.Consent, p.AnonymousId);
+            };
             Application.targetFrameRate = args.Bot ? 30 : 120;
             QualitySettings.vSyncCount = args.Bot ? 0 : 1;
             string name = !string.IsNullOrEmpty(args.Name) ? args.Name : PlayerPrefs.GetString("player.name", System.Environment.UserName);

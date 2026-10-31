@@ -1,0 +1,273 @@
+{
+  "assets": {
+    "menu_lobby": {
+      "cue_id": "menu_lobby",
+      "intended_use": "Main menu and lobby bed",
+      "prompt": "Instrumental only, no vocals. Sparse dry arrangement with lots of empty space for people talking over it. Muted upright-style bass, brushed or soft rim-click percussion, restrained electric piano, celesta, muted vibraphone, pizzicato strings. Recurring short four-note rising-then-falling motif, played politely and slightly off-balance. Dark office comedy atmosphere, awkward corporate optimism with playful suspicion. Mid-slow tempo around 92 BPM, light and awkwardly cheerful, hopeful but faintly suspicious, a gentle loop-friendly groove that begins and ends in the same state. ",
+      "provider": "ElevenLabs",
+      "endpoint": "https://api.elevenlabs.io/v1/music",
+      "model_id_requested": "music_v2_5",
+      "output_format": "mp3_44100_128",
+      "force_instrumental": true,
+      "requested_length_ms": 75000,
+      "generated_utc": "2026-10-31T21:41:19Z",
+      "response_headers": {
+        "date": "Sat, 31 Oct 2026 21:41:12 GMT",
+        "song-id": "4jSmj4PudY8EPTHCm4fW",
+        "content-length": "1200840",
+        "content-type": "audio/mpeg"
+      },
+      "song_id": "4jSmj4PudY8EPTHCm4fW",
+      "source_path": "Art/Audio/Music/source/menu_lobby.mp3",
+      "integrated_path": "Game/Assets/Game/Audio/Resources/music/menu_lobby.ogg",
+      "bytes": 1200840,
+      "loop": true,
+      "crossfade_ms": 1500,
+      "post_processing": [
+        "decode to 44.1 kHz stereo float",
+        "trim leading/trailing silence (<-55 dB)",
+        "cut generated fade-in/out: keep 0.00-71.50 s of the decoded source (levels within 4 dB of the 70th percentile)",
+        "equal-power (qsin) 1500 ms tail->head crossfade baked into the loop seam",
+        "linear gain -4.90 dB toward -19.0 LUFS (true peak limit -1.5 dBTP, no limiter/compression)",
+        "encode OGG Vorbis q5 44.1 kHz stereo"
+      ],
+      "integrated_duration_s": 70.0,
+      "integrated_format": "ogg vorbis q5 44.1kHz stereo"
+    },
+    "office_work": {
+      "cue_id": "office_work",
+      "intended_use": "Low-intensity bed during work blocks, task intro, reveal, break",
+      "prompt": "Instrumental only, no vocals. Sparse dry arrangement with lots of empty space for people talking over it. Muted upright-style bass, brushed or soft rim-click percussion, restrained electric piano, celesta, muted vibraphone, pizzicato strings. Recurring short four-note rising-then-falling motif, played politely and slightly off-balance. Dark office comedy atmosphere, awkward corporate optimism with playful suspicion. Very low intensity, slow 84 BPM, steady quiet pulse, small playful pizzicato figures, almost background, restrained suspense, steady throughout with no big builds. ",
+      "provider": "ElevenLabs",
+      "endpoint": "https://api.elevenlabs.io/v1/music",
+      "model_id_requested": "music_v2_5",
+      "output_format": "mp3_44100_128",
+      "force_instrumental": true,
+      "requested_length_ms": 75000,
+      "generated_utc": "2026-10-31T21:41:32Z",
+      "response_headers": {
+        "date": "Sat, 31 Oct 2026 21:41:24 GMT",
+        "song-id": "TJl6s5soMswmkIfur0Ow",
+        "content-length": "1200840",
+        "content-type": "audio/mpeg"
+      },
+      "song_id": "TJl6s5soMswmkIfur0Ow",
+      "source_path": "Art/Audio/Music/source/office_work.mp3",
+      "integrated_path": "Game/Assets/Game/Audio/Resources/music/office_work.ogg",
+      "bytes": 1200840,
+      "loop": true,
+      "crossfade_ms": 1500,
+      "post_processing": [
+        "decode to 44.1 kHz stereo float",
+        "trim leading/trailing silence (<-55 dB)",
+        "cut generated fade-in/out: keep 0.00-71.25 s of the decoded source (levels within 4 dB of the 70th percentile)",
+        "equal-power (qsin) 1500 ms tail->head crossfade baked into the loop seam",
+        "linear gain -1.00 dB toward -19.0 LUFS (true peak limit -1.5 dBTP, no limiter/compression)",
+        "encode OGG Vorbis q5 44.1 kHz stereo"
+      ],
+      "integrated_duration_s": 69.75,
+      "integrated_format": "ogg vorbis q5 44.1kHz stereo"
+    },
+    "deadline": {
+      "cue_id": "deadline",
+      "intended_use": "Rising tension in the last seconds of a task",
+      "prompt": "Instrumental only, no vocals. Sparse dry arrangement with lots of empty space for people talking over it. Muted upright-style bass, brushed or soft rim-click percussion, restrained electric piano, celesta, muted vibraphone, pizzicato strings. Recurring short four-note rising-then-falling motif, played politely and slightly off-balance. Dark office comedy atmosphere, awkward corporate optimism with playful suspicion. Faster 120 BPM, ticking muted percussion, pizzicato ostinato, slowly rising tension through the piece, restrained not dramatic, steady energy at the end so it can repeat. ",
+      "provider": "ElevenLabs",
+      "endpoint": "https://api.elevenlabs.io/v1/music",
+      "model_id_requested": "music_v2_5",
+      "output_format": "mp3_44100_128",
+      "force_instrumental": true,
+      "requested_length_ms": 40000,
+      "generated_utc": "2026-10-31T21:41:37Z",
+      "response_headers": {
+        "date": "Sat, 31 Oct 2026 21:41:31 GMT",
+        "song-id": "1wibe074kV4UfTQ3UyEx",
+        "content-length": "640775",
+        "content-type": "audio/mpeg"
+      },
+      "song_id": "1wibe074kV4UfTQ3UyEx",
+      "source_path": "Art/Audio/Music/source/deadline.mp3",
+      "integrated_path": "Game/Assets/Game/Audio/Resources/music/deadline.ogg",
+      "bytes": 640775,
+      "loop": true,
+      "crossfade_ms": 1500,
+      "post_processing": [
+        "decode to 44.1 kHz stereo float",
+        "trim leading/trailing silence (<-55 dB)",
+        "cut generated fade-in/out: keep 0.00-39.75 s of the decoded source (levels within 4 dB of the 70th percentile)",
+        "equal-power (qsin) 1500 ms tail->head crossfade baked into the loop seam",
+        "linear gain -5.10 dB toward -19.0 LUFS (true peak limit -1.5 dBTP, no limiter/compression)",
+        "encode OGG Vorbis q5 44.1 kHz stereo"
+      ],
+      "integrated_duration_s": 38.25,
+      "integrated_format": "ogg vorbis q5 44.1kHz stereo"
+    },
+    "meeting_intro": {
+      "cue_id": "meeting_intro",
+      "intended_use": "Stinger at the start of the meeting dossier",
+      "prompt": "Instrumental only, no vocals. Sparse dry arrangement with lots of empty space for people talking over it. Muted upright-style bass, brushed or soft rim-click percussion, restrained electric piano, celesta, muted vibraphone, pizzicato strings. Recurring short four-note rising-then-falling motif, played politely and slightly off-balance. Dark office comedy atmosphere, awkward corporate optimism with playful suspicion. Short stinger, a stiff formal fanfare played on celesta and pizzicato strings, one awkward wrong-footed final chord, then a short decay. ",
+      "provider": "ElevenLabs",
+      "endpoint": "https://api.elevenlabs.io/v1/music",
+      "model_id_requested": "music_v2_5",
+      "output_format": "mp3_44100_128",
+      "force_instrumental": true,
+      "requested_length_ms": 10000,
+      "generated_utc": "2026-10-31T21:41:40Z",
+      "response_headers": {
+        "date": "Sat, 31 Oct 2026 21:41:36 GMT",
+        "song-id": "9Nj4b9cfNdlb916q7IQa",
+        "content-length": "170153",
+        "content-type": "audio/mpeg"
+      },
+      "song_id": "9Nj4b9cfNdlb916q7IQa",
+      "source_path": "Art/Audio/Music/source/meeting_intro.mp3",
+      "integrated_path": "Game/Assets/Game/Audio/Resources/music/meeting_intro.ogg",
+      "bytes": 170153,
+      "loop": false,
+      "crossfade_ms": 0,
+      "post_processing": [
+        "decode to 44.1 kHz stereo float",
+        "trim leading/trailing silence (<-55 dB)",
+        "10 ms fade-in, 350 ms fade-out",
+        "linear gain +2.00 dB toward -17.0 LUFS (true peak limit -1.5 dBTP, no limiter/compression)",
+        "encode OGG Vorbis q5 44.1 kHz stereo"
+      ],
+      "integrated_duration_s": 10.166,
+      "integrated_format": "ogg vorbis q5 44.1kHz stereo"
+    },
+    "meeting_discussion": {
+      "cue_id": "meeting_discussion",
+      "intended_use": "Very sparse bed during meeting discussion, vote, verdict",
+      "prompt": "Instrumental only, no vocals. Sparse dry arrangement with lots of empty space for people talking over it. Muted upright-style bass, brushed or soft rim-click percussion, restrained electric piano, celesta, muted vibraphone, pizzicato strings. Recurring short four-note rising-then-falling motif, played politely and slightly off-balance. Dark office comedy atmosphere, awkward corporate optimism with playful suspicion. Extremely sparse, 70 BPM, a few soft sustained notes, occasional muted vibraphone, one low bass note per bar, quiet uneasy suspicion, almost nothing happening. ",
+      "provider": "ElevenLabs",
+      "endpoint": "https://api.elevenlabs.io/v1/music",
+      "model_id_requested": "music_v2_5",
+      "output_format": "mp3_44100_128",
+      "force_instrumental": true,
+      "requested_length_ms": 55000,
+      "generated_utc": "2026-10-31T21:41:47Z",
+      "response_headers": {
+        "date": "Sat, 31 Oct 2026 21:41:39 GMT",
+        "song-id": "evJqjNapGd2nA0RpvXbj",
+        "content-length": "880684",
+        "content-type": "audio/mpeg"
+      },
+      "song_id": "evJqjNapGd2nA0RpvXbj",
+      "source_path": "Art/Audio/Music/source/meeting_discussion.mp3",
+      "integrated_path": "Game/Assets/Game/Audio/Resources/music/meeting_discussion.ogg",
+      "bytes": 880684,
+      "loop": true,
+      "crossfade_ms": 1500,
+      "post_processing": [
+        "decode to 44.1 kHz stereo float",
+        "trim leading/trailing silence (<-55 dB)",
+        "cut generated fade-in/out: keep 0.00-49.25 s of the decoded source (levels within 4 dB of the 70th percentile)",
+        "equal-power (qsin) 1500 ms tail->head crossfade baked into the loop seam",
+        "linear gain -2.20 dB toward -19.0 LUFS (true peak limit -1.5 dBTP, no limiter/compression)",
+        "encode OGG Vorbis q5 44.1 kHz stereo"
+      ],
+      "integrated_duration_s": 47.75,
+      "integrated_format": "ogg vorbis q5 44.1kHz stereo"
+    },
+    "final_vote": {
+      "cue_id": "final_vote",
+      "intended_use": "Tense bed for final defense, vote and verdict",
+      "prompt": "Instrumental only, no vocals. Sparse dry arrangement with lots of empty space for people talking over it. Muted upright-style bass, brushed or soft rim-click percussion, restrained electric piano, celesta, muted vibraphone, pizzicato strings. Recurring short four-note rising-then-falling motif, played politely and slightly off-balance. Dark office comedy atmosphere, awkward corporate optimism with playful suspicion. Tense, slow 76 BPM, low muted bass pulse, sparse dissonant electric piano, soft ticking, restrained dread with a hint of absurdity, steady and loopable. ",
+      "provider": "ElevenLabs",
+      "endpoint": "https://api.elevenlabs.io/v1/music",
+      "model_id_requested": "music_v2_5",
+      "output_format": "mp3_44100_128",
+      "force_instrumental": true,
+      "requested_length_ms": 40000,
+      "generated_utc": "2026-10-31T21:41:53Z",
+      "response_headers": {
+        "date": "Sat, 31 Oct 2026 21:41:46 GMT",
+        "song-id": "lmJiSKrG31zh2XUZ0g2D",
+        "content-length": "640775",
+        "content-type": "audio/mpeg"
+      },
+      "song_id": "lmJiSKrG31zh2XUZ0g2D",
+      "source_path": "Art/Audio/Music/source/final_vote.mp3",
+      "integrated_path": "Game/Assets/Game/Audio/Resources/music/final_vote.ogg",
+      "bytes": 640775,
+      "loop": true,
+      "crossfade_ms": 1500,
+      "post_processing": [
+        "decode to 44.1 kHz stereo float",
+        "trim leading/trailing silence (<-55 dB)",
+        "cut generated fade-in/out: keep 0.00-38.25 s of the decoded source (levels within 4 dB of the 70th percentile)",
+        "equal-power (qsin) 1500 ms tail->head crossfade baked into the loop seam",
+        "linear gain -5.30 dB toward -19.0 LUFS (true peak limit -1.5 dBTP, no limiter/compression)",
+        "encode OGG Vorbis q5 44.1 kHz stereo"
+      ],
+      "integrated_duration_s": 36.75,
+      "integrated_format": "ogg vorbis q5 44.1kHz stereo"
+    },
+    "results_success": {
+      "cue_id": "results_success",
+      "intended_use": "Stinger when the company survives",
+      "prompt": "Instrumental only, no vocals. Sparse dry arrangement with lots of empty space for people talking over it. Muted upright-style bass, brushed or soft rim-click percussion, restrained electric piano, celesta, muted vibraphone, pizzicato strings. Recurring short four-note rising-then-falling motif, played politely and slightly off-balance. Dark office comedy atmosphere, awkward corporate optimism with playful suspicion. Short stinger in a major key, the recurring motif played hopefully on celesta and vibraphone with a warm pizzicato resolution, a small awkward flourish at the end. ",
+      "provider": "ElevenLabs",
+      "endpoint": "https://api.elevenlabs.io/v1/music",
+      "model_id_requested": "music_v2_5",
+      "output_format": "mp3_44100_128",
+      "force_instrumental": true,
+      "requested_length_ms": 10000,
+      "generated_utc": "2026-10-31T21:41:57Z",
+      "response_headers": {
+        "date": "Sat, 31 Oct 2026 21:41:52 GMT",
+        "song-id": "bj6QAa7uso58lHJPXgi4",
+        "content-length": "160540",
+        "content-type": "audio/mpeg"
+      },
+      "song_id": "bj6QAa7uso58lHJPXgi4",
+      "source_path": "Art/Audio/Music/source/results_success.mp3",
+      "integrated_path": "Game/Assets/Game/Audio/Resources/music/results_success.ogg",
+      "bytes": 160540,
+      "loop": false,
+      "crossfade_ms": 0,
+      "post_processing": [
+        "decode to 44.1 kHz stereo float",
+        "trim leading/trailing silence (<-55 dB)",
+        "10 ms fade-in, 350 ms fade-out",
+        "linear gain +6.80 dB toward -17.0 LUFS (true peak limit -1.5 dBTP, no limiter/compression)",
+        "encode OGG Vorbis q5 44.1 kHz stereo"
+      ],
+      "integrated_duration_s": 9.894,
+      "integrated_format": "ogg vorbis q5 44.1kHz stereo"
+    },
+    "results_collapse": {
+      "cue_id": "results_collapse",
+      "intended_use": "Stinger when the company collapses",
+      "prompt": "Instrumental only, no vocals. Sparse dry arrangement with lots of empty space for people talking over it. Muted upright-style bass, brushed or soft rim-click percussion, restrained electric piano, celesta, muted vibraphone, pizzicato strings. Recurring short four-note rising-then-falling motif, played politely and slightly off-balance. Dark office comedy atmosphere, awkward corporate optimism with playful suspicion. Short stinger in a minor key, the recurring motif played slowly and deflated, sagging pitch, a comically sad muted descending figure, ending on a flat unresolved note. ",
+      "provider": "ElevenLabs",
+      "endpoint": "https://api.elevenlabs.io/v1/music",
+      "model_id_requested": "music_v2_5",
+      "output_format": "mp3_44100_128",
+      "force_instrumental": true,
+      "requested_length_ms": 10000,
+      "generated_utc": "2026-10-31T21:42:03Z",
+      "response_headers": {
+        "date": "Sat, 31 Oct 2026 21:41:56 GMT",
+        "song-id": "7IE1GTpt5uQ8IAIakigx",
+        "content-length": "160540",
+        "content-type": "audio/mpeg"
+      },
+      "song_id": "7IE1GTpt5uQ8IAIakigx",
+      "source_path": "Art/Audio/Music/source/results_collapse.mp3",
+      "integrated_path": "Game/Assets/Game/Audio/Resources/music/results_collapse.ogg",
+      "bytes": 160540,
+      "loop": false,
+      "crossfade_ms": 0,
+      "post_processing": [
+        "decode to 44.1 kHz stereo float",
+        "trim leading/trailing silence (<-55 dB)",
+        "10 ms fade-in, 350 ms fade-out",
+        "linear gain -1.00 dB toward -17.0 LUFS (true peak limit -1.5 dBTP, no limiter/compression)",
+        "encode OGG Vorbis q5 44.1 kHz stereo"
+      ],
+      "integrated_duration_s": 9.938,
+      "integrated_format": "ogg vorbis q5 44.1kHz stereo"
+    }
+  }
+}

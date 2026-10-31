@@ -1,0 +1,7 @@
+anonymous_group_id,build_version,ruleset_version,player_count,match_id,day_index,round_index,phase,moment_timestamp,natural_accusation_occurred,accusation_referenced_game_evidence,recording_was_intelligible,recording_was_relevant,recording_lacked_context,recording_created_reaction,recording_was_referenced_later,players_reconsidered_accusation,players_appeared_confused,players_appeared_excluded,meeting_felt_too_short,meeting_felt_too_long,funny_betrayal,unexpected_accusation,surprising_outcome,notable_funny_moment,players_requested_rematch,observer_id,coding_confidence,moderator_required_repeat
+G01,202611012000-a1b2c3,v4.0-hybrid,4,m-g01-1,0,1,MeetingDiscussion,00:09:40,yes,yes,yes,yes,no,yes,yes,yes,no,no,no,no,yes,no,no,yes,yes,O1,high,no
+G01,202611012000-a1b2c3,v4.0-hybrid,4,m-g01-1,2,0,MeetingDiscussion,00:21:05,yes,no,yes,no,yes,no,no,no,yes,no,no,yes,no,yes,no,no,yes,O1,medium,no
+G01,202611012000-a1b2c3,v4.0-hybrid,4,m-g01-2,1,0,MeetingDiscussion,00:08:10,no,,yes,yes,no,yes,no,,no,no,no,no,no,no,no,no,no,O1,high,no
+G02,202611012000-a1b2c3,v4.0-hybrid,3,m-g02-1,0,0,RoundPlay,00:03:50,no,,,,,,,,yes,yes,no,no,no,no,no,no,no,O2,medium,no
+G03,202611012000-a1b2c3,v4.0-hybrid,5,m-g03-1,1,1,MeetingDiscussion,00:11:30,yes,yes,no,no,yes,no,no,no,no,no,yes,no,no,no,yes,no,no,O2,medium,no
+G04,202611021200-d4e5f6,v4.1-hybrid,6,m-g04-1,0,1,RoundPlay,00:05:00,no,,yes,yes,no,yes,yes,,no,no,no,no,no,no,no,no,yes,O3,high,no
