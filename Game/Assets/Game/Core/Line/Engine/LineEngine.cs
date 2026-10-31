@@ -24,6 +24,7 @@ namespace BirimizKovulacak.Core
             internal readonly List<LineMessage> Messages = new List<LineMessage>();
             internal readonly List<LineCallRecordView> Log = new List<LineCallRecordView>();
             internal readonly HashSet<int> Access = new HashSet<int>();
+            internal readonly HashSet<int> ArchiveAccess = new HashSet<int>();
             internal readonly HashSet<int> Bought = new HashSet<int>();
             internal readonly HashSet<int> Presented = new HashSet<int>();
         }

@@ -109,7 +109,7 @@ dotnet run -c Release --project Tools/LineSim/LineSim.csproj -- --matches 20 --p
 ```
 
 Final core build: **0 warnings, 0 errors**, targeting netstandard2.1 / C# 9.
-Final NUnit run: **417 passed, 0 failed, 0 skipped**. NuGet emitted NU1900 because the sandbox could not
+Final NUnit run: **505 passed, 0 failed, 0 skipped**. NuGet emitted NU1900 because the sandbox could not
 reach the package vulnerability service; cached packages restored successfully and the tests completed.
 
 Coverage includes every task and raw income at all four head counts, pair/trio payoffs, defaults and
@@ -149,45 +149,45 @@ view maxima and deterministic hashes are in [v4-sim.txt](../Tools/LineSim/v4-sim
 
 | Players | Length | Talk mean % / closure % | NoComm mean % / closure % | Mixed mean % / closure % |
 |---|---|---:|---:|---:|
-| 3 | Short | 95.58 / 0 | 54.41 / 75 | 83.24 / 0 |
-| 3 | Full | 97.93 / 0 | 56.19 / 70 | 85.08 / 0 |
-| 4 | Short | 97.65 / 0 | 57.77 / 80 | 90.11 / 0 |
-| 4 | Full | 97.28 / 0 | 60.15 / 80 | 90.11 / 0 |
-| 5 | Short | 97.81 / 0 | 63.35 / 50 | 89.83 / 0 |
-| 5 | Full | 98.01 / 0 | 61.14 / 70 | 92.58 / 0 |
-| 6 | Short | 98.03 / 0 | 62.43 / 60 | 93.17 / 0 |
-| 6 | Full | 98.26 / 0 | 62.52 / 70 | 93.11 / 0 |
+| 3 | Short | 97.86 / 0 | 54.41 / 75 | 84.24 / 0 |
+| 3 | Full | 98.47 / 0 | 56.24 / 70 | 84.44 / 0 |
+| 4 | Short | 99.24 / 0 | 57.77 / 80 | 90.65 / 0 |
+| 4 | Full | 98.98 / 0 | 60.10 / 80 | 90.34 / 0 |
+| 5 | Short | 99.19 / 0 | 63.35 / 50 | 90.87 / 0 |
+| 5 | Full | 98.93 / 0 | 61.14 / 70 | 92.79 / 0 |
+| 6 | Short | 99.03 / 0 | 62.43 / 60 | 93.63 / 0 |
+| 6 | Full | 99.20 / 0 | 62.52 / 70 | 93.97 / 0 |
 
-Talk (160 matches): EotM 113/160; incidents created/exposed 70/53; daily warnings/no-action 48/432; surviving-company firing/no-majority 33/127; carry 125.12 s/match over 1176 early-submit triggers. Accepted actions 34423, Busy discoveries 0.
+Talk (160 matches): EotM 93/160; incidents created/exposed 77/0; daily warnings/no-action 0/480; surviving-company firing/no-majority 0/160; carry 125.12 s/match over 1176 early-submit triggers. Accepted actions 33771, Busy discoveries 0.
 
-NoComm (160 matches): EotM 49/160; incidents created/exposed 0/0; daily warnings/no-action 0/480; surviving-company firing/no-majority 0/49; carry 125.12 s/match over 1176 early-submit triggers. Accepted actions 16536, Busy discoveries 0.
+NoComm (160 matches): EotM 49/160; incidents created/exposed 0/0; daily warnings/no-action 0/480; surviving-company firing/no-majority 0/49; carry 125.12 s/match over 1176 early-submit triggers. Accepted actions 16068, Busy discoveries 0.
 
-Mixed (160 matches): EotM 124/160; incidents created/exposed 601/269; daily warnings/no-action 211/269; surviving-company firing/no-majority 130/30; carry 125.12 s/match over 1176 early-submit triggers. Accepted actions 33002, Busy discoveries 0.
+Mixed (160 matches): EotM 125/160; incidents created/exposed 601/50; daily warnings/no-action 63/417; surviving-company firing/no-majority 42/118; carry 125.12 s/match over 1176 early-submit triggers. Accepted actions 32211, Busy discoveries 0.
 
 Career component mean points per player, including closures:
 
 | Component | Talk | NoComm | Mixed |
 |---|---:|---:|---:|
-| NotFired | 95.42 | 31.81 | 81.94 |
+| NotFired | 100.00 | 31.81 | 94.17 |
 | CompanyTarget | 75.00 | 23.85 | 75.00 |
-| SecretObjective | 35.33 | 11.00 | 32.83 |
-| EmployeeOfMonth | 6.28 | 2.72 | 6.89 |
-| ProvenSabotage | -3.68 | 0.00 | -18.68 |
+| SecretObjective | 42.58 | 12.83 | 41.33 |
+| EmployeeOfMonth | 5.17 | 2.72 | 6.94 |
+| ProvenSabotage | 0.00 | 0.00 | -3.47 |
 
 Task mean output points (100 max), pooled by observed task instances:
 
 | Task | Talk | NoComm | Mixed |
 |---|---:|---:|---:|
-| invoice_reconcile | 95.19 | 9.63 | 59.80 |
-| budget_split | 99.54 | 90.27 | 88.69 |
-| customer_spec | 93.21 | 22.45 | 69.70 |
+| invoice_reconcile | 93.81 | 9.63 | 59.66 |
+| budget_split | 99.54 | 90.27 | 87.74 |
+| customer_spec | 93.82 | 22.45 | 69.61 |
 | report_review | 100.00 | 100.00 | 92.69 |
 | room_booking | 100.00 | 61.60 | 79.41 |
-| archive_visitor | 97.70 | 57.30 | 84.17 |
-| bonus_pool | 91.51 | 68.11 | 73.01 |
+| archive_visitor | 97.84 | 57.30 | 84.58 |
+| bonus_pool | 91.26 | 68.11 | 72.92 |
 | server_code | 100.00 | 21.50 | 100.00 |
 | phishing_check | 100.00 | 29.95 | 100.00 |
-| shift_cover | 80.00 | 83.36 | 81.91 |
+| shift_cover | 100.00 | 83.36 | 89.74 |
 | vendor_pick | 99.19 | 66.42 | 99.19 |
 | supply_swap | 100.00 | 17.29 | 95.60 |
 
@@ -195,18 +195,17 @@ Objective completion, including completed objectives on closed-company results (
 
 | Objective | Talk | NoComm | Mixed |
 |---|---:|---:|---:|
-| Saver | 22/80 (27.5%) | 15/80 (18.8%) | 22/80 (27.5%) |
-| Broker | 8/68 (11.8%) | 3/68 (4.4%) | 7/68 (10.3%) |
-| Patron | 0/88 (0.0%) | 0/88 (0.0%) | 0/88 (0.0%) |
+| Saver | 14/80 (17.5%) | 6/80 (7.5%) | 11/80 (13.8%) |
+| Broker | 8/68 (11.8%) | 0/68 (0.0%) | 7/68 (10.3%) |
+| Patron | 88/88 (100.0%) | 88/88 (100.0%) | 88/88 (100.0%) |
 | TeamPlayer | 74/74 (100.0%) | 36/74 (48.6%) | 71/74 (95.9%) |
-| CleanRecord | 88/92 (95.7%) | 92/92 (100.0%) | 61/92 (66.3%) |
-| Rival | 2/82 (2.4%) | 0/82 (0.0%) | 7/82 (8.5%) |
-| Guardian | 66/72 (91.7%) | 25/72 (34.7%) | 62/72 (86.1%) |
-| Archivist | 62/62 (100.0%) | 62/62 (100.0%) | 62/62 (100.0%) |
+| CleanRecord | 92/92 (100.0%) | 92/92 (100.0%) | 83/92 (90.2%) |
+| Rival | 0/82 (0.0%) | 0/82 (0.0%) | 1/82 (1.2%) |
+| Guardian | 72/72 (100.0%) | 25/72 (34.7%) | 71/72 (98.6%) |
+| Archivist | 61/62 (98.4%) | 60/62 (96.8%) | 62/62 (100.0%) |
 | Presenter | 102/102 (100.0%) | 102/102 (100.0%) | 102/102 (100.0%) |
 
-Maximum measured six-player block-2 play view: **3,454 bytes**, below 6 KB. 1,000,000 idle ticks: 0 allocated bytes; 17.94 million ticks/s (local observation). Final matrix aggregate hash: **`057C28DACE6569CB`**. Local run time: 79.79 seconds.
-
+Maximum measured six-player block-2 play view: **3,405 bytes**, below 6 KB. 1,000,000 idle ticks: 0 allocated bytes; 16.06 million ticks/s (local observation). Final matrix aggregate hash: **`2719C182636CE5E2`**. Local run time: 86.57 seconds.
 
 ## Limits
 
@@ -223,4 +222,78 @@ snapshots; messages have their own bounded, separately paged delivery. Voice cap
 selection, transport routing, telemetry consent enforcement, UI/localisation and playtesting belong to
 the host/client work and were not exercised by running Unity.
 
+## Follow-up
+
+This bounded follow-up implements `docs/codex/ENGINE_V4_FOLLOWUP.md` on the lead's merged v4 branch.
+Contracts and `Core/Telemetry/**` remain untouched; no commit or Unity run was made.
+
+- Each resolved task emits one Host-audience `HostOutcome` (49) per scheduled participant and one
+  `HostTaskOutcome` (50). The codec now accepts both enum values. Participant income is only the credited
+  `MoneyReason.TaskIncome` delta after the running block filter; deals, favourite bonuses and remedials
+  are excluded. Quality is the value accumulated for EotM (zero when the seat never participated).
+  Opportunity/credit flags reflect EotM accounting; the connected flag snapshots resolution presence.
+- Task group counts use the pair/trio partition for Pair tasks and one group for the remaining tasks.
+  Full groups use actual output after sabotage. Sabotage loss is the non-negative difference from
+  output with only sabotage options removed, using the same submissions, grants/approval decisions,
+  group floors, means and MaxOutput scaling. It is metadata and never subtracts output again.
+  In Report Review the approval/rejection decision stays fixed: a rejected polished report can have
+  zero measured loss relative to a rejected accurate report. Accepting a bank offer by itself changes
+  no code, flag or vendor vote and therefore has zero direct output loss.
+- Both recipient copies of `RemedialResolved` now carry the actual added output in C, capped by remaining
+  task capacity; declines, timeouts and cancellation carry zero.
+- Archivist tracks acquisition provenance in a private id set. Only independent purchases (including
+  future records covered by an interval purchase) or partner visibility qualify. Own calls/transfers,
+  own submissions and payments, public task outcomes/warnings/remedials, and records gained solely
+  from another player's presentation do not count. T4 audit figures describe the Subject's department;
+  a peer named as Subject on my own submission does not turn it into foreign information. A later
+  purchase can qualify an already presented record. Distinct-colleague checks use the same qualified set.
+- The Presenter objective rule is unchanged. All bot policies use at most one presentation per meeting,
+  counting any allowance already consumed, and select only unpresented records about another player.
+- The shift-cover bug was independent per-shift ownership: the same low-id flexible volunteer could
+  be selected for several shifts, choose only the first, and leave other volunteers yielding. Talk now
+  computes a deterministic matching that maximises covered shifts, with private cost as a tie-break.
+  Each player gets at most one shift. NoComm and Greedy retain their previous minimum-available-slot
+  choice, so the comparison isolates the Talk correction rather than exploiting fact order.
+- Patron's `Other()` always chose the same colleague, so repeated payments could never satisfy the
+  distinct-colleague goal. Bots now read their own authenticated transfer totals, finish a partial
+  payment or choose another unpaid colleague, honour balance/rate/amount limits, and stop after reaching
+  the objective. The policy still makes at most one transfer per block.
+
+Validation: `dotnet test Tools/CoreTests/Tests/CoreTests.csproj`: **505 passed, 0 failed, 0 skipped**
+(88 additional regression cases). Coverage includes T1/T7/T5 event values and all twelve task/head-count
+combinations, filtered income, clamped/scaled sabotage loss, absence flags, actual remedial deltas,
+codec enum support, and client event-list exclusion at every phase. Archivist fixtures explicitly set
+thresholds rather than assuming the shipped default. Shift tests cover 48 seeded deals across 3-6
+players; Patron tests complete the objective under all three policies. Determinism and privacy scans pass.
+The core build also completed with 0 warnings and 0 errors. The package audit warning remains the sandbox's
+unreachable NuGet vulnerability service; package restore and tests succeeded.
+
+**Synthetic bot data.** Re-ran the exact matrix command shown above: 480 completed matches, 20 per cell,
+unchanged seeds, 2-second input steps, and ten-match sessions. All updated tables above and
+`Tools/LineSim/v4-sim.txt` describe this follow-up run. The raw report retains productivity distributions,
+per-task output, career averages, EotM, objectives, incidents/exposure, warnings, firing and carry.
+
+| Probe | Original Talk / NoComm / Mixed | Follow-up Talk / NoComm / Mixed |
+|---|---|---|
+| Shift output | 80.00 / 83.36 / 81.91 | 100.00 / 83.36 / 89.74 |
+| Patron completed | 0/88 / 0/88 / 0/88 | 88/88 / 88/88 / 88/88 |
+| Archivist completed | 62/62 / 62/62 / 62/62 | 61/62 / 60/62 / 62/62 |
+| Presenter completed | 102/102 / 102/102 / 102/102 | 102/102 / 102/102 / 102/102 |
+
+Talk: mean final productivity 98.86%, closures 0/160, EotM 93/160. NoComm: mean final productivity 59.75%, closures 111/160, EotM 49/160. Mixed: mean final productivity 90.12%, closures 0/160, EotM 125/160.
+
+Presenter still completes in every observed assignment despite the one-per-meeting and foreign-record
+restrictions. Early partner entries and purchased evidence provide enough qualifying records across
+separate meetings. The cap is enforced; this cohort does not establish that the objective is difficult.
+
+**Recommended lead-owned default: `ArchivistRecords = 4` (currently 6).** The engine reads the actual
+config value and applies no override. This matrix therefore used **6**, with the stricter acquisition rule;
+the reported rates are not measurements of the proposed default 4. A lead config change and subsequent
+human playtests can evaluate that recommendation.
+
+Final result aggregate hash: **`2719C182636CE5E2`**; six-player block-2 maximum **3,405 bytes**;
+1,000,000 idle ticks: 0 allocated bytes; 16.06 million ticks/s (local observation).
+
 ## Contract requests
+
+Recommended default change in the lead-owned config: `ArchivistRecords` 6 -> **4**. No schema change is needed.

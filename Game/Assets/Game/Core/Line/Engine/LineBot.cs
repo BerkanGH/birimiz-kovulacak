@@ -40,9 +40,9 @@ namespace BirimizKovulacak.Core
                 if(m.Phone.Status==CallStatus.Connected){if(v.Task!=null)contacted.Add(m.Phone.Other);if(now-m.Phone.Since>=7)return Action(v,LineVerb.HangUp);}
             }
             if(m.IncomingRemedial!=null&&v.Features.CallsOpen)return Action(v,LineVerb.RespondRemedial,m.IncomingRemedial.Requester,1);
-            if(v.Features.PresentationOpen&&m.PresentationsLeft>0)
+            if(v.Features.PresentationOpen&&m.PresentationsLeft>0&&m.PresentationsLeft==config.PresentationsPerMeeting)
             {
-                var record=m.Records.Find(r=>r.ProofOf>0&&!r.Presented)??(m.Objective.Kind==ObjectiveKind.Presenter?m.Records.Find(r=>!r.Presented):null);
+                var record=m.Records.Find(r=>r.ProofOf>0&&!r.Presented&&AboutOtherPlayer(v,r))??(m.Objective.Kind==ObjectiveKind.Presenter?m.Records.Find(r=>!r.Presented&&AboutOtherPlayer(v,r)):null);
                 if(record!=null)return Action(v,LineVerb.PresentRecord,a:record.Id);
             }
             if(v.Features.EvidenceOpen&&m.PurchasesLeftThisBlock>0&&m.PurchasesLeftThisMatch>0&&v.Phase!=LinePhase.RoundPlay)
@@ -52,8 +52,30 @@ namespace BirimizKovulacak.Core
             }
             if(v.Features.RemedialOpen&&!triedRemedial&&m.RemedialOptions.Count>0&&m.OutgoingRemedial==null)
             {int number=m.RemedialOptions[0];int peer=-1;if(participants.TryGetValue(number,out var members))foreach(var p in v.Players)if(p.Id!=seat&&p.Connected&&members.Contains(p.Id)){peer=p.Id;break;}if(peer>=0){triedRemedial=true;return Action(v,LineVerb.StartRemedial,peer,number);}}
-            if(v.Features.TransfersOpen&&!transferred&&m.Money>=2&&config.TransferMax>0&&now>=m.NextTransferAt&&(m.Objective.Kind==ObjectiveKind.Patron||policy==LineBotPolicy.Talk&&rng.Unit()<0.015))
-            {int peer=Other(v);if(peer>=0){transferred=true;return Action(v,LineVerb.Transfer,peer,Math.Min(2,config.TransferMax));}}
+            if(v.Features.TransfersOpen&&!transferred&&config.TransferMax>0&&now>=m.NextTransferAt)
+            {
+                if(m.Objective.Kind==ObjectiveKind.Patron&&m.Objective.Progress<m.Objective.Threshold&&m.Money>0)
+                {
+                    var paid = new int[6];
+                    foreach(var record in m.Records)
+                        if(record.Kind==RecordKind.Transfer&&record.Actor==seat&&record.Subject>=0&&record.Subject<6)
+                            paid[record.Subject]+=Math.Max(0,record.N1);
+                    int target=-1, remaining=int.MaxValue;
+                    foreach(var player in v.Players)if(player.Id!=seat&&player.Connected)
+                    {
+                        int needed=config.PatronEach-paid[player.Id];
+                        if(needed>0&&(needed<remaining||needed==remaining&&(target<0||player.Id<target)))
+                        {target=player.Id;remaining=needed;}
+                    }
+                    if(target>=0)
+                    {
+                        transferred=true;
+                        return Action(v,LineVerb.Transfer,target,Math.Min(m.Money,Math.Min(config.TransferMax,remaining)));
+                    }
+                }
+                else if(m.Objective.Kind!=ObjectiveKind.Patron&&m.Money>=2&&policy==LineBotPolicy.Talk&&rng.Unit()<0.015)
+                {int peer=Other(v);if(peer>=0){transferred=true;return Action(v,LineVerb.Transfer,peer,Math.Min(2,config.TransferMax));}}
+            }
             if(v.Features.TricksUnlocked&&v.Features.CallsOpen&&v.Day>0&&!m.TrickUsedToday&&m.TricksLeftThisWeek>0&&m.Trick!=TrickType.None&&policy==LineBotPolicy.Greedy)
             {
                 int target=Other(v);if(target>=0&&(m.Trick!=TrickType.SahteEposta||now>=m.NextMessageAt&&m.EmailsLeftThisBlock>0))return Action(v,LineVerb.UseTrick,target,a:m.Trick==TrickType.SahteEposta&&config.MailTemplates>0?0:-1,text:m.Trick==TrickType.SahteEposta&&config.MailTemplates==0?"Please check this memo.":"");
@@ -125,6 +147,33 @@ namespace BirimizKovulacak.Core
             if(mask==TaskField.None)return null;
             return Action(v,LineVerb.SubmitTask,flagTarget,a,b,(int)mask);
         }
+        private bool AboutOtherPlayer(LineView v,LineRecordView record)
+        {return v.Players.Exists(p=>p.Id!=seat&&(p.Id==record.Actor||p.Id==record.Subject));}
+        private static Dictionary<int,int> ShiftAssignment(List<LineView> known)
+        {
+            var present=known.FindAll(v=>v.Players.Exists(p=>p.Id==v.Me&&p.Connected));
+            present.Sort((a,b)=>a.Me.CompareTo(b.Me));
+            var current=new Dictionary<int,int>();var best=new Dictionary<int,int>();int coverage=-1,cost=int.MaxValue;
+            SearchShifts(present,0,0,0,current,ref coverage,ref cost,ref best);return best;
+        }
+        private static void SearchShifts(List<LineView> known,int index,int used,int cost,Dictionary<int,int> current,
+            ref int bestCoverage,ref int bestCost,ref Dictionary<int,int> best)
+        {
+            if(index==known.Count)
+            {
+                int coverage=Count(used);
+                if(coverage>bestCoverage||coverage==bestCoverage&&cost<bestCost)
+                {bestCoverage=coverage;bestCost=cost;best=new Dictionary<int,int>(current);}
+                return;
+            }
+            var v=known[index];current[v.Me]=9;
+            SearchShifts(known,index+1,used,cost,current,ref bestCoverage,ref bestCost,ref best);
+            foreach(int shift in Ns(v.Task,"available"))if((used&(1<<shift))==0)
+            {
+                current[v.Me]=shift;
+                SearchShifts(known,index+1,used|(1<<shift),cost+N(v.Task,"cost"),current,ref bestCoverage,ref bestCost,ref best);
+            }
+        }
         private int Other(LineView v) {foreach(var p in v.Players)if(p.Id!=seat&&p.Connected)return p.Id;return -1;}
         private int Choose(LineView v,List<LineView> known)
         {
@@ -167,9 +216,14 @@ namespace BirimizKovulacak.Core
                     int code=0;for(int i=0;i<n;i++)code=code*10+(digits[i]>=0?digits[i]:i==0?1+rng.Index(9):rng.Index(10));return code;
                 case TaskKind.PhishingCheck:return 0;
                 case TaskKind.ShiftCover:
-                    int shifts=N(t,"shifts"),pick=9;for(int shift=0;shift<shifts;shift++)
-                    {int owner=int.MaxValue;foreach(var k in known)if(Ns(k.Task,"available").Contains(shift))owner=Math.Min(owner,k.Me);if(owner==seat){pick=shift;break;}}
-                    return greedy&&N(t,"cost")==2?9:pick==9&&known.Count==1?Ns(t,"available")[0]:pick;
+                    // Preserve the solo policies' original minimum-slot choice. Only Talk coordinates a matching.
+                    if(policy!=LineBotPolicy.Talk||known.Count==1)
+                    {
+                        int pick=9;foreach(int available in Ns(t,"available"))pick=Math.Min(pick,available);
+                        return greedy&&N(t,"cost")==2?9:pick;
+                    }
+                    var shifts=ShiftAssignment(known);
+                    return shifts.TryGetValue(seat,out int shift)?shift:9;
                 case TaskKind.VendorPick:
                     if(greedy&&Fact(t,"kickback")!=null)return N(t,"kickback");int best=-1,vendor=0;foreach(var k in known){var f=Fact(k.Task,"tested");if(f!=null&&f.N2>best){best=f.N2;vendor=f.N1;}}return vendor;
                 default:return 1;

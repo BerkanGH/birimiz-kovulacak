@@ -9,6 +9,8 @@ namespace BirimizKovulacak.Core
         private void ResolveTask(double time)
         {
             var t=task; var r=c.TaskRules;
+            var incomeBefore = new int[6];
+            foreach (int id in ids) incomeBefore[id] = Filter(seats[id].RawIncome);
             t.Reveal=new LineTaskReveal{Kind=t.Kind,Index=roundIndex,Number=t.Number,MaxOutput=t.Max};
             foreach(int id in ids)
             {
@@ -27,7 +29,7 @@ namespace BirimizKovulacak.Core
                 }
                 if(t.B[id]<0)t.B[id]=0;
             }
-            int output=0;
+            int output=0, withoutSabotage=0, fullGroups=0;
             switch(t.Kind)
             {
                 case TaskKind.InvoiceReconcile:
@@ -35,7 +37,7 @@ namespace BirimizKovulacak.Core
                     foreach(var group in t.Groups)
                     {
                         int good=0,pads=0; foreach(int id in group) { if(t.A[id]==t.D[id,2])good++; if(t.B[id]==1)pads++; }
-                        int score=Math.Max(0,100*good/group.Count-r.InvoicePaddingLoss*pads); output+=score; if(good==group.Count)groupsCorrect++;
+                        int baseline=100*good/group.Count; int score=Math.Max(0,baseline-r.InvoicePaddingLoss*pads); output+=score; withoutSabotage+=baseline; if(score>=100)fullGroups++; if(good==group.Count)groupsCorrect++;
                         foreach(int id in group)
                         {
                             bool exact=t.A[id]==t.D[id,2]; t.Q[id]=exact?100:0; t.Credit[id]=good==group.Count; t.GroupScore[id]=score;
@@ -45,7 +47,7 @@ namespace BirimizKovulacak.Core
                         }
                         correct+=good;
                     }
-                    output/=t.Groups.Count; t.Reveal.PublicFacts.Add(Fact("correct_entries",correct,ids.Count,scope:2)); t.Reveal.PublicFacts.Add(Fact("groups_correct",groupsCorrect,t.Groups.Count,scope:2)); break;
+                    output/=t.Groups.Count; withoutSabotage/=t.Groups.Count; t.Reveal.PublicFacts.Add(Fact("correct_entries",correct,ids.Count,scope:2)); t.Reveal.PublicFacts.Add(Fact("groups_correct",groupsCorrect,t.Groups.Count,scope:2)); break;
                 case TaskKind.BudgetSplit:
                     int sum=0,successes=0,budget=2*ids.Count+2; foreach(int id in ids)sum+=Math.Max(0,t.A[id]);
                     foreach(int id in ids)
@@ -62,7 +64,7 @@ namespace BirimizKovulacak.Core
                     foreach(var g in t.Groups)
                     {
                         int good=0; foreach(int id in g) if(t.A[id]==t.D[id,0])good++;
-                        int score=100*good/g.Count; output+=score; orders+=good;
+                        int score=100*good/g.Count; output+=score; orders+=good; if(score>=100)fullGroups++;
                         foreach(int id in g)
                         {
                             bool exact=t.A[id]==t.D[id,0]; t.Q[id]=exact?100:0; t.GroupScore[id]=score;
@@ -79,7 +81,7 @@ namespace BirimizKovulacak.Core
                     {
                         int approver=t.D[id,3]; bool submitted=t.A[id]>=0, accurate=t.A[id]==0, approve=t.B[approver]==0;
                         bool right=submitted && (accurate==approve); int score=!submitted?0:accurate?(approve?r.ReportAccurateApproved:r.ReportAccurateRejected):(approve?r.ReportPolishedApproved:r.ReportPolishedRejected);
-                        output+=score; if(approve&&submitted)approved++;
+                        output+=score; withoutSabotage+=!submitted?0:approve?r.ReportAccurateApproved:r.ReportAccurateRejected; if(approve&&submitted)approved++;
                         if(submitted&&accurate&&approve)Money(id,r.ReportAcceptedIncome,MoneyReason.TaskIncome,time);
                         if(right)Money(approver,r.ReportCorrectDecisionIncome,MoneyReason.TaskIncome,time);
                         t.Q[id]+=submitted&&accurate?50:0; t.Q[approver]+=right?50:0; t.Credit[approver]=right;
@@ -91,7 +93,7 @@ namespace BirimizKovulacak.Core
                         int auditor=ids.Find(p=>t.D[p,4]==id);
                         AddRecord(RecordKind.AuditFigure,RecordSource.TaskSystem,time,auditor,id,t.D[id,0],taskNumber:t.Number,access:new[]{auditor});
                     }
-                    output/=ids.Count; t.Reveal.PublicFacts.Add(Fact("reports_approved",approved,ids.Count,scope:2)); break;
+                    output/=ids.Count; withoutSabotage/=ids.Count; t.Reveal.PublicFacts.Add(Fact("reports_approved",approved,ids.Count,scope:2)); break;
                 case TaskKind.RoomBooking:
                     int value=0; var counts=new int[ids.Count-1]; foreach(int id in ids) if(t.A[id]>=0&&t.A[id]<counts.Length)counts[t.A[id]]++;
                     foreach(int id in ids)
@@ -112,7 +114,7 @@ namespace BirimizKovulacak.Core
                         t.Q[id]=confirmed?100:0; if(got) { served++; Money(id,r.ArchiveServedIncome,MoneyReason.TaskIncome,time); }
                         AuditEntry(t,id,time);
                     }
-                    output=100*served/k; t.Q[t.Role]=output; Money(t.Role,r.ArchiveVisitorIncomePerServed*served,MoneyReason.TaskIncome,time);
+                    output=100*served/k; withoutSabotage=output; t.Q[t.Role]=output; Money(t.Role,r.ArchiveVisitorIncomePerServed*served,MoneyReason.TaskIncome,time);
                     for(int doc=0;doc<6;doc++)if((mask&(1<<doc))!=0)AddRecord(RecordKind.BadgeAccess,RecordSource.BadgeLog,time,t.Role,n1:doc,n2:0,taskNumber:t.Number);
                     if(t.B[t.Role]==1)
                     {
@@ -126,7 +128,7 @@ namespace BirimizKovulacak.Core
                     foreach(var g in t.Groups)
                     {
                         int takers=0; foreach(int id in g)if(t.A[id]==1)takers++; takes+=takers;
-                        int score=(g.Count==2?r.BonusPairOutput:r.BonusTrioOutput)[takers]; output+=score;
+                        int score=(g.Count==2?r.BonusPairOutput:r.BonusTrioOutput)[takers]; output+=score; if(score>=100)fullGroups++;
                         foreach(int id in g)
                         {
                             bool take=t.A[id]==1; int income=takers==0?r.BonusAllShareIncome:takers==g.Count?r.BonusAllTakeIncome:!take?0:takers==1?r.BonusSoloTakerIncome:r.BonusTrioTwoTakersIncome;
@@ -172,7 +174,19 @@ namespace BirimizKovulacak.Core
             {
                 if(LineTasks.Family(t.Kind)!=TaskFamily.Pair)t.GroupScore[id]=output;
                 if(t.Participated[id]) { seats[id].Quality+=Math.Max(0,Math.Min(100,t.Q[id])); seats[id].TasksConnected++; if(HasCreditRule(t.Kind)){seats[id].Opportunities++;t.Opportunity[id]=true;} if(t.Credit[id])seats[id].Credits++; }
+                int flags = (t.Opportunity[id] ? 1 : 0) | (t.Participated[id] && t.Credit[id] ? 2 : 0) | (seats[id].Connected ? 4 : 0);
+                Emit(LineEventType.HostOutcome, time, actor:id, target:t.Number,
+                    a:t.Participated[id] ? Math.Max(0, Math.Min(100, t.Q[id])) : 0,
+                    b:Filter(seats[id].RawIncome)-incomeBefore[id], extra:flags, host:true);
             }
+            // Counterfactual output holds submitted non-sabotage decisions fixed; it never changes the task result.
+            int loss = 0;
+            if (t.Kind == TaskKind.InvoiceReconcile || t.Kind == TaskKind.ReportReview || t.Kind == TaskKind.ArchiveVisitor)
+                loss = Math.Max(0, Math.Min(t.Max, (int)((long)withoutSabotage*t.Max/100))-t.Output);
+            bool pairs = LineTasks.Family(t.Kind) == TaskFamily.Pair;
+            int groups = pairs ? t.Groups.Count : 1;
+            if (!pairs) fullGroups = t.Output == t.Max ? 1 : 0;
+            Emit(LineEventType.HostTaskOutcome, time, a:t.Number, b:loss, extra:groups*10+fullGroups, host:true);
             if(favourite>=0)Money(favourite,profile.FavouriteIncome,MoneyReason.Favourite,time);
             AddRecord(RecordKind.TaskOutcome,RecordSource.TaskSystem,time,n1:t.Output,n2:t.Max,taskNumber:t.Number,publicRecord:true);
             lastChange=CompanyChange.TaskResolved; lastTask=t.Kind; lastDelta=t.Output; Changed();

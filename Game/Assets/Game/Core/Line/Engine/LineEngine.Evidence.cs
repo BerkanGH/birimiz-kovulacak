@@ -19,13 +19,38 @@ namespace BirimizKovulacak.Core
         {
             var v=new LineRecordView{Id=records.Count+1,Kind=kind,Source=source,Time=time,Day=Day,TaskNumber=taskNumber,Task=taskNumber>=0?schedule[taskNumber]:TaskKind.None,Actor=actor,Subject=subject,N1=n1,N2=n2,N3=n3,ProofOf=proof};
             var state=new RecordState{View=v,Purchasable=purchasable};records.Add(state);
-            if(publicRecord)foreach(int id in ids)Grant(id,v.Id,time);else if(access!=null)foreach(int id in access)Grant(id,v.Id,time);
-            if(purchasable)foreach(int id in ids)if(HasPurchase(seats[id],v))Grant(id,v.Id,time);
+            if(publicRecord)foreach(int id in ids)Grant(id,v.Id,time);else if(access!=null)foreach(int id in access)Grant(id,v.Id,time,PartnerRecord(v));
+            if(purchasable)foreach(int id in ids)if(HasPurchase(seats[id],v))Grant(id,v.Id,time,true);
             Changed();return v;
         }
         private bool HasPurchase(Seat s,LineRecordView r)
         { return r.Source==RecordSource.Bank&&s.Bought.Contains(100+r.Day)||r.Source==RecordSource.TaskSystem&&r.TaskNumber>=0&&s.Bought.Contains(200+r.TaskNumber)||r.Source==RecordSource.ITLog&&s.Bought.Contains(300+r.Day)||r.Source==RecordSource.BadgeLog&&s.Bought.Contains(400+r.Day); }
-        private void Grant(int id,int record,double time) { if(seats[id].Access.Add(record)){Emit(LineEventType.RecordGranted,time,a:record,recipient:id);Changed();} }
+        private static bool PartnerRecord(LineRecordView r)
+        {
+            return r.Kind == RecordKind.TaskEntry || r.Kind == RecordKind.AuditFigure || r.Kind == RecordKind.ReportDraft ||
+                r.Kind == RecordKind.DealPayment || r.Kind == RecordKind.OfferAcceptance;
+        }
+        private bool ArchiveRecord(int id, LineRecordView r)
+        {
+            bool involvesMe = r.Actor == id || r.Subject == id;
+            if (r.Kind == RecordKind.TaskOutcome || r.Kind == RecordKind.Warning || r.Kind == RecordKind.Remedial ||
+                involvesMe && (r.Kind == RecordKind.Call || r.Kind == RecordKind.Transfer || r.Kind == RecordKind.ItemTransfer) ||
+                r.Actor == id && (r.Kind == RecordKind.DealPayment || r.Kind == RecordKind.OfferAcceptance)) return false;
+            // A report entry's Subject can name its reviewer; that does not make my own submission
+            // information about somebody else. AuditFigure instead describes the Subject's department.
+            if (r.Kind == RecordKind.TaskEntry || r.Kind == RecordKind.ReportDraft ||
+                r.Kind == RecordKind.DealPayment || r.Kind == RecordKind.OfferAcceptance)
+                return HasSeat(r.Actor) && r.Actor != id;
+            if (r.Kind == RecordKind.AuditFigure) return HasSeat(r.Subject) && r.Subject != id;
+            return HasSeat(r.Actor) && r.Actor != id || HasSeat(r.Subject) && r.Subject != id;
+        }
+        private void Grant(int id,int record,double time,bool archival = false)
+        {
+            var s = seats[id];
+            // Provenance survives presentation, and a later purchase can qualify an already accessible record.
+            if (archival && ArchiveRecord(id, records[record - 1].View) && s.ArchiveAccess.Add(record)) Changed();
+            if(s.Access.Add(record)){Emit(LineEventType.RecordGranted,time,a:record,recipient:id);Changed();}
+        }
         private int Filter(int raw) { return Math.Min(c.BlockIncomeCap,Math.Min(raw,c.BlockIncomeFull)+Math.Max(0,raw-c.BlockIncomeFull)/2); }
         private void Money(int id,int amount,MoneyReason reason,double time)
         {
@@ -86,7 +111,7 @@ namespace BirimizKovulacak.Core
                     if(s.BlockPurchases>=c.PurchasesPerBlock||s.Purchases>=c.PurchasesPerMatch)return LineFailure.LimitReached;
                     if(s.Money<offer.Price)return LineFailure.InsufficientFunds;
                     s.Bought.Add(a.A);s.BlockPurchases++;s.Purchases++;Money(id,-offer.Price,MoneyReason.Purchase,time);
-                    foreach(var record in records)if(record.Purchasable&&HasPurchase(s,record.View))Grant(id,record.View.Id,time);
+                    foreach(var record in records)if(record.Purchasable&&HasPurchase(s,record.View))Grant(id,record.View.Id,time,true);
                     Emit(LineEventType.PurchaseMade,time,a:a.A,b:offer.Price,recipient:id);return LineFailure.None;
                 case LineVerb.PresentRecord:
                     if(!PresentOpen)return LineFailure.WrongPhase;if(!s.Access.Contains(a.A))return LineFailure.NotOwned;
@@ -122,10 +147,11 @@ namespace BirimizKovulacak.Core
         private void ResolveRemedial(int index,bool accept,double time)
         {
             var r=remedials[index];remedials.RemoveAt(index);var t=tasks.Find(x=>x.Number==r.TaskNumber);var requester=seats[r.Requester];
+            int added = 0;
             accept=accept&&!t.Remedied&&t.Output<t.Max&&requester.BlockRemedials<c.RemedialsPerBlock&&requester.Remedials<c.RemedialsPerMatch&&finalProductivity<0;
             if(accept)
             {
-                int prior=Provisional(),delta=Math.Min(c.RemedialOutput,t.Max-t.Output);t.Output+=delta;t.Reveal.Output=t.Output;t.Remedied=true;foreach(int id in ids)t.GroupScore[id]=LineTasks.Family(t.Kind)==TaskFamily.Pair?Math.Min(100,t.GroupScore[id]+100*delta/t.Max):100*t.Output/t.Max;requester.Remedials++;requester.BlockRemedials++;
+                int prior=Provisional(),delta=Math.Min(c.RemedialOutput,t.Max-t.Output);added = delta;t.Output+=delta;t.Reveal.Output=t.Output;t.Remedied=true;foreach(int id in ids)t.GroupScore[id]=LineTasks.Family(t.Kind)==TaskFamily.Pair?Math.Min(100,t.GroupScore[id]+100*delta/t.Max):100*t.Output/t.Max;requester.Remedials++;requester.BlockRemedials++;
                 Blame(r.Requester,-c.RemedialBlame,BlameReason.Remedial,time,t.Kind);Money(r.Requester,c.RemedialIncome,MoneyReason.Remedial,time);Money(r.Cosigner,c.RemedialIncome,MoneyReason.Remedial,time);
                 // Cooperation is normalised per task, including remedial work on that task.
                 foreach(int id in new[]{r.Requester,r.Cosigner})
@@ -137,8 +163,8 @@ namespace BirimizKovulacak.Core
                 AddRecord(RecordKind.Remedial,RecordSource.HR,time,r.Requester,r.Cosigner,t.Number,delta,taskNumber:t.Number,publicRecord:true);
                 Emit(LineEventType.ProductivityChanged,time,a:Provisional(),b:Provisional()-prior);
             }
-            Emit(LineEventType.RemedialResolved,time,r.Requester,r.Cosigner,accept?1:0,r.TaskNumber,recipient:r.Requester);
-            Emit(LineEventType.RemedialResolved,time,r.Requester,r.Cosigner,accept?1:0,r.TaskNumber,recipient:r.Cosigner);Changed();
+            Emit(LineEventType.RemedialResolved,time,r.Requester,r.Cosigner,accept?1:0,r.TaskNumber,recipient:r.Requester,extra:added);
+            Emit(LineEventType.RemedialResolved,time,r.Requester,r.Cosigner,accept?1:0,r.TaskNumber,recipient:r.Cosigner,extra:added);Changed();
         }
         private sealed class TransferTime { internal int A,B;internal double Time; }
         private readonly List<TransferTime> transfers=new List<TransferTime>();

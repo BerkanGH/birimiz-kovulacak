@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
@@ -32,7 +32,14 @@ namespace BirimizKovulacak.Core.Tests
                     if(v.Me!=1)Assert.IsTrue(v.Mine.Records.All(r=>r.Kind!=RecordKind.HrFile));
                     if(v.Meeting!=null)Assert.IsTrue(v.Meeting.Recordings.All(p=>p.CandidateCallIds.Count==0));
                 }
-                Assert.IsFalse(Contains(LineCodec.EncodeEvents(m.Engine.DrainEvents()),Encoding.UTF8.GetBytes("PRIVATE_SENTINEL_İ_747347")));phases++;m.Next();
+                var events=m.Engine.DrainEvents();
+                Assert.IsFalse(Contains(LineCodec.EncodeEvents(events),Encoding.UTF8.GetBytes("PRIVATE_SENTINEL_İ_747347")));
+                foreach(var player in m.Setup.Players)
+                {
+                    var client=LineCodec.DecodeEvents(LineCodec.EncodeEvents(events.Where(e=>e.IsVisibleTo(player.Id)).ToList()));
+                    Assert.IsFalse(client.Any(e=>e.Type==LineEventType.HostOutcome||e.Type==LineEventType.HostTaskOutcome));
+                }
+                phases++;m.Next();
             }
             Assert.Greater(phases,30);
         }
