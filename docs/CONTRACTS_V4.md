@@ -141,6 +141,7 @@ commission spec, 0 other · T4 A: 0 accurate / 1 polished; B: 0 approve / 1 reje
 1 correct / 0 wrong · T7 A: 0 share / 1 take · T8 A: 1 exact / 0 wrong; B: accept · T9 Target: 1 holder, 0 other, 2
 self; B: accept · T10 A: 0 decline, 1 available shift, 2 unavailable · T11 A: quality of the vendor; B: accept · T12
 `GiveItem` → HostChoice Target 0, A = 1 when the item completed the receiver's need, else 0; `done` A = 1.
+v4 additions (lead, after the first engine pass): `HostOutcome` (49) per participant at resolution — A quality, B task income, C flags 1 opportunity / 2 credit / 4 connected, Target task number; `HostTaskOutcome` (50) per task — A task number, B sabotage loss, C groups×10 + full groups; `RemedialResolved.C` = output added.
 These codes never reach clients; the telemetry layer holds them until the match ends (`private_until_match_end`).
 
 ## 9. Codec

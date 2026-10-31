@@ -277,7 +277,7 @@ namespace BirimizKovulacak.Core
         IncidentExposed = 26,
         /// <summary>To the co-signer: Actor = requester, A = task number.</summary>
         RemedialRequested = 27,
-        /// <summary>To both: Actor = requester, Target = co-signer, A = 1 accepted / 0 declined or expired, B = task number.</summary>
+        /// <summary>To both: Actor = requester, Target = co-signer, A = 1 accepted / 0 declined or expired, B = task number, C = output points added.</summary>
         RemedialResolved = 28,
         /// <summary>Public: A = provisional productivity per mille (-1 measuring), B = change in per mille.</summary>
         ProductivityChanged = 29,
@@ -307,6 +307,10 @@ namespace BirimizKovulacak.Core
         HostMessage = 47,
         /// <summary>Actor's submission was blocked or defaulted at resolution: A = task number, B = 1 missed (blame) / 2 blocked by a trick / 3 absent.</summary>
         HostMissedTask = 48,
+        /// <summary>Per participant at task resolution: Actor, A = contribution quality 0..100, B = task income credited, C = flags (1 cooperation opportunity, 2 cooperation credit, 4 connected at resolution); Target = task number.</summary>
+        HostOutcome = 49,
+        /// <summary>Per task at resolution: A = task number, B = output lost to sabotage options (points), C = groups × 10 + groups at full output.</summary>
+        HostTaskOutcome = 50,
     }
 
     public enum BlameReason : byte
