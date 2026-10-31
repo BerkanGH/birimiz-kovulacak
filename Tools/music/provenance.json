@@ -26,11 +26,12 @@
       "post_processing": [
         "decode to 44.1 kHz stereo float",
         "trim leading/trailing silence (<-55 dB)",
+        "cut generated fade-in/out: keep 0.00-71.50 s of the decoded source (levels within 4 dB of the 70th percentile)",
         "equal-power (qsin) 1500 ms tail->head crossfade baked into the loop seam",
-        "linear gain -4.80 dB toward -19.0 LUFS (true peak limit -1.5 dBTP, no limiter/compression)",
+        "linear gain -4.90 dB toward -19.0 LUFS (true peak limit -1.5 dBTP, no limiter/compression)",
         "encode OGG Vorbis q5 44.1 kHz stereo"
       ],
-      "integrated_duration_s": 72.768,
+      "integrated_duration_s": 70.0,
       "integrated_format": "ogg vorbis q5 44.1kHz stereo"
     },
     "office_work": {
@@ -59,11 +60,12 @@
       "post_processing": [
         "decode to 44.1 kHz stereo float",
         "trim leading/trailing silence (<-55 dB)",
+        "cut generated fade-in/out: keep 0.00-71.25 s of the decoded source (levels within 4 dB of the 70th percentile)",
         "equal-power (qsin) 1500 ms tail->head crossfade baked into the loop seam",
         "linear gain -1.00 dB toward -19.0 LUFS (true peak limit -1.5 dBTP, no limiter/compression)",
         "encode OGG Vorbis q5 44.1 kHz stereo"
       ],
-      "integrated_duration_s": 72.552,
+      "integrated_duration_s": 69.75,
       "integrated_format": "ogg vorbis q5 44.1kHz stereo"
     },
     "deadline": {
@@ -92,11 +94,12 @@
       "post_processing": [
         "decode to 44.1 kHz stereo float",
         "trim leading/trailing silence (<-55 dB)",
+        "cut generated fade-in/out: keep 0.00-39.75 s of the decoded source (levels within 4 dB of the 70th percentile)",
         "equal-power (qsin) 1500 ms tail->head crossfade baked into the loop seam",
         "linear gain -5.10 dB toward -19.0 LUFS (true peak limit -1.5 dBTP, no limiter/compression)",
         "encode OGG Vorbis q5 44.1 kHz stereo"
       ],
-      "integrated_duration_s": 38.52,
+      "integrated_duration_s": 38.25,
       "integrated_format": "ogg vorbis q5 44.1kHz stereo"
     },
     "meeting_intro": {
@@ -158,11 +161,12 @@
       "post_processing": [
         "decode to 44.1 kHz stereo float",
         "trim leading/trailing silence (<-55 dB)",
+        "cut generated fade-in/out: keep 0.00-49.25 s of the decoded source (levels within 4 dB of the 70th percentile)",
         "equal-power (qsin) 1500 ms tail->head crossfade baked into the loop seam",
-        "linear gain -2.10 dB toward -19.0 LUFS (true peak limit -1.5 dBTP, no limiter/compression)",
+        "linear gain -2.20 dB toward -19.0 LUFS (true peak limit -1.5 dBTP, no limiter/compression)",
         "encode OGG Vorbis q5 44.1 kHz stereo"
       ],
-      "integrated_duration_s": 50.936,
+      "integrated_duration_s": 47.75,
       "integrated_format": "ogg vorbis q5 44.1kHz stereo"
     },
     "final_vote": {
@@ -191,11 +195,12 @@
       "post_processing": [
         "decode to 44.1 kHz stereo float",
         "trim leading/trailing silence (<-55 dB)",
+        "cut generated fade-in/out: keep 0.00-38.25 s of the decoded source (levels within 4 dB of the 70th percentile)",
         "equal-power (qsin) 1500 ms tail->head crossfade baked into the loop seam",
-        "linear gain -5.10 dB toward -19.0 LUFS (true peak limit -1.5 dBTP, no limiter/compression)",
+        "linear gain -5.30 dB toward -19.0 LUFS (true peak limit -1.5 dBTP, no limiter/compression)",
         "encode OGG Vorbis q5 44.1 kHz stereo"
       ],
-      "integrated_duration_s": 38.415,
+      "integrated_duration_s": 36.75,
       "integrated_format": "ogg vorbis q5 44.1kHz stereo"
     },
     "results_success": {

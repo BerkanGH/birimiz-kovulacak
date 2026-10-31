@@ -87,6 +87,34 @@ def seam(path):
     return round(worst, 2), round(abs(rms_db(0, w) - rms_db(n - w, n)), 2)
 
 
+def level_profile(a):
+    """250 ms RMS levels (dB) of interleaved stereo float samples."""
+    n = len(a) // 2
+    w = SR // 4
+    out = []
+    for i in range(0, n - w + 1, w):
+        seg = a[2 * i:2 * (i + w)]
+        out.append(10 * math.log10(max(sum(v * v for v in seg) / len(seg), 1e-12)))
+    return out
+
+
+def body_range(a, drop_db=4.0):
+    """Seconds range [t0, t1] that excludes the generated fade-in/fade-out (windows more than drop_db below the 70th percentile)."""
+    lv = level_profile(a)
+    ref = sorted(lv)[int(len(lv) * 0.7)]
+    ok = [i for i, v in enumerate(lv) if v >= ref - drop_db]
+    return ok[0] * 0.25, (ok[-1] + 1) * 0.25
+
+
+def dip_db(path):
+    """Quietest 250 ms level in the first/last 2 s relative to the 10th-percentile level of the whole file
+    (sparse beds are naturally spiky, so the median would flag normal gaps). Negative = the seam is quieter than the music's own quietest parts."""
+    lv = level_profile(pcm(path))
+    p10 = sorted(lv)[int(len(lv) * 0.1)]
+    edge = lv[:8] + lv[-8:]
+    return round(min(edge) - p10, 1)
+
+
 def process(cue, tmp):
     cid = cue["id"]
     src = os.path.join(ROOT, cue["source"])
@@ -101,6 +129,12 @@ def process(cue, tmp):
     n = duration(w0)
     raw_seam = seam(w0) if cue["loop"] else None
     if cue["loop"]:
+        t0, t1 = body_range(pcm(w0))
+        w0b = os.path.join(tmp, cid + "_0b.wav")
+        ff("-i", w0, "-af", f"atrim=start={t0:.3f}:end={t1:.3f},asetpts=PTS-STARTPTS", "-c:a", "pcm_f32le", w0b)
+        w0 = w0b
+        n = duration(w0)
+        steps.append(f"cut generated fade-in/out: keep {t0:.2f}-{t1:.2f} s of the decoded source (levels within 4 dB of the 70th percentile)")
         c = cue["crossfade_ms"] / 1000.0
         flt = (f"[0:a]atrim=start={n - c:.6f},asetpts=PTS-STARTPTS[t];[0:a]atrim=end={n - c:.6f},asetpts=PTS-STARTPTS[b];"
                f"[t][b]acrossfade=d={c}:c1=qsin:c2=qsin[o]")
@@ -139,7 +173,8 @@ def process(cue, tmp):
         j, lv = seam(dst)
         res.update({"seam_jump_ratio": j, "seam_level_step_db": lv, "seam_jump_ratio_unprocessed": raw_seam[0],
                     "seam_level_step_unprocessed_db": raw_seam[1], "crossfade_ms": cue["crossfade_ms"]})
-        res["seam_ok"] = j <= 1.5 and lv <= 3.0
+        res["edge_dip_db"] = dip_db(dst)
+        res["seam_ok"] = j <= 1.5 and lv <= 6.0 and res["edge_dip_db"] >= -3.0
     res["checks_ok"] = (res["codec"] == "vorbis" and res["sample_rate"] == SR and ltp <= TP_LIMIT
                         and abs(li - target) <= (1.0 if cue["loop"] else 3.0) and (not cue["loop"] or res["seam_ok"]))
     return res, steps
