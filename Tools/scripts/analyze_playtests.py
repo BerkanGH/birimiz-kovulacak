@@ -2445,7 +2445,9 @@ def build_summary(S, rows, grows, frows, charts, warnings_, args_desc):
           "- Truncated final lines: %d; corrupt lines: %d; rejected by envelope validation: %d%s" % (ld.truncated, ld.corrupt, sum(ld.rejected.values()), (" (" + ", ".join("%s=%d" % kv for kv in ld.rejected.most_common(5)) + ")") if ld.rejected else ""),
           "- Event catalog: %s" % ("loaded (%d events), schema issues: %d" % (len(ld.catalog), sum(ld.param_issues.values())) if ld.catalog else "not found - envelope validation + built-in section 5 list only"),
           "- Unknown event names: %s" % (", ".join("%s(%d)" % kv for kv in ld.unknown_events.most_common(8)) or "none"),
-          "- Contexts analysed: %d matches, %d groups; strata (build | ruleset): %s" % (len(S.matches), len(S.groups), "; ".join("%s | %s" % st for st in S.strata)),
+          "- Contexts analysed: %d matches, %d groups with matches (%d pre-lobby client sessions not linked to a group); strata (build | ruleset): %s" % (
+              len(S.matches), len({c.group for c in S.matches}), len([g for g in S.groups if g not in {c.group for c in S.matches}]),
+              "; ".join("%s | %s" % st for st in S.strata)),
           "- Excluded as synthetic (not human playtest data): %s" % (", ".join("%s=%d" % kv for kv in S.excluded.items()) or "none"),
           "- Observer rows linked: %d; feedback rows linked: %d" % (len(S.obs_pairs), len(S.fb_pairs))]
     for w in warnings_:
@@ -2668,7 +2670,7 @@ def main(argv=None):
     S, rows = run_analysis(a.paths, a.observer, a.feedback, a.out, a.include_synthetic, a.catalog if os.path.isfile(a.catalog) else None)
     ok = sum(1 for r in rows if r["status"] == "ok")
     print("events accepted %d, duplicates %d, truncated %d, corrupt %d, rejected %d" % (S.load.accepted, S.load.duplicates, S.load.truncated, S.load.corrupt, sum(S.load.rejected.values())))
-    print("matches %d, groups %d, strata %d, excluded synthetic %s" % (len(S.matches), len(S.groups), len(S.strata), dict(S.excluded) or "none"))
+    print("matches %d, groups with matches %d, strata %d, excluded synthetic %s" % (len(S.matches), len({c.group for c in S.matches}), len(S.strata), dict(S.excluded) or "none"))
     print("metric rows %d (ok %d); reports in %s" % (len(rows), ok, a.out))
     return 0
 
