@@ -1,0 +1,26 @@
+{
+    "name": "BirimizKovulacak.Telemetry.UGS",
+    "rootNamespace": "BirimizKovulacak.Telemetry.UGS",
+    "references": [
+        "BirimizKovulacak.Core",
+        "Unity.Services.Core",
+        "Unity.Services.Analytics"
+    ],
+    "includePlatforms": [],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": true,
+    "defineConstraints": [
+        "BK_UGS_ANALYTICS"
+    ],
+    "versionDefines": [
+        {
+            "name": "com.unity.services.analytics",
+            "expression": "",
+            "define": "BK_UGS_ANALYTICS"
+        }
+    ],
+    "noEngineReferences": false
+}

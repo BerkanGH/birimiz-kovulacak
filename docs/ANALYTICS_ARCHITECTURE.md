@@ -231,3 +231,33 @@ private_until_match_end. Consent: S self, A all_participants, V voter, H host_ag
   diagnostics shown only on the host; private-until-match-end events never displayed during a match).
 
 (Sections 7+ — implementation notes, threading, bounds — are written by the telemetry track.)
+
+## 7. Implementation notes (telemetry track)
+
+**Threading.** Events are built and submitted on the main thread (`TelemetrySessionContext` is main-thread only and is copied into each event). `GameTelemetryService.Flush()` runs on a dedicated background thread (`TelemetryBootstrap`, interval `FlushIntervalSeconds`, default 2 s) and also synchronously on quit. The queue and consent tables sit behind one lock; sinks run under a second lock on the flush thread only and see events detached from the queue. The Unity Analytics sink additionally hands events to the main thread (SDK calls happen there).
+
+**Bounds.** Queue 2048 events (`QueueBound`), private buffer 4096 (`PrivateBufferBound`), host-event dedupe window 32768 ids, debug ring 256, Unity Analytics hand-off queue 256. Nothing grows without bound.
+
+**Overflow.** `DropNewest` (default; keeps the contiguous start of a burst) or `DropOldest`. Every drop is counted (`DroppedOverflow`, `DroppedPrivateOverflow`, `DroppedWithdrawal`) and reported at the next flush as `telemetry_queue_dropped` (`overflow` / `consent_withdrawn`); the report itself bypasses the bound. A sink fault produces one `telemetry_sink_error` per fault (not per retry); the report is queued and travels with the following flush.
+
+**Flushing / rotation / retention.** Local sink appends one batch per write (open-append-close); files rotate at `MaxFileBytes` (1 MB) and the directory keeps at most `MaxFiles` (20) files younger than `RetentionDays` (30), pruned at first write and at each rotation (never the current file; only `events_*.jsonl`). A failed or partial write abandons that file; the next batch starts a new numbered file, so a torn line can only be the last line of an old file. A new process never appends to an old file.
+
+**Dedupe.** Host events get `h-` + FNV-1a-64 of `match_id|event|logical_key`; the observer supplies logical keys (call id, task number, voter + time, ...), and the service drops a second event with the same id. Engine events delivered twice (both call parties, retries) therefore count once. Client ids are random 128-bit, fixed when the event is created.
+
+**Disabled overhead (measured, net8.0, this machine).** `Begin` returns a shared no-op builder: 1,000,000 disabled `Begin(...).Float().Enum().Emit()` calls took ~28 ms (28 ns per call) and allocated no per-call memory (40 bytes total measurement noise); the observer does not read the engine when disabled (tested). Enabled: ~2.2 us per event to build, validate, consent-check and enqueue (20,000 events in 44 ms).
+
+**Decisions that refine the contract (no section 1-6 text changed).**
+- *Ballots*: `meeting_vote_submitted` / `final_vote_submitted` are public in the contract but a host log must not show ballots while voting is open. The observer holds them in memory and emits them when the votes become public (entering `MeetingVerdict` / `FinalVerdict`) with the original cast time.
+- *Phase exit reason*: `PhaseChanged.B` describes the phase that just ended, so a closed company shows `skipped` on the `MeetingDiscussion` exit, not on `FinalVerdict`.
+- *Presence*: connectivity is taken from engine `Presence` events and `HostTelemetryBridge.PlayerConnection`; the second report of the same state is ignored.
+- *Participation*: a consenting player counts as participating when **they** had a connected call overlapping the task window, regardless of the partner's consent (self data only; the partner is never identified). `eligible` = non-bot players connected when the window opened; `observed` = eligible with consent >= 2. With nobody observed `participation_rate` is omitted (`not_measured`).
+- *Phone failures*: only `CallBusy`, `MissedCall` and `CallEnded` are visible as engine events; refused `Apply` results (PhoneDead, Absent, WrongPhase) are not.
+- *session_interrupted* means the session did not survive. Survivable drops appear as `reconnect_attempted` / `reconnect_succeeded`. Connection flip-flops (reject.* then Connecting then net.reconnect_failed) are held for 6 s and only the terminal outcome is reported with the most specific reason.
+- Client events on the host process share the session context with the host observer; on a host the client glue does not touch match id / position.
+
+**Contract requests (for the lead).**
+1. Engine/contract: expose per-choice quality and cooperation credit/opportunity (for `choice_outcome_resolved`), `sabotage_loss` / `groups` / `groups_full` per task (for `task_output_resolved`), and `output_added` for remedial resolution. Until then these are omitted or `pending_integration`.
+2. Voice: a structured stats snapshot (loss %, jitter ms, underruns) instead of `VoiceStatsReporter.Build` log text, for `voice_quality_summary`.
+3. `LineConnectionPayload.TelemetryConsent/AnonymousPlayerId` must be filled by `ConnectionManager.BuildPayload` (it currently is not) and re-sent through a NetSession RPC on `TelemetryConsentStore.ConsentChanged`.
+4. A `ConnectionManager` event or call for the join kind (`rejoin`) would replace the `-autojoin` inference; `ClientTelemetry.NoteJoinKind("rejoin")` is the hook.
+5. `HostCall` timing: engine events should carry the call id on `CallEnded` for calls that never connected (currently handled by pair matching).

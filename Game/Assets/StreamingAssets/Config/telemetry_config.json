@@ -1,0 +1,16 @@
+{
+  "Enabled": true,
+  "Local": true,
+  "Cloud": false,
+  "Environment": "auto",
+  "QueueBound": 2048,
+  "PrivateBufferBound": 4096,
+  "FlushIntervalSeconds": 2.0,
+  "Overflow": "DropNewest",
+  "MaxFileBytes": 1048576,
+  "MaxFiles": 20,
+  "RetentionDays": 30,
+  "Cohort": "",
+  "GroupId": "",
+  "Experiments": []
+}
