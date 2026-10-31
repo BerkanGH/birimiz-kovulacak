@@ -145,7 +145,7 @@ namespace BirimizKovulacak.Core
                 case ObjectiveKind.Patron:int paid=0;foreach(int p in ids)if(p!=id&&s.Paid[p]>=c.PatronEach)paid++;return paid;
                 case ObjectiveKind.TeamPlayer:int tasksGood=0;foreach(var t in tasks)if(t.Resolved&&t.Participated[id]&&t.GroupScore[id]>=c.TeamPlayerOutput)tasksGood++;return tasksGood;
                 case ObjectiveKind.Rival:case ObjectiveKind.Guardian:return seats[s.ObjectiveTarget].Warnings;
-                case ObjectiveKind.Archivist:int count=0;foreach(var r in records)if(s.Access.Contains(r.View.Id)&&(r.View.Actor>=0&&r.View.Actor!=id||r.View.Subject>=0&&r.View.Subject!=id))count++;return count;
+                case ObjectiveKind.Archivist:return s.ArchiveAccess.Count;
                 case ObjectiveKind.Presenter:return s.Presented.Count;
                 default:return -1;
             }
@@ -160,7 +160,7 @@ namespace BirimizKovulacak.Core
             if(s.Objective==ObjectiveKind.Guardian)return seats[s.ObjectiveTarget].Warnings==0&&meeting.Fired!=s.ObjectiveTarget&&!closed;
             if(s.Objective==ObjectiveKind.Archivist)
             {
-                var colleagues=new HashSet<int>();foreach(var r in records)if(s.Access.Contains(r.View.Id)){if(HasSeat(r.View.Actor)&&r.View.Actor!=id)colleagues.Add(r.View.Actor);if(HasSeat(r.View.Subject)&&r.View.Subject!=id)colleagues.Add(r.View.Subject);}
+                var colleagues=new HashSet<int>();foreach(var r in records)if(s.ArchiveAccess.Contains(r.View.Id)){if(HasSeat(r.View.Actor)&&r.View.Actor!=id)colleagues.Add(r.View.Actor);if(HasSeat(r.View.Subject)&&r.View.Subject!=id)colleagues.Add(r.View.Subject);}
                 return ObjectiveProgress(id)>=c.ArchivistRecords&&colleagues.Count>=c.ArchivistColleagues;
             }
             return ObjectiveProgress(id)>=ObjectiveThreshold(s.Objective);
