@@ -55,8 +55,13 @@ for path in logs:
 for match, per_log in sorted(results.items()):
     hashes = {v[0] for v in per_log.values()}
     sample = next(iter(per_log.values()))
-    print("match %d: %d processes reported results, hashes=%s fired=%s company=%s quota=%s/%s informant=%s informantWon=%s incidents=%s winners=%s"
-          % (match, len(per_log), sorted(hashes), sample[1], sample[2], sample[3], sample[4], sample[5], sample[6], sample[7], sample[8]))
+    if sample[2] in ("True", "False"):
+        # v4: fired (-2 nobody, -1 company closed), company closed flag, final productivity per mille, manager, blocks
+        print("match %d: %d processes reported results, hashes=%s fired=%s closed=%s productivity=%s%% manager=%s blocks=%s"
+              % (match, len(per_log), sorted(hashes), sample[1], sample[2], int(sample[3]) / 10.0, sample[5], sample[8]))
+    else:
+        print("match %d: %d processes reported results, hashes=%s fired=%s company=%s quota=%s/%s informant=%s informantWon=%s incidents=%s winners=%s"
+              % (match, len(per_log), sorted(hashes), sample[1], sample[2], sample[3], sample[4], sample[5], sample[6], sample[7], sample[8]))
     if len(hashes) != 1 or len(per_log) != len(logs):
         ok = False
         print("   MISMATCH: not every process received the same result")
