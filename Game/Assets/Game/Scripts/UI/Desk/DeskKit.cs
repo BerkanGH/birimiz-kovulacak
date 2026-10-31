@@ -16,7 +16,7 @@ namespace BirimizKovulacak.Game
     /// Assumed verb argument conventions (the engine owner should confirm): SendText(target, text) · SendEmail(target or
     /// None = everyone, a = template or -1, c = replied mail id or -1, text) · FileComplaint(target, a = preset or -1, text)
     /// · Transfer(target, a = amount) · BuyEvidence(a = offer id) · StartRemedial(cosigner, a = task number) ·
-    /// RespondRemedial(requester, a = 1 accept / 0 decline) · UseTrick(target, a = template or -1, b = apparent sender, text)
+    /// RespondRemedial(requester, a = 1 accept / 0 decline) · UseTrick(target = victim, or the apparent sender for a fake email, a = template or -1, text)
     /// · SubmitTask(target, a, b, c = TaskField mask) · GiveItem(receiver, a = held item index).
     /// </summary>
     public static class Dk

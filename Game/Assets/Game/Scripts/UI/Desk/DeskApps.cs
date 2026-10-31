@@ -551,16 +551,16 @@ namespace BirimizKovulacak.Game
 
             if (unavailable.Length > 0) { Text(unavailable, "dk-composer-status", "dk-composer-status-bad").NoPick().AddTo(_body); Dk.NoRich(_body); return; }
 
-            if (Dk.TrickNeedsTarget(t))
+            if (Dk.TrickNeedsTarget(t) && t != TrickType.SahteEposta)
             {
-                Dk.Heading(_body, Dk.T(t == TrickType.SahteEposta ? "desk.trick.victim_mail" : "desk.trick.victim"));
+                Dk.Heading(_body, Dk.T("desk.trick.victim"));
                 var pick = Dk.Picker(_body, v, id => { _target = id; if (_apparent == id) _apparent = LineIds.None; _err = ""; _confirming = false; ForceRebuild(); }, false, "badge-m");
                 pick(_target);
             }
             if (t == TrickType.SahteEposta)
             {
                 Dk.Heading(_body, Dk.T("desk.trick.apparent"), Dk.T("desk.trick.apparent_hint"));
-                var ap = Dk.ChipPicker(_body, v, id => { _apparent = id; _err = ""; _confirming = false; ForceRebuild(); }, false, _target >= 0 ? new[] { _target } : null);
+                var ap = Dk.ChipPicker(_body, v, id => { _apparent = id; _err = ""; _confirming = false; ForceRebuild(); }, false, null);
                 ap(_apparent);
                 Dk.Heading(_body, Dk.T("desk.trick.body"), Dk.T("desk.trick.body_hint"));
                 var tpls = Box("dk-chips").AddTo(_body);
@@ -602,7 +602,8 @@ namespace BirimizKovulacak.Game
         {
             why = "";
             var t = v.Mine.Trick;
-            if (Dk.TrickNeedsTarget(t) && _target < 0) { why = Dk.T("desk.trick.pick_victim"); return false; }
+            // A fake email goes to everyone; its only target is the apparent sender (engine: UseTrick.Target).
+            if (Dk.TrickNeedsTarget(t) && t != TrickType.SahteEposta && _target < 0) { why = Dk.T("desk.trick.pick_victim"); return false; }
             if (t == TrickType.SahteEposta)
             {
                 if (_apparent < 0) { why = Dk.T("desk.trick.pick_apparent"); return false; }
@@ -638,7 +639,7 @@ namespace BirimizKovulacak.Game
             if (v == null || !Ready(v, out why)) { _confirming = false; ForceRebuild(); return; }
             var t = v.Mine.Trick;
             _err = "";
-            if (t == TrickType.SahteEposta) Dk.Send(LineVerb.UseTrick, _target, _tpl, _apparent, -1, _box.Value.Trim());
+            if (t == TrickType.SahteEposta) Dk.Send(LineVerb.UseTrick, _apparent, _tpl, -1, -1, _box.Value.Trim());
             else Dk.Send(LineVerb.UseTrick, Dk.TrickNeedsTarget(t) ? _target : LineIds.None);
             _confirming = false;
             Dk.Play("stamp");
