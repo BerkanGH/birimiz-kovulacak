@@ -6,9 +6,10 @@ using UnityEngine;
 namespace BirimizKovulacak.Game
 {
     /// <summary>
-    /// Text helpers of the v3 meeting UI: names, round/trick names, dossier lines and round summaries, the fictional
-    /// office clock ("14:32"). Every sentence is built from keys in tr.meeting.json / en.meeting.json and avoids
-    /// grammar that depends on the name (Turkish suffixes): "Label: Name" instead of "Name'in ...".
+    /// Text helpers of the v4 meeting UI: names, task / trick / incident names, dossier effect lines, record sentences, the
+    /// fictional office clock ("14:32"). Every sentence is built from keys in tr.meeting.json / en.meeting.json and avoids
+    /// grammar that depends on a name (Turkish suffixes): "Label: Name" instead of "Name'in ...".
+    /// Strings built here may contain player names: callers must put them in labels created by UiKit (rich text is off).
     /// Called only when a slide is (re)built, never per frame.
     /// </summary>
     public static class MeetingText
@@ -34,14 +35,23 @@ namespace BirimizKovulacak.Game
             return id >= 0 ? Loc.T("player.default." + id) : Loc.T("common.nobody");
         }
 
-        public static string Round(RoundType t) { return Loc.T("dossier.round." + t); }
+        public static string Task(TaskKind t) { return Loc.T("dossier.task." + LineTasks.Id(t)); }
         public static string Trick(TrickType t) { return Loc.T("dossier.trick." + t); }
+        public static string Incident(IncidentKind k) { return Loc.T("incident.kind." + (int)k); }
         public static string Day(int day) { return Loc.DayName(day); }
-
         public static string Phase(LinePhase p) { return Loc.T("meeting.phase." + p); }
 
-        /// <summary>Signed blame delta, e.g. "+3" / "−1" (U+2212 is not in every font: plain hyphen-minus).</summary>
+        /// <summary>Signed number, e.g. "+3" / "-1" (U+2212 is not in every font: plain hyphen-minus).</summary>
         public static string Signed(int d) { return d > 0 ? "+" + d : d.ToString(); }
+
+        /// <summary>Per mille as a percentage: 725 -> "72.5%" (TR: "72,5%"), -1 -> "…".</summary>
+        public static string Percent(int permille)
+        {
+            if (permille < 0) return Loc.T("company.measuring");
+            return (permille / 10f).ToString("0.#", Loc.Culture) + "%";
+        }
+
+        public static string Money(int n) { return Loc.F("money.fmt", n); }
 
         public static LineProfile Profile(LineView v)
         {
@@ -51,16 +61,25 @@ namespace BirimizKovulacak.Game
 
         public static LineConfig Config => Client != null ? Client.Config : LineConfig.CreateDefault();
 
-        public static string RoundIcon(RoundType t)
+        public static LinePlayerView Player(LineView v, int id)
+        {
+            if (v == null) return null;
+            foreach (var p in v.Players) if (p.Id == id) return p;
+            return null;
+        }
+
+        // ------------------------------------------------------------------ icons
+
+        public static string TaskIcon(TaskKind t)
         {
             switch (t)
             {
-                case RoundType.PrimHavuzu: return "icons_v3/share";
-                case RoundType.FarkliEposta: return "icons_v3/odd_email";
-                case RoundType.KayipRapor: return "icons_v3/lost_report";
-                case RoundType.IhbarKutusu: return "icons_v3/complaint";
-                case RoundType.TerfiListesi: return "icons_v3/promotion";
-                case RoundType.OrtakSifre: return "icons_v3/keypad";
+                case TaskKind.InvoiceReconcile: case TaskKind.BudgetSplit: case TaskKind.BonusPool: return "icons_v3/share";
+                case TaskKind.CustomerSpec: case TaskKind.VendorPick: return "icons_v3/odd_email";
+                case TaskKind.ReportReview: return "icons_v3/lost_report";
+                case TaskKind.ArchiveVisitor: case TaskKind.RoomBooking: return "icons_v3/promotion";
+                case TaskKind.ServerCode: return "icons_v3/keypad";
+                case TaskKind.PhishingCheck: return "icons_v3/complaint";
                 default: return "icons/info";
             }
         }
@@ -74,8 +93,21 @@ namespace BirimizKovulacak.Game
                 case TrickType.FisCek: return "icons_v3/phone_dead";
                 case TrickType.InternetKes: return "icons_v3/wifi_off";
                 case TrickType.HatDinle: return "icons_v3/wiretap";
-                case TrickType.KayitSil: return "icons_v3/erase_tape";
                 default: return "icons/warning";
+            }
+        }
+
+        public static string SourceIcon(RecordSource s)
+        {
+            switch (s)
+            {
+                case RecordSource.PhoneLog: return "icons/call";
+                case RecordSource.Bank: return "icons/quota";
+                case RecordSource.TaskSystem: return "icons_v3/task_app";
+                case RecordSource.ITLog: return "icons_v3/trick_app";
+                case RecordSource.BadgeLog: return "icons/lock_screen";
+                case RecordSource.HR: return "icons_v3/warning_letter";
+                default: return "icons/notes";
             }
         }
 
@@ -103,204 +135,94 @@ namespace BirimizKovulacak.Game
                 case "icons_v3/intern": return "icons/contacts";
                 case "icons_v3/defense": return "icons/accuse";
                 case "icons_v3/meeting": return "icons/ballot";
+                case "icons_v3/task_app": return "icons/task_report";
+                case "icons_v3/trick_app": return "icons/warning";
+                case "icons_v3/manager_line": return "icons/manager";
                 default: return "icons/info";
             }
         }
 
+        /// <summary>Applies a v3 icon id with its existing-kit fallback, then a glyph tile.</summary>
+        public static void ApplyIcon(UnityEngine.UIElements.VisualElement e, string v3Path)
+        {
+            if (UiArt.Apply(e, v3Path)) { e.RemoveFromClassList("icon-fallback"); return; }
+            string fb = FallbackIcon(v3Path);
+            if (v3Path.StartsWith("icons/")) fb = v3Path;
+            UiKit.SetIcon(e, fb.StartsWith("icons/") ? fb.Substring(6) : fb);
+        }
+
+        /// <summary>Stamp art for the current language (full art paths, e.g. "stamps_v3/stamp_ihtar" / "stamps_v3/stamp_warning").</summary>
+        public static bool ApplyStamp(UnityEngine.UIElements.VisualElement e, string trPath, string enPath)
+        {
+            return UiArt.Apply(e, Loc.Language == "en" ? enPath : trPath);
+        }
+
         // ------------------------------------------------------------------ dossier
 
-        /// <summary>One dossier entry as an icon + title + detail line (null for entries shown elsewhere, e.g. recordings).</summary>
-        public static bool Describe(LineDossierEntry e, LineView v, out Line line)
+        /// <summary>
+        /// One observable incident effect as icon + sentence. Never names a culprit: the contract carries no actor.
+        /// </summary>
+        public static Line Effect(LineDossierEntry e, LineView v)
         {
-            line = new Line { Who = LineIds.None, Tone = Tone.Neutral };
-            switch (e.Kind)
-            {
-                case DossierKind.Favourite:
-                    line.Icon = "icons/favor_heart";
-                    line.Title = Loc.T("dossier.favourite");
-                    line.Detail = Loc.F("dossier.favourite_detail", Name(e.Player));
-                    line.Who = e.Player;
-                    line.Tone = Tone.Good;
-                    return true;
-                case DossierKind.TrickTrace:
-                    line.Icon = TrickIcon(e.Trick);
-                    line.Title = TraceTitle(e);
-                    line.Detail = e.Named ? Loc.F("dossier.culprit_named", Name(e.Player), Signed(Profile(v).TrickCaughtBlame)) : Loc.T("dossier.culprit_unknown");
-                    line.Tone = e.Named ? Tone.Bad : Tone.Secret;
-                    line.Who = e.Named ? e.Player : LineIds.None;
-                    return true;
-                case DossierKind.RecordingErased:
-                    line.Icon = "icons_v3/erase_tape";
-                    line.Title = Loc.T("dossier.erased");
-                    line.Detail = e.Named ? Loc.F("dossier.culprit_named", Name(e.Player), Signed(Profile(v).TrickCaughtBlame)) : Loc.T("dossier.culprit_unknown");
-                    line.Tone = e.Named ? Tone.Bad : Tone.Secret;
-                    line.Who = e.Named ? e.Player : LineIds.None;
-                    return true;
-                case DossierKind.TipResult:
-                {
-                    line.Icon = "icons_v3/tip_off";
-                    line.Title = Loc.F("dossier.tip", Name(e.Player));
-                    bool ok = e.Arg == 1;
-                    if (ok)
-                    {
-                        line.Detail = Loc.F("dossier.tip_true", Name(e.Player), Signed(Config.ConfirmedTipBlame));
-                        line.Who = e.Player;
-                    }
-                    else if (e.Victim >= 0)
-                    {
-                        // v3.1: a false tip names the tipper
-                        line.Detail = Loc.F("dossier.tip_false_named", Name(e.Victim), Signed(Config.FalseTipBlame));
-                        line.Who = e.Victim;
-                    }
-                    else
-                    {
-                        line.Detail = Loc.F("dossier.tip_false", Signed(Config.FalseTipBlame));
-                        line.Who = LineIds.None;
-                    }
-                    line.Tone = Tone.Bad;
-                    return true;
-                }
-                case DossierKind.ComplaintLeak:
-                    line.Icon = "icons_v3/complaint";
-                    line.Title = Loc.T("dossier.leak");
-                    line.Detail = Loc.F("dossier.leak_detail", Name(e.Player), Name(e.Victim));
-                    line.Tone = Tone.Bad;
-                    line.Who = e.Player;
-                    return true;
-                case DossierKind.RoundOutcome:
-                {
-                    line.Icon = RoundIcon(e.Round);
-                    line.Title = Round(e.Round);
-                    var r = RevealFor(v, e.Arg, e.Round);
-                    line.Detail = r != null ? RoundHeadline(r) : "";
-                    line.Who = e.Player;
-                    return true;
-                }
-                default:
-                    return false;
-            }
-        }
-
-        static string TraceTitle(LineDossierEntry e)
-        {
+            var line = new Line { Icon = TrickIcon(e.Trick), Who = e.Victim, Tone = Tone.Bad };
+            string time = OfficeClock(e.Time, v);
             switch (e.Trick)
             {
-                case TrickType.SahteEposta:
-                {
-                    string subject = e.TemplateId >= 0 ? MailSubject(e.TemplateId) : null;
-                    return subject != null ? Loc.F("dossier.trace.SahteEposta_subject", subject) : Loc.T("dossier.trace.SahteEposta");
-                }
+                case TrickType.InternetKes:
+                    line.Title = Loc.F("effect.InternetKes", time);
+                    line.Who = LineIds.None;
+                    break;
                 case TrickType.KahveDok:
                 case TrickType.FisCek:
-                    return Loc.F("dossier.trace." + e.Trick, Name(e.Victim));
+                case TrickType.SahteEposta:
                 case TrickType.HatDinle:
-                    return Loc.F("dossier.trace.HatDinle", Name(e.Victim));
+                    line.Title = e.Victim >= 0 ? Loc.F("effect." + e.Trick, Name(e.Victim), time) : Loc.F("effect.unknown", time);
+                    break;
                 default:
-                    return Loc.T("dossier.trace." + e.Trick);
+                    line.Title = Loc.F("effect.unknown", time);
+                    break;
             }
+            line.Detail = Loc.T("effect.note");
+            return line;
         }
 
-        /// <summary>Subject of a personal mail template (desk track keys), if present.</summary>
-        static string MailSubject(int template)
-        {
-            string k = "mail.personal." + template + ".subject";
-            if (Loc.Has(k)) return Loc.T(k);
-            k = "mail.personal." + template;
-            return Loc.Has(k) ? Loc.T(k) : null;
-        }
+        // ------------------------------------------------------------------ records
 
-        public static LineRoundReveal RevealFor(LineView v, int index, RoundType type)
-        {
-            if (v == null) return null;
-            for (int i = 0; i < v.TodayReveals.Count; i++)
-                if (v.TodayReveals[i].Index == index && (type == RoundType.None || v.TodayReveals[i].Type == type)) return v.TodayReveals[i];
-            for (int i = 0; i < v.TodayReveals.Count; i++)
-                if (v.TodayReveals[i].Type == type) return v.TodayReveals[i];
-            return null;
-        }
+        public static string SourceName(RecordSource s) { return Loc.T("record.source." + (int)s); }
 
-        /// <summary>One sentence summary of a round outcome.</summary>
-        public static string RoundHeadline(LineRoundReveal r)
+        /// <summary>One authenticated record as a sentence (names inserted as plain text).</summary>
+        public static string RecordSentence(LineRecordView r)
         {
-            switch (r.Type)
+            if (r == null) return "";
+            string a = Name(r.Actor), s = Name(r.Subject);
+            switch (r.Kind)
             {
-                case RoundType.PrimHavuzu:
-                {
-                    int takers = 0;
-                    foreach (var p in r.Pairs) { if (p.ChoiceA == 1) takers++; if (p.ChoiceB == 1 && p.B != LineIds.Intern) takers++; }
-                    return takers == 0 ? Loc.T("dossier.prim.all_shared") : Loc.F("dossier.prim.takers", takers);
-                }
-                case RoundType.FarkliEposta:
-                    return Loc.F(r.Winner == r.Hidden && r.Hidden >= 0 ? "dossier.odd.caught" : "dossier.odd.escaped", Name(r.Hidden));
-                case RoundType.KayipRapor:
-                    return Loc.F(r.Winner == r.Hidden && r.Hidden >= 0 ? "dossier.lost.caught" : "dossier.lost.escaped", Name(r.Hidden));
-                case RoundType.IhbarKutusu:
-                {
-                    int max = 0, top = LineIds.None, tied = 0;
-                    for (int i = 0; i < r.Counts.Count; i++)
-                    {
-                        if (r.Counts[i] > max) { max = r.Counts[i]; top = i; tied = 1; }
-                        else if (r.Counts[i] == max && max > 0) tied++;
-                    }
-                    if (max == 0) return Loc.T("dossier.complaint.none");
-                    return tied > 1 ? Loc.F("dossier.complaint.tied", max) : Loc.F("dossier.complaint.top", Name(top), max);
-                }
-                case RoundType.TerfiListesi:
-                    return r.Winner >= 0 ? Loc.F("dossier.promo.winner", Name(r.Winner)) : Loc.T("dossier.promo.none");
-                case RoundType.OrtakSifre:
-                    return Loc.F(r.Solved ? "dossier.code.cracked" : "dossier.code.failed", Name(r.Hidden));
-                default:
-                    return "";
+                case RecordKind.Call: return Loc.F("record.kind.Call", a, s, r.N1 < 0 ? 0 : r.N1);
+                case RecordKind.Transfer: return Loc.F("record.kind.Transfer", a, s, Money(r.N1 < 0 ? 0 : r.N1));
+                case RecordKind.TaskEntry: return Loc.F("record.kind.TaskEntry", a, r.Task != TaskKind.None ? Task(r.Task) : "?");
+                case RecordKind.TaskOutcome: return Loc.F("record.kind.TaskOutcome", r.Task != TaskKind.None ? Task(r.Task) : "?", r.N1, r.N2);
+                case RecordKind.DealPayment: return Loc.F("record.kind.DealPayment", a, Money(r.N1 < 0 ? 0 : r.N1));
+                case RecordKind.TrickLog:
+                    return r.Subject >= 0 ? Loc.F("record.kind.TrickLog", a, Trick((TrickType)Mathf.Clamp(r.N1, 0, 5)), s) : Loc.F("record.kind.TrickLogAll", a, Trick((TrickType)Mathf.Clamp(r.N1, 0, 5)));
+                case RecordKind.SpoofedMail: return Loc.F("record.kind.SpoofedMail", a, s);
+                case RecordKind.BadgeAccess: return Loc.F(r.N2 == 1 ? "record.kind.BadgeCopy" : "record.kind.BadgeAccess", a);
+                case RecordKind.Remedial: return Loc.F("record.kind.Remedial", a, s, r.N2 < 0 ? 0 : r.N2);
+                case RecordKind.Warning: return Loc.F("record.kind.Warning", s);
+                case RecordKind.AuditFigure: return Loc.F("record.kind.AuditFigure", s, r.N1);
+                case RecordKind.ReportDraft: return Loc.F(r.N1 == 1 ? "record.kind.ReportDraftPolished" : "record.kind.ReportDraftAccurate", a);
+                case RecordKind.HrFile: return Loc.F("record.kind.HrFile", s);
+                case RecordKind.ItemTransfer: return Loc.F("record.kind.ItemTransfer", a, s);
+                case RecordKind.OfferAcceptance: return Loc.F("record.kind.OfferAcceptance", a);
+                case RecordKind.TrickEffect: return Loc.F("record.kind.TrickEffect", s, Trick((TrickType)Mathf.Clamp(r.N1, 0, 5)));
+                default: return Loc.T("record.kind.unknown");
             }
         }
 
-        /// <summary>Detail lines of a round (pairs, votes...), at most <paramref name="max"/>.</summary>
-        public static void RoundDetails(LineRoundReveal r, List<string> into, int max = 4)
-        {
-            into.Clear();
-            switch (r.Type)
-            {
-                case RoundType.PrimHavuzu:
-                    foreach (var p in r.Pairs)
-                    {
-                        if (into.Count >= max) break;
-                        into.Add(Loc.F("dossier.prim.pair", Name(p.A), Loc.T(p.ChoiceA == 1 ? "dossier.prim.take" : "dossier.prim.share"),
-                            Name(p.B), Loc.T(p.ChoiceB == 1 ? "dossier.prim.take" : "dossier.prim.share")));
-                    }
-                    break;
-                case RoundType.FarkliEposta:
-                    if (r.OddGuess >= 0) into.Add(Loc.T(r.OddGuessCorrect ? "dossier.odd.guess_right" : "dossier.odd.guess_wrong"));
-                    if (r.Winner >= 0 && r.Winner != r.Hidden) into.Add(Loc.F("dossier.wrong_pick", Name(r.Winner)));
-                    break;
-                case RoundType.KayipRapor:
-                    if (r.Winner >= 0 && r.Winner != r.Hidden) into.Add(Loc.F("dossier.wrong_pick", Name(r.Winner)));
-                    break;
-                case RoundType.IhbarKutusu:
-                    foreach (var c in r.Complaints)
-                    {
-                        if (into.Count >= max) break;
-                        into.Add(Loc.F("dossier.complaint.line", Name(c.Target), Loc.T("dossier.reason." + c.Reason)));
-                    }
-                    break;
-                case RoundType.TerfiListesi:
-                    if (r.Winner >= 0)
-                    {
-                        int backers = 0;
-                        foreach (var vv in r.Votes) if (vv.Target == r.Winner) backers++;
-                        into.Add(Loc.F("dossier.promo.backers", backers));
-                    }
-                    break;
-                case RoundType.OrtakSifre:
-                    if (r.Solved && r.SolvedBy >= 0) into.Add(Loc.F("dossier.code.by", Name(r.SolvedBy)));
-                    break;
-            }
-        }
-
-        // ------------------------------------------------------------------ recordings / office clock
+        // ------------------------------------------------------------------ office clock
 
         /// <summary>
-        /// Host time of the dossier start (= end of the office day). Derived from the recording schedule
-        /// (PlayAt = start + 4 + i × DossierPerRecording) when there is one, else from the phase.
+        /// Host time of the dossier start (= end of the work block). Derived from the recording schedule when there is
+        /// one, else from the phase.
         /// </summary>
         public static double DossierStart(LineView v)
         {
@@ -310,14 +232,15 @@ namespace BirimizKovulacak.Game
             var m = v.Meeting;
             int recs = m != null ? m.Recordings.Count : 0;
             double dossier = d.Dossier + d.DossierPerRecording * recs;
+            bool final = m != null && m.IsFinal;
             if (v.Phase == LinePhase.MeetingDiscussion) return v.PhaseStartTime - dossier;
-            if (v.Phase == LinePhase.MeetingVote) return v.PhaseStartTime - dossier - d.Discussion;
+            if (v.Phase == LinePhase.MeetingVote) return v.PhaseStartTime - dossier - (final ? d.FinalDiscussion : d.Discussion);
             if (m != null && recs > 0) return m.Recordings[0].PlayAt - 4.0;
-            return v.PhaseStartTime;
+            return v.PhaseStartTime - (final ? d.FinalDiscussion : 0);
         }
 
         /// <summary>
-        /// The fictional wall clock of the office day: 09:00 at the morning call, 17:30 when the meeting starts.
+        /// The fictional wall clock of the work block: 09:00 at the morning call, 17:30 when the meeting starts.
         /// Host time is mapped linearly over the configured length of the office phases.
         /// </summary>
         public static string OfficeClock(double hostTime, LineView v)
@@ -348,19 +271,15 @@ namespace BirimizKovulacak.Game
             return n;
         }
 
-        /// <summary>Applies a v3 icon id with its existing-kit fallback, then a glyph tile.</summary>
-        public static void ApplyIcon(UnityEngine.UIElements.VisualElement e, string v3Path)
-        {
-            if (UiArt.Apply(e, v3Path)) { e.RemoveFromClassList("icon-fallback"); return; }
-            string fb = FallbackIcon(v3Path);
-            if (v3Path.StartsWith("icons/")) fb = v3Path;
-            UiKit.SetIcon(e, fb.StartsWith("icons/") ? fb.Substring(6) : fb);
-        }
+        /// <summary>Rough minutes of a match for the lobby ("≈ 20" / "≈ 33"), straight from the shipped design numbers.</summary>
+        public static int ApproxMinutes(WeekLength len) { return len == WeekLength.Full ? 33 : 20; }
 
-        /// <summary>Stamp art for the current language (full art paths, e.g. "stamps_v3/stamp_ihtar" / "stamps_v3/stamp_warning").</summary>
-        public static bool ApplyStamp(UnityEngine.UIElements.VisualElement e, string trPath, string enPath)
+        /// <summary>Votes for a target in a revealed ballot (-2 counts "No action / Fire nobody").</summary>
+        public static int VotesFor(LineMeetingView m, int target)
         {
-            return UiArt.Apply(e, Loc.Language == "en" ? enPath : trPath);
+            int n = 0;
+            if (m != null) foreach (var x in m.Votes) if (x.Target == target) n++;
+            return n;
         }
     }
 }

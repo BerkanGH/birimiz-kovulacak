@@ -51,6 +51,9 @@ namespace BirimizKovulacak.Game
             Btn(Loc.T("menu.settings"), () => SettingsScreen.Open(), "btn-ghost", "menu-small").AddTo(row);
             Btn(Loc.T("menu.how_to"), HowToPlayScreen.Open, "btn-ghost", "menu-small").AddTo(row);
             Btn(Loc.T("menu.quit"), () => ConfirmDialog.Show(Loc.T("menu.quit"), Loc.T("menu.quit_confirm"), Loc.T("menu.quit"), Application.Quit, true), "btn-ghost", "menu-small").AddTo(row);
+            var row2 = Box("menu-row").AddTo(_main);
+            Btn(Loc.T("menu.intro"), () => IntroScreen.Open(false), "btn-ghost", "menu-small").AddTo(row2);
+            if (TelemetryHooks.Privacy != null) Btn(Loc.T("menu.privacy"), () => SettingsScreen.Open((int)SettingsScreen.Tab.Privacy), "btn-ghost", "menu-small").AddTo(row2);
             _error = Text("", "error-line").AddTo(_main);
 
             // ---- join card
@@ -257,6 +260,7 @@ namespace BirimizKovulacak.Game
                 if (child is Button || child.ClassListContains("menu-row")) { UiMotion.SlideIn(child, new Vector2(-24f, 0f), 0.25f, d); d += 0.05f; }
             }
             if (NeedsLanguage()) ShowLanguagePicker();
+            else ShellFlow.Next(); // consent prompt, then the 3-card intro (first launch only)
             if (OpenJoinOnShow) { OpenJoinOnShow = false; ShowJoin(true); }
         }
 
@@ -289,8 +293,9 @@ namespace BirimizKovulacak.Game
     /// </summary>
     public sealed class LobbyScreen : UiKit.Screen
     {
-        readonly VisualElement _board, _grid, _desk, _lengthHost, _recHost, _week, _ticket;
-        readonly Label _count, _status, _addresses, _lengthClient, _consent, _session;
+        readonly VisualElement _board, _grid, _desk, _lengthHost, _recHost, _week, _ticket, _groupRow;
+        readonly Label _count, _status, _addresses, _lengthClient, _consent, _session, _experiments, _rules;
+        readonly TextField _group;
         readonly Button _ready, _start, _addBot, _short, _full;
         readonly Toggle _rec;
         readonly List<SlotCard> _cards = new List<SlotCard>();
@@ -324,12 +329,21 @@ namespace BirimizKovulacak.Game
             _full = SegButton(_lengthHost, Loc.T("lobby.full_week"), Loc.T("lobby.full_week_sub"), () => HostLineController.Current?.SetLength(WeekLength.Full));
             _lengthClient = Title("", "lobby-length-client").AddTo(_week);
             var cfg = LineClient.I != null ? LineClient.I.Config : LineConfig.CreateDefault();
-            Text(Loc.F("lobby.start_blame", cfg.StartBlame, cfg.StartBlame + cfg.LeaderStartBonus), "lobby-note").AddTo(_week);
+            _rules = Text(Loc.F("lobby.rules_note", cfg.CompanyTargetPercent), "lobby-note").AddTo(_week);
+            _experiments = Text("", "lobby-note", "lobby-experiments").AddTo(_week);
             Bold(Loc.T("lobby.recordings"), "lobby-label", "mt-m").AddTo(_week);
             _recHost = Box("row").AddTo(_week);
             _rec = new Toggle(Loc.T("lobby.recordings_toggle")).Cls("toggle", "lobby-rec-toggle").AddTo(_recHost);
             _rec.RegisterValueChangedCallback(e => HostLineController.Current?.SetRecordings(e.newValue));
             _consent = Text("", "lobby-consent").AddTo(_week);
+
+            // host only: optional playtest group code (a facilitator's pseudonymous group id; never a name)
+            _groupRow = Box("col", "lobby-group").AddTo(_week);
+            _group = new TextField(Loc.T("lobby.group_code")) { value = PlayerPrefs.GetString(GroupPref, ""), maxLength = 24 }.Cls("field", "lobby-group-field").AddTo(_groupRow);
+            _group.labelElement.enableRichText = false;
+            _group.RegisterCallback<BlurEvent>(_ => CommitGroup());
+            _group.RegisterCallback<KeyDownEvent>(e => { if (e.keyCode == KeyCode.Return || e.keyCode == KeyCode.KeypadEnter) CommitGroup(); });
+            Text(Loc.T("lobby.group_note"), "lobby-note").NoPick().AddTo(_groupRow);
 
             var act = Box("lobby-act").AddTo(cols);
             _status = Bold("", "lobby-status").AddTo(act);
@@ -339,6 +353,21 @@ namespace BirimizKovulacak.Game
             Text(Loc.T("lobby.voice_hint_v3"), "lobby-voice").AddTo(act);
 
             _addresses = Text("", "lobby-addresses").AddTo(Root);
+        }
+
+        const string GroupPref = "playtest.group_code";
+
+        /// <summary>
+        /// Integration seam (the lead wires it to <c>HostLineController.Current.SetGroupCode(code)</c>); null until then.
+        /// Kept in one place so the call can be switched on without touching the layout.
+        /// </summary>
+        public static Action<string> GroupCodeSetter;
+
+        void CommitGroup()
+        {
+            string code = (_group.value ?? "").Trim();
+            PlayerPrefs.SetString(GroupPref, code);
+            if (HostLineController.Current != null) GroupCodeSetter?.Invoke(code);
         }
 
         static Button SegButton(VisualElement parent, string title, string sub, Action onClick)
@@ -393,6 +422,8 @@ namespace BirimizKovulacak.Game
             int hash = 17;
             foreach (var s in lobby.Slots)
                 hash = hash * 31 + (s.Occupied ? 1 : 0) + (s.Ready ? 2 : 0) + (s.Connected ? 4 : 0) + (s.IsBot ? 8 : 0) + (s.IsHost ? 16 : 0) + s.SessionPoints * 64 + (s.Name ?? "").GetHashCode();
+            foreach (var s in lobby.Slots) hash = hash * 31 + (s.WantsRematch ? 1 : 0);
+            hash = hash * 31 + (lobby.StatusKey ?? "").GetHashCode() + (lobby.Experiments != null ? lobby.Experiments.Count : 0) * 5;
             hash = hash * 31 + (int)lobby.Length * 7 + (lobby.RecordingsEnabled ? 3 : 0) + lobby.WeeksPlayed * 131 + c.MySlot * 17 + (isHost ? 1 : 0) + (lobby.WeekRunning ? 5 : 0);
             if (hash != _lastHash)
             {
@@ -443,6 +474,9 @@ namespace BirimizKovulacak.Game
             _short.EnableInClassList("seg-on", lobby.Length == WeekLength.Short);
             _full.EnableInClassList("seg-on", lobby.Length == WeekLength.Full);
             _recHost.Show(isHost);
+            _groupRow.Show(isHost && !lobby.WeekRunning);
+            _experiments.text = lobby.Experiments != null && lobby.Experiments.Count > 0 ? Loc.F("lobby.experiments", string.Join(", ", lobby.Experiments)) : "";
+            _experiments.Show(_experiments.text.Length > 0);
             _rec.SetValueWithoutNotify(lobby.RecordingsEnabled);
             _consent.text = Loc.T(lobby.RecordingsEnabled ? "lobby.recordings_consent" : "lobby.recordings_off");
             _consent.EnableInClassList("lobby-consent-off", !lobby.RecordingsEnabled);
@@ -524,6 +558,7 @@ namespace BirimizKovulacak.Game
                 if (s.Slot == mySlot) Tag(Loc.T("lobby.you_tag"), "tag-sticky").AddTo(_tags);
                 if (s.IsBot) Tag(Loc.T("lobby.bot_tag"), "tag-grey").AddTo(_tags);
                 if (!s.Connected) Tag(Loc.T("lobby.offline_tag"), "tag-red").AddTo(_tags);
+                if (s.WantsRematch) Tag(Loc.T("lobby.wants_rematch"), "tag-green").AddTo(_tags);
                 if (s.Ready || s.IsHost)
                 {
                     if (!MeetingText.ApplyStamp(_stamp, "stamps/stamp_onaylandi", "stamps_v3/stamp_approved"))

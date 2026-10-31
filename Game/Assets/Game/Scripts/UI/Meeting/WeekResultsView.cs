@@ -7,17 +7,24 @@ using static BirimizKovulacak.Game.UiKit;
 namespace BirimizKovulacak.Game
 {
     /// <summary>
-    /// WeekResults: the end-of-week report on the desk — per player: survived / fired, the hidden agenda revealed
-    /// (target and hit/miss), the dirty trick revealed, points counting up, the Employee of the Week stamp; the session
-    /// board; host buttons (next week / back to lobby) or "waiting for the host".
+    /// WeekResults (v4): the end-of-match report on the desk. Company outcome first (productivity vs target; a closed
+    /// company is a shared defeat: no winner, no ranks, but contributions, objectives and penalties stay visible), then per
+    /// player the itemised career lines, shared ranks, Employee of the Month, objectives, exposed incidents only, money and
+    /// contribution quality; the session board; the fired player's next-manager pick; "Play again".
+    /// Wording never claims the match was fair or fun.
     /// </summary>
     public sealed class WeekResultsView : MeetingPanel
     {
-        readonly VisualElement _sheet, _rows, _side, _session, _next, _actions, _pickLayer, _pickCards;
+        static int _promptedWeek = int.MinValue;
+
+        readonly VisualElement _sheet, _banner, _rows, _side, _session, _eotm, _incidents, _next, _actions, _rematchRow, _pickLayer, _pickCards;
         readonly Label _title, _sub, _timer, _waiting;
+        readonly ScrollView _scroll;
+        Button _again;
         int _lastSec = -1, _builtWeek = -1;
         string _shownPick;
-        bool _host, _picked;
+        bool _host, _picked, _wantsRematch;
+        int _rematchKey = int.MinValue;
 
         public WeekResultsView(VisualElement parent) : base(parent, "mt-results")
         {
@@ -30,28 +37,25 @@ namespace BirimizKovulacak.Game
             var conf = Box("wr-confidential").NoPick().AddTo(head);
             if (!UiArt.Apply(conf, "stamps_v3/stamp_confidential")) conf.RemoveFromHierarchy();
 
-            var cols = Box("wr-cols").NoPick().AddTo(_sheet);
-            var left = Box("wr-table").NoPick().AddTo(cols);
-            var hdr = Box("wr-row", "wr-row-head").NoPick().AddTo(left);
-            Text(Loc.T("results.col.employee"), "wr-c-name", "wr-h").NoPick().AddTo(hdr);
-            Text(Loc.T("results.col.agenda"), "wr-c-agenda", "wr-h").NoPick().AddTo(hdr);
-            Text(Loc.T("results.col.trick"), "wr-c-trick", "wr-h").NoPick().AddTo(hdr);
-            Text(Loc.T("results.col.points"), "wr-c-pts", "wr-h").NoPick().AddTo(hdr);
-            Box("wr-c-total").NoPick().AddTo(hdr);
-            Box("wr-c-stamp").NoPick().AddTo(hdr);
-            _rows = Box("col").NoPick().AddTo(left);
+            _banner = Box("wr4-banner").NoPick().AddTo(_sheet);
 
-            _side = Box("wr-side").NoPick().AddTo(cols);
-            _session = Box("wr-session").NoPick().AddTo(_side);
-            _next = Box("wr-next").NoPick().AddTo(_side);
+            var cols = Box("wr-cols").NoPick().AddTo(_sheet);
+            _scroll = new ScrollView().Cls("wr4-scroll").AddTo(cols);
+            _rows = _scroll.contentContainer;
+            _side = new ScrollView().Cls("wr-side", "wr4-side").AddTo(cols);
+            _session = Box("wr-session").NoPick().AddTo(_side.contentContainer);
+            _eotm = Box("wr4-eotm").NoPick().AddTo(_side.contentContainer);
+            _incidents = Box("wr4-incidents").NoPick().AddTo(_side.contentContainer);
+            _next = Box("wr-next").NoPick().AddTo(_side.contentContainer);
 
             var foot = Box("wr-foot").AddTo(_sheet);
             _timer = Bold("", "wr-timer").NoPick().AddTo(foot);
             Box("spacer").NoPick().AddTo(foot);
+            _rematchRow = Box("wr4-rematch").NoPick().AddTo(foot);
             _waiting = Bold(Loc.T("results.waiting_host"), "wr-waiting").NoPick().AddTo(foot);
             _actions = Box("row").AddTo(foot);
 
-            // v3.1: the fired player picks next week's manager (revenge overlay)
+            // the fired player picks next match's manager (revenge overlay)
             _pickLayer = Box("pick-layer").AddTo(Root);
             var card = Box("pick-card").AddTo(_pickLayer);
             StampText(Loc.T("results.pick.title"), "pick-title").NoPick().AddTo(card);
@@ -68,6 +72,8 @@ namespace BirimizKovulacak.Game
             _lastSec = -1;
             _shownPick = null;
             _picked = false;
+            _wantsRematch = false;
+            _rematchKey = int.MinValue;
             Build(v);
         }
 
@@ -89,6 +95,9 @@ namespace BirimizKovulacak.Game
             var r = v.Result;
             _rows.Clear();
             _session.Clear();
+            _eotm.Clear();
+            _incidents.Clear();
+            _banner.Clear();
             _actions.Clear();
             _host = HostLineController.Current != null;
             _waiting.Show(!_host);
@@ -104,109 +113,243 @@ namespace BirimizKovulacak.Game
                 return;
             }
             _builtWeek = v.WeekId;
-            _title.text = Loc.T("results.title");
-            _sub.text = Loc.F("results.sub", MeetingText.Name(r.Fired), Loc.ManagerName(r.ManagerProfileId), r.Days);
-
-            var players = new List<LineWeekPlayerResult>(r.Players);
-            players.Sort((a, b) => b.Points != a.Points ? b.Points.CompareTo(a.Points) : a.Blame != b.Blame ? a.Blame.CompareTo(b.Blame) : a.Player.CompareTo(b.Player));
-            var cfg = MeetingText.Config;
-            int n = 0;
-            foreach (var p in players)
+            bool closed = r.CompanyClosed;
+            _title.text = Loc.T(closed ? "results.title_closed" : "results.title");
+            _sub.text = Loc.F("results.sub", Loc.ManagerName(r.ManagerProfileId), r.Days);
+            if (r.Players.Count >= LineProtocol.MinPlayers && _promptedWeek != v.WeekId)
             {
-                float delay = 0.25f + n * 0.22f;
-                var row = Box("wr-row").NoPick().AddTo(_rows);
-                if (p.Player == v.Me) row.AddToClassList("wr-row-me");
-                if (!p.Survived) row.AddToClassList("wr-row-fired");
-
-                // name + status
-                var name = Box("wr-c-name", "row").NoPick().AddTo(row);
-                Badge(p.Player, "badge-m").AddTo(name);
-                var nc = Box("col").NoPick().AddTo(name);
-                Title(MeetingText.Name(p.Player), "wr-name").NoPick().AddTo(nc);
-                var line = Box("row").NoPick().AddTo(nc);
-                Text(Loc.F("meeting.blame_n", p.Blame), "wr-small").NoPick().AddTo(line);
-                for (int k = 0; k < p.Ihtars; k++) DossierDeck.IhtarMark(line);
-
-                // hidden agenda: target + hit/miss (the reveal flips in)
-                var ag = Box("wr-c-agenda").NoPick().AddTo(row);
-                var agRow = Box("row").NoPick().AddTo(ag);
-                MeetingText.ApplyIcon(Box("icon", "icon-s").NoPick().AddTo(agRow), "icons_v3/agenda_target");
-                if (p.AgendaTarget >= 0) Badge(p.AgendaTarget, "badge-xs").AddTo(agRow);
-                Bold(p.AgendaTarget >= 0 ? MeetingText.Name(p.AgendaTarget) : Loc.T("common.nobody"), "wr-agenda-name").NoPick().AddTo(agRow);
-                bool targetFired = p.AgendaTarget >= 0 && p.AgendaTarget == r.Fired;
-                int agendaPts = cfg.AgendaPointsPerIhtar * p.AgendaIhtars + (targetFired ? cfg.AgendaPoints : 0);
-                var agTags = Box("row", "wr-agenda-tags").NoPick().AddTo(ag);
-                if (targetFired) Tag(Loc.T("results.agenda_fired"), "tag-green").AddTo(agTags);
-                if (p.AgendaIhtars > 0) Tag(Loc.F("results.agenda_ihtars", p.AgendaIhtars), "tag-green").AddTo(agTags);
-                if (!targetFired && p.AgendaIhtars == 0) Tag(Loc.T("results.agenda_miss"), "tag-grey").AddTo(agTags);
-                UiMotion.Flip(ag, null, 0.4f, delay + 0.1f);
-
-                // dirty trick
-                var tr = Box("wr-c-trick").NoPick().AddTo(row);
-                var trRow = Box("row").NoPick().AddTo(tr);
-                MeetingText.ApplyIcon(Box("icon", "icon-s").NoPick().AddTo(trRow), MeetingText.TrickIcon(p.Trick));
-                Bold(p.Trick != TrickType.None ? MeetingText.Trick(p.Trick) : "–", "wr-trick-name").NoPick().AddTo(trRow);
-                Text(p.TricksUsed > 0 ? Loc.F("results.trick_used", p.TricksUsed) : Loc.T("results.trick_unused"), "wr-small").NoPick().AddTo(tr);
-                UiMotion.Flip(tr, null, 0.4f, delay + 0.2f);
-
-                // points: breakdown chips + total counting up
-                var pts = Box("wr-c-pts").NoPick().AddTo(row);
-                var chips = Box("wr-chips").NoPick().AddTo(pts);
-                if (p.Survived) PointChip(chips, Loc.T("results.pt.survived"), cfg.SurvivePoints, delay + 0.3f);
-                else PointChip(chips, Loc.T("results.pt.fired"), 0, delay + 0.3f, true);
-                if (agendaPts > 0) PointChip(chips, Loc.T("results.pt.agenda"), agendaPts, delay + 0.4f);
-                if (p.EmployeeOfWeek) PointChip(chips, Loc.T("results.pt.eotw"), cfg.EmployeeOfWeekPoints, delay + 0.5f);
-                var total = Title("0", "wr-total", "wr-c-total").NoPick().AddTo(row);
-                var slot = Box("wr-c-stamp").NoPick().AddTo(row);
-                UiMotion.CountUp(total, 0, p.Points, 0.6f, x => "+" + x, delay + 0.5f);
-
-                if (p.EmployeeOfWeek || !p.Survived)
-                {
-                    var st = Box("wr-stamp").NoPick().AddTo(slot);
-                    bool ok = p.EmployeeOfWeek
-                        ? MeetingText.ApplyStamp(st, "stamps_v3/stamp_haftanin_elemani", "stamps_v3/stamp_employee_week_en")
-                        : MeetingText.ApplyStamp(st, "stamps/stamp_kovuldu", "stamps_v3/stamp_fired");
-                    if (!ok) TextStamp(st, Loc.T(p.EmployeeOfWeek ? "results.eotw_stamp" : "final.stamp.fired"), p.EmployeeOfWeek ? "stamp-gold" : "");
-                    if (p.EmployeeOfWeek) st.AddToClassList("wr-stamp-gold");
-                    UiMotion.Stamp(st, p.EmployeeOfWeek ? -6f : -10f, 0.22f, delay + 1.1f, () => Sfx.Play(p.EmployeeOfWeek ? "cheer" : "place", 0.6f));
-                }
-                UiMotion.SlideIn(row, new Vector2(0f, 24f), 0.3f, delay);
-                n++;
+                _promptedWeek = v.WeekId;
+                TelemetryHooks.RematchPromptShown();
             }
 
-            // session board: totals including this week
+            BuildBanner(v, r);
+            BuildRematch(v, r);
+
+            var cfg = MeetingText.Config;
+            var players = new List<LineWeekPlayerResult>(r.Players);
+            if (closed) players.Sort((a, b) => b.CareerTotal != a.CareerTotal ? b.CareerTotal.CompareTo(a.CareerTotal) : a.Player.CompareTo(b.Player));
+            else players.Sort((a, b) => a.Rank != b.Rank ? (a.Rank == 0 ? 1 : b.Rank == 0 ? -1 : a.Rank.CompareTo(b.Rank)) : a.Player.CompareTo(b.Player));
+            int n = 0;
+            foreach (var p in players) { BuildPlayerRow(v, r, p, n); n++; }
+
+            BuildSession(r);
+            BuildEotm(v, r);
+            BuildIncidents(r);
+            BuildNext(v, false);
+            UiMotion.SlideIn(_sheet, new Vector2(0f, 60f), 0.4f);
+            UiMotion.SlideIn(_side, new Vector2(60f, 0f), 0.4f, 0.8f);
+        }
+
+        // ------------------------------------------------------------------ company banner
+
+        void BuildBanner(LineView v, LineWeekResult r)
+        {
+            int target = r.TargetPercent > 0 ? r.TargetPercent : MeetingText.Config.CompanyTargetPercent;
+            bool closed = r.CompanyClosed;
+            _banner.EnableInClassList("wr4-banner-closed", closed);
+            var left = Box("col").NoPick().AddTo(_banner);
+            Memo(Loc.T("results.company"), "wr4-banner-label").NoPick().AddTo(left);
+            Title(MeetingText.Percent(r.FinalProductivityPermille), "wr4-banner-big", closed ? "company-bad" : "company-good").NoPick().AddTo(left);
+            Bold(Loc.F("company.vs_target", target), "company-target").NoPick().AddTo(left);
+            var mid = Box("col", "grow", "wr4-banner-mid").NoPick().AddTo(_banner);
+            DossierDeck.Gauge(mid, r.FinalProductivityPermille, target, closed, "wr4-gauge");
+            Bold(Loc.T(closed ? "results.closed.headline" : "results.survived.headline"), "wr4-headline", closed ? "company-bad" : "company-good").NoPick().AddTo(mid);
+            string line;
+            if (closed) line = Loc.T("results.closed.body");
+            else if (r.Fired >= 0) line = Loc.F("results.fired.line", MeetingText.Name(r.Fired));
+            else line = Loc.T("results.nobody.line");
+            Text(line, "wr4-line").NoPick().AddTo(mid);
+            var st = Box("wr4-banner-stamp").NoPick().AddTo(_banner);
+            if (closed)
+            {
+                TextStamp(st, Loc.T("final.stamp.closed"));
+            }
+            else if (r.Fired >= 0)
+            {
+                if (!MeetingText.ApplyStamp(st, "stamps/stamp_kovuldu", "stamps_v3/stamp_fired")) TextStamp(st, Loc.T("final.stamp.fired"));
+            }
+            else TextStamp(st, Loc.T("final.stamp.none"), "stamp-navy");
+            UiMotion.Stamp(st, -8f, 0.22f, 0.5f, () => Sfx.Play(closed ? "fired" : "place", 0.7f));
+        }
+
+        // ------------------------------------------------------------------ player rows
+
+        static string ObjectiveName(LineWeekPlayerResult p) { return p.Objective == ObjectiveKind.None ? "-" : Loc.T("objective.v4." + p.Objective + ".name"); }
+
+        void BuildPlayerRow(LineView v, LineWeekResult r, LineWeekPlayerResult p, int n)
+        {
+            float delay = 0.25f + n * 0.2f;
+            bool closed = r.CompanyClosed;
+            var row = Box("wr4-row").NoPick().AddTo(_rows);
+            if (p.Player == v.Me) row.AddToClassList("wr-row-me");
+            if (p.Fired || closed) row.AddToClassList("wr-row-fired");
+
+            // left: rank + identity
+            var rank = Title(p.Rank > 0 ? p.Rank.ToString() : "-", "wr4-rank").NoPick().AddTo(row);
+            if (p.Rank == 1) rank.AddToClassList("wr4-rank-first");
+            var who = Box("wr4-who").NoPick().AddTo(row);
+            Badge(p.Player, "badge-m").AddTo(who);
+            var nc = Box("col").NoPick().AddTo(who);
+            Title(MeetingText.Name(p.Player), "wr-name").NoPick().AddTo(nc);
+            var tags = Box("row", "wr4-tags").NoPick().AddTo(nc);
+            if (p.Fired && !closed) Tag(Loc.T("results.tag.fired"), "tag-red").AddTo(tags);
+            if (closed) Tag(Loc.T("results.tag.fired_closed"), "tag-red").AddTo(tags);
+            if (p.EmployeeOfMonth) Tag(Loc.T("results.tag.eotm"), "tag-sticky").AddTo(tags);
+            if (p.Warnings > 0) Tag(Loc.F("results.tag.warnings", p.Warnings), "tag-grey").AddTo(tags);
+
+            // middle: objective + facts
+            var mid = Box("wr4-mid").NoPick().AddTo(row);
+            var obj = Box("row").NoPick().AddTo(mid);
+            MeetingText.ApplyIcon(Box("icon", "icon-s").NoPick().AddTo(obj), "icons_v3/agenda_target");
+            Bold(ObjectiveName(p), "wr-agenda-name").NoPick().AddTo(obj);
+            if (p.ObjectiveTarget >= 0) { Badge(p.ObjectiveTarget, "badge-xs").AddTo(obj); Text(MeetingText.Name(p.ObjectiveTarget), "wr-small").NoPick().AddTo(obj); }
+            Tag(Loc.T(p.ObjectiveDone ? "results.objective.done" : "results.objective.missed"), p.ObjectiveDone ? "tag-green" : "tag-grey").AddTo(obj);
+            var facts = Box("row", "wr4-facts").NoPick().AddTo(mid);
+            Text(Loc.F("results.fact.money", MeetingText.Money(p.Money)), "wr-small").NoPick().AddTo(facts);
+            Text(p.ContributionQuality >= 0 ? Loc.F("results.fact.quality", p.ContributionQuality, p.TasksConnected) : Loc.T("results.fact.quality_none"), "wr-small").NoPick().AddTo(facts);
+            Text(Loc.F("results.fact.blame", p.Blame), "wr-small").NoPick().AddTo(facts);
+            if (p.ExposedIncidents > 0) Tag(Loc.F("results.fact.exposed", p.ExposedIncidents), "tag-red").AddTo(facts);
+            UiMotion.Flip(mid, null, 0.4f, delay + 0.1f);
+
+            // right: career lines + total
+            var career = Box("wr4-career").NoPick().AddTo(row);
+            var chips = Box("wr-chips").NoPick().AddTo(career);
+            int k = 0;
+            foreach (var cl in p.Career)
+            {
+                string label = Loc.T("career.item." + cl.Item) + (cl.Count > 1 ? " ×" + cl.Count : "");
+                CareerChip(chips, label, cl.Points, delay + 0.3f + k * 0.08f);
+                k++;
+            }
+            if (p.Career.Count == 0) Text(Loc.T(closed ? "results.career.closed" : "results.career.none"), "wr-small", "wr4-nocareer").NoPick().AddTo(chips);
+            var total = Title("0", "wr-total", "wr4-total").NoPick().AddTo(row);
+            UiMotion.CountUp(total, 0, p.CareerTotal, 0.6f, x => (x > 0 ? "+" : "") + x, delay + 0.4f);
+            UiMotion.SlideIn(row, new Vector2(0f, 24f), 0.3f, delay);
+        }
+
+        static void CareerChip(VisualElement parent, string label, int pts, float delay)
+        {
+            var c = Box("wr-chip", pts < 0 ? "wr-chip-bad" : "").NoPick().AddTo(parent);
+            Text(label, "wr-chip-label").NoPick().AddTo(c);
+            Bold((pts > 0 ? "+" : "") + pts, "wr-chip-num").NoPick().AddTo(c);
+            UiMotion.PopIn(c, 0.22f, delay, 0.6f);
+        }
+
+        // ------------------------------------------------------------------ side column
+
+        /// <summary>Competition ranks over a list already sorted by points (descending).</summary>
+        static int[] Ranks(List<LineWeekPlayerResult> sorted, System.Func<LineWeekPlayerResult, int> score)
+        {
+            var ranks = new int[sorted.Count];
+            for (int i = 0; i < sorted.Count; i++) ranks[i] = i > 0 && score(sorted[i]) == score(sorted[i - 1]) ? ranks[i - 1] : i + 1;
+            return ranks;
+        }
+
+        void BuildSession(LineWeekResult r)
+        {
             Title(Loc.T("results.session.title"), "wr-session-title").NoPick().AddTo(_session);
             Memo(Loc.T("results.session.sub"), "wr-session-sub").NoPick().AddTo(_session);
             var board = new List<LineWeekPlayerResult>(r.Players);
             board.Sort((a, b) => b.SessionPoints != a.SessionPoints ? b.SessionPoints.CompareTo(a.SessionPoints) : a.Player.CompareTo(b.Player));
+            var ranks = Ranks(board, x => x.SessionPoints);
             int top = board.Count > 0 ? board[0].SessionPoints : 0;
-            int i = 0;
-            foreach (var p in board)
+            for (int i = 0; i < board.Count; i++)
             {
+                var p = board[i];
                 var row = Box("wr-srow").NoPick().AddTo(_session);
                 if (p.SessionPoints == top && top > 0) row.AddToClassList("wr-srow-lead");
-                Title((i + 1) + ".", "wr-srank").NoPick().AddTo(row);
+                Title(ranks[i] + ".", "wr-srank").NoPick().AddTo(row);
                 Badge(p.Player, "badge-s").AddTo(row);
                 Bold(MeetingText.Name(p.Player), "wr-sname").NoPick().AddTo(row);
                 var pts = Title("", "wr-spts").NoPick().AddTo(row);
-                UiMotion.CountUp(pts, p.SessionPoints - p.Points, p.SessionPoints, 0.7f, x => x.ToString(), 1.4f + i * 0.1f);
-                i++;
+                UiMotion.CountUp(pts, p.SessionPoints - p.CareerTotal, p.SessionPoints, 0.7f, x => x.ToString(), 1.2f + i * 0.1f);
             }
-
-            Text(Loc.F("results.session.start_blame", cfg.StartBlame, cfg.StartBlame + cfg.LeaderStartBonus), "wr-session-note").NoPick().AddTo(_session);
-
-            BuildNext(v, false);
-            UiMotion.SlideIn(_sheet, new Vector2(0f, 60f), 0.4f);
-            UiMotion.SlideIn(_side, new Vector2(60f, 0f), 0.4f, 1.0f);
+            if (r.CompanyClosed) Text(Loc.T("results.session.closed_note"), "wr-session-note").NoPick().AddTo(_session);
         }
 
-        // ------------------------------------------------------------------ next manager (v3.1)
+        void BuildEotm(LineView v, LineWeekResult r)
+        {
+            Bold(Loc.T("results.eotm.title"), "wr-next-title").NoPick().AddTo(_eotm);
+            if (r.CompanyClosed) { Text(Loc.T("results.eotm.closed"), "wr-small").NoPick().AddTo(_eotm); return; }
+            LineWeekPlayerResult w = null;
+            foreach (var p in r.Players) if (p.EmployeeOfMonth) w = p;
+            if (w == null) { Text(Loc.T("results.eotm.none"), "wr-small").NoPick().AddTo(_eotm); return; }
+            var row = Box("row").NoPick().AddTo(_eotm);
+            Badge(w.Player, "badge-m").AddTo(row);
+            var col = Box("col", "grow").NoPick().AddTo(row);
+            Title(MeetingText.Name(w.Player), "wr-next-name").NoPick().AddTo(col);
+            Text(Loc.F("results.eotm.line", MeetingText.Config.CareerEmployeeOfMonth), "wr-small").NoPick().AddTo(col);
+        }
+
+        void BuildIncidents(LineWeekResult r)
+        {
+            Bold(Loc.T("results.incidents.title"), "wr-next-title").NoPick().AddTo(_incidents);
+            Text(Loc.F("results.incidents.count", r.IncidentsTotal, r.Exposed.Count), "wr-small").NoPick().AddTo(_incidents);
+            if (r.Exposed.Count == 0) { Text(Loc.T("results.incidents.none_exposed"), "wr-small", "t-muted").NoPick().AddTo(_incidents); return; }
+            foreach (var e in r.Exposed)
+            {
+                var row = Box("wr4-inc").NoPick().AddTo(_incidents);
+                if (e.Actor >= 0) Badge(e.Actor, "badge-xs").AddTo(row);
+                var col = Box("col", "grow").NoPick().AddTo(row);
+                Bold(MeetingText.Incident(e.Kind), "wr-small").NoPick().AddTo(col);
+                Text(Loc.F("results.incidents.line", MeetingText.Name(e.Actor), MeetingText.Day(e.Day), e.ExposedBy >= 0 ? MeetingText.Name(e.ExposedBy) : "-"), "wr-small", "t-muted").NoPick().AddTo(col);
+            }
+        }
+
+        // ------------------------------------------------------------------ rematch
+
+        void BuildRematch(LineView v, LineWeekResult r)
+        {
+            _rematchRow.Clear();
+            _again = null;
+            _againLabelOn = false;
+            _again = Btn(Loc.T("results.play_again"), ToggleRematch, "btn-primary").AddTo(_rematchRow);
+            _rematchRow.pickingMode = PickingMode.Position;
+            _rematchKey = int.MinValue;
+            _wantsRematch = false;
+            UpdateRematch();
+        }
+
+        bool _againLabelOn;
+        VisualElement _rematchBadges;
+
+        void ToggleRematch()
+        {
+            _wantsRematch = !_wantsRematch;
+            var c = LineClient.I;
+            if (c != null) c.RequestRematch(_wantsRematch);
+            if (_wantsRematch) TelemetryHooks.RematchRequested();
+            _rematchKey = int.MinValue;
+            UpdateRematch();
+        }
+
+        void UpdateRematch()
+        {
+            if (_again == null) return;
+            var lobby = LineClient.I != null ? LineClient.I.Lobby : null;
+            int key = (_wantsRematch ? 1 : 0);
+            if (lobby != null) foreach (var s in lobby.Slots) key = key * 3 + (s.Occupied && s.WantsRematch ? s.Slot + 1 : 0);
+            if (key == _rematchKey) return;
+            _rematchKey = key;
+            _again.text = Loc.T(_wantsRematch ? "results.rematch_cancel" : "results.play_again");
+            _again.EnableInClassList("btn-primary", !_wantsRematch);
+            _again.EnableInClassList("btn-secondary", _wantsRematch);
+            if (_rematchBadges != null) _rematchBadges.RemoveFromHierarchy();
+            _rematchBadges = Box("row", "wr4-rematch-badges").NoPick().AddTo(_rematchRow);
+            int want = 0;
+            if (lobby != null)
+                foreach (var s in lobby.Slots)
+                    if (s.Occupied && s.WantsRematch) { Badge(s.Slot, "badge-xs").AddTo(_rematchBadges); want++; }
+            if (want > 0) Text(Loc.F("results.rematch_count", want), "wr-small").NoPick().AddTo(_rematchBadges);
+        }
+
+        // ------------------------------------------------------------------ next manager
 
         void BuildNext(LineView v, bool animate)
         {
             var r = v.Result;
             _next.Clear();
-            if (r == null || r.Fired < 0) { _next.Show(false); _pickLayer.Show(false); return; }
+            if (r == null || r.Fired < 0 || r.CompanyClosed) { _next.Show(false); _pickLayer.Show(false); return; }
             _next.Show(true);
             string pick = r.NextManagerPick ?? "";
             _shownPick = pick;
@@ -275,16 +418,9 @@ namespace BirimizKovulacak.Game
             _pickLayer.schedule.Execute(() => { if (_pickLayer.IsShown()) UiMotion.FadeOut(_pickLayer, 0.3f); }).StartingIn(1600);
         }
 
-        static void PointChip(VisualElement parent, string label, int pts, float delay, bool bad = false)
-        {
-            var c = Box("wr-chip", bad ? "wr-chip-bad" : "").NoPick().AddTo(parent);
-            Text(label, "wr-chip-label").NoPick().AddTo(c);
-            Bold("+" + pts, "wr-chip-num").NoPick().AddTo(c);
-            UiMotion.PopIn(c, 0.22f, delay, 0.6f);
-        }
-
         public override void Tick(LineView v, double now)
         {
+            UpdateRematch();
             int sec = (int)System.Math.Ceiling(System.Math.Max(0, v.PhaseEndTime - now));
             if (sec == _lastSec) return;
             _lastSec = sec;

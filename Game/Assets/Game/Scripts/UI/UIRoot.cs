@@ -30,6 +30,9 @@ namespace BirimizKovulacak.Game
         HowToPlayScreen _howTo;
         ConfirmDialog _confirm;
         StatusOverlay _status;
+        ConsentScreen _consent;
+        IntroScreen _intro;
+        MomentMarker _moment;
         DeskUi _desk;
         MeetingUi _meeting;
         bool _built, _rebuildPending;
@@ -82,7 +85,7 @@ namespace BirimizKovulacak.Game
         public void Rebuild()
         {
             if (!_built) return;
-            bool settings = _settings.Visible, howTo = _howTo.Visible, pause = _pause.Visible, join = _menu.JoinOpen;
+            bool settings = _settings.Visible, howTo = _howTo.Visible, pause = _pause.Visible, join = _menu.JoinOpen, intro = _intro.Visible && !ShellFlow.NeedsIntro;
             int tab = (int)SettingsScreen.CurrentTab;
             Modal.CloseAll();
             foreach (var e in _screenElements) e.RemoveFromHierarchy();
@@ -92,6 +95,7 @@ namespace BirimizKovulacak.Game
             if (pause) _pause.Toggle();
             if (howTo) HowToPlayScreen.Open();
             if (settings) SettingsScreen.Open(tab);
+            if (intro) IntroScreen.Open(false);
             _menu.OpenJoinOnShow = join;
         }
 
@@ -108,6 +112,9 @@ namespace BirimizKovulacak.Game
             _settings = new SettingsScreen(_root);
             _confirm = new ConfirmDialog(_root);
             _status = new StatusOverlay(_root);
+            _intro = new IntroScreen(_root);
+            _consent = new ConsentScreen(_root);
+            _moment = new MomentMarker(_root);
             for (int i = before; i < _root.childCount; i++) _screenElements.Add(_root[i]);
             _built = true;
         }
@@ -130,19 +137,20 @@ namespace BirimizKovulacak.Game
             if (GameInput.Pause != null && GameInput.Pause.WasPressedThisFrame())
             {
                 if (Modal.CloseTop()) { }
+                else if (_intro.Visible) _intro.Skip();
                 else if (_settings.Visible) _settings.Hide();
                 else if (_howTo.Visible) _howTo.Hide();
                 else if (!online && _menu.JoinOpen) _menu.ShowJoin(false);
                 else if (online) _pause.Toggle();
             }
-            bool overlay = _pause.Visible || _settings.Visible || _howTo.Visible || Modal.AnyOpen;
+            bool overlay = _pause.Visible || _settings.Visible || _howTo.Visible || Modal.AnyOpen || _intro.Visible || _consent.Visible;
 
             _menu.SetVisible(!online);
             _lobby.SetVisible(online && (conn == null || conn.Current != ConnectionManager.State.Connecting));
             if (!online && _pause.Visible) _pause.Hide();
 
             _menu.Tick(); _lobby.Tick(); _pause.Tick();
-            _settings.Tick(); _howTo.Tick(); _confirm.Tick(); _status.Tick();
+            _settings.Tick(); _howTo.Tick(); _confirm.Tick(); _status.Tick(); _intro.Tick(); _moment.Tick();
 
             bool modal = !online || _lobby.Visible || overlay;
             BlocksGameplay = modal;
@@ -157,11 +165,12 @@ namespace BirimizKovulacak.Game
             if (GameInput.Pause != null && GameInput.Pause.WasPressedThisFrame())
             {
                 if (Modal.CloseTop()) { }
+                else if (_intro.Visible) _intro.Skip();
                 else if (_settings.Visible) _settings.Hide();
                 else if (_howTo.Visible) _howTo.Hide();
                 else _pause.Toggle();
             }
-            bool overlay = _pause.Visible || _settings.Visible || _howTo.Visible || Modal.AnyOpen;
+            bool overlay = _pause.Visible || _settings.Visible || _howTo.Visible || Modal.AnyOpen || _intro.Visible;
             bool office = LineClient.IsOfficePhase(v.Phase);
             bool meeting = LineClient.IsMeetingPhase(v.Phase) || v.Phase == LinePhase.WeekResults || v.Phase == LinePhase.Abandoned;
 
@@ -170,7 +179,7 @@ namespace BirimizKovulacak.Game
             _meeting.SetVisible(meeting);
 
             _desk.Tick(); _meeting.Tick();
-            _pause.Tick(); _settings.Tick(); _howTo.Tick(); _confirm.Tick(); _status.Tick();
+            _pause.Tick(); _settings.Tick(); _howTo.Tick(); _confirm.Tick(); _status.Tick(); _intro.Tick(); _moment.Tick();
 
             var rooms = Rooms.Presenter;
             bool lookMode = rooms != null && (rooms.Mode == PovMode.Office || rooms.Mode == PovMode.Meeting);
