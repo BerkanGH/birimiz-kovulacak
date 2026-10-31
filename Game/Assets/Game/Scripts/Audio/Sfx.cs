@@ -61,6 +61,7 @@ namespace BirimizKovulacak.Game
             Build();
             Debug.Log("[Sfx] " + _clips.Count + " clips synthesised in " + ((Time.realtimeSinceStartup - t0) * 1000f).ToString("0") + " ms");
             if (GetComponent<Ambience>() == null) gameObject.AddComponent<Ambience>();
+            if (GetComponent<MusicDirector>() == null) gameObject.AddComponent<MusicDirector>();
             if (GetComponent<FxPool>() == null) gameObject.AddComponent<FxPool>();
         }
 
