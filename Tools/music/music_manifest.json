@@ -1,0 +1,97 @@
+{
+  "provider": "ElevenLabs",
+  "endpoint": "https://api.elevenlabs.io/v1/music",
+  "model_id": "music_v2_5",
+  "output_format": "mp3_44100_128",
+  "force_instrumental": true,
+  "cues": [
+    {
+      "id": "menu_lobby",
+      "use": "Main menu and lobby bed",
+      "kind": "loop",
+      "target_duration_s": 75,
+      "prompt": "Instrumental only, no vocals. Sparse dry arrangement with lots of empty space for people talking over it. Muted upright-style bass, brushed or soft rim-click percussion, restrained electric piano, celesta, muted vibraphone, pizzicato strings. Recurring short four-note rising-then-falling motif, played politely and slightly off-balance. Dark office comedy atmosphere, awkward corporate optimism with playful suspicion. Mid-slow tempo around 92 BPM, light and awkwardly cheerful, hopeful but faintly suspicious, a gentle loop-friendly groove that begins and ends in the same state. ",
+      "source": "Art/Audio/Music/source/menu_lobby.mp3",
+      "integrated": "Game/Assets/Game/Audio/Resources/music/menu_lobby.ogg",
+      "loop": true,
+      "crossfade_ms": 1500
+    },
+    {
+      "id": "office_work",
+      "use": "Low-intensity bed during work blocks, task intro, reveal, break",
+      "kind": "loop",
+      "target_duration_s": 75,
+      "prompt": "Instrumental only, no vocals. Sparse dry arrangement with lots of empty space for people talking over it. Muted upright-style bass, brushed or soft rim-click percussion, restrained electric piano, celesta, muted vibraphone, pizzicato strings. Recurring short four-note rising-then-falling motif, played politely and slightly off-balance. Dark office comedy atmosphere, awkward corporate optimism with playful suspicion. Very low intensity, slow 84 BPM, steady quiet pulse, small playful pizzicato figures, almost background, restrained suspense, steady throughout with no big builds. ",
+      "source": "Art/Audio/Music/source/office_work.mp3",
+      "integrated": "Game/Assets/Game/Audio/Resources/music/office_work.ogg",
+      "loop": true,
+      "crossfade_ms": 1500
+    },
+    {
+      "id": "deadline",
+      "use": "Rising tension in the last seconds of a task",
+      "kind": "loop",
+      "target_duration_s": 40,
+      "prompt": "Instrumental only, no vocals. Sparse dry arrangement with lots of empty space for people talking over it. Muted upright-style bass, brushed or soft rim-click percussion, restrained electric piano, celesta, muted vibraphone, pizzicato strings. Recurring short four-note rising-then-falling motif, played politely and slightly off-balance. Dark office comedy atmosphere, awkward corporate optimism with playful suspicion. Faster 120 BPM, ticking muted percussion, pizzicato ostinato, slowly rising tension through the piece, restrained not dramatic, steady energy at the end so it can repeat. ",
+      "source": "Art/Audio/Music/source/deadline.mp3",
+      "integrated": "Game/Assets/Game/Audio/Resources/music/deadline.ogg",
+      "loop": true,
+      "crossfade_ms": 1500
+    },
+    {
+      "id": "meeting_intro",
+      "use": "Stinger at the start of the meeting dossier",
+      "kind": "stinger",
+      "target_duration_s": 10,
+      "prompt": "Instrumental only, no vocals. Sparse dry arrangement with lots of empty space for people talking over it. Muted upright-style bass, brushed or soft rim-click percussion, restrained electric piano, celesta, muted vibraphone, pizzicato strings. Recurring short four-note rising-then-falling motif, played politely and slightly off-balance. Dark office comedy atmosphere, awkward corporate optimism with playful suspicion. Short stinger, a stiff formal fanfare played on celesta and pizzicato strings, one awkward wrong-footed final chord, then a short decay. ",
+      "source": "Art/Audio/Music/source/meeting_intro.mp3",
+      "integrated": "Game/Assets/Game/Audio/Resources/music/meeting_intro.ogg",
+      "loop": false,
+      "crossfade_ms": 0
+    },
+    {
+      "id": "meeting_discussion",
+      "use": "Very sparse bed during meeting discussion, vote, verdict",
+      "kind": "loop",
+      "target_duration_s": 55,
+      "prompt": "Instrumental only, no vocals. Sparse dry arrangement with lots of empty space for people talking over it. Muted upright-style bass, brushed or soft rim-click percussion, restrained electric piano, celesta, muted vibraphone, pizzicato strings. Recurring short four-note rising-then-falling motif, played politely and slightly off-balance. Dark office comedy atmosphere, awkward corporate optimism with playful suspicion. Extremely sparse, 70 BPM, a few soft sustained notes, occasional muted vibraphone, one low bass note per bar, quiet uneasy suspicion, almost nothing happening. ",
+      "source": "Art/Audio/Music/source/meeting_discussion.mp3",
+      "integrated": "Game/Assets/Game/Audio/Resources/music/meeting_discussion.ogg",
+      "loop": true,
+      "crossfade_ms": 1500
+    },
+    {
+      "id": "final_vote",
+      "use": "Tense bed for final defense, vote and verdict",
+      "kind": "loop",
+      "target_duration_s": 40,
+      "prompt": "Instrumental only, no vocals. Sparse dry arrangement with lots of empty space for people talking over it. Muted upright-style bass, brushed or soft rim-click percussion, restrained electric piano, celesta, muted vibraphone, pizzicato strings. Recurring short four-note rising-then-falling motif, played politely and slightly off-balance. Dark office comedy atmosphere, awkward corporate optimism with playful suspicion. Tense, slow 76 BPM, low muted bass pulse, sparse dissonant electric piano, soft ticking, restrained dread with a hint of absurdity, steady and loopable. ",
+      "source": "Art/Audio/Music/source/final_vote.mp3",
+      "integrated": "Game/Assets/Game/Audio/Resources/music/final_vote.ogg",
+      "loop": true,
+      "crossfade_ms": 1500
+    },
+    {
+      "id": "results_success",
+      "use": "Stinger when the company survives",
+      "kind": "stinger",
+      "target_duration_s": 10,
+      "prompt": "Instrumental only, no vocals. Sparse dry arrangement with lots of empty space for people talking over it. Muted upright-style bass, brushed or soft rim-click percussion, restrained electric piano, celesta, muted vibraphone, pizzicato strings. Recurring short four-note rising-then-falling motif, played politely and slightly off-balance. Dark office comedy atmosphere, awkward corporate optimism with playful suspicion. Short stinger in a major key, the recurring motif played hopefully on celesta and vibraphone with a warm pizzicato resolution, a small awkward flourish at the end. ",
+      "source": "Art/Audio/Music/source/results_success.mp3",
+      "integrated": "Game/Assets/Game/Audio/Resources/music/results_success.ogg",
+      "loop": false,
+      "crossfade_ms": 0
+    },
+    {
+      "id": "results_collapse",
+      "use": "Stinger when the company collapses",
+      "kind": "stinger",
+      "target_duration_s": 10,
+      "prompt": "Instrumental only, no vocals. Sparse dry arrangement with lots of empty space for people talking over it. Muted upright-style bass, brushed or soft rim-click percussion, restrained electric piano, celesta, muted vibraphone, pizzicato strings. Recurring short four-note rising-then-falling motif, played politely and slightly off-balance. Dark office comedy atmosphere, awkward corporate optimism with playful suspicion. Short stinger in a minor key, the recurring motif played slowly and deflated, sagging pitch, a comically sad muted descending figure, ending on a flat unresolved note. ",
+      "source": "Art/Audio/Music/source/results_collapse.mp3",
+      "integrated": "Game/Assets/Game/Audio/Resources/music/results_collapse.ogg",
+      "loop": false,
+      "crossfade_ms": 0
+    }
+  ]
+}
