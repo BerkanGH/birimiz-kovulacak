@@ -808,6 +808,12 @@ class Analysis:
         for c in self.ctxs:
             self.strat_events[c.strat].update(c.events.keys())
         self.groups = sorted({c.group for c in self.ctxs})
+        self.session_ends = defaultdict(list)
+        for c in self.ctxs:
+            for name in ("session_ended", "session_interrupted"):
+                for e in c.e(name):
+                    if e.get("anonymous_player_id"):
+                        self.session_ends[e["anonymous_player_id"]].append(e.get("timestamp_utc") or "")
         self.group_classes = defaultdict(set)
         for c in self.all_ctx.values():
             self.group_classes[c.group].add(c.klass)
@@ -1378,9 +1384,15 @@ def kpi_E_F_G(S):
         if gaps:
             C.sample("F.worst_served_gap", ctx, max(gaps))
         # coverage of summaries vs connected players
-        conn = sum(num(P(e).get("connected")) or 0 for e in ctx.e("round_finished"))
+        # per round: summaries capped by players connected at round end (a player who dropped mid-round may still have one)
+        sums_by_round = Counter(e.get("task_number") for e in ctx.e("round_player_summary"))
+        conn = covered = 0
+        for e in ctx.e("round_finished"):
+            c_round = num(P(e).get("connected")) or 0
+            conn += c_round
+            covered += min(c_round, sums_by_round.get(e.get("task_number"), 0))
         if conn > 0 and ctx.has("round_player_summary"):
-            C.ratio("F.observation_coverage", ctx, len(ctx.e("round_player_summary")), conn)
+            C.ratio("F.observation_coverage", ctx, covered, conn)
         # career by communication profile
         if not company_closed(ctx):
             for e in ctx.e("career_breakdown"):
@@ -1582,6 +1594,9 @@ def kpi_J(S):
         inc = defaultdict(float)
         for e in ctx.e("income_credited"):
             s = islot(P(e).get("player"))
+            # Earned money only: transfers and purchases move money between players, they are not income.
+            if P(e).get("reason") in ("transfer_in", "transfer_out", "purchase"):
+                continue
             if s is not None and num(P(e).get("amount")) is not None:
                 inc[s] += P(e)["amount"]
         if inc and n >= 2:
@@ -1674,7 +1689,14 @@ def kpi_K(S):
             C.sample("K.stuck_phase", ctx, len(ctx.e("stuck_phase")))
             C.sample("K.unexpected_transition", ctx, len(ctx.e("unexpected_transition")))
         if ctx.has("session_started"):
+            # A client adopts the host's session id after joining, so its end event can sit in another context:
+            # pair by the client's pseudonymous id (any later end of the same player closes the session).
             ended = ctx.has("session_ended") or ctx.has("session_interrupted")
+            if not ended:
+                for e in ctx.e("session_started"):
+                    pid = e.get("anonymous_player_id")
+                    if pid and any(t >= (e.get("timestamp_utc") or "") for t in S.session_ends.get(pid, ())):
+                        ended = True
             C.ratio("K.possible_crash", ctx, 0 if ended else 1, 1)
 
 

@@ -723,7 +723,11 @@ namespace BirimizKovulacak.Game
                 catch (Exception e) { Debug.LogException(e); HostTelemetryBridge.TechnicalFailure("voice_exception", e); }
                 MatchLog.Write("host: recording pick=" + p.Index + " candidates=" + p.CandidateCallIds.Count + " played=" + (chosen >= 0 ? "yes" : "no") + " failure=" + info.Failure);
                 _engine.ReportRecording(p.Index, chosen, now);
-                HostTelemetryBridge.RecordingStarted(_engine, p, chosen, info, now);
+                // The cached pick predates the report: hand analytics the reported copy (caller, callee, task context).
+                var reported = p;
+                try { foreach (var x in _engine.RecordingPicks) if (x.Index == p.Index) { reported = x; break; } }
+                catch (Exception e) { Debug.LogException(e); }
+                HostTelemetryBridge.RecordingStarted(_engine, reported, chosen, info, now);
                 break; // one per frame; the next waits until this tape has finished
             }
         }

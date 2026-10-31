@@ -377,6 +377,42 @@ class TestEconomyAndObserver(Base):
         self.assertEqual(get(rows, "J.rank1_is_best_quality")["numerator"], "0")   # best quality is slot 1, rank 1 is slot 0
         self.assertEqual(get(rows, "J.rank1_is_best_quality_baseline")["value"], "0.25")
 
+    def test_income_concentration_ignores_transfers(self):
+        # Regression (lead, bot runs): transfers netted into income gave a 340% top share and a Gini of 3.5.
+        evs = match_events()
+        evs += [ev("player_slot_map", 0, slot=i, anonymous_player_id="p-%d" % i, is_bot=False) for i in range(4)]
+        evs += [ev("income_credited", 100, player=0, amount=4, raw_amount=4, reason="task_income", block_total=4),
+                ev("income_credited", 101, player=1, amount=4, raw_amount=4, reason="task_income", block_total=4),
+                ev("income_credited", 102, player=0, amount=-3, raw_amount=-3, reason="transfer_out", block_total=1),
+                ev("income_credited", 102, player=1, amount=3, raw_amount=3, reason="transfer_in", block_total=7)]
+        S, rows = self.run_an({"h.jsonl": evs})
+        self.assertEqual(get(rows, "J.income_top_share")["value"], "0.5")
+        self.assertLessEqual(float(get(rows, "J.income_gini")["value"]), 1.0)
+
+    def test_client_session_end_pairs_across_adopted_session(self):
+        # Regression (lead, bot runs): a client adopts the host session id, so its end event is in another context.
+        evs = [ev("session_started", 0, auth="client", match=None, session="s-own", pid="p-a", platform="windows", language="tr",
+                  fullscreen=True, first_launch=False),
+               ev("session_ended", 900, auth="client", match=None, session="s-host", pid="p-a", duration_seconds=900.0, reason="quit")]
+        S, rows = self.run_an({"c.jsonl": evs})
+        self.assertEqual(get(rows, "K.possible_crash")["numerator"], "0")
+
+    def test_observation_coverage_is_capped_per_round(self):
+        # Regression (lead, bot runs): a player who dropped mid-round still has a summary -> coverage above 100%.
+        evs = match_events()
+        rf = ev("round_finished", 100, output=80, max_output=100, submitted=3, connected=3, early_submit=False)
+        rf["task_number"] = 0
+        evs.append(rf)
+        for i in range(4):
+            e = ev("round_player_summary", 100, slot=i, player=i, connected_seconds=60.0, calls_attempted=0, calls_connected=0,
+                   unique_partners=0, texts_sent=0, emails_sent=0, submitted=True, revisions=0, longest_gap_seconds=5.0,
+                   post_submit_wait_seconds=1.0, busy_failures=0, unanswered_attempts=0, comm_mode="none", blocked_seconds=0.0)
+            e["task_number"] = 0
+            evs.append(e)
+        S, rows = self.run_an({"h.jsonl": evs})
+        r = get(rows, "F.observation_coverage")
+        self.assertEqual((r["numerator"], r["denominator"]), ("3", "3"))
+
     def test_observer_blank_is_missing_and_notable_groups(self):
         obs = os.path.join(self.dir, "obs.csv")
         cols = ["anonymous_group_id", "build_version", "ruleset_version", "player_count", "match_id", "day_index", "round_index", "phase",
