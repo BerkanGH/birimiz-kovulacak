@@ -168,7 +168,8 @@ Without-comm values are the expected output of the engine's no-communication bot
 ### T3 `customer_spec` — Müşteri Talebi / Customer Spec (P)
 - "The customer's wishes are split between you. Order the one product that matches all of them."
 - Private: pair — one member sees colour + size, the other sees delivery day; trio — one attribute each. Six catalogue
-  specs; exactly one matches all three wishes (decoys share two attributes). Each member also has a private
+  specs form a symmetric catalogue (three colour+size pairs, each on two different days, every day twice): no spec stands
+  out publicly, colour+size alone leaves two, the day alone leaves two, together exactly one. Each member also has a private
   **commission** on one decoy (+2 if *they* order it).
 - Controls: `Choice` spec (6, required).
 - Output per group = 100 × correct orders / members. Income: correct +2; commission +2 (deal income; not sabotage).

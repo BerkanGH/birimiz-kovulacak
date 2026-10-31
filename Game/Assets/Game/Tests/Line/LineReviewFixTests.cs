@@ -82,6 +82,29 @@ namespace BirimizKovulacak.Core.Tests.Line
         }
 
         [Test]
+        public void CustomerSpecCatalogueNeedsBothPartners()
+        {
+            // Regression (Codex review): the most frequent colour, size and day of the public catalogue were the answer.
+            for (int seed = 1; seed <= 60; seed++)
+            {
+                var m = LineTest.Task(TaskKind.CustomerSpec, 4, seed: seed);
+                m.Until(LinePhase.RoundPlay);
+                var views = m.Views();
+                var specs = views[0].Task.PublicFacts.Where(f => f.Key == "spec").Select(f => f.N2).ToList();
+                Assert.AreEqual(6, specs.Distinct().Count());
+                foreach (var attr in new System.Func<int, int>[] { x => x / 9, x => x / 3 % 3, x => x % 3 })
+                    Assert.IsTrue(specs.GroupBy(attr).All(g => g.Count() == 2), "every value appears twice: no public majority (seed " + seed + ")");
+                var a = views.First(v => v.Task.Facts.Any(f => f.Key == "color") && v.Task.Facts.Any(f => f.Key == "size"));
+                var b = views.First(v => v.Me != a.Me && a.Task.Group.Contains(v.Me));
+                int color = a.Task.Facts.Single(f => f.Key == "color").N1, size = a.Task.Facts.Single(f => f.Key == "size").N1;
+                int day = b.Task.Facts.Single(f => f.Key == "day").N1;
+                Assert.AreEqual(2, specs.Count(x => x / 9 == color && x / 3 % 3 == size), "colour+size alone leaves two");
+                Assert.AreEqual(2, specs.Count(x => x % 3 == day), "day alone leaves two");
+                Assert.AreEqual(1, specs.Count(x => x / 9 == color && x / 3 % 3 == size && x % 3 == day), "together: one");
+            }
+        }
+
+        [Test]
         public void ASubmissionMadeBeforeADisconnectStands()
         {
             var m = LineTest.Task(TaskKind.BonusPool);

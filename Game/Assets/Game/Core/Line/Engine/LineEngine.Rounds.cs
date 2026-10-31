@@ -79,10 +79,20 @@ namespace BirimizKovulacak.Core
                 case TaskKind.CustomerSpec:
                     {
                         int color = rng.Index(3), size = rng.Index(3), day = rng.Index(3), packed = color*9+size*3+day;
-                        var specs = new List<int> { packed };
-                        for (int a = 0; a < 3; a++) for (int x = 1; x <= 2; x++)
-                            specs.Add(((a==0 ? (color+x)%3 : color)*9)+((a==1 ? (size+x)%3 : size)*3)+(a==2 ? (day+x)%3 : day));
-                        specs.RemoveAt(1+rng.Index(6)); rng.Shuffle(specs); int correct = specs.IndexOf(packed);
+                        // Symmetric catalogue (lead review fix): three colour+size pairs, each offered on two different days,
+                        // every day used twice. No spec stands out publicly; colour+size alone leaves two, a day alone leaves
+                        // two in different pairs, and only the combination identifies the order.
+                        int dayOther = (day + 1 + rng.Index(2)) % 3, dayThird = 3 - day - dayOther;
+                        int c1 = (color + 1) % 3, c2 = (color + 2) % 3, s1 = (size + 1) % 3, s2 = (size + 2) % 3;
+                        if (rng.Unit() < 0.5) { int tmp = s1; s1 = s2; s2 = tmp; }
+                        int[] d0d1 = rng.Unit() < 0.5 ? new[] { day, dayOther } : new[] { dayOther, day };
+                        var specs = new List<int>
+                        {
+                            color*9+size*3+d0d1[0], color*9+size*3+d0d1[1],
+                            c1*9+s1*3+d0d1[1], c1*9+s1*3+dayThird,
+                            c2*9+s2*3+dayThird, c2*9+s2*3+d0d1[0],
+                        };
+                        rng.Shuffle(specs); int correct = specs.IndexOf(packed);
                         for(int k=0;k<6;k++)t.Public.Add(Fact("spec",k,specs[k],scope:2));
                         foreach(var g in t.Groups)
                         for (int i = 0; i < g.Count; i++)

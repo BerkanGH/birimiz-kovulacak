@@ -69,6 +69,7 @@ namespace BirimizKovulacak.Game
         bool _matchEndReported = true;
         string _matchId = "";
         string _lastMatchId = "";
+        int _matchSeed;
         readonly List<string> _experiments = new List<string>();
         int _recordingsPhaseKey = -1;
         LinePhase _lastPhase = LinePhase.None;
@@ -152,6 +153,15 @@ namespace BirimizKovulacak.Game
             BroadcastLobby();
         }
 
+        /// <summary>Session history is kept per seat; a new occupant starts clean (points, firings, roles).</summary>
+        void ResetSeatHistory(int slot)
+        {
+            if (_history == null) return;
+            if (slot < _history.SessionPoints.Count) _history.SessionPoints[slot] = 0;
+            if (slot < _history.TimesFired.Count) _history.TimesFired[slot] = 0;
+            if (slot < _history.RoleUses.Count) _history.RoleUses[slot] = 0;
+        }
+
         static bool ValidAnonymousId(string id)
         {
             if (string.IsNullOrEmpty(id) || id.Length != 34 || !id.StartsWith("p-")) return false;
@@ -207,6 +217,7 @@ namespace BirimizKovulacak.Game
                     if (!_slots[i].Occupied && !_pendingApprovals.ContainsValue(i)) slot = i;
                 if (slot < 0) return new Approval { Reason = "reject.full" };
                 var s = _slots[slot];
+                ResetSeatHistory(slot); // a new person takes this seat: they do not inherit its session record
                 s.Occupied = true;
                 s.Virtual = false;
                 s.Name = SanitizeName(p.PlayerName, slot);
@@ -350,6 +361,7 @@ namespace BirimizKovulacak.Game
             {
                 if (_slots[i].Occupied || _pendingApprovals.ContainsValue(i)) continue;
                 var s = _slots[i];
+                ResetSeatHistory(i);
                 s.Occupied = true; s.Virtual = true; s.Connected = true; s.Ready = true; s.Token = "";
                 s.Name = Loc.T("player.bot." + i);
                 SetConsent(i, 2, ""); // synthetic seat: covered by the host's own consent, always flagged is_bot
@@ -514,7 +526,9 @@ namespace BirimizKovulacak.Game
             _abandonedAt = -1;
             _resultLogged = false;
             ResetRecordings();
-            MatchLog.Write("host: week " + _weekId + " started seed=" + setup.Seed + " players=" + setup.Players.Count + " length=" + Length
+            // The seed reproduces every secret of the match: it is logged only once results are public (LogResult).
+            _matchSeed = setup.Seed;
+            MatchLog.Write("host: week " + _weekId + " started players=" + setup.Players.Count + " length=" + Length
                 + " recordings=" + RecordingsEnabled + " weeksPlayed=" + WeeksPlayed);
             BroadcastLobby();
             SendViewsToAll();
@@ -583,7 +597,7 @@ namespace BirimizKovulacak.Game
             _resultLogged = true;
             _weeksCompleted++;
             var r = _engine.Result;
-            if (r != null) MatchLog.Write("host: results week=" + r.WeekId + " hash=" + r.ResultHash + " fired=" + r.Fired + " manager=" + r.ManagerProfileId);
+            if (r != null) MatchLog.Write("host: results week=" + r.WeekId + " hash=" + r.ResultHash + " fired=" + r.Fired + " manager=" + r.ManagerProfileId + " seed=" + _matchSeed);
             // Results are public now: telemetry may flush the private-until-match-end buffer.
             if (_engine.Phase == LinePhase.WeekResults || _engine.IsFinished) ReportMatchEnd("results");
         }
