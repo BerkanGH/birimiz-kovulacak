@@ -1,5 +1,7 @@
 # v3.1 rules engine
 
+> **Superseded (2026-11-01)** by the v4 engine (`docs/ENGINE_V4.md`). Kept for history; numbers below are v3.1 bot statistics.
+
 The pure C# engine implements V3_DESIGN §0 with the supplied contracts, targeting netstandard2.1 / C# 9
 without UnityEngine. No contracts or v2 sources were changed.
 
