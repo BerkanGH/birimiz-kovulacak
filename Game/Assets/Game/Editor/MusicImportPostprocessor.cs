@@ -24,8 +24,9 @@ namespace BirimizKovulacak.EditorTools
             s.quality = 0.6f;
             s.sampleRateSetting = AudioSampleRateSetting.PreserveSampleRate;
             s.loadType = stinger ? AudioClipLoadType.CompressedInMemory : AudioClipLoadType.Streaming;
+            // Unity 6: preload is a per-platform sample setting. Stingers must start instantly; beds stream lazily.
+            s.preloadAudioData = stinger;
             imp.defaultSampleSettings = s;
-            imp.preloadAudioData = false;
         }
     }
 }
