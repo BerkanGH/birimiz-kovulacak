@@ -1,0 +1,5 @@
+anonymous_group_id,build_version,ruleset_version,data_class,player_counts,n_matches_logged,matches_completed,matches_abandoned,matches_unknown_end,completion_rate,phone_participation,phone_participation_n,no_contact_share,first_contact_latency_median_s,longest_gap_mean_s,post_submit_wait_mean_s,worst_served_gap_s,voluntary_rematch,rematch_intent,company_closed_matches,final_productivity_permille_mean,technical_failure_matches,observer_rows,notable_moments_confirmed,feedback_rows,observation_coverage_mean,status
+g-055e7f7d8e3b,0.4.0+202610312257-ffdef6,v4.0-hybrid,bot_sim,6,1,1,0,0,1,0.388889,36,0,0.17,15.3845,2.4215,16.4418,0,0,1,551,0,,,,1,ok
+g-5ae82c35b325,0.4.0+202610312322-82c509,v4.0-hybrid,bot_sim,4,2,2,0,0,1,0.583333,48,0,0.122,8.1585,3.01602,8.91667,0,0,1,605,0,,,,1,ok
+g-60347e0e520d,0.4.0+202610312257-ffdef6,v4.0-hybrid,bot_sim,3,1,1,0,0,1,0.666667,18,0,0.076,5.47283,3.58089,6.6695,0,0,1,400,0,,,,1,ok
+g-edff7e13d209,0.4.0+202610312257-ffdef6,v4.0-hybrid,bot_sim,5,1,1,0,0,1,0.64,50,0,0.1745,10.4599,3.13992,11.9554,0,0,1,511,0,,,,1,ok

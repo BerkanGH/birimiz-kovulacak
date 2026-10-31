@@ -1,0 +1,65 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="760" height="396" viewBox="0 0 760 396" font-family="Segoe UI, Arial, sans-serif">
+<rect width="100%" height="100%" fill="#ffffff"/>
+<rect x="0" y="0" width="760" height="24" fill="#b91c1c"/><text x="12" y="17" font-size="13" font-weight="700" fill="#ffffff">SYNTHETIC — not playtest evidence</text>
+<text x="12" y="50" font-size="16" font-weight="700" fill="#111827">Phone participation by round</text>
+<text x="12" y="67" font-size="11" fill="#4b5563">build 0.4.0+202610312257-ffdef6 | ruleset v4.0-hybrid | SYNTHETIC | observed players with a connected call</text>
+<line x1="190.0" y1="90" x2="190.0" y2="356" stroke="#e5e7eb"/>
+<text x="190.0" y="370" font-size="10" fill="#6b7280" text-anchor="middle">0%</text>
+<line x1="310.0" y1="90" x2="310.0" y2="356" stroke="#e5e7eb"/>
+<text x="310.0" y="370" font-size="10" fill="#6b7280" text-anchor="middle">25%</text>
+<line x1="430.0" y1="90" x2="430.0" y2="356" stroke="#e5e7eb"/>
+<text x="430.0" y="370" font-size="10" fill="#6b7280" text-anchor="middle">50%</text>
+<line x1="550.0" y1="90" x2="550.0" y2="356" stroke="#e5e7eb"/>
+<text x="550.0" y="370" font-size="10" fill="#6b7280" text-anchor="middle">75%</text>
+<line x1="670.0" y1="90" x2="670.0" y2="356" stroke="#e5e7eb"/>
+<text x="670.0" y="370" font-size="10" fill="#6b7280" text-anchor="middle">100%</text>
+<text x="182" y="111" font-size="11" fill="#1f2937" text-anchor="end">d0_r0</text>
+<rect x="190" y="100" width="137.1" height="16" rx="2" fill="#2563eb"/>
+<line x1="190.0" y1="108" x2="510.0" y2="108" stroke="#111827" stroke-width="1.5"/>
+<line x1="190.0" y1="103" x2="190.0" y2="113" stroke="#111827" stroke-width="1.5"/>
+<line x1="510.0" y1="103" x2="510.0" y2="113" stroke="#111827" stroke-width="1.5"/>
+<text x="516.0" y="112" font-size="11" fill="#111827">29% (n=14, g=3)</text>
+<text x="182" y="137" font-size="11" fill="#1f2937" text-anchor="end">d0_r1</text>
+<rect x="190" y="126" width="137.1" height="16" rx="2" fill="#2563eb"/>
+<line x1="190.0" y1="134" x2="510.0" y2="134" stroke="#111827" stroke-width="1.5"/>
+<line x1="190.0" y1="129" x2="190.0" y2="139" stroke="#111827" stroke-width="1.5"/>
+<line x1="510.0" y1="129" x2="510.0" y2="139" stroke="#111827" stroke-width="1.5"/>
+<text x="516.0" y="138" font-size="11" fill="#111827">29% (n=14, g=3)</text>
+<text x="182" y="163" font-size="11" fill="#1f2937" text-anchor="end">d1_r0</text>
+<rect x="190" y="152" width="411.4" height="16" rx="2" fill="#2563eb"/>
+<line x1="538.4" y1="160" x2="670.0" y2="160" stroke="#111827" stroke-width="1.5"/>
+<line x1="538.4" y1="155" x2="538.4" y2="165" stroke="#111827" stroke-width="1.5"/>
+<line x1="670.0" y1="155" x2="670.0" y2="165" stroke="#111827" stroke-width="1.5"/>
+<text x="610.0" y="164" font-size="11" fill="#111827">86% (n=14, g=3)</text>
+<text x="182" y="189" font-size="11" fill="#1f2937" text-anchor="end">d1_r1</text>
+<rect x="190" y="178" width="205.7" height="16" rx="2" fill="#2563eb"/>
+<line x1="190.0" y1="186" x2="574.0" y2="186" stroke="#111827" stroke-width="1.5"/>
+<line x1="190.0" y1="181" x2="190.0" y2="191" stroke="#111827" stroke-width="1.5"/>
+<line x1="574.0" y1="181" x2="574.0" y2="191" stroke="#111827" stroke-width="1.5"/>
+<text x="580.0" y="190" font-size="11" fill="#111827">43% (n=14, g=3)</text>
+<text x="182" y="215" font-size="11" fill="#1f2937" text-anchor="end">d2_r0</text>
+<rect x="190" y="204" width="274.3" height="16" rx="2" fill="#2563eb"/>
+<line x1="350.0" y1="212" x2="574.0" y2="212" stroke="#111827" stroke-width="1.5"/>
+<line x1="350.0" y1="207" x2="350.0" y2="217" stroke="#111827" stroke-width="1.5"/>
+<line x1="574.0" y1="207" x2="574.0" y2="217" stroke="#111827" stroke-width="1.5"/>
+<text x="580.0" y="216" font-size="11" fill="#111827">57% (n=14, g=3)</text>
+<text x="182" y="241" font-size="11" fill="#1f2937" text-anchor="end">d2_r1</text>
+<rect x="190" y="230" width="342.9" height="16" rx="2" fill="#2563eb"/>
+<line x1="382.0" y1="238" x2="670.0" y2="238" stroke="#111827" stroke-width="1.5"/>
+<line x1="382.0" y1="233" x2="382.0" y2="243" stroke="#111827" stroke-width="1.5"/>
+<line x1="670.0" y1="233" x2="670.0" y2="243" stroke="#111827" stroke-width="1.5"/>
+<text x="610.0" y="242" font-size="11" fill="#111827">71% (n=14, g=3)</text>
+<text x="182" y="267" font-size="11" fill="#1f2937" text-anchor="end">d3_r0</text>
+<rect x="190" y="256" width="192.0" height="16" rx="2" fill="#2563eb"/>
+<text x="388.0" y="268" font-size="11" fill="#111827">40% (n=5, g=1)</text>
+<text x="182" y="293" font-size="11" fill="#1f2937" text-anchor="end">d3_r1</text>
+<rect x="190" y="282" width="384.0" height="16" rx="2" fill="#2563eb"/>
+<text x="580.0" y="294" font-size="11" fill="#111827">80% (n=5, g=1)</text>
+<text x="182" y="319" font-size="11" fill="#1f2937" text-anchor="end">d4_r0</text>
+<rect x="190" y="308" width="384.0" height="16" rx="2" fill="#2563eb"/>
+<text x="580.0" y="320" font-size="11" fill="#111827">80% (n=5, g=1)</text>
+<text x="182" y="345" font-size="11" fill="#1f2937" text-anchor="end">d4_r1</text>
+<rect x="190" y="334" width="384.0" height="16" rx="2" fill="#2563eb"/>
+<text x="580.0" y="346" font-size="11" fill="#111827">80% (n=5, g=1)</text>
+<text x="12" y="388" font-size="10" fill="#6b7280">Whiskers: group-level interval where n_groups &gt;= 3 (cluster bootstrap / Wilson). Orange tick: baseline. Exploratory evidence only.</text>
+</svg>

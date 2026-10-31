@@ -97,7 +97,7 @@ from the cloud subset in the catalog, check event limits): `docs/ANALYTICS_SETUP
 | Unity-free compile check, editor and `--player` | **0 errors** |
 | Unity batch build (6000.6.3f1) | succeeded, 185 MB player, 0 errors |
 | UI mocks (`-uimock` desk/meeting/final/results/menu/lobby/match/howto) | 293 screenshots, 0 exceptions; lead reviewed contact sheets |
-| Multi-process bot runs, synthetic voice, ×0.3 timings | 4p Short ×2 matches PASS (pre-fix build), 3p Short PASS, 6p Short Paranoyak PASS, 5p Full with simulated drop + reconnect PASS — identical result hashes on every process, all v4 phases, 0 errors; final 4p ×2 run on the last build: see §8 |
+| Multi-process bot runs, synthetic voice, ×0.3 timings | 5 runs, 7 matches, all PASS: 4p Short ×2 (pre-fix build), 3p Short, 6p Short Paranoyak, 5p Full with simulated drop + reconnect, final 4p Short ×2 — identical result hashes on every process, all v4 phases, 0 errors |
 | Regression tests written for bugs found during integration | 26 (each verified to fail on the old code) |
 
 Not run: Unity EditMode/PlayMode runner inside the editor (the same NUnit sources run under dotnet), real microphones,
@@ -113,7 +113,7 @@ play, memory sampling (`Tools/scripts/measure_memory.ps1` exists; not re-run for
 - Event volume per match, all processes together (bot runs, cohort `bot_sim`): 3p Short 433, 6p Short 701,
   5p Full 1,105 events; ≈ 20–40 KB of JSONL per process per Short match. 0 queue drops, 0 sink errors,
   0 technical failures, 0 unexpected transitions in the post-fix runs.
-- Final 4p ×2 run on the last build: FINAL_RUN_PLACEHOLDER
+- Final 4p ×2 run on the last build (`Builds/runs/v4_4p_final`, telemetry copied to `Reports/bot_runs_telemetry/`): PASS — match 1 company survived at 67.5 %, nobody fired (final vote: no majority); match 2 company closed at 53.5 %; identical hashes on all 4 processes; 1,113 events, 0 technical failures/unexpected transitions/drops/sink errors; 5/5 recordings with task context; one `choice_outcome_resolved` per player per task (48); automatic rematch recorded with `auto=true` (excluded from voluntary-rematch KPIs). The committed `Reports/` contain two strata (two builds), never pooled.
 
 ## 9. Bugs found by integration and review (all fixed)
 
