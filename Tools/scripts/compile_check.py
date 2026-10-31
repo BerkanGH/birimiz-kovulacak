@@ -6,6 +6,7 @@ no Library folder. Generated projects go to <checkout>/Builds/compilecheck (igno
 
     python -I Tools/scripts/compile_check.py            # Core + Game + Editor
     python -I Tools/scripts/compile_check.py --player   # also drop UNITY_EDITOR defines for the Game assembly
+    python -I Tools/scripts/compile_check.py --engine-stubs   # compile Core/Line/Engine as Tools/stubs (contracts only)
 
 Exit code 0 = compiled. Warnings are not printed unless --warnings is given.
 """
@@ -25,7 +26,7 @@ def main_checkout():
     return os.path.dirname(common)
 
 
-def generate(main_game, out_dir, name, src_dir, player):
+def generate(main_game, out_dir, name, src_dir, player, stubs=False):
     src = os.path.join(main_game, "BirimizKovulacak.%s.csproj" % name)
     if not os.path.exists(src):
         sys.exit("Missing %s - open the project in Unity once (or run Tools/build.ps1) so it generates csproj files." % src)
@@ -34,6 +35,11 @@ def generate(main_game, out_dir, name, src_dir, player):
     text = re.sub(r"\s*<None Include=\"[^\"]*\"\s*/>", "", text)
     glob = os.path.join(ROOT, "Game", src_dir, "**", "*.cs")
     extra = "<ItemGroup>\n    <Compile Include=\"%s\" />" % glob
+    if stubs and name == "Core":
+        # Parallel tracks compile against the contracts while the engine is being rewritten.
+        engine = os.path.join(ROOT, "Game", src_dir, "Line", "Engine", "**", "*.cs")
+        extra = "<ItemGroup>\n    <Compile Include=\"%s\" Exclude=\"%s\" />" % (glob, engine)
+        extra += "\n    <Compile Include=\"%s\" />" % os.path.join(ROOT, "Tools", "stubs", "LineEngineStubs.cs")
     # Managed plugins added in this checkout (e.g. Assets/Plugins/Concentus) are not in Unity's csproj yet.
     if name != "Core":
         for dirpath, _, files in os.walk(os.path.join(ROOT, "Game", "Assets", "Plugins")):
@@ -59,9 +65,10 @@ def generate(main_game, out_dir, name, src_dir, player):
 def main():
     player = "--player" in sys.argv
     warnings = "--warnings" in sys.argv
+    stubs = "--engine-stubs" in sys.argv
     main_game = os.path.join(main_checkout(), "Game")
     out_dir = os.path.join(ROOT, "Builds", "compilecheck")
-    paths = [generate(main_game, out_dir, n, s, player) for n, s in ASSEMBLIES]
+    paths = [generate(main_game, out_dir, n, s, player, stubs) for n, s in ASSEMBLIES]
     proc = subprocess.run(["dotnet", "build", paths[-1], "-nologo", "-v", "q", "-clp:NoSummary"], capture_output=True, text=True)
     lines = [l for l in proc.stdout.splitlines() + proc.stderr.splitlines() if l.strip()]
     errors = sorted(set(l.strip() for l in lines if ": error " in l))

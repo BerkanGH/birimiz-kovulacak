@@ -29,6 +29,8 @@ namespace BirimizKovulacak.Game
         public event Action<LineEvent> EventReceived;
         public event Action<LineActionResult, LineAction> ResultReceived;
         public event Action Welcomed;
+        /// <summary>New messages appended to <see cref="Messages"/> (texts, email, meeting chat, system/manager notices).</summary>
+        public event Action<IReadOnlyList<LineMessage>> MessagesReceived;
 
         /// <summary>Set by the network adapter (NetSession) or the UI mock; receives every outgoing request.</summary>
         public static Action<LineAction> Transport;
@@ -36,12 +38,25 @@ namespace BirimizKovulacak.Game
         public static Func<double> Clock;
         /// <summary>Set by the network adapter; receives the lobby ready flag.</summary>
         public static Action<bool> ReadyTransport;
+        /// <summary>Set by the network adapter: ask the host to resend my messages after this sequence number.</summary>
+        public static Action<long> MessageResyncTransport;
+        /// <summary>Set by the network adapter: "Play again" intent on the results screen.</summary>
+        public static Action<bool> RematchTransport;
 
         public void SetReady(bool ready) { ReadyTransport?.Invoke(ready); }
 
         uint _nextRequestId;
         float _nextRemember;
         readonly Dictionary<uint, LineAction> _pending = new Dictionary<uint, LineAction>();
+        readonly List<LineMessage> _messages = new List<LineMessage>();
+        int _messagesWeek = -1;
+        float _gapSince = -1f;
+
+        /// <summary>My messages of the current match, oldest first (player text is untrusted: render with rich text off).</summary>
+        public IReadOnlyList<LineMessage> Messages => _messages;
+        public long LastMessageSeq => _messages.Count > 0 ? _messages[_messages.Count - 1].Seq : 0;
+
+        public void RequestRematch(bool want) { RematchTransport?.Invoke(want); }
 
         public LineConfig Config => HostConfig ?? LineConfig.CreateDefault();
         public double Now => Clock != null ? Clock() : Time.realtimeSinceStartupAsDouble;
@@ -61,6 +76,8 @@ namespace BirimizKovulacak.Game
             Lobby = null;
             HostConfig = null;
             _pending.Clear();
+            _messages.Clear();
+            _messagesWeek = -1;
         }
 
         public void ClearWeek()
@@ -108,6 +125,8 @@ namespace BirimizKovulacak.Game
             var old = View;
             if (old != null && v.WeekId == old.WeekId && v.StateVersion < old.StateVersion) return; // out of order
             View = v;
+            if (v.WeekId != _messagesWeek) { _messages.Clear(); _messagesWeek = v.WeekId; _gapSince = -1f; }
+            CheckMessageGap(v);
             var cm = ConnectionManager.I;
             if (cm != null && cm.LineHost == null && !string.IsNullOrEmpty(ReconnectToken) && Time.unscaledTime > _nextRemember)
             {
@@ -123,6 +142,35 @@ namespace BirimizKovulacak.Game
             {
                 MatchLog.Write("phase " + oldPhase + " -> " + v.Phase + " day=" + v.Day + " round=" + v.RoundIndex + " week=" + v.WeekId);
                 PhaseChanged?.Invoke(oldPhase, v.Phase);
+            }
+        }
+
+        /// <summary>Messages pushed by the host (in order); duplicates and gaps are handled here.</summary>
+        public void ApplyMessages(int weekId, List<LineMessage> batch)
+        {
+            if (batch == null || batch.Count == 0) return;
+            if (weekId != _messagesWeek) { _messages.Clear(); _messagesWeek = weekId; }
+            List<LineMessage> added = null;
+            foreach (var m in batch)
+            {
+                if (m == null || m.Seq <= LastMessageSeq) continue; // duplicate or replayed after a resync
+                _messages.Add(m);
+                (added ?? (added = new List<LineMessage>())).Add(m);
+            }
+            if (added == null) return;
+            _gapSince = -1f;
+            MessagesReceived?.Invoke(added);
+        }
+
+        void CheckMessageGap(LineView v)
+        {
+            if (v.Mine == null || v.Mine.MessageSeq <= LastMessageSeq) { _gapSince = -1f; return; }
+            // The view says more messages exist than arrived: after a short grace (in-flight RPCs), ask for a resend.
+            if (_gapSince < 0f) { _gapSince = Time.unscaledTime; return; }
+            if (Time.unscaledTime - _gapSince > 2f)
+            {
+                _gapSince = Time.unscaledTime;
+                MessageResyncTransport?.Invoke(LastMessageSeq);
             }
         }
 
@@ -146,10 +194,10 @@ namespace BirimizKovulacak.Game
 
         // ---- outbound ------------------------------------------------------------------------------
 
-        public void Send(LineVerb verb, int target = LineIds.None, int a = -1, int b = -1)
+        public void Send(LineVerb verb, int target = LineIds.None, int a = -1, int b = -1, int c = -1, string text = "")
         {
             if (View == null || Transport == null) return;
-            var req = new LineAction(View.WeekId, _nextRequestId++, verb, target, a, b);
+            var req = new LineAction(View.WeekId, _nextRequestId++, verb, target, a, b, c, text);
             _pending[req.RequestId] = req;
             if (_pending.Count > 64)
             {
@@ -157,7 +205,7 @@ namespace BirimizKovulacak.Game
                 foreach (var k in _pending.Keys) if (k < oldest) oldest = k;
                 _pending.Remove(oldest);
             }
-            MatchLog.Write("send " + req);
+            MatchLog.Write("send " + req); // ToString never includes the text
             Transport(req);
         }
 
@@ -172,11 +220,10 @@ namespace BirimizKovulacak.Game
             return null;
         }
 
-        /// <summary>Display name for any participant id (colleagues, intern, manager, system).</summary>
+        /// <summary>Display name for any participant id (colleagues, manager, system).</summary>
         public string NameOf(int id)
         {
-            if (id == LineIds.None) return Loc.T("common.nobody");
-            if (id == LineIds.Intern) return Loc.T("line.intern.name");
+            if (id == LineIds.None || id == LineIds.Nobody) return Loc.T("common.nobody");
             if (id == LineIds.Manager) return Loc.ManagerName(View != null ? View.ManagerProfileId : "");
             if (id == LineIds.System) return Loc.T("line.system.name");
             var p = Player(id);
@@ -191,7 +238,7 @@ namespace BirimizKovulacak.Game
 
         public static bool IsOfficePhase(LinePhase p)
         {
-            return p == LinePhase.Morning || p == LinePhase.RoundIntro || p == LinePhase.RoundPlay || p == LinePhase.RoundReveal;
+            return p == LinePhase.Morning || p == LinePhase.RoundIntro || p == LinePhase.RoundPlay || p == LinePhase.RoundReveal || p == LinePhase.Break;
         }
 
         public static bool IsMeetingPhase(LinePhase p)

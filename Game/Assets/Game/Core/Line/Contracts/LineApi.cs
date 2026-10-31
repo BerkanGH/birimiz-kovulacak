@@ -3,26 +3,30 @@ using System.Collections.Generic;
 
 namespace BirimizKovulacak.Core
 {
-    /// <summary>A client's request. The host validates everything (phase, week id, target, limits) and answers with a <see cref="LineActionResult"/>.</summary>
+    /// <summary>A client's request. The host validates everything (phase, week id, target, limits, text) and answers with a <see cref="LineActionResult"/>.</summary>
     [Serializable]
     public sealed class LineAction
     {
         public int WeekId;
-        /// <summary>Client-local increasing id; duplicates per player are ignored.</summary>
+        /// <summary>Client-local increasing id; duplicates per player are ignored (retries never repeat an effect).</summary>
         public uint RequestId;
         public LineVerb Verb;
         public int Target = LineIds.None;
         public int A = -1;
         public int B = -1;
+        public int C = -1;
+        /// <summary>Player-authored text (texts, email, meeting chat, complaints, fake mail). Never logged.</summary>
+        public string Text = "";
 
         public LineAction() { }
 
-        public LineAction(int weekId, uint requestId, LineVerb verb, int target = LineIds.None, int a = -1, int b = -1)
+        public LineAction(int weekId, uint requestId, LineVerb verb, int target = LineIds.None, int a = -1, int b = -1, int c = -1, string text = "")
         {
-            WeekId = weekId; RequestId = requestId; Verb = verb; Target = target; A = a; B = b;
+            WeekId = weekId; RequestId = requestId; Verb = verb; Target = target; A = a; B = b; C = c; Text = text ?? "";
         }
 
-        public override string ToString() { return Verb + "(" + Target + "," + A + "," + B + ")#" + RequestId; }
+        /// <summary>Never includes <see cref="Text"/> (logs must not contain player-authored content).</summary>
+        public override string ToString() { return Verb + "(" + Target + "," + A + "," + B + "," + C + (Text.Length > 0 ? ",text" : "") + ")#" + RequestId; }
     }
 
     [Serializable]
@@ -37,7 +41,7 @@ namespace BirimizKovulacak.Core
         public override string ToString() { return Accepted ? ("OK#" + RequestId) : ("FAIL#" + RequestId + ":" + Failure); }
     }
 
-    /// <summary>Transient feedback (sounds, toasts, animations). Durable facts live in <see cref="LineView"/>. Field meaning per type: <see cref="LineEventType"/>.</summary>
+    /// <summary>Transient feedback (sounds, toasts, animations) and host-only semantic events. Durable facts live in <see cref="LineView"/>. Field meaning per type: <see cref="LineEventType"/>.</summary>
     [Serializable]
     public sealed class LineEvent
     {
@@ -49,6 +53,7 @@ namespace BirimizKovulacak.Core
         public int Target = LineIds.None;
         public int A = -1;
         public int B = -1;
+        public int C = -1;
 
         public bool IsVisibleTo(int player)
         {
@@ -57,7 +62,7 @@ namespace BirimizKovulacak.Core
             return false;
         }
 
-        public override string ToString() { return Type + "@" + Time.ToString("0.0") + " a=" + Actor + " t=" + Target + " A=" + A + " B=" + B + " [" + Audience + (Audience == LineAudience.Player ? ":" + AudiencePlayer : "") + "]"; }
+        public override string ToString() { return Type + "@" + Time.ToString("0.0") + " a=" + Actor + " t=" + Target + " A=" + A + " B=" + B + " C=" + C + " [" + Audience + (Audience == LineAudience.Player ? ":" + AudiencePlayer : "") + "]"; }
     }
 
     [Serializable]
@@ -69,56 +74,58 @@ namespace BirimizKovulacak.Core
         public bool IsBot;
     }
 
-    /// <summary>Everything needed to start one week.</summary>
+    /// <summary>Everything needed to start one match.</summary>
     [Serializable]
     public sealed class LineSetup
     {
         public int WeekId;
+        /// <summary>Host-generated random id, copied into views and results (analytics correlation only).</summary>
+        public string MatchId = "";
         public int Seed;
         public double StartTime;
         public WeekLength Length;
         public List<LinePlayerInfo> Players = new List<LinePlayerInfo>();
-        /// <summary>Empty = the engine picks (seeded, never the previous week's manager).</summary>
+        /// <summary>Empty = the engine picks (seeded, never the previous match's manager).</summary>
         public string ManagerProfileId = "";
         public bool RecordingsEnabled = true;
-        /// <summary>Carried across weeks of one session; null for the first week (onboarding rules).</summary>
+        /// <summary>Carried across matches of one session; null for the first match (onboarding rules).</summary>
         public LineSessionHistory History;
 
         // ---- test hooks (null/empty = random)
-        /// <summary>Agenda target per player id.</summary>
-        public List<int> ForceAgendas;
+        /// <summary>Objective kind per player id.</summary>
+        public List<ObjectiveKind> ForceObjectives;
+        /// <summary>Objective target per player id (-1 none).</summary>
+        public List<int> ForceObjectiveTargets;
         /// <summary>Trick per player id.</summary>
         public List<TrickType> ForceTricks;
-        /// <summary>Round types day by day (RoundsPerDay per day, flattened).</summary>
-        public List<RoundType> ForceRounds;
-        /// <summary>Hidden player per round (odd one / culprit / saboteur), flattened like ForceRounds; -1 = random.</summary>
-        public List<int> ForceHidden;
+        /// <summary>Task kinds for the whole match (RoundsPerDay per block, flattened).</summary>
+        public List<TaskKind> ForceTasks;
+        /// <summary>Role holder per task number (visitor, offered player, insider, fake-mail holder; -1 = random).</summary>
+        public List<int> ForceRoles;
     }
 
     [Serializable]
     public sealed class LineSessionHistory
     {
         public int WeeksPlayed;
-        /// <summary>Points per player id.</summary>
+        /// <summary>Career points per player id.</summary>
         public List<int> SessionPoints = new List<int>();
         public List<string> PastManagers = new List<string>();
-        /// <summary>Round types already introduced in this session (long rule card only the first time).</summary>
-        public List<RoundType> SeenRounds = new List<RoundType>();
-        /// <summary>Odd Email topic ids already used.</summary>
-        public List<int> UsedTopics = new List<int>();
+        /// <summary>Tasks already introduced in this session (long tutorial intro only the first time).</summary>
+        public List<TaskKind> SeenTasks = new List<TaskKind>();
+        /// <summary>How often each task was played this session (index = (int)TaskKind).</summary>
+        public List<int> TaskUses = new List<int>();
         /// <summary>Times fired per player id.</summary>
         public List<int> TimesFired = new List<int>();
-        /// <summary>v3.1: manager picked by last week's fired player ("" = none; Setup.ManagerProfileId still wins).</summary>
+        /// <summary>Manager picked by last match's fired player ("" = none; Setup.ManagerProfileId still wins).</summary>
         public string NextManager = "";
-        /// <summary>v3.1: hidden-role count per player id (odd one / culprit / saboteur) so roles spread across the session.</summary>
-        public List<int> HiddenRoles = new List<int>();
-        /// <summary>v3.1: how often each round type was played this session (index = (int)RoundType).</summary>
-        public List<int> RoundUses = new List<int>();
+        /// <summary>Special-role count per player id (visitor, offered player, insider, fake-mail holder).</summary>
+        public List<int> RoleUses = new List<int>();
     }
 
     /// <summary>
-    /// The deterministic v3 rules engine (pure C#, no UnityEngine). Host-only. The same seed, setup and sequence of
-    /// (time, player, action) calls always produce the same views, events and result.
+    /// The deterministic v4 rules engine (pure C#, no UnityEngine). Host-only. The same seed, setup and sequence of
+    /// (time, player, action) calls always produce the same views, events, messages and result.
     /// </summary>
     public interface ILineEngine
     {
@@ -132,16 +139,20 @@ namespace BirimizKovulacak.Core
         /// <summary>Set once WeekResults is reached.</summary>
         LineWeekResult Result { get; }
 
-        /// <summary>Advance time (phase changes, timeouts, ring timeouts, trick expiry).</summary>
+        /// <summary>Advance time (phase changes, timeouts, ring timeouts, trick expiry, remedial expiry).</summary>
         void Tick(double now);
         LineActionResult Apply(int player, LineAction action, double now);
-        /// <summary>Host-side presence; absent players keep their seat, their choices take defaults.</summary>
+        /// <summary>Host-side presence; absent players keep their seat, their controls take defaults.</summary>
         void SetConnected(int player, bool connected, double now);
         LineView BuildView(int player, double now);
-        /// <summary>All events since the last drain, in order (the adapter routes by audience).</summary>
+        /// <summary>All events since the last drain, in order (the adapter routes by audience; Host events stay on the host).</summary>
         List<LineEvent> DrainEvents();
-        /// <summary>History to pass into the next week's setup (valid when finished).</summary>
+        /// <summary>History to pass into the next match's setup (valid when finished).</summary>
         LineSessionHistory NextHistory();
+
+        // ---- messages (free text travels outside the view)
+        /// <summary>Detached copies of the player's messages with Seq &gt; <paramref name="afterSeq"/>, oldest first.</summary>
+        List<LineMessage> MessagesFor(int player, long afterSeq);
 
         // ---- voice integration (host)
         /// <summary>Connected call id of a player, or -1.</summary>
@@ -156,26 +167,33 @@ namespace BirimizKovulacak.Core
         IReadOnlyList<LineRecordingPick> RecordingPicks { get; }
         /// <summary>The voice system reports which candidate it played (or -1 if none had speech).</summary>
         void ReportRecording(int pickIndex, int chosenCallId, double now);
-        /// <summary>WeekResults: the host ends the week early.</summary>
+        /// <summary>WeekResults: the host ends the match early.</summary>
         void HostContinue(double now);
     }
 
-    // ---- lobby / connection (v3)
+    // ---- lobby / connection
 
     [Serializable]
     public sealed class LineLobbyView
     {
         public int ProtocolVersion = LineProtocol.Version;
         public string BuildId = "";
+        public string RulesetVersion = LineProtocol.RulesetVersion;
         public List<LineLobbySlot> Slots = new List<LineLobbySlot>();
         public bool WeekRunning;
         public int WeekId;
         public WeekLength Length;
         public bool RecordingsEnabled = true;
-        /// <summary>Weeks finished in this session.</summary>
+        /// <summary>Matches finished in this session.</summary>
         public int WeeksPlayed;
-        /// <summary>Message key shown when the host cannot start, e.g. "lobby.need_players".</summary>
+        /// <summary>Message key shown when the host cannot start, e.g. "lobby.need_players", "lobby.pool_too_small".</summary>
         public string StatusKey = "";
+        /// <summary>Host-generated random id of this hosting session (analytics correlation).</summary>
+        public string SessionId = "";
+        /// <summary>Pseudonymous friend-group id (facilitator code or random per session).</summary>
+        public string GroupId = "";
+        /// <summary>Declared experiment assignments, "id=variant" entries (analytics tagging).</summary>
+        public List<string> Experiments = new List<string>();
     }
 
     [Serializable]
@@ -189,6 +207,8 @@ namespace BirimizKovulacak.Core
         public bool IsBot;
         public string Name = "";
         public int SessionPoints;
+        /// <summary>The player pressed "Play again" on the last results screen.</summary>
+        public bool WantsRematch;
     }
 
     [Serializable]
@@ -200,6 +220,10 @@ namespace BirimizKovulacak.Core
         public string ReconnectToken = "";
         /// <summary>"tr" or "en" (informational; text is localised on each client).</summary>
         public string Language = "tr";
+        /// <summary>Analytics consent of this participant: 0 unknown, 1 denied, 2 local logs, 3 local + cloud.</summary>
+        public int TelemetryConsent;
+        /// <summary>Random pseudonymous analytics id (empty unless consent ≥ 2). Never a name, account or device id.</summary>
+        public string AnonymousPlayerId = "";
     }
 
     [Serializable]
