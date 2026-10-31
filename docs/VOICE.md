@@ -1,5 +1,7 @@
 # Voice
 
+> v4 note: the voice core is unchanged; the host now reports recording failure reasons and playback timing to analytics (`HostLineVoiceBridge`), and the `Break` phase uses calls-only routing like other office phases. Recording selection rules: `docs/GAMEPLAY_REDESIGN.md` §13.
+
 In-game voice for "Birimiz Kovulacak": custom Opus voice over NGO named messages, host-authoritative routing.
 The v2 design, wire format, codec choice (native libopus + Concentus fallback), measurements, launch args and the v2
 integration steps are in [`VOICE_NOTES.md`](VOICE_NOTES.md). This file covers **v3 "Ofis Hattı"** (branch `v3-voice`).
@@ -15,8 +17,8 @@ Verified without Unity: `dotnet test Tools/VoiceTests/Tests` → **109/109 passe
 | Meetings: everyone hears everyone | `VoiceMode.AllHear` (unchanged). |
 | Final defense: only the defender's mic is open | `AllHear` + `IVoiceModeProvider.CanSpeak(slot) = slot == defender`. |
 | §5 Hattı Dinle (wiretap, 60 s) | The host also delivers both sides of the target's connected call to every tapper, flagged `Call \| Tap`. Clients play it through the phone EQ at 70 % gain. One-way: the tapper's voice never enters the tapped call. Never while the call is not connected. |
-| §5 Kaydı Sil (erase tape) | `EraseTape(slot)`: that slot's calls of today (and later ones until the clear) are never selected, and their audio stops being stored. |
-| §6 Recordings | The host records the routed call frames (both directions, Opus as received) per call id, **in memory only**, cleared after every meeting and at session end. At the dossier it picks the most speech-dense ~7 s of the first good candidate and streams it to everyone at real-time pace, with the original speaker slots. Clients play it in 2D through a tape filter (300–3400 Hz band-pass, soft saturation, gentle wow/flutter, light hiss). |
+| §5 Kaydı Sil (erase tape) | **Retired since v3.1** (never dealt; `EraseTape` has no callers). Kept in the voice core for history. |
+| §6 Recordings | The host records the routed call frames (both directions, Opus as received) per call id, **in memory only**, cleared when the next block's `Morning` (or `WeekResults`) begins, at match start/lobby return, when recordings are switched off, and at session end (v4: `HostLineController`). At the dossier it picks the most speech-dense ~7 s of the first good candidate and streams it to everyone at real-time pace, with the original speaker slots. Clients play it in 2D through a tape filter (300–3400 Hz band-pass, soft saturation, gentle wow/flutter, light hiss). |
 | Talk animation in the meeting room | `GetSpeechLevel(slot)` 0..1 for every player, local included. |
 | The phone is the main channel | Call audio gets a subtle telephone EQ (`VoiceSettings.PhoneEq`, default on): 200 Hz high-pass, +2.5 dB presence at 1.8 kHz, gentle 5.5 kHz low-pass. Measured: 90 Hz −14 dB, 1 kHz +1.2 dB, 7.5 kHz −6.9 dB. It stays wideband speech, not a 3.4 kHz line. |
 
@@ -92,7 +94,7 @@ var vs = VoiceSystem.Instance;
 vs.RecordingEnabled = hostLine.RecordingsEnabled;   // lobby toggle (default on). Off also clears.
 vs.EraseTape(slot);                                  // when slot uses Kaydı Sil (the engine still filters its candidates too)
 
-// MeetingDossier: candidates in the engine's order (§6: today's calls ≥ 6 s, no erased participant, weighted by
+// MeetingDossier: candidates in the engine's order (v4: today's calls ≥ 6 s, weighted by duration × context factors; see GAMEPLAY_REDESIGN §13;
 // duration, up to 3 fallbacks). serverTime ≈ now + 0.3..0.5 s so the start message lands before the audio.
 double at = NetworkManager.Singleton.ServerTime.Time + 0.5;
 if (vs.TryPlayBestRecording(candidateCallIds, at, out RecordingSnippet snip))
@@ -103,7 +105,7 @@ if (vs.TryPlayBestRecording(candidateCallIds, at, out RecordingSnippet snip))
 // Paranoyak (2 recordings): start the second one from OnHostRecordingFinished, or schedule it at
 // at + snip.LengthMs / 1000.0 + 1.0. A new PlayRecording replaces a tape that is still running.
 
-vs.ClearRecordings();                                // after every meeting (MeetingVerdict / FinalVerdict)
+vs.ClearRecordings();                                // at the next Morning / WeekResults, match start and lobby return
 ```
 
 | Host API | |
