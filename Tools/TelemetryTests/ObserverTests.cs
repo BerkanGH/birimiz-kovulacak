@@ -349,6 +349,39 @@ namespace BirimizKovulacak.Telemetry.Tests
         }
 
         [Test]
+        public void Rounds_HostOutcomeDetailsAttachToTaskOutputAndChoiceOutcome()
+        {
+            var rig = InRound();
+            rig.Engine.Reveals.Add(new LineTaskReveal { Number = 0, Output = 70, MaxOutput = 100 });
+            rig.Go(1099, LinePhase.RoundReveal, 10);
+            // Same batch: the public resolution, the per-task detail and per-participant outcomes.
+            rig.Feed(Ev.Pub(LineEventType.TaskResolved, 1099, a: 0, b: 70),
+                Ev.Host(LineEventType.HostTaskOutcome, 1099, a: 0, b: 30, c: 21),
+                Ev.Host(LineEventType.HostOutcome, 1099, actor: 1, target: 0, a: 100, b: 2, c: 1 | 2 | 4),
+                Ev.Host(LineEventType.HostOutcome, 1099, actor: 2, target: 0, a: 0, b: 0, c: 1 | 4));
+            var to = One(rig, "task_output_resolved");
+            Assert.AreEqual(70, to.GetInt("output")); Assert.AreEqual(30, to.GetInt("sabotage_loss"));
+            Assert.AreEqual(2, to.GetInt("groups")); Assert.AreEqual(1, to.GetInt("groups_full"));
+            // Per-player outcomes are private until the match ends.
+            Assert.AreEqual(0, rig.Named("choice_outcome_resolved").Count());
+            rig.Host.Observer.MatchEnded("results", 1200);
+            var co = rig.Named("choice_outcome_resolved").ToDictionary(e => (int)e.GetInt("player"));
+            Assert.AreEqual(100, co[1].GetInt("quality")); Assert.IsTrue(co[1].GetBool("cooperation_credit"));
+            Assert.AreEqual(0, co[2].GetInt("quality")); Assert.IsFalse(co[2].GetBool("cooperation_credit")); Assert.IsTrue(co[2].GetBool("cooperation_opportunity"));
+        }
+
+        [Test]
+        public void Rounds_TaskOutputWithoutDetailIsStillWrittenOnce()
+        {
+            var rig = InRound();
+            rig.Go(1099, LinePhase.RoundReveal, 10);
+            rig.Feed(Ev.Pub(LineEventType.TaskResolved, 1099, a: 0, b: 40));
+            rig.Feed(Ev.Host(LineEventType.HostTaskOutcome, 1099, a: 0, b: 0, c: 11)); // late detail: no duplicate
+            var to = One(rig, "task_output_resolved");
+            Assert.IsFalse(to.TryGet("sabotage_loss", out _));
+        }
+
+        [Test]
         public void Rounds_WithoutEarlySubmitOmitsSavedSeconds()
         {
             var rig = InRound();

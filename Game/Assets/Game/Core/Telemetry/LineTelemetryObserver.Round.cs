@@ -234,6 +234,48 @@ namespace BirimizKovulacak.Telemetry
             return false;
         }
 
+        readonly System.Collections.Generic.Dictionary<int, int[]> _pendingTaskOut = new System.Collections.Generic.Dictionary<int, int[]>();
+        readonly System.Collections.Generic.Dictionary<int, double> _pendingTaskOutTime = new System.Collections.Generic.Dictionary<int, double>();
+        readonly System.Collections.Generic.List<int> _flushKeys = new System.Collections.Generic.List<int>();
+
+        void OnHostTaskOutcome(LineEvent e)
+        {
+            int number = e.A;
+            int[] p;
+            if (!_pendingTaskOut.TryGetValue(number, out p)) return;
+            int groups = e.C >= 0 ? e.C / 10 : -1, full = e.C >= 0 ? e.C % 10 : -1;
+            var b = B("task_output_resolved", _pendingTaskOutTime[number], "taskres|" + number).Int("output", p[0]).Int("max_output", p[1]);
+            if (e.B >= 0) b.Int("sabotage_loss", e.B);
+            if (groups > 0) b.Int("groups", groups).Int("groups_full", full);
+            b.Emit();
+            _pendingTaskOut.Remove(number);
+            _pendingTaskOutTime.Remove(number);
+        }
+
+        void FlushPendingTaskOutputs()
+        {
+            if (_pendingTaskOut.Count == 0) return;
+            _flushKeys.Clear();
+            _flushKeys.AddRange(_pendingTaskOut.Keys);
+            _flushKeys.Sort();
+            foreach (int number in _flushKeys)
+            {
+                var p = _pendingTaskOut[number];
+                B("task_output_resolved", _pendingTaskOutTime[number], "taskres|" + number).Int("output", p[0]).Int("max_output", p[1]).Emit();
+            }
+            _pendingTaskOut.Clear();
+            _pendingTaskOutTime.Clear();
+        }
+
+        /// <summary>Per-participant outcome of a resolved task (private until the match ends).</summary>
+        void OnHostOutcome(LineEvent e)
+        {
+            if (!Valid(e.Actor)) return;
+            B("choice_outcome_resolved", e.Time, "outcome|" + e.Actor + "|" + e.Target).Slot("player", e.Actor)
+                .Int("quality", e.A).Int("income", Math.Max(0, e.B))
+                .Bool("cooperation_credit", (e.C & 2) != 0).Bool("cooperation_opportunity", (e.C & 1) != 0).Emit();
+        }
+
         void OnHostMissedTask(LineEvent e)
         {
             if (!Valid(e.Actor)) return;
@@ -269,7 +311,9 @@ namespace BirimizKovulacak.Telemetry
             }
             if (max < 0) max = output;
             _dayOutput += output; _dayMax += max;
-            B("task_output_resolved", e.Time, "taskres|" + number).Int("output", output).Int("max_output", max).Emit();
+            // Written together with HostTaskOutcome (same batch) so sabotage loss and group counts can be attached.
+            _pendingTaskOut[number] = new[] { output, max, 0 };
+            _pendingTaskOutTime[number] = e.Time;
             int submitted = 0, connected = 0;
             foreach (int id in _ids) { if (_pr[id].Submitted) submitted++; if (_connected[id]) connected++; }
             double[] early;

@@ -201,6 +201,7 @@ namespace BirimizKovulacak.Telemetry
         {
             var b = B("remedial_resolved", e.Time, "remres|" + e.Actor + "|" + e.Target + "|" + e.B).Slot("requester", e.Actor).Slot("cosigner", e.Target).Bool("accepted", e.A == 1);
             if (e.A == 1 && Valid(e.Actor) && _remedialBlame[e.Actor] != 0) b.Int("blame_delta", _remedialBlame[e.Actor]);
+            if (e.A == 1 && e.C >= 0) b.Int("output_added", e.C);
             b.Emit();
         }
 

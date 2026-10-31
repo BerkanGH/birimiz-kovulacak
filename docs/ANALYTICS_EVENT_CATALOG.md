@@ -2,7 +2,7 @@
 
 Generated from `Game/Assets/Game/Core/Telemetry/TelemetryCatalog.cs` by the `CatalogExport` test in `Tools/TelemetryTests` (`TELEMETRY_EXPORT_DOCS=1 dotnet test Tools/TelemetryTests/TelemetryTests.csproj --filter CatalogExport`). Do not edit by hand. Machine-readable twin: `docs/analytics/event_catalog.json`. Contract: `docs/ANALYTICS_ARCHITECTURE.md`.
 
-**95 events**: 82 implemented, 12 pending_integration, 0 unsupported, 1 not_applicable.
+**95 events**: 83 implemented, 11 pending_integration, 0 unsupported, 1 not_applicable.
 
 Status meaning: `implemented` = emitting code exists in this repository, fed from sources that exist today (contract events/views, connection state), covered by tests; host events still need the `HostTelemetryBridge` call sites in `HostLineController` (see `docs/ANALYTICS_SETUP.md`) and the v4 engine emitting the contract events. `pending_integration` = a source is missing (named in the entry); the event is **not** emitted. `not_applicable` / `unsupported` = never emitted.
 
@@ -48,7 +48,7 @@ Envelope fields (every event, omitted when not applicable): schema_version, even
 | [`choice_submitted`](#choice_submitted) | host | private until match end | self | local | implemented |
 | [`choice_changed`](#choice_changed) | host | private until match end | self | local | implemented |
 | [`choice_timed_out`](#choice_timed_out) | host | private until match end | self | local | implemented |
-| [`choice_outcome_resolved`](#choice_outcome_resolved) | host | private until match end | self | local | pending_integration |
+| [`choice_outcome_resolved`](#choice_outcome_resolved) | host | private until match end | self | local | implemented |
 | [`round_player_summary`](#round_player_summary) | host | private until match end | self | local | implemented |
 | [`meeting_started`](#meeting_started) | host | public | host_aggregate | local | implemented |
 | [`recording_playback_started`](#recording_playback_started) | host | public | all_participants | local | implemented |
@@ -791,15 +791,15 @@ Envelope fields (every event, omitted when not applicable): schema_version, even
 ### choice_outcome_resolved
 
 - **Name / version**: `choice_outcome_resolved` v1
-- **Meaning**: Outcome of one player's choice.
-- **Trigger location**: `Core/Telemetry/LineTelemetryObserver.cs  (not emitted)`
+- **Meaning**: Outcome of one player's task contribution (quality, productive income, cooperation).
+- **Trigger location**: `Core/Telemetry/LineTelemetryObserver.cs OnHostOutcome`
 - **Authority**: host
 - **Privacy / consent**: private_until_match_end (held in host memory, written at results/abandon); consent rule `self`
 - **Routing**: local
 - **Expected max frequency**: <=6/task
 - **KPI contribution**: information_asymmetry
-- **Availability**: pending_integration - engine must expose per-choice quality, cooperation credit and opportunity (not in LineEvent/LineView in v4 contract)
-- **Notes**: Income per task is available through income_credited.
+- **Availability**: implemented
+- **Notes**: From engine HostOutcome (49).
 
 | Param | Type | Required | Cloud | Values |
 |---|---|---|---|---|
@@ -1181,14 +1181,14 @@ Envelope fields (every event, omitted when not applicable): schema_version, even
 
 - **Name / version**: `task_output_resolved` v1
 - **Meaning**: Task output resolved.
-- **Trigger location**: `Core/Telemetry/LineTelemetryObserver.cs OnTaskResolved`
+- **Trigger location**: `Core/Telemetry/LineTelemetryObserver.cs OnTaskResolved + OnHostTaskOutcome`
 - **Authority**: host
 - **Privacy / consent**: public (written immediately); consent rule `host_aggregate`
 - **Routing**: local
 - **Expected max frequency**: 1/task
 - **KPI contribution**: productivity
 - **Availability**: implemented
-- **Notes**: sabotage_loss, groups, groups_full are omitted until the engine exposes them in the v4 contract (P: LineEvent.TaskResolved carries only output).
+- **Notes**: sabotage_loss, groups and groups_full come from engine HostTaskOutcome (50); omitted if that event is missing.
 
 | Param | Type | Required | Cloud | Values |
 |---|---|---|---|---|
@@ -1262,7 +1262,7 @@ Envelope fields (every event, omitted when not applicable): schema_version, even
 - **Expected max frequency**: <=2/match
 - **KPI contribution**: economy, blame_tension
 - **Availability**: implemented
-- **Notes**: output_added omitted until the engine exposes it.
+- **Notes**: output_added from RemedialResolved.C.
 
 | Param | Type | Required | Cloud | Values |
 |---|---|---|---|---|

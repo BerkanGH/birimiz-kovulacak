@@ -196,6 +196,9 @@ namespace BirimizKovulacak.Telemetry
                 try { Dispatch(e, now); }
                 catch (Exception ex) { Fail(ex); }
             }
+            // A task outcome whose HostTaskOutcome detail did not arrive in this batch is written without the extras.
+            try { FlushPendingTaskOutputs(); }
+            catch (Exception ex) { Fail(ex); }
         }
 
         void Dispatch(LineEvent e, double now)
@@ -234,6 +237,8 @@ namespace BirimizKovulacak.Telemetry
                 case LineEventType.HostRecordingPick: OnRecordingPick(e); break;
                 case LineEventType.HostMessage: OnHostMessage(e); break;
                 case LineEventType.HostMissedTask: OnHostMissedTask(e); break;
+                case LineEventType.HostOutcome: OnHostOutcome(e); break;
+                case LineEventType.HostTaskOutcome: OnHostTaskOutcome(e); break;
             }
         }
 
