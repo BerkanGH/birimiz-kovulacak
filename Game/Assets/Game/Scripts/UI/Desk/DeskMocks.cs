@@ -6,237 +6,181 @@ using UnityEngine;
 namespace BirimizKovulacak.Game
 {
     /// <summary>
-    /// UI mock scenarios for the desk UI (run with <c>-uimock "desk.*" -uimockout &lt;dir&gt;</c>). Every state of the office
-    /// phases at 3–6 players, Turkish and English. Views are built when their step runs so times are relative to the
-    /// mock clock. Language switches restore the saved preference immediately (no lasting side effect).
+    /// UI mock scenarios for the v4 desk UI (run with <c>-uimock "desk.*" -uimockout &lt;dir&gt;</c>). Every office state in
+    /// Turkish (name) and English (name + ".en"): measuring and live productivity, morning call, task intros, the play
+    /// view of each of the twelve tasks (role variants, sabotage confirmation), tutorial steps, messages, email (inbox, reply,
+    /// compose), complaint, bank, evidence records and shop, remedial (start, incoming, outgoing), dirty tricks, phone
+    /// (missed call), break and reveal cards. Views are built when their step runs so times follow the mock clock; the
+    /// language is switched for the screenshot without changing the saved preference.
     /// </summary>
     public static class DeskMocks
     {
-        static readonly string[] TrNames = { "Mavi", "Sarı", "Pembe", "Yeşil", "Turuncu", "Mor" };
-        static readonly string[] EnNames = { "Alex", "Sam", "Jo", "Kim", "Lee", "Max" };
-        static readonly int[] Blames = { 5, 7, 3, 6, 4, 8 };
-
         static DeskUi Ui => DeskUi.I;
         static double Now => LineMock.Now;
 
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.BeforeSceneLoad)]
         static void Register()
         {
-            // ---- office HUD, notifications, hover hint
-            Reg("a_office.6p", false, s => s
-                .Show(0.1f, () => WithInbox(Play(V(LinePhase.RoundPlay, 6), RoundType.PrimHavuzu, 0)))
-                .Do(0.4f, () => { Ui.CloseComputer(); Ui.Hud.ForceHover(DeskTarget.Monitor); })
-                .Events(0.6f, Ev(LineEventType.MailReceived, a: 12), Ev(LineEventType.FavouriteNamed, target: 2), Ev(LineEventType.CallBusy, target: 3))
-                .Do(0.9f, () => { }, true));
-            Reg("a_office.3p.en", true, s => s
-                .Show(0.1f, () => Play(V(LinePhase.RoundPlay, 3, true, left: 8), RoundType.OrtakSifre, 0))
-                .Do(0.4f, () => { Ui.CloseComputer(); Ui.Hud.ForceHover(DeskTarget.Phone); })
-                .Events(0.6f, Ev(LineEventType.MissedCall, actor: 2), Ev(LineEventType.TrickHit, a: (int)TrickType.FisCek))
-                .Do(1.0f, () => { }, true));
+            // ---- HUD: measuring vs live productivity
+            Reg("hud.measuring", s => s.Show(0.1f, e => Measuring(WithTask(V(LinePhase.RoundPlay, 4, e, 0, 70), TaskKind.InvoiceReconcile))).Do(0.6f, () => Ui.CloseComputer()).Do(0.9f, () => { }, true));
+            Reg("hud.live", s => s.Show(0.1f, e => { var v = WithTask(V(LinePhase.RoundPlay, 6, e, 1, 60), TaskKind.BudgetSplit); v.Company.ProvisionalPermille = 520; v.Company.LastDelta = 40; return v; }).Do(0.6f, () => Ui.CloseComputer()).Do(0.9f, () => { }, true));
+            Reg("hud.carried_break", s => s.Show(0.1f, e => { var v = V(LinePhase.Break, 4, e, 0, 40); v.Features.CarriedSeconds = 14; return v; }).Do(0.6f, () => Ui.Cards.HideAll()).Do(0.9f, () => { }, true));
 
-            // ---- morning call
-            Reg("b_morning.ring.onboard.3p", false, s => s
-                .Show(0.1f, () => Onboard(V(LinePhase.Morning, 3, day: 0, left: 36, mgr: LineManagerIds.Disiplinci)))
-                .Do(1.2f, () => { }, true));
-            Reg("b_morning.call.6p", false, s => s
-                .Show(0.1f, () => { var v = V(LinePhase.Morning, 6, day: 1, left: 18, mgr: LineManagerIds.Kayirmaci); v.Favourite = 2; return v; })
-                .Do(0.5f, () => Ui.Cards.AnswerManager())
-                .Do(4.5f, () => { }, true));
-            Reg("b_morning.call.4p.en", true, s => s
-                .Show(0.1f, () => { var v = V(LinePhase.Morning, 4, true, day: 4, left: 18, mgr: LineManagerIds.Paranoyak); v.Features.IsLastDay = true; SetRounds(v, RoundType.OrtakSifre, RoundType.KayipRapor); return v; })
-                .Do(0.5f, () => Ui.Cards.AnswerManager())
-                .Do(4.5f, () => { }, true));
+            // ---- morning
+            Reg("morning.ring.onboard", s => s.Show(0.1f, e => Onboard(V(LinePhase.Morning, 4, e, 0, 36, LineManagerIds.Disiplinci))).Do(1.2f, () => { }, true));
+            Reg("morning.call", s => s.Show(0.1f, e => { var v = V(LinePhase.Morning, 6, e, 1, 18, LineManagerIds.Kayirmaci); v.Favourite = 2; return v; }).Do(0.5f, () => Ui.Cards.AnswerManager()).Do(4.5f, () => { }, true));
+            Reg("morning.call.last", s => s.Show(0.1f, e => { var v = V(LinePhase.Morning, 4, e, 4, 18, LineManagerIds.Paranoyak); v.Features.IsLastDay = true; v.Company.ProvisionalPermille = 610; return v; }).Do(0.5f, () => Ui.Cards.AnswerManager()).Do(4.5f, () => { }, true));
+            Reg("unlock.trick", s => s.Show(0.1f, e => { var v = V(LinePhase.Morning, 5, e, 1, 18); v.FirstWeek = true; return v; }).Do(0.5f, () => Ui.Cards.AnswerManager()).Do(0.9f, () => Ui.Cards.Back()).Do(1.0f, () => { }, true));
 
-            // ---- unlock cards (first week)
-            Reg("c_unlock.trick.5p", false, s => s
-                .Show(0.1f, () => FirstWeek(V(LinePhase.Morning, 5, day: 1, left: 18), tips: false))
-                .Do(0.5f, () => Ui.Cards.AnswerManager())
-                .Do(0.9f, () => Ui.Cards.Back())
-                .Do(1.0f, () => { }, true));
-            Reg("c_unlock.line.4p.en", true, s => s
-                .Show(0.1f, () => FirstWeek(V(LinePhase.Morning, 4, true, day: 2, left: 18), tips: true))
-                .Do(0.3f, () => Ui.State.TrickUnlockSeen = true)
-                .Do(0.5f, () => Ui.Cards.AnswerManager())
-                .Do(0.9f, () => Ui.Cards.Back())
-                .Do(1.0f, () => { }, true));
+            // ---- intro card (known task) and tutorial steps (first-time task)
+            Reg("intro.card", s => s.Show(0.1f, e => WithTask(V(LinePhase.RoundIntro, 4, e, 1, 10), TaskKind.CustomerSpec)).Do(1.3f, () => { }, true));
+            Reg("intro.card.trio", s => s.Show(0.1f, e => WithTask(V(LinePhase.RoundIntro, 3, e, 1, 10), TaskKind.BonusPool)).Do(1.3f, () => { }, true));
+            Reg("tutorial.invoice", s => s
+                .Show(0.1f, e => { var v = WithTask(V(LinePhase.RoundIntro, 4, e, 0, 22), TaskKind.InvoiceReconcile); v.Features.FirstTimeTask = true; v.Features.OnboardingDay = true; v.FirstWeek = true; return v; })
+                .Do(0.8f, () => { }, true)
+                .Do(0.1f, () => Ui.Computer.Task.MockTutorialStep(1), true)
+                .Do(0.1f, () => Ui.Computer.Task.MockTutorialStep(2), true)
+                .Do(0.1f, () => Ui.Computer.Task.MockTutorialStep(3), true)
+                .Do(0.1f, () => Ui.Computer.Task.MockTutorialStep(4), true));
+            Reg("tutorial.archive", s => s
+                .Show(0.1f, e => { var v = WithTask(V(LinePhase.RoundIntro, 5, e, 1, 22), TaskKind.ArchiveVisitor, 1); v.Features.FirstTimeTask = true; return v; })
+                .Do(0.8f, () => Ui.Computer.Task.MockTutorialStep(2), true)
+                .Do(0.1f, () => Ui.Computer.Task.MockTutorialStep(4), true));
+            Reg("tutorial.server", s => s
+                .Show(0.1f, e => { var v = WithTask(V(LinePhase.RoundIntro, 6, e, 1, 22), TaskKind.ServerCode, 1); v.Features.FirstTimeTask = true; return v; })
+                .Do(0.8f, () => Ui.Computer.Task.MockTutorialStep(1), true)
+                .Do(0.1f, () => Ui.Computer.Task.MockTutorialStep(3), true));
 
-            // ---- round intro (rule cards)
-            Reg("d_intro.prim.long.onboard.4p", false, s => s
-                .Show(0.1f, () => { var v = Onboard(V(LinePhase.RoundIntro, 4, day: 0, left: 14)); v.Features.FirstTimeRound = true; return Intro(v, RoundType.PrimHavuzu, 0); })
-                .Do(0.3f, () => { Ui.State.MorningAnsweredDay = 0; Ui.State.ObOpenedComputer = true; })
-                .Do(1.4f, () => { }, true));
-            Reg("d_intro.code.6p.en", true, s => s
-                .Show(0.1f, () => Intro(V(LinePhase.RoundIntro, 6, true, left: 6), RoundType.OrtakSifre, 0))
-                .Do(1.2f, () => { }, true));
-            Reg("d_intro.odd.long.5p", false, s => s
-                .Show(0.1f, () => { var v = V(LinePhase.RoundIntro, 5, left: 15); v.Features.FirstTimeRound = true; return Intro(v, RoundType.FarkliEposta, 1); })
-                .Do(1.4f, () => { }, true));
-
-            // ---- round play (Task app)
-            Reg("e_play.prim.pair.6p", false, s => s
-                .Show(0.1f, () => Play(V(LinePhase.RoundPlay, 6, left: 118), RoundType.PrimHavuzu, 0, r => { r.Partners.Add(3); r.Partner = 3; }, submitted: new[] { 1, 2, 4 }))
-                .Do(0.5f, () => Ui.Computer.Task.MockSelect(-1, 0), true));
-            Reg("e_play.prim.trio.5p.en", true, s => s
-                .Show(0.1f, () => Play(V(LinePhase.RoundPlay, 5, true, left: 64), RoundType.PrimHavuzu, 0, r => { r.Partners.Add(2); r.Partners.Add(4); r.Partner = 2; r.Submitted = true; r.MyA = 1; }, submitted: new[] { 0, 3 }))
-                .Do(0.5f, () => Ui.Computer.Task.MockSelect(-1, 1), true));
-            Reg("e_play.odd.majority.4p", false, s => s
-                .Show(0.1f, () => Play(V(LinePhase.RoundPlay, 4, left: 96), RoundType.FarkliEposta, 1, r => { r.TopicId = 4; }, submitted: new[] { 2 }))
-                .Do(0.5f, () => Ui.Computer.Task.MockSelect(3, -1), true));
-            Reg("e_play.odd.oddone.6p.en", true, s => s
-                .Show(0.1f, () => Play(V(LinePhase.RoundPlay, 6, true, left: 77), RoundType.FarkliEposta, 1, r => { r.TopicId = 21; r.IsOdd = true; r.GuessOptions.AddRange(new[] { 6, 4, 7, 5 }); }, submitted: new[] { 1, 5 }))
-                .Do(0.5f, () => Ui.Computer.Task.MockSelect(2, 4), true));
-            Reg("e_play.lost.culprit.6p", false, s => s
-                .Show(0.1f, () => Play(V(LinePhase.RoundPlay, 6, left: 88), RoundType.KayipRapor, 1, r => { r.IsCulprit = true; r.ClueInnocent = 3; r.NoAlibi.Add(2); r.NoAlibi.Add(4); }, submitted: new[] { 3 }))
-                .Do(0.5f, () => Ui.Computer.Task.MockSelect(4, -1), true));
-            Reg("e_play.lost.innocent.4p.en", true, s => s
-                .Show(0.1f, () => Play(V(LinePhase.RoundPlay, 4, true, left: 54), RoundType.KayipRapor, 1, r => { r.ClueInnocent = 2; }))
-                .Do(0.5f, () => { }, true));
-            Reg("e_play.complaint.5p", false, s => s
-                .Show(0.1f, () => Play(V(LinePhase.RoundPlay, 5, left: 102), RoundType.IhbarKutusu, 1, null, submitted: new[] { 2, 4 }))
-                .Do(0.5f, () => Ui.Computer.Task.MockSelect(3, 2), true));
-            Reg("e_play.promo.3p.en", true, s => s
-                .Show(0.1f, () => Play(V(LinePhase.RoundPlay, 3, true, left: 41), RoundType.TerfiListesi, 1, r => { r.Submitted = true; r.MyTarget = 2; }, submitted: new[] { 0, 1 }))
-                .Do(0.5f, () => Ui.Computer.Task.MockSelect(2, -1), true));
-            Reg("e_play.code.6p", false, s => s
-                .Show(0.1f, () => Play(V(LinePhase.RoundPlay, 6, left: 131), RoundType.OrtakSifre, 0, r => Code(r, 6, false, false), submitted: new[] { 3 }))
-                .Do(0.5f, () => Ui.Computer.Task.MockSelect(-1, -1, 4, 7, 3), true));
-            Reg("e_play.code.saboteur.4p.en", true, s => s
-                .Show(0.1f, () => Play(V(LinePhase.RoundPlay, 4, true, left: 23), RoundType.OrtakSifre, 0, r => Code(r, 4, true, true), submitted: new[] { 0, 1, 2 }))
-                .Do(0.5f, () => Ui.Computer.Task.MockSelect(-1, -1, 5, 8, 2, 1), true));
-            Reg("e_play.idle.morning.5p", false, s => s
-                .Show(0.1f, () => V(LinePhase.Morning, 5, left: 12))
-                .Do(0.4f, () => { Ui.Cards.AnswerManager(); Ui.Cards.Back(); Ui.OpenComputer(DeskApp.Task); })
-                .Do(0.6f, () => { }, true));
-
-            // ---- reveal
-            Reg("f_reveal.prim.6p", false, s => s.Show(0.1f, () => Reveal(V(LinePhase.RoundReveal, 6, left: 12), RevealPrim(false))).Do(4.8f, () => { }, true));
-            Reg("f_reveal.prim.trio.5p.en", true, s => s.Show(0.1f, () => Reveal(V(LinePhase.RoundReveal, 5, true, left: 12), RevealPrim(true))).Do(4.8f, () => { }, true));
-            Reg("f_reveal.odd.6p", false, s => s.Show(0.1f, () => Reveal(V(LinePhase.RoundReveal, 6, left: 12), RevealOdd())).Do(4.8f, () => { }, true));
-            Reg("f_reveal.lost.5p.en", true, s => s.Show(0.1f, () => Reveal(V(LinePhase.RoundReveal, 5, true, left: 12), RevealLost())).Do(4.8f, () => { }, true));
-            Reg("f_reveal.complaint.6p", false, s => s.Show(0.1f, () => Reveal(V(LinePhase.RoundReveal, 6, left: 12), RevealComplaint())).Do(4.8f, () => { }, true));
-            Reg("f_reveal.promo.4p", false, s => s.Show(0.1f, () => Reveal(V(LinePhase.RoundReveal, 4, left: 12), RevealPromo())).Do(4.8f, () => { }, true));
-            Reg("f_reveal.code.6p", false, s => s.Show(0.1f, () => Reveal(Codeview(V(LinePhase.RoundReveal, 6, left: 12), 6), RevealCode(6, true))).Do(4.8f, () => { }, true));
-            Reg("f_reveal.code.4p.en", true, s => s.Show(0.1f, () => Reveal(Codeview(V(LinePhase.RoundReveal, 4, true, left: 12), 4), RevealCode(4, false))).Do(4.8f, () => { }, true));
-
-            // ---- other apps
-            Reg("g_mail.inbox.6p", false, s => s
-                .Show(0.1f, () => WithInbox(Play(V(LinePhase.RoundPlay, 6, left: 70), RoundType.PrimHavuzu, 0)))
-                .Do(0.4f, () => Ui.OpenComputer(DeskApp.Mail))
-                .Do(0.6f, () => Ui.Computer.Mail.Select(13), true));
-            Reg("g_mail.compose.4p.en", true, s => s
-                .Show(0.1f, () => WithInbox(Play(V(LinePhase.RoundPlay, 4, true, left: 70), RoundType.FarkliEposta, 1)))
-                .Do(0.4f, () => Ui.OpenComputer(DeskApp.Mail))
-                .Do(0.6f, () => Ui.Computer.Mail.Compose(LineIds.None, 6, 2), true));
-            Reg("h_record.6p", false, s => s
-                .Show(0.1f, () => { var v = Play(V(LinePhase.RoundPlay, 6, mgr: LineManagerIds.Kayirmaci, left: 70), RoundType.OrtakSifre, 0); v.Favourite = 2; v.TodayReveals.Add(RevealPrim(false)); return v; })
-                .Do(0.4f, () => Ui.OpenComputer(DeskApp.Record))
-                .Do(0.6f, () => { }, true));
-            Reg("h_record.3p.en", true, s => s
-                .Show(0.1f, () => { var v = Play(V(LinePhase.RoundPlay, 3, true, day: 2, left: 70), RoundType.TerfiListesi, 1); v.DayCount = 3; v.Features.IsLastDay = true; return v; })
-                .Do(0.4f, () => Ui.OpenComputer(DeskApp.Record))
-                .Do(0.6f, () => { }, true));
-            Reg("i_trick.coffee.armed.6p", false, s => s
-                .Show(0.1f, () => Play(V(LinePhase.RoundPlay, 6, left: 70), RoundType.PrimHavuzu, 0))
-                .Do(0.4f, () => Ui.OpenComputer(DeskApp.Trick))
-                .Do(0.6f, () => Ui.Computer.Trick.MockPick(3, -1, -1, true), true));
-            Reg("i_trick.fake.4p.en", true, s => s
-                .Show(0.1f, () => { var v = Play(V(LinePhase.RoundPlay, 4, true, left: 70), RoundType.KayipRapor, 1); v.Mine.Trick = TrickType.SahteEposta; return v; })
-                .Do(0.4f, () => Ui.OpenComputer(DeskApp.Trick))
-                .Do(0.6f, () => Ui.Computer.Trick.MockPick(2, 4, 3, false), true));
-            Reg("i_trick.locked.3p", false, s => s
-                .Show(0.1f, () => { var v = FirstWeek(Play(V(LinePhase.RoundPlay, 3, day: 0, left: 70), RoundType.PrimHavuzu, 0), false); v.Features.TricksUnlocked = false; v.Mine.Trick = TrickType.FisCek; return v; })
-                .Do(0.4f, () => Ui.OpenComputer(DeskApp.Trick))
-                .Do(0.6f, () => { }, true));
-            Reg("i_trick.used.5p.en", true, s => s
-                .Show(0.1f, () => { var v = Play(V(LinePhase.RoundPlay, 5, true, left: 70), RoundType.OrtakSifre, 0); v.Mine.Trick = TrickType.HatDinle; v.Mine.TrickUsedToday = true; v.Mine.TricksLeftThisWeek = 1; return v; })
-                .Do(0.4f, () => Ui.OpenComputer(DeskApp.Trick))
-                .Do(0.6f, () => { }, true));
-            Reg("j_agenda.5p", false, s => s
-                .Show(0.1f, () => Play(V(LinePhase.RoundPlay, 5, day: 2, left: 70), RoundType.OrtakSifre, 0))
-                .Do(0.4f, () => Ui.OpenComputer(DeskApp.Agenda))
-                .Do(0.6f, () => { }, true));
-            Reg("j_agenda.3p.en", true, s => s
-                .Show(0.1f, () => { var v = Play(V(LinePhase.RoundPlay, 3, true, day: 1, left: 70), RoundType.FarkliEposta, 1); v.DayCount = 3; v.Length = WeekLength.Short; return v; })
-                .Do(0.4f, () => Ui.OpenComputer(DeskApp.Agenda))
-                .Do(0.6f, () => { }, true));
-            Reg("k_blocked.coffee.6p", false, s => s
-                .Show(0.1f, () => { var v = Play(V(LinePhase.RoundPlay, 6, left: 70), RoundType.PrimHavuzu, 0); v.Mine.ComputerBlockedUntil = Now + 32; v.Mine.ComputerBlockedBy = TrickType.KahveDok; return v; })
-                .Do(0.6f, () => { }, true));
-            Reg("k_blocked.offline.4p.en", true, s => s
-                .Show(0.1f, () => { var v = Play(V(LinePhase.RoundPlay, 4, true, left: 70), RoundType.KayipRapor, 1); v.Mine.ComputerBlockedUntil = Now + 21; v.Mine.ComputerBlockedBy = TrickType.InternetKes; return v; })
-                .Do(0.6f, () => { }, true));
-
-            // ---- desk phone
-            Reg("l_phone.idle.6p", false, s => s
-                .Show(0.1f, () => WithLog(Play(V(LinePhase.RoundPlay, 6, left: 70), RoundType.PrimHavuzu, 0)))
-                .Do(0.4f, () => Ui.OpenPhone())
-                .Do(0.6f, () => { }, true));
-            Reg("l_phone.dialing.4p", false, s => s
-                .Show(0.1f, () => { var v = WithLog(Play(V(LinePhase.RoundPlay, 4, left: 70), RoundType.FarkliEposta, 1)); Phone(v, CallStatus.Dialing, 3, ring: 11); return v; })
-                .Do(0.4f, () => Ui.OpenPhone())
-                .Do(0.6f, () => { }, true));
-            Reg("l_phone.connected.5p.en", true, s => s
-                .Show(0.1f, () => { var v = WithLog(Play(V(LinePhase.RoundPlay, 5, true, left: 70), RoundType.PrimHavuzu, 0)); Phone(v, CallStatus.Connected, 1, since: 42); return v; })
-                .Do(0.4f, () => Ui.OpenPhone())
-                .Do(0.6f, () => { }, true));
-            Reg("l_phone.busy.3p", false, s => s
-                .Show(0.1f, () => WithLog(Play(V(LinePhase.RoundPlay, 3, left: 70), RoundType.OrtakSifre, 0)))
-                .Do(0.4f, () => Ui.OpenPhone())
-                .Events(0.6f, Ev(LineEventType.CallBusy, target: 2))
-                .Do(0.7f, () => { }, true));
-            Reg("l_phone.dead.6p.en", true, s => s
-                .Show(0.1f, () => { var v = WithLog(Play(V(LinePhase.RoundPlay, 6, true, left: 70), RoundType.PrimHavuzu, 0)); v.Mine.PhoneDeadUntil = Now + 31; return v; })
-                .Do(0.4f, () => Ui.OpenPhone())
-                .Do(0.6f, () => { }, true));
-            Reg("l_phone.tipoff.confirm.5p", false, s => s
-                .Show(0.1f, () => WithLog(Play(V(LinePhase.RoundPlay, 5, day: 3, left: 70), RoundType.KayipRapor, 1)))
-                .Do(0.4f, () => Ui.OpenPhone())
-                .Do(0.6f, () => Ui.Phone.MockIvr(2, 4), true));
-            Reg("l_phone.tipoff.menu.4p.en", true, s => s
-                .Show(0.1f, () => WithLog(Play(V(LinePhase.RoundPlay, 4, true, day: 3, left: 70), RoundType.KayipRapor, 1)))
-                .Do(0.4f, () => Ui.OpenPhone())
-                .Do(0.6f, () => Ui.Phone.MockIvr(1, -1), true));
-
-            // ---- calls without the phone open
-            Reg("m_call.incoming.6p", false, s => s
-                .Show(0.1f, () => { var v = Play(V(LinePhase.RoundPlay, 6, left: 70), RoundType.PrimHavuzu, 0); Phone(v, CallStatus.Ringing, 2, ring: 12); return v; })
-                .Do(0.4f, () => Ui.CloseComputer())
-                .Do(0.9f, () => { }, true));
-            Reg("m_call.incall.task.4p.en", true, s => s
-                .Show(0.1f, () => { var v = Play(V(LinePhase.RoundPlay, 4, true, left: 88), RoundType.PrimHavuzu, 0, r => { r.Partners.Add(1); r.Partner = 1; }); Phone(v, CallStatus.Connected, 1, since: 17); v.Mine.CallLog.Add(new LineCallRecordView { CallId = 3, Other = 1, Outgoing = true, Connected = true, Start = Now - 17 }); return v; })
-                .Do(0.6f, () => Ui.Computer.Task.MockSelect(-1, 0), true));
-            Reg("m_call.wiretap.5p", false, s => s
-                .Show(0.1f, () => { var v = Play(V(LinePhase.RoundPlay, 5, left: 70), RoundType.OrtakSifre, 0); v.Mine.Trick = TrickType.HatDinle; v.Mine.WiretapTarget = 3; v.Mine.WiretapUntil = Now + 44; return v; })
-                .Do(0.4f, () => Ui.CloseComputer())
-                .Do(0.6f, () => { }, true));
-
-            // ---- onboarding steps (first day)
-            Reg("n_onboard.call_partner.4p", false, s => s
-                .Show(0.1f, () => Onboard(Play(V(LinePhase.RoundPlay, 4, day: 0, left: 120), RoundType.PrimHavuzu, 0, r => { r.Partners.Add(2); r.Partner = 2; })))
-                .Do(0.3f, () => { Ui.State.MorningAnsweredDay = 0; Ui.State.IntroSeenKey = 0; })
-                .Do(0.8f, () => { }, true));
-            Reg("n_onboard.office.3p.en", true, s => s
-                .Show(0.1f, () => Onboard(V(LinePhase.Morning, 3, true, day: 0, left: 22)))
-                .Do(0.3f, () => { Ui.Cards.AnswerManager(); })
-                .Do(0.6f, () => { Ui.Cards.Back(); })
-                .Do(0.9f, () => { }, true));
-
-        }
-
-        // ------------------------------------------------------------------ scenario plumbing
-
-        static void Reg(string name, bool en, Action<LineMockScenario> build)
-        {
-            LineMock.Register("desk." + name, () =>
+            // ---- play view of every task
+            foreach (var kind in new[] { TaskKind.InvoiceReconcile, TaskKind.BudgetSplit, TaskKind.CustomerSpec, TaskKind.ReportReview, TaskKind.RoomBooking, TaskKind.ArchiveVisitor,
+                                          TaskKind.BonusPool, TaskKind.ServerCode, TaskKind.PhishingCheck, TaskKind.ShiftCover, TaskKind.VendorPick, TaskKind.SupplySwap })
             {
-                var s = new LineMockScenario { Me = 0 };
-                s.Do(0f, () => { Rooms.Hovered = DeskTarget.None; Lang(en ? "en" : "tr"); });
-                build(s);
-                return s;
-            });
+                var k = kind;
+                int players = k == TaskKind.BonusPool ? 3 : k == TaskKind.ServerCode ? 5 : k == TaskKind.BudgetSplit ? 6 : 4;
+                Reg("task." + LineTasks.Id(k), s => s.Show(0.1f, e => WithTask(V(LinePhase.RoundPlay, players, e, 1, 58), k)).Do(0.5f, () => Ui.Computer.Task.MockSelect(-1, DefaultPick(k)), true));
+            }
+            Reg("task.invoice_reconcile.sabotage_confirm", s => s
+                .Show(0.1f, e => WithTask(V(LinePhase.RoundPlay, 4, e, 1, 58), TaskKind.InvoiceReconcile))
+                .Do(0.4f, () => { Ui.Computer.Task.MockSelect(0, 23); Ui.Computer.Task.MockSelect(1, 1); Ui.Computer.Task.MockConfirm(); }, true));
+            Reg("task.report_review.waiting", s => s.Show(0.1f, e => WithTask(V(LinePhase.RoundPlay, 4, e, 1, 40), TaskKind.ReportReview)).Do(0.4f, () => Ui.Computer.Task.MockSelect(0, 1), true));
+            Reg("task.report_review.locked", s => s.Show(0.1f, e => { var v = WithTask(V(LinePhase.RoundPlay, 4, e, 1, 40), TaskKind.ReportReview, 0, true); v.Task.Controls[0].Enabled = true; v.Task.SubmittedFields = TaskField.A; v.Task.MyA = 0; return v; }).Do(1.0f, () => { }, true));
+            Reg("task.archive_visitor.requester", s => s.Show(0.1f, e => WithTask(V(LinePhase.RoundPlay, 5, e, 1, 50), TaskKind.ArchiveVisitor, 2)).Do(0.5f, () => Ui.Computer.Task.MockSelect(0, 1), true));
+            Reg("task.server_code.offered", s => s.Show(0.1f, e => WithTask(V(LinePhase.RoundPlay, 4, e, 1, 50), TaskKind.ServerCode, 1)).Do(0.5f, () => Ui.Computer.Task.MockSelect(0, 7140), true));
+            Reg("task.phishing_check.insider", s => s.Show(0.1f, e => WithTask(V(LinePhase.RoundPlay, 4, e, 1, 50), TaskKind.PhishingCheck, 1)).Do(0.5f, () => Ui.Computer.Task.MockSelect(0, 2), true));
+            Reg("task.vendor_pick.insider", s => s.Show(0.1f, e => WithTask(V(LinePhase.RoundPlay, 5, e, 1, 50), TaskKind.VendorPick, 1)).Do(0.5f, () => Ui.Computer.Task.MockSelect(0, 2), true));
+            Reg("task.submitted", s => s.Show(0.1f, e => WithTask(V(LinePhase.RoundPlay, 4, e, 1, 30), TaskKind.BonusPool, 0, true)).Do(1.0f, () => { }, true));
+            Reg("task.blocked", s => s.Show(0.1f, e => { var v = WithTask(V(LinePhase.RoundPlay, 4, e, 1, 50), TaskKind.InvoiceReconcile); v.Mine.ComputerBlockedUntil = Now + 20; v.Mine.ComputerBlockedBy = TrickType.KahveDok; return v; }).Do(1.0f, () => { }, true));
+            Reg("task.offline", s => s.Show(0.1f, e => { var v = WithTask(V(LinePhase.RoundPlay, 4, e, 1, 50), TaskKind.InvoiceReconcile); v.Mine.ComputerBlockedUntil = Now + 20; v.Mine.ComputerBlockedBy = TrickType.InternetKes; return v; }).Do(1.0f, () => { }, true));
+
+            // ---- messages
+            Reg("msg.thread", s => s
+                .Show(0.1f, e => WithTask(V(LinePhase.RoundPlay, 4, e, 1, 50), TaskKind.InvoiceReconcile))
+                .Do(0.3f, () => { LineClient.I.ApplyMessages(1, TextThread(Loc.Language == "en")); Ui.OpenMessages(3); Ui.Computer.Messages.MockType(Loc.Language == "en" ? "Mine are 7 and 4" : "Benimkiler 7 ve 4"); }, true));
+            Reg("msg.unread", s => s
+                .Show(0.1f, e => WithTask(V(LinePhase.RoundPlay, 5, e, 1, 50), TaskKind.BudgetSplit))
+                .Do(0.3f, () => { LineClient.I.ApplyMessages(1, TextThread(Loc.Language == "en")); Ui.CloseComputer(); }, false)
+                .Do(0.6f, () => Ui.OpenComputer(DeskApp.Task), true));
+            Reg("msg.ratelimit", s => s
+                .Show(0.1f, e => { var v = V(LinePhase.Break, 4, e, 1, 30); v.Mine.NextMessageAt = Now + 30; v.Mine.TextsLeftThisBlock = 3; return v; })
+                .Do(0.3f, () => { LineClient.I.ApplyMessages(1, TextThread(Loc.Language == "en")); Ui.Cards.HideAll(); Ui.OpenMessages(1); Ui.Computer.Messages.MockType("..."); }, true));
+
+            // ---- email
+            Reg("mail.inbox", s => s
+                .Show(0.1f, e => V(LinePhase.Break, 5, e, 1, 30))
+                .Do(0.3f, () => { LineClient.I.ApplyMessages(1, MailThread(Loc.Language == "en")); Ui.Cards.HideAll(); Ui.OpenComputer(DeskApp.Mail); }, true));
+            Reg("mail.reply", s => s
+                .Show(0.1f, e => V(LinePhase.Break, 5, e, 1, 30))
+                .Do(0.3f, () => { LineClient.I.ApplyMessages(1, MailThread(Loc.Language == "en")); Ui.Cards.HideAll(); Ui.OpenComputer(DeskApp.Mail); })
+                .Do(0.4f, () => Ui.Computer.Mail.MockReply(Loc.Language == "en" ? "Okay, I will pay you the coffee tomorrow." : "Tamam, kahveyi yarın ben ısmarlıyorum."), true));
+            Reg("mail.compose", s => s
+                .Show(0.1f, e => V(LinePhase.Break, 5, e, 1, 30))
+                .Do(0.3f, () => { LineClient.I.ApplyMessages(1, MailThread(Loc.Language == "en")); Ui.Cards.HideAll(); Ui.OpenComputer(DeskApp.Mail); Ui.Computer.Mail.MockNew(-1, Loc.T("mail.template.2")); }, true));
+
+            // ---- complaint, bank, evidence
+            Reg("complaint.preset", s => s.Show(0.1f, e => V(LinePhase.Break, 5, e, 1, 30)).Do(0.3f, () => { Ui.Cards.HideAll(); Ui.OpenComputer(DeskApp.Complaint); Ui.Computer.Complaint.MockFill(2, 0, null); }, true));
+            Reg("complaint.free", s => s.Show(0.1f, e => V(LinePhase.Break, 4, e, 1, 30)).Do(0.3f, () => { Ui.Cards.HideAll(); Ui.OpenComputer(DeskApp.Complaint); Ui.Computer.Complaint.MockFill(1, -1, Loc.Language == "en" ? "Rearranged my desk plants. Again." : "Saksılarımı yine yerinden oynattı."); }, true));
+            Reg("bank", s => s.Show(0.1f, e => { var v = V(LinePhase.Break, 5, e, 1, 30); v.Mine.Money = 7; v.Mine.BlockIncome = 5; v.Mine.Records.Add(LineMock.Rec(RecordKind.Transfer, RecordSource.Bank, 2, 0, 2, -1, -1, -1, TaskKind.None, -1)); return v; })
+                .Do(0.3f, () => { Ui.Cards.HideAll(); Ui.OpenComputer(DeskApp.Bank); Ui.Computer.Bank.MockFill(3, 3); }, true));
+            Reg("bank.capped", s => s.Show(0.1f, e => { var v = V(LinePhase.Break, 4, e, 1, 30); v.Mine.Money = 1; v.Mine.BlockIncome = 6; v.Mine.NextTransferAt = Now + 20; return v; })
+                .Do(0.3f, () => { Ui.Cards.HideAll(); Ui.OpenComputer(DeskApp.Bank); Ui.Computer.Bank.MockFill(1, 1); }, true));
+            Reg("evidence.records", s => s.Show(0.1f, e => Records(V(LinePhase.Break, 5, e, 1, 30))).Do(0.3f, () => { Ui.Cards.HideAll(); Ui.OpenComputer(DeskApp.Evidence); Ui.Computer.Evidence.MockTab(0); }, true));
+            Reg("evidence.shop", s => s.Show(0.1f, e => Records(V(LinePhase.Break, 5, e, 1, 30))).Do(0.3f, () => { Ui.Cards.HideAll(); Ui.OpenComputer(DeskApp.Evidence); Ui.Computer.Evidence.MockTab(1); }, true));
+
+            // ---- remedial
+            Reg("remedial.start", s => s.Show(0.1f, e => Remedial(V(LinePhase.Break, 4, e, 1, 30), false, false)).Do(0.3f, () => { Ui.Cards.HideAll(); Ui.OpenComputer(DeskApp.Remedial); Ui.Computer.Remedial.MockPick(0, 2); }, true));
+            Reg("remedial.incoming", s => s.Show(0.1f, e => Remedial(V(LinePhase.Break, 4, e, 1, 30), true, false)).Do(0.3f, () => { Ui.Cards.HideAll(); Ui.OpenComputer(DeskApp.Remedial); }, true));
+            Reg("remedial.incoming.hud", s => s.Show(0.1f, e => Remedial(V(LinePhase.RoundReveal, 4, e, 1, 8), true, false)).Do(0.3f, () => Ui.Cards.HideAll(), true));
+            Reg("remedial.outgoing", s => s.Show(0.1f, e => Remedial(V(LinePhase.Break, 4, e, 1, 30), false, true)).Do(0.3f, () => { Ui.Cards.HideAll(); Ui.OpenComputer(DeskApp.Remedial); }, true));
+
+            // ---- dirty tricks
+            Reg("trick.kahve", s => s.Show(0.1f, e => V(LinePhase.RoundPlay, 4, e, 1, 50)).Do(0.3f, () => { Ui.OpenComputer(DeskApp.Trick); Ui.Computer.Trick.MockPick(2, -1, -1); }, true));
+            Reg("trick.fake_email", s => s.Show(0.1f, e => { var v = V(LinePhase.RoundPlay, 5, e, 1, 50); v.Mine.Trick = TrickType.SahteEposta; return v; })
+                .Do(0.3f, () => { Ui.OpenComputer(DeskApp.Trick); Ui.Computer.Trick.MockPick(2, 4, 3); }, true));
+            Reg("trick.used", s => s.Show(0.1f, e => { var v = V(LinePhase.RoundPlay, 4, e, 1, 50); v.Mine.TrickUsedToday = true; v.Mine.TricksLeftThisWeek = 0; return v; }).Do(0.3f, () => Ui.OpenComputer(DeskApp.Trick), true));
+
+            // ---- phone
+            Reg("phone.idle", s => s.Show(0.1f, e => V(LinePhase.RoundPlay, 5, e, 1, 50)).Do(0.3f, () => Ui.OpenPhone(), true));
+            Reg("phone.missed", s => s.Show(0.1f, e => V(LinePhase.RoundPlay, 5, e, 1, 50))
+                .Do(0.3f, () => Ui.CloseComputer())
+                .Events(0.4f, Ev(LineEventType.MissedCall, actor: 3))
+                .Do(0.5f, () => Ui.OpenPhone(), true));
+            Reg("phone.busy", s => s.Show(0.1f, e => V(LinePhase.RoundPlay, 5, e, 1, 50))
+                .Do(0.3f, () => Ui.CloseComputer())
+                .Events(0.4f, Ev(LineEventType.CallBusy, target: 2))
+                .Do(0.5f, () => Ui.OpenPhone(), true));
+            Reg("phone.break", s => s.Show(0.1f, e => { var v = V(LinePhase.Break, 4, e, 1, 30); v.Mine.Phone.Status = CallStatus.Connected; v.Mine.Phone.Other = 2; v.Mine.Phone.Since = Now - 12; return v; }).Do(0.5f, () => Ui.OpenPhone(), true));
+            Reg("phone.ringing", s => s.Show(0.1f, e => { var v = V(LinePhase.RoundPlay, 4, e, 1, 50); v.Mine.Phone.Status = CallStatus.Ringing; v.Mine.Phone.Other = 2; v.Mine.Phone.RingUntil = Now + 12; return v; }).Do(0.6f, () => Ui.CloseComputer(), true));
+
+            // ---- break and reveal
+            Reg("break", s => s.Show(0.1f, e => V(LinePhase.Break, 4, e, 1, 25)).Do(1.3f, () => { }, true));
+            Reg("break.carried", s => s.Show(0.1f, e => { var v = V(LinePhase.Break, 4, e, 1, 25); v.Features.CarriedSeconds = 18; return v; }).Do(1.3f, () => { }, true));
+            foreach (var kind in new[] { TaskKind.InvoiceReconcile, TaskKind.BudgetSplit, TaskKind.PhishingCheck, TaskKind.VendorPick, TaskKind.RoomBooking, TaskKind.ShiftCover, TaskKind.CustomerSpec })
+            {
+                var k = kind;
+                Reg("reveal." + LineTasks.Id(k), s => s.Show(0.1f, e => Reveal(V(LinePhase.RoundReveal, 5, e, 1, 8), k, k == TaskKind.BudgetSplit)).Do(1.6f, () => { }, true));
+            }
+            Reg("reveal.low", s => s.Show(0.1f, e => { var v = Reveal(V(LinePhase.RoundReveal, 4, e, 1, 8), TaskKind.InvoiceReconcile, true); v.Task.Reveal.Output = 24; v.Company.ProvisionalPermille = 380; return v; }).Do(1.6f, () => { }, true));
+            Reg("reveal.first", s => s.Show(0.1f, e => Measuring(Reveal(V(LinePhase.RoundReveal, 4, e, 0, 8), TaskKind.BonusPool, false))).Do(1.6f, () => { }, true));
         }
 
-        /// <summary>Switches the language for the screenshot without changing the saved preference.</summary>
+        // ------------------------------------------------------------------ plumbing
+
+        sealed class Scn
+        {
+            public LineMockScenario S;
+            public bool En;
+            public Scn Show(float at, Func<bool, LineView> make, bool shot = false) { S.Do(at, () => { var v = make(En); v.Now = LineClient.I.Now; LineClient.I.ApplyView(v); }, shot); return this; }
+            public Scn Do(float at, Action a, bool shot = false) { S.Do(at, a, shot); return this; }
+            public Scn Events(float at, params LineEvent[] ev) { S.Do(at, () => LineClient.I.ApplyEvents(new List<LineEvent>(ev))); return this; }
+        }
+
+        /// <summary>Registers "desk.&lt;name&gt;" (Turkish) and "desk.&lt;name&gt;.en".</summary>
+        static void Reg(string name, Action<Scn> build)
+        {
+            foreach (var en in new[] { false, true })
+            {
+                bool english = en;
+                LineMock.Register("desk." + name + (english ? ".en" : ""), () =>
+                {
+                    var s = new LineMockScenario { Me = 0 };
+                    s.Do(0f, () => { Rooms.Hovered = DeskTarget.None; Lang(english ? "en" : "tr"); Reset(); });
+                    build(new Scn { S = s, En = english });
+                    return s;
+                });
+            }
+        }
+
+        static void Reset()
+        {
+            var ui = Ui;
+            if (ui == null) return;
+            ui.State.Reset(-1);
+            ui.CloseComputer();
+            ui.ClosePhone();
+            ui.Cards.HideAll();
+            ui.Notes.Clear();
+        }
+
         static void Lang(string want)
         {
             if (Loc.Language == want) return;
@@ -247,21 +191,6 @@ namespace BirimizKovulacak.Game
             PlayerPrefs.Save();
         }
 
-        static LineMockScenario Show(this LineMockScenario s, float at, Func<LineView> make, bool shot = false)
-        {
-            return s.Do(at, () =>
-            {
-                var v = make();
-                v.Now = LineClient.I.Now;
-                LineClient.I.ApplyView(v);
-            }, shot);
-        }
-
-        static LineMockScenario Events(this LineMockScenario s, float at, params LineEvent[] ev)
-        {
-            return s.Do(at, () => LineClient.I.ApplyEvents(new List<LineEvent>(ev)));
-        }
-
         static LineEvent Ev(LineEventType t, int actor = -1, int target = -1, int a = -1)
         {
             return new LineEvent { Type = t, Time = Now, Audience = LineAudience.All, Actor = actor, Target = target, A = a };
@@ -269,29 +198,26 @@ namespace BirimizKovulacak.Game
 
         // ------------------------------------------------------------------ view builders
 
-        static LineView V(LinePhase phase, int players, bool en = false, int day = 1, double left = 90, string mgr = LineManagerIds.Paragoz)
+        static LineView V(LinePhase phase, int players, bool en, int day = 1, double left = 90, string mgr = LineManagerIds.Paragoz)
         {
             var v = LineMock.BaseView(phase, players, day, left);
+            LineMock.SetNames(v, en);
             v.ManagerProfileId = mgr;
-            for (int i = 0; i < v.Players.Count; i++)
-            {
-                v.Players[i].Name = (en ? EnNames : TrNames)[i];
-                v.Players[i].Blame = Blames[i];
-                v.Players[i].Ihtars = i == 1 ? 1 : 0;
-            }
-            v.Mine.TricksLeftThisWeek = 2;
-            v.Mine.TipsLeftThisWeek = 1;
-            v.Mine.AgendaTarget = players > 3 ? 3 : 2;
-            v.Mine.Trick = TrickType.KahveDok;
-            SetRounds(v, RoundType.PrimHavuzu, players >= 4 ? RoundType.KayipRapor : RoundType.FarkliEposta);
+            for (int i = 0; i < v.Players.Count; i++) v.Players[i].Blame = new[] { 5, 7, 3, 6, 4, 8 }[i];
             return v;
         }
 
-        static void SetRounds(LineView v, RoundType a, RoundType b)
+        static LineView WithTask(LineView v, TaskKind kind, int role = 0, bool submitted = false)
         {
-            v.TodayRounds.Clear();
-            v.TodayRounds.Add(a);
-            v.TodayRounds.Add(b);
+            LineMock.WithTask(v, kind, role, submitted);
+            for (int i = 0; i < v.Players.Count; i++) v.Players[i].Submitted = i == 1 || (submitted && i == 0);
+            return v;
+        }
+
+        static LineView Measuring(LineView v)
+        {
+            v.Company = new LineCompanyView { ProvisionalPermille = -1, TargetPercent = 65, TasksScheduled = 6, ScheduledMax = 600 };
+            return v;
         }
 
         static LineView Onboard(LineView v)
@@ -300,210 +226,85 @@ namespace BirimizKovulacak.Game
             v.Day = 0;
             v.Features.OnboardingDay = true;
             v.Features.TricksUnlocked = false;
-            v.Features.TipLineUnlocked = false;
-            SetRounds(v, RoundType.PrimHavuzu, RoundType.FarkliEposta);
+            v.Company = new LineCompanyView { ProvisionalPermille = -1, TargetPercent = 65 };
+            v.TodayTasks[0] = TaskKind.BonusPool; v.TodayTasks[1] = TaskKind.InvoiceReconcile;
             return v;
         }
 
-        static LineView FirstWeek(LineView v, bool tips)
+        static LineView Reveal(LineView v, TaskKind kind, bool missed)
         {
-            v.FirstWeek = true;
-            v.Features.TricksUnlocked = true;
-            v.Features.TipLineUnlocked = tips;
+            v.Task = LineMock.TaskView(kind, v.Players.Count, 0, true);
+            v.TodayTasks[0] = kind;
+            v.Task.Reveal = LineMock.RevealView(kind, v.Players.Count, kind == TaskKind.BudgetSplit ? 58 : 74, missed);
+            v.TodayReveals.Add(v.Task.Reveal);
             return v;
         }
 
-        static LineRoundView NewRound(LineView v, RoundType t, int index)
+        static LineView Records(LineView v)
         {
-            v.RoundIndex = index;
-            if (index < v.TodayRounds.Count) v.TodayRounds[index] = t;
-            var r = new LineRoundView { Type = t, Index = index, PlayEndTime = v.PhaseEndTime, AttemptsLeft = 0 };
-            if (t == RoundType.PrimHavuzu) { r.Partner = v.Players.Count > 3 ? 3 : 1; }
-            if (t == RoundType.FarkliEposta) { r.TopicId = 4; }
-            if (t == RoundType.KayipRapor) { r.ClueInnocent = 2; }
-            if (t == RoundType.OrtakSifre) Code(r, v.Players.Count, false, false);
-            if (t == RoundType.PrimHavuzu && r.Partners.Count == 0) r.Partners.Add(r.Partner);
-            return r;
-        }
-
-        static LineView Intro(LineView v, RoundType t, int index)
-        {
-            v.Round = NewRound(v, t, index);
+            var m = v.Mine;
+            m.Records.Add(LineMock.Rec(RecordKind.DealPayment, RecordSource.Bank, 2, 2, 3, -1, -1, 0, TaskKind.InvoiceReconcile, 5, false, 40));
+            m.Records.Add(LineMock.Rec(RecordKind.TrickEffect, RecordSource.ITLog, LineIds.None, 0, (int)TrickType.KahveDok, -1, -1, 1, TaskKind.CustomerSpec, -1, false, 15));
+            m.Records.Add(LineMock.Rec(RecordKind.AuditFigure, RecordSource.TaskSystem, LineIds.None, 1, 64, -1, -1, 2, TaskKind.ReportReview, -1, true, 8));
+            m.Records.Add(LineMock.Rec(RecordKind.BadgeAccess, RecordSource.BadgeLog, 3, LineIds.None, -1, 1, -1, 3, TaskKind.ArchiveVisitor, 7, false, 5));
+            m.Money = 6;
+            m.Offers[2].Purchased = true;
+            m.Offers[3].Available = false;
             return v;
         }
 
-        static LineView Play(LineView v, RoundType t, int index, Action<LineRoundView> tweak = null, params int[] submitted)
+        static LineView Remedial(LineView v, bool incoming, bool outgoing)
         {
-            var r = NewRound(v, t, index);
-            if (tweak != null)
+            var m = v.Mine;
+            m.RemedialOptions.Clear(); m.RemedialOptions.Add(0); m.RemedialOptions.Add(1);
+            v.TodayReveals.Add(LineMock.RevealView(TaskKind.InvoiceReconcile, v.Players.Count, 74, false));
+            v.TodayReveals[0].Number = 0;
+            var second = LineMock.RevealView(TaskKind.CustomerSpec, v.Players.Count, 40, false); second.Number = 1;
+            v.TodayReveals.Add(second);
+            if (incoming) m.IncomingRemedial = new LineRemedialView { Requester = 2, Cosigner = 0, TaskNumber = 1, Task = TaskKind.CustomerSpec, ExpiresAt = Now + 24 };
+            if (outgoing) m.OutgoingRemedial = new LineRemedialView { Requester = 0, Cosigner = 3 % v.Players.Count, TaskNumber = 1, Task = TaskKind.CustomerSpec, ExpiresAt = Now + 21 };
+            return v;
+        }
+
+        static int DefaultPick(TaskKind k)
+        {
+            switch (k)
             {
-                if (t == RoundType.PrimHavuzu) { r.Partners.Clear(); }
-                tweak(r);
-                if (t == RoundType.PrimHavuzu && r.Partners.Count == 0) r.Partners.Add(r.Partner);
-            }
-            v.Round = r;
-            for (int i = 0; i < submitted.Length; i++)
-                for (int k = 0; k < v.Players.Count; k++) if (v.Players[k].Id == submitted[i]) v.Players[k].Submitted = true;
-            if (r.Submitted) v.Players[0].Submitted = true;
-            return v;
-        }
-
-        static void Code(LineRoundView r, int n, bool saboteur, bool submitted)
-        {
-            int[] owners6 = { 3, 0, 5, 1, 4, 2 };
-            int[] owners4 = { 2, 0, 3, 1 };
-            int[] owners5 = { 4, 0, 3, 1, 2 };
-            int[] owners3 = { 1, 0, 2 };
-            int[] owners = n >= 6 ? owners6 : n == 5 ? owners5 : n == 4 ? owners4 : owners3;
-            int[] digits = n >= 6 ? new[] { 4, 7, 3, 9, 1, 6 } : n == 5 ? new[] { 2, 7, 8, 0, 4 } : n == 4 ? new[] { 5, 8, 2, 1 } : new[] { 9, 3, 6 };
-            r.CodeLength = n;
-            r.PositionOwners.Clear();
-            r.PositionOwners.AddRange(owners);
-            r.DigitPosition = Array.IndexOf(owners, 0);
-            r.Digit = digits[r.DigitPosition];
-            r.NeighborPosition = (r.DigitPosition + 1) % n;
-            r.NeighborDigit = digits[r.NeighborPosition];
-            r.IsSaboteur = saboteur;
-            if (submitted)
-            {
-                int code = 0;
-                for (int i = 0; i < n; i++) code = code * 10 + digits[i];
-                r.Submitted = true;
-                r.MyA = code;
+                case TaskKind.InvoiceReconcile: return 23;
+                case TaskKind.BudgetSplit: return 3;
+                case TaskKind.ServerCode: return 71409;
+                case TaskKind.PhishingCheck: return 2;
+                case TaskKind.ArchiveVisitor: return 7;
+                default: return 1;
             }
         }
 
-        static LineView Codeview(LineView v, int n)
+        static List<LineMessage> TextThread(bool en)
         {
-            var r = NewRound(v, RoundType.OrtakSifre, 0);
-            Code(r, n, false, true);
-            v.Round = r;
-            return v;
+            var l = new List<LineMessage>();
+            string[] a = en ? new[] { "Hi, my lines are 7 and 4. What are yours?", "9 and 3. So the total is 23?", "Yes! Enter it, please.", "On it. Careful, Lee keeps calling me." }
+                            : new[] { "Selam, benim kalemlerim 7 ve 4. Seninkiler?", "9 ve 3. Yani toplam 23, değil mi?", "Evet! Gir bakalım.", "Giriyorum. Dikkat et, Turuncu sürekli arıyor." };
+            l.Add(LineMock.Msg(MessageKind.Text, 3, 0, a[0], ago: 60));
+            l.Add(LineMock.Msg(MessageKind.Text, 0, 3, a[1], ago: 50));
+            l.Add(LineMock.Msg(MessageKind.Text, 3, 0, a[2], ago: 40));
+            l.Add(LineMock.Msg(MessageKind.Text, 3, 0, a[3], ago: 12));
+            l.Add(LineMock.Msg(MessageKind.Text, 1, 0, en ? "Do not forget the meeting tonight <b>bold?</b>" : "Akşamki toplantıyı unutma çok iyi bir İŞ çıkardık ğüşiöç <b>kalın?</b>", ago: 8));
+            return l;
         }
 
-        static LineView Reveal(LineView v, LineRoundReveal rv)
+        static List<LineMessage> MailThread(bool en)
         {
-            if (v.Round == null || v.Round.Type != rv.Type) v.Round = NewRound(v, rv.Type, rv.Index);
-            v.RoundIndex = rv.Index;
-            if (rv.Index < v.TodayRounds.Count) v.TodayRounds[rv.Index] = rv.Type;
-            v.Round.Reveal = rv;
-            v.TodayReveals.Add(rv);
-            return v;
+            var l = new List<LineMessage>();
+            var m1 = LineMock.Msg(MessageKind.Manager, LineIds.Manager, 0, en ? "Team: productivity is on my desk. Please keep it there." : "Ekip: verimlilik masamda. Orada kalsın lütfen.", ago: 300);
+            l.Add(m1);
+            var m2 = LineMock.Msg(MessageKind.Email, 2, 0, en ? "Can you cover for me on the budget? I will owe you a coffee." : "Bütçede beni kollar mısın? Bir kahve borcum olsun.", ago: 120);
+            l.Add(m2);
+            l.Add(LineMock.Msg(MessageKind.Email, 0, 2, en ? "Maybe. What is in it for me?" : "Belki. Bana ne var?", replyTo: m2.Id, thread: m2.ThreadId, ago: 90));
+            l.Add(LineMock.Msg(MessageKind.Email, 2, 0, en ? "Half a coffee. Final offer." : "Yarım kahve. Son teklif.", replyTo: m2.Id, thread: m2.ThreadId, ago: 30));
+            l.Add(LineMock.Msg(MessageKind.Email, 4, 0, en ? "Everyone: the printer is cursed. Do not touch it." : "Herkese: yazıcı lanetli. Dokunmayın.", toAll: true, ago: 20));
+            l.Add(LineMock.Msg(MessageKind.System, LineIds.System, 0, en ? "IT: the internet will be unstable around noon." : "BT: öğlen civarı internet dalgalanabilir.", ago: 10));
+            return l;
         }
 
-        static LineView WithInbox(LineView v)
-        {
-            var inbox = v.Mine.Inbox;
-            inbox.Add(new LineMailView { Id = 10, Kind = MailKind.Manager, From = LineIds.Manager, TemplateId = 0, ToAll = true, Time = Now - 300 });
-            inbox.Add(new LineMailView { Id = 11, Kind = MailKind.Personal, From = 2, TemplateId = 2, About = -1, ToAll = true, Time = Now - 190 });
-            inbox.Add(new LineMailView { Id = 12, Kind = MailKind.System, From = LineIds.System, TemplateId = (int)TrickType.KahveDok, Time = Now - 95 });
-            inbox.Add(new LineMailView { Id = 13, Kind = MailKind.Personal, From = v.Players.Count > 3 ? 3 : 1, TemplateId = 4, About = v.Players.Count > 4 ? 4 : 2, ToAll = true, Time = Now - 20 });
-            Ui?.State.ReadMail.Add(10);
-            return v;
-        }
-
-        static LineView WithLog(LineView v)
-        {
-            var log = v.Mine.CallLog;
-            log.Add(new LineCallRecordView { CallId = 1, Other = 1, Outgoing = true, Connected = true, Start = Now - 400, End = Now - 352, EndReason = CallEndReason.HungUp });
-            log.Add(new LineCallRecordView { CallId = 2, Other = 2, Outgoing = false, Connected = false, Start = Now - 260, End = Now - 245, EndReason = CallEndReason.Missed });
-            if (v.Players.Count > 3) log.Add(new LineCallRecordView { CallId = 3, Other = 3, Outgoing = true, Connected = true, Start = Now - 150, End = Now - 64, EndReason = CallEndReason.HungUp });
-            log.Add(new LineCallRecordView { CallId = 4, Other = v.Players.Count - 1, Outgoing = true, Connected = false, Start = Now - 40, End = Now - 38, EndReason = CallEndReason.Declined });
-            return v;
-        }
-
-        static void Phone(LineView v, CallStatus status, int other, double ring = 0, double since = 0)
-        {
-            v.Mine.Phone.Status = status;
-            v.Mine.Phone.Other = other;
-            v.Mine.Phone.RingUntil = Now + ring;
-            v.Mine.Phone.Since = Now - since;
-            v.Mine.Phone.CallId = status == CallStatus.Connected ? 9 : -1;
-        }
-
-        // ------------------------------------------------------------------ reveals
-
-        static void Delta(LineRoundReveal r, int player, int d) { r.Deltas.Add(new LineBlameDelta { Player = player, Delta = d, Reason = BlameReason.Round, Round = r.Type }); }
-
-        static LineRoundReveal RevealPrim(bool trio)
-        {
-            var r = new LineRoundReveal { Type = RoundType.PrimHavuzu, Index = 0 };
-            if (!trio)
-            {
-                r.Pairs.Add(new LinePairReveal { A = 0, B = 3, ChoiceA = 0, ChoiceB = 1, C = -1, ChoiceC = -1 });
-                r.Pairs.Add(new LinePairReveal { A = 1, B = 4, ChoiceA = 0, ChoiceB = 0, C = -1, ChoiceC = -1 });
-                r.Pairs.Add(new LinePairReveal { A = 2, B = 5, ChoiceA = 1, ChoiceB = 1, C = -1, ChoiceC = -1 });
-                Delta(r, 0, 2); Delta(r, 3, -4); Delta(r, 1, -1); Delta(r, 4, -1); Delta(r, 2, 1); Delta(r, 5, 1);
-            }
-            else
-            {
-                r.Pairs.Add(new LinePairReveal { A = 0, B = 2, ChoiceA = 0, ChoiceB = 0, C = -1, ChoiceC = -1 });
-                r.Pairs.Add(new LinePairReveal { A = 1, B = 3, ChoiceA = 0, ChoiceB = 1, C = 4, ChoiceC = 0 });
-                Delta(r, 0, -1); Delta(r, 2, -1); Delta(r, 3, -4); Delta(r, 1, 2); Delta(r, 4, 2);
-            }
-            return r;
-        }
-
-        static LineRoundReveal RevealOdd()
-        {
-            var r = new LineRoundReveal { Type = RoundType.FarkliEposta, Index = 1, Hidden = 4, TopicId = 4, OddGuess = 5, OddGuessCorrect = false, Winner = 4 };
-            int[] votes = { 4, 4, 3, 4, 2, 1 };
-            for (int i = 0; i < votes.Length; i++) r.Votes.Add(new LineVoteView { Voter = i, Target = votes[i] });
-            r.Counts.AddRange(new[] { 0, 1, 1, 1, 3, 0 });
-            Delta(r, 4, 3); Delta(r, 0, -1); Delta(r, 1, -1); Delta(r, 3, -1);
-            return r;
-        }
-
-        static LineRoundReveal RevealLost()
-        {
-            var r = new LineRoundReveal { Type = RoundType.KayipRapor, Index = 1, Hidden = 2, Winner = 3 };
-            r.Clues.AddRange(new[] { 3, 0, 4, 1, 0 });
-            int[] votes = { 2, 3, 3, 2, 3 };
-            for (int i = 0; i < votes.Length; i++) r.Votes.Add(new LineVoteView { Voter = i, Target = votes[i] });
-            r.Counts.AddRange(new[] { 0, 0, 2, 3, 0 });
-            Delta(r, 2, -2); Delta(r, 3, 2);
-            return r;
-        }
-
-        static LineRoundReveal RevealComplaint()
-        {
-            var r = new LineRoundReveal { Type = RoundType.IhbarKutusu, Index = 1, Winner = 3 };
-            r.Complaints.Add(new LineComplaintView { Target = 3, Reason = 0 });
-            r.Complaints.Add(new LineComplaintView { Target = 3, Reason = 2 });
-            r.Complaints.Add(new LineComplaintView { Target = 1, Reason = 4 });
-            r.Complaints.Add(new LineComplaintView { Target = 3, Reason = 5 });
-            r.Complaints.Add(new LineComplaintView { Target = 5, Reason = 1 });
-            r.Counts.AddRange(new[] { 0, 1, 0, 3, 0, 1 });
-            Delta(r, 3, 2); Delta(r, 0, -1); Delta(r, 2, -1); Delta(r, 4, -1);
-            return r;
-        }
-
-        static LineRoundReveal RevealPromo()
-        {
-            var r = new LineRoundReveal { Type = RoundType.TerfiListesi, Index = 1, Winner = 2 };
-            int[] votes = { 2, 2, 1, 2 };
-            for (int i = 0; i < votes.Length; i++) r.Votes.Add(new LineVoteView { Voter = i, Target = votes[i] });
-            r.Counts.AddRange(new[] { 0, 1, 3, 0 });
-            Delta(r, 2, -3); Delta(r, 0, -1); Delta(r, 1, -1); Delta(r, 3, -1);
-            return r;
-        }
-
-        static LineRoundReveal RevealCode(int n, bool solved)
-        {
-            var r = new LineRoundReveal { Type = RoundType.OrtakSifre, Index = 0, Solved = solved };
-            if (n >= 6)
-            {
-                r.Code = 473916; r.Hidden = 4;
-                r.CodesByPlayer.AddRange(new[] { 473916, 473916, 473196, 473916, 471916, 473916 });
-                for (int i = 0; i < 6; i++) Delta(r, i, i == 4 ? 2 : -1);
-            }
-            else
-            {
-                r.Code = 5821; r.Hidden = 1;
-                r.CodesByPlayer.AddRange(new[] { 5821, 5281, 5821, -1 });
-                for (int i = 0; i < 4; i++) Delta(r, i, i == 1 ? -2 : 1);
-            }
-            return r;
-        }
     }
 }

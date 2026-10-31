@@ -7,584 +7,652 @@ using static BirimizKovulacak.Game.UiKit;
 
 namespace BirimizKovulacak.Game
 {
-    // ======================================================================== Mail
+    // =================================================================================================================
+    // Bank: balance, block income filter, transfers, history
+    // =================================================================================================================
 
-    /// <summary>E-posta / Mail: inbox (newest first), reading pane, compose (recipient or everyone + template + mentioned colleague).</summary>
-    public sealed class DeskMailApp : DeskAppView
+    public sealed class DeskBankApp : DeskAppView
     {
-        public DeskMailApp(DeskUi ui) : base(ui, "dk-app-mail") { }
-        public override DeskApp Id => DeskApp.Mail;
-        public override string Icon => "mail_app";
+        public DeskBankApp(DeskUi ui) : base(ui, "dk-app-bank") { Build(); }
+        public override DeskApp Id => DeskApp.Bank;
+        public override string Icon => "bank_app";
 
-        int _sig = int.MinValue, _selected = -1;
-        bool _compose;
-        int _to = LineIds.None, _template = -1, _about = LineIds.None;
-        VisualElement _list, _pane;
+        Label _balance, _incomeText, _incomeRule, _status, _amountLabel, _rule;
+        VisualElement _incomeFill, _markFull, _pickHost, _history;
+        Button _send, _minus, _plus;
+        Action<int> _pickUpdate;
+        int _target = LineIds.None, _amount = 1;
+        int _sig = int.MinValue, _lastWait = -1;
+        string _err = "";
 
-        public override string Subtitle(LineView v) { return Dk.F("desk.mail.sub", Unread(v), v.Mine.Inbox.Count); }
+        public override string Subtitle(LineView v) { return Dk.F("desk.bank.balance", v.Mine.Money); }
 
-        public int Unread(LineView v)
+        void Build()
         {
-            int n = 0;
-            var inbox = v.Mine.Inbox;
-            for (int i = 0; i < inbox.Count; i++) if (!Ui.State.ReadMail.Contains(inbox[i].Id)) n++;
-            return n;
+            var scroll = new ScrollView(ScrollViewMode.Vertical).Cls("dk-bank-scroll").AddTo(Root);
+            var c = scroll.contentContainer;
+            var top = Box("dk-bank-top").AddTo(c);
+            var bal = Box("dk-bank-balance").NoPick().AddTo(top);
+            StampText(Loc.Upper(Dk.T("desk.bank.title")), "dk-bank-band").NoPick().AddTo(bal);
+            _balance = MemoBold("", "dk-bank-amount").NoPick().AddTo(bal);
+            var inc = Box("dk-bank-income").NoPick().AddTo(top);
+            Bold(Dk.T("desk.bank.income_title"), "dk-bank-income-title").NoPick().AddTo(inc);
+            var bar = Box("dk-incbar").NoPick().AddTo(inc);
+            _incomeFill = Box("dk-incbar-fill").NoPick().AddTo(bar);
+            _markFull = Box("dk-incbar-mark").NoPick().AddTo(bar);
+            _incomeText = Bold("", "dk-bank-income-text").NoPick().AddTo(inc);
+            _incomeRule = Text("", "dk-bank-income-rule").NoPick().AddTo(inc);
+
+            Dk.Heading(c, Dk.T("desk.bank.transfer"), Dk.T("desk.bank.transfer_hint"));
+            _pickHost = Box("dk-bank-pick").AddTo(c);
+            var amt = Box("dk-amount").AddTo(c);
+            Bold(Dk.T("desk.bank.amount"), "dk-amount-label").NoPick().AddTo(amt);
+            _minus = Btn("-", () => Step(-1), "btn-secondary", "dk-amount-btn").AddTo(amt);
+            _amountLabel = MemoBold("1", "dk-amount-value").NoPick().AddTo(amt);
+            _plus = Btn("+", () => Step(1), "btn-secondary", "dk-amount-btn").AddTo(amt);
+            Box("spacer").NoPick().AddTo(amt);
+            _send = Btn(Dk.T("desk.bank.send"), Send, "btn-primary", "dk-composer-send").AddTo(amt);
+            _status = Text("", "dk-composer-status").NoPick().AddTo(c);
+            _rule = Text("", "dk-bank-rule").NoPick().AddTo(c);
+
+            Dk.Heading(c, Dk.T("desk.bank.history"));
+            _history = Box("dk-bank-history").AddTo(c);
         }
 
-        public override int Badge(LineView v) { return Unread(v); }
+        internal void MockFill(int target, int amount) { _target = target; _amount = amount; _sig = int.MinValue; var v = Dk.View; if (v != null) Refresh(v, true); }
 
-        public void Select(int id)
+        void Step(int d)
         {
-            _selected = id;
-            _compose = false;
-            Ui.State.ReadMail.Add(id);
             var v = Dk.View;
-            if (v != null) Build(v, false);
-            Ui.Computer.RefreshSubtitle();
+            if (v == null) return;
+            _amount = Mathf.Clamp(_amount + d, 1, MaxAmount(v));
+            _err = "";
+            Update(v);
         }
 
-        public void Compose(int to = LineIds.None, int template = -1, int about = LineIds.None)
-        {
-            _compose = true;
-            _to = to; _template = template; _about = about;
-            var v = Dk.View;
-            if (v != null) Build(v, false);
-        }
+        static int MaxAmount(LineView v) { return Mathf.Max(1, Mathf.Min(Dk.Config.TransferMax, v.Mine.Money)); }
 
-        public override bool Back()
-        {
-            if (_compose) { _compose = false; var v = Dk.View; if (v != null) Build(v, false); return true; }
-            return false;
-        }
-
-        public override void OnShown()
-        {
-            var v = Dk.View;
-            if (v == null || _compose || _selected >= 0) return;
-            var inbox = v.Mine.Inbox;
-            if (inbox.Count > 0) Select(inbox[inbox.Count - 1].Id);
-        }
+        public override void OnShown() { _sig = int.MinValue; var v = Dk.View; if (v != null) Refresh(v, true); }
 
         public override void Refresh(LineView v, bool force)
         {
-            var inbox = v.Mine.Inbox;
-            int sig = inbox.Count * 1000 + (inbox.Count > 0 ? inbox[inbox.Count - 1].Id : 0);
-            sig = sig * 31 + v.Mine.MailsSentToday;
-            sig = sig * 31 + (Dk.ComputerBlocked(v) ? 1 : 0);
-            sig = sig * 31 + v.Players.Count;
-            if (!force && sig == _sig) return;
-            _sig = sig;
-            Build(v, force);
-        }
-
-        void Build(LineView v, bool animate)
-        {
-            Root.Clear();
-            var page = Box("dk-mail").AddTo(Root);
-            var left = Box("dk-mail-left").AddTo(page);
-            int left_ = Mathf.Max(0, Dk.Config.MailsPerDay - v.Mine.MailsSentToday);
-            var newRow = Box("dk-mail-new").AddTo(left);
-            var nb = Btn(Dk.T("desk.mail.new"), () => Compose(), "btn-primary", "dk-mail-new-btn").AddTo(newRow);
-            nb.SetEnabled(left_ > 0);
-            Text(Dk.F("desk.mail.left", left_, Dk.Config.MailsPerDay), "dk-mail-left-count").NoPick().AddTo(newRow);
-            var scroll = new ScrollView(ScrollViewMode.Vertical).Cls("dk-mail-list").AddTo(left);
-            _list = scroll.contentContainer;
-            var inbox = v.Mine.Inbox;
-            if (inbox.Count == 0) Text(Dk.T("desk.mail.empty"), "dk-empty").NoPick().AddTo(_list);
-            int n = 0;
-            for (int i = inbox.Count - 1; i >= 0; i--)
-            {
-                var m = inbox[i];
-                int id = m.Id;
-                bool unread = !Ui.State.ReadMail.Contains(id);
-                var row = Dk.Tile(() => Select(id), "dk-mail-row").AddTo(_list);
-                if (unread) row.AddToClassList("dk-mail-row-unread");
-                if (id == _selected && !_compose) row.AddToClassList("dk-mail-row-on");
-                if (m.Kind == MailKind.Manager) row.AddToClassList("dk-mail-row-manager");
-                Dk.Badge(m.From, "badge-s").AddTo(row);
-                var col = Box("dk-mail-row-col").NoPick().AddTo(row);
-                var top = Box("dk-mail-row-top").NoPick().AddTo(col);
-                Bold(Dk.Name(m.From), "dk-mail-row-from").NoPick().AddTo(top);
-                Box("spacer").NoPick().AddTo(top);
-                Text(Dk.OfficeClock(m.Time), "dk-mail-row-time").NoPick().AddTo(top);
-                var subj = Box("dk-mail-row-subj").NoPick().AddTo(col);
-                if (unread) Box("dk-unread-dot").NoPick().AddTo(subj);
-                Text(Dk.MailSubject(m), "dk-mail-row-subject").NoPick().AddTo(subj);
-                if (animate && n < 6) UiMotion.SlideIn(row, new Vector2(-24f, 0), 0.24f, 0.05f * n);
-                n++;
-            }
-
-            _pane = Box("dk-mail-pane").AddTo(page);
-            if (_compose) BuildCompose(v);
-            else
-            {
-                LineMailView sel = null;
-                for (int i = 0; i < inbox.Count; i++) if (inbox[i].Id == _selected) sel = inbox[i];
-                if (sel != null) BuildRead(v, sel, animate);
-                else
-                {
-                    var empty = Box("dk-mail-none").NoPick().AddTo(_pane);
-                    Dk.Icon("mail_app", "dk-mail-none-icon").AddTo(empty);
-                    Text(Dk.T(inbox.Count == 0 ? "desk.mail.none_yet" : "desk.mail.pick"), "dk-empty").NoPick().AddTo(empty);
-                }
-            }
-        }
-
-        void BuildRead(LineView v, LineMailView m, bool animate)
-        {
-            var paper = Box("dk-letter").AddTo(_pane);
-            var head = Box("dk-letter-head").NoPick().AddTo(paper);
-            Dk.Badge(m.From, "badge-l").AddTo(head);
-            var hc = Box("dk-letter-headcol").NoPick().AddTo(head);
-            Title(Dk.MailSubject(m), "dk-letter-subject").NoPick().AddTo(hc);
-            Text(Dk.F("desk.mail.from_to", Dk.Name(m.From), Dk.T(m.ToAll ? "desk.mail.to_all" : "desk.mail.to_you")) + "  ·  " + Dk.OfficeClock(m.Time), "dk-letter-meta").NoPick().AddTo(hc);
-            Box("dk-email-rule").NoPick().AddTo(paper);
-            Memo(Dk.MailBody(m), "dk-letter-body").NoPick().AddTo(paper);
-            if (m.Kind == MailKind.Personal)
-            {
-                var foot = Box("dk-letter-foot").AddTo(paper);
-                Text(Dk.T("desk.mail.spoof_hint"), "dk-letter-hint").NoPick().AddTo(foot);
-                Box("spacer").NoPick().AddTo(foot);
-                if (m.From >= 0 && m.From < 100 && m.From != v.Me)
-                {
-                    int from = m.From;
-                    Btn(Dk.T("desk.mail.reply"), () => Compose(from), "btn-secondary", "btn-small").AddTo(foot);
-                    var cb = Btn("", () => Ui.Call(from), "btn-secondary", "btn-small", "btn-icon").AddTo(foot);
-                    Dk.Icon("call", "btn-icon-img").AddTo(cb);
-                    Bold(Dk.T("desk.task.call"), "btn-label").NoPick().AddTo(cb);
-                }
-            }
-            if (animate) UiMotion.SlideIn(paper, new Vector2(30f, 0), 0.26f, 0.1f);
-        }
-
-        void BuildCompose(LineView v)
-        {
-            var c = Box("dk-compose").AddTo(_pane);
-            var lcol = Box("dk-compose-left").AddTo(c);
-            Dk.Heading(lcol, Dk.T("desk.mail.compose_to"));
-            var chips = Box("dk-chips").AddTo(lcol);
-            Chip(chips, LineIds.None, Dk.T("desk.mail.everyone"), _to == LineIds.None, () => { _to = LineIds.None; Build(v, false); });
-            for (int i = 0; i < v.Players.Count; i++)
-            {
-                int id = v.Players[i].Id;
-                if (id == v.Me) continue;
-                Chip(chips, id, v.Players[i].Name, _to == id, () => { _to = id; Build(v, false); });
-            }
-            bool needs = _template >= 0 && Dk.TemplateMentions(_template);
-            if (needs)
-            {
-                Dk.Heading(lcol, Dk.T("desk.mail.compose_about"));
-                var ach = Box("dk-chips").AddTo(lcol);
-                for (int i = 0; i < v.Players.Count; i++)
-                {
-                    int id = v.Players[i].Id;
-                    Chip(ach, id, v.Players[i].Name, _about == id, () => { _about = id; Build(v, false); });
-                }
-            }
-            Box("spacer").NoPick().AddTo(lcol);
-            var send = Box("dk-compose-send").AddTo(lcol);
-            int left = Mathf.Max(0, Dk.Config.MailsPerDay - v.Mine.MailsSentToday);
-            var row = Box("row").AddTo(send);
-            Btn(Dk.T("desk.cancel"), () => Back(), "btn-ghost").AddTo(row);
-            var sb = Btn(Dk.T("desk.mail.send"), () => SendMail(v), "btn-primary", "btn-big", "dk-primary").AddTo(row);
-            bool ok = _template >= 0 && (!needs || _about >= 0) && left > 0 && !Dk.ComputerBlocked(v) && LineClient.IsOfficePhase(v.Phase);
-            sb.SetEnabled(ok);
-            if (_template < 0) Text(Dk.T("desk.mail.pick_template"), "dk-compose-why").NoPick().AddTo(send);
-            else if (needs && _about < 0) Text(Dk.T("desk.mail.pick_about"), "dk-compose-why").NoPick().AddTo(send);
-
-            var rcol = Box("dk-compose-right").AddTo(c);
-            Dk.Heading(rcol, Dk.T("desk.mail.compose_template"), Dk.T("desk.mail.compose_template_hint"));
-            var scroll = new ScrollView(ScrollViewMode.Vertical).Cls("dk-templates").AddTo(rcol);
-            int n = Dk.Config.MailTemplates;
-            for (int i = 0; i < n; i++)
-            {
-                int t = i;
-                var tile = Dk.Tile(() => { _template = t; if (!Dk.TemplateMentions(t)) _about = LineIds.None; Build(v, false); }, "dk-template").AddTo(scroll.contentContainer);
-                if (t == _template) tile.AddToClassList("dk-template-on");
-                Bold(Dk.T("mail.personal." + t + ".subject"), "dk-template-subject").NoPick().AddTo(tile);
-                string body = t == _template && _about >= 0 ? Dk.PersonalBody(t, _about) : Dk.F("mail.personal." + t, "___");
-                Memo(body, "dk-template-body").NoPick().AddTo(tile);
-            }
-        }
-
-        static void Chip(VisualElement parent, int id, string label, bool on, Action click)
-        {
-            var c = Dk.Tile(click, "dk-chip").AddTo(parent);
-            if (on) c.AddToClassList("dk-chip-on");
-            if (id >= 0) Dk.Badge(id, "badge-xs").AddTo(c);
-            else Dk.Icon("mail_app", "dk-chip-icon").AddTo(c);
-            Bold(label, "dk-chip-text").NoPick().AddTo(c);
-        }
-
-        void SendMail(LineView v)
-        {
-            if (_template < 0) return;
-            Dk.Send(LineVerb.SendMail, _to, _template, Dk.TemplateMentions(_template) ? _about : LineIds.None);
-            Dk.Play("mail_drop", "email_ding");
-            Ui.Notes.Post(SlipKind.Good, "mail_app", Dk.T("desk.mail.sent"), Dk.F("desk.mail.sent_to", _to < 0 ? Dk.T("desk.mail.everyone") : Dk.Name(_to)));
-            _compose = false;
-            _template = -1; _about = LineIds.None;
-            Build(v, false);
-        }
-    }
-
-    // ======================================================================== Record
-
-    /// <summary>Sicil / Record: the blame table (highest first) with warnings, today's changes and the favourite.</summary>
-    public sealed class DeskRecordApp : DeskAppView
-    {
-        public DeskRecordApp(DeskUi ui) : base(ui, "dk-app-record") { }
-        public override DeskApp Id => DeskApp.Record;
-        public override string Icon => "record_app";
-        int _sig = int.MinValue;
-        readonly List<LinePlayerView> _sorted = new List<LinePlayerView>();
-
-        public override string Subtitle(LineView v) { return Dk.F("desk.record.sub", Dk.DayName(v.Day)); }
-
-        public override void Refresh(LineView v, bool force)
-        {
-            int sig = v.Favourite + 7;
-            for (int i = 0; i < v.Players.Count; i++)
-            {
-                var p = v.Players[i];
-                sig = sig * 31 + p.Blame * 8 + p.Ihtars * 2 + (p.Connected ? 1 : 0);
-            }
-            sig = sig * 31 + v.TodayReveals.Count;
-            if (!force && sig == _sig) return;
-            _sig = sig;
-            Build(v, force);
-        }
-
-        int Today(LineView v, int player)
-        {
-            int d = 0;
-            for (int i = 0; i < v.TodayReveals.Count; i++)
-            {
-                var ds = v.TodayReveals[i].Deltas;
-                for (int k = 0; k < ds.Count; k++) if (ds[k].Player == player) d += ds[k].Delta;
-            }
-            return d;
-        }
-
-        void Build(LineView v, bool animate)
-        {
-            Root.Clear();
-            var page = Box("dk-record").AddTo(Root);
-            var head = Box("dk-record-head").NoPick().AddTo(page);
-            Dk.Heading(head, Dk.T("desk.record.title"), Dk.F(v.Features.IsLastDay ? "desk.record.hint_last" : "desk.record.hint", Dk.Profile(v).IhtarBlame));
-            var cols = Box("dk-record-cols").NoPick().AddTo(page);
-            Text(Dk.T("desk.record.col.who"), "dk-record-col", "dk-record-col-who").NoPick().AddTo(cols);
-            Text(Dk.T("desk.record.col.blame"), "dk-record-col", "dk-record-col-blame").NoPick().AddTo(cols);
-            Text(Dk.T("desk.record.col.ihtar"), "dk-record-col", "dk-record-col-ihtar").NoPick().AddTo(cols);
-            Text(Dk.T("desk.record.col.today"), "dk-record-col", "dk-record-col-today").NoPick().AddTo(cols);
-
-            _sorted.Clear();
-            _sorted.AddRange(v.Players);
-            _sorted.Sort((a, b) => b.Blame != a.Blame ? b.Blame.CompareTo(a.Blame) : b.Ihtars != a.Ihtars ? b.Ihtars.CompareTo(a.Ihtars) : a.Id.CompareTo(b.Id));
-            int max = 1;
-            for (int i = 0; i < _sorted.Count; i++) if (_sorted[i].Blame > max) max = _sorted[i].Blame;
-            for (int i = 0; i < _sorted.Count; i++)
-            {
-                var p = _sorted[i];
-                var row = Box("dk-record-row").NoPick().AddTo(page);
-                if (p.Id == v.Me) row.AddToClassList("dk-record-me");
-                if (i == 0 && p.Blame > 0) row.AddToClassList("dk-record-top");
-                if (!p.Connected) row.AddToClassList("dk-record-away");
-                Bold(Num(i + 1), "dk-record-rank").NoPick().AddTo(row);
-                Dk.Badge(p.Id, "badge-m").AddTo(row);
-                var nc = Box("dk-record-namecol").NoPick().AddTo(row);
-                Bold(p.Name, "dk-record-name").NoPick().AddTo(nc);
-                var tags = Box("dk-record-tags").NoPick().AddTo(nc);
-                if (p.Id == v.Me) Tag(Dk.T("desk.you"), "tag-teal").AddTo(tags);
-                if (p.Id == v.Favourite) Tag(Dk.T("desk.record.favourite"), "tag-sticky").AddTo(tags);
-                if (!p.Connected) Tag(Dk.T("desk.away"), "tag-grey").AddTo(tags);
-                // blame: number + ink blots
-                var bcol = Box("dk-record-blame").NoPick().AddTo(row);
-                var num = Title(Num(p.Blame), "dk-record-blame-n").NoPick().AddTo(bcol);
-                var blots = Box("dk-blots").NoPick().AddTo(bcol);
-                int shown = Mathf.Min(p.Blame, 14);
-                for (int k = 0; k < shown; k++)
-                {
-                    var b = Box("dk-blot").NoPick().AddTo(blots);
-                    Dk.Art(b, "icons_v3/blame");
-                    Dk.SetTilt(b, Dk.Tilt(p.Id * 31 + k, 25f));
-                }
-                if (p.Blame > shown) Bold("+" + Num(p.Blame - shown), "dk-blot-more").NoPick().AddTo(blots);
-                var ih = Box("dk-record-ihtar").NoPick().AddTo(row);
-                for (int k = 0; k < p.Ihtars; k++) Dk.Icon("warning_letter", "dk-ihtar-mark").AddTo(ih);
-                if (p.Ihtars == 0) Text("–", "dk-record-dash").NoPick().AddTo(ih);
-                int today = Today(v, p.Id);
-                var td = Bold(today == 0 ? "–" : Dk.Delta(today), "dk-record-today").NoPick().AddTo(row);
-                td.AddToClassList(today > 0 ? "dk-bad" : today < 0 ? "dk-good" : "dk-neutral");
-                if (animate)
-                {
-                    UiMotion.SlideIn(row, new Vector2(-30f, 0), 0.26f, 0.04f * i);
-                    UiMotion.CountUp(num, 0, p.Blame, 0.5f, Num, 0.1f + 0.04f * i);
-                }
-            }
-            var foot = Box("dk-record-foot").NoPick().AddTo(page);
-            Text(Dk.T(Dk.Profile(v).HasFavourite ? "desk.record.foot_fav" : "desk.record.foot"), "dk-record-foot-text").NoPick().AddTo(foot);
-        }
-    }
-
-    // ======================================================================== Dirty Trick
-
-    /// <summary>Kirli İş / Dirty Trick: this week's card, how it works, and the use flow (target / fake-mail pickers, confirm).</summary>
-    public sealed class DeskTrickApp : DeskAppView
-    {
-        public DeskTrickApp(DeskUi ui) : base(ui, "dk-app-trick") { }
-        public override DeskApp Id => DeskApp.Trick;
-        public override string Icon => "trick_app";
-        int _sig = int.MinValue;
-        int _target = LineIds.None, _template = -1, _about = LineIds.None;
-        bool _armed;
-        float _armedAt;
-        Button _go;
-
-        public override string Subtitle(LineView v) { return v.Mine.Trick != TrickType.None ? Dk.TrickName(v.Mine.Trick) : ""; }
-
-        public override int Badge(LineView v)
-        {
-            return v.Features.TricksUnlocked && !v.Mine.TrickUsedToday && v.Mine.TricksLeftThisWeek > 0 && v.Mine.Trick != TrickType.None && Dk.InRound(v.Phase) ? v.Mine.TricksLeftThisWeek : 0;
-        }
-
-        public override void Refresh(LineView v, bool force)
-        {
-            int sig = (int)v.Mine.Trick;
-            sig = sig * 31 + (v.Mine.TrickUsedToday ? 1 : 0) + (v.Features.TricksUnlocked ? 2 : 0) + (Dk.InRound(v.Phase) ? 4 : 0) + (Dk.ComputerBlocked(v) ? 8 : 0) + v.Mine.TricksLeftThisWeek * 16;
-            sig = sig * 31 + v.Day;
+            int sig = v.Players.Count * 31 + v.Mine.Money * 7 + v.Mine.BlockIncome * 13 + v.Mine.Records.Count;
             for (int i = 0; i < v.Players.Count; i++) sig = sig * 3 + (v.Players[i].Connected ? 1 : 0);
-            if (!force && sig == _sig) return;
-            _sig = sig;
-            Build(v, force);
+            if (force || sig != _sig)
+            {
+                bool rebuildPick = force || _sig == int.MinValue || (_sig / 31) != (sig / 31);
+                _sig = sig;
+                _pickHost.Clear();
+                _pickUpdate = Dk.Picker(_pickHost, v, id => { _target = id; _err = ""; _pickUpdate(id); Update(Dk.View); }, false, "badge-m");
+                BuildHistory(v);
+            }
+            Update(v);
+        }
+
+        void Update(LineView v)
+        {
+            var cfg = Dk.Config;
+            _amount = Mathf.Clamp(_amount, 1, MaxAmount(v));
+            _pickUpdate?.Invoke(_target);
+            _balance.SetText(Dk.F("desk.bank.balance", v.Mine.Money));
+            int full = cfg.BlockIncomeFull, cap = cfg.BlockIncomeCap;
+            _incomeFill.style.width = Length.Percent(Mathf.Clamp01(v.Mine.BlockIncome / (float)Mathf.Max(1, cap)) * 100f);
+            _markFull.style.left = Length.Percent(Mathf.Clamp01(full / (float)Mathf.Max(1, cap)) * 100f);
+            _incomeText.SetText(Dk.F("desk.bank.income_now", v.Mine.BlockIncome, cap));
+            _incomeRule.SetText(v.Mine.BlockIncome >= cap ? Dk.F("desk.bank.income_capped", cap)
+                : v.Mine.BlockIncome >= full ? Dk.F("desk.bank.income_half", full, cap)
+                : Dk.F("desk.bank.income_rule", full, cap));
+            _incomeFill.EnableInClassList("dk-incbar-fill-half", v.Mine.BlockIncome >= full);
+            _incomeFill.EnableInClassList("dk-incbar-fill-cap", v.Mine.BlockIncome >= cap);
+            _amountLabel.SetText(Num(_amount));
+            _minus.SetEnabled(_amount > 1);
+            _plus.SetEnabled(_amount < MaxAmount(v));
+            _rule.SetText(Dk.F("desk.bank.rule", cfg.TransferMax, cfg.TransferMinInterval.ToString("0.#", Loc.Culture)));
+            string why = Why(v);
+            _send.SetEnabled(why.Length == 0);
+            _status.SetText(_err.Length > 0 ? _err : why.Length > 0 ? why : Dk.F("desk.bank.ready", _amount, _target >= 0 ? Dk.Name(_target) : "?"));
+            _status.EnableInClassList("dk-composer-status-bad", _err.Length > 0);
+            Dk.NoRich(_status);
+        }
+
+        string Why(LineView v)
+        {
+            if (!v.Features.TransfersOpen) return Dk.T("desk.bank.closed");
+            if (Dk.ComputerBlocked(v)) return Dk.T("desk.msg.blocked");
+            if (v.Mine.Money <= 0) return Dk.T("desk.bank.broke");
+            if (_target < 0) return Dk.T("desk.bank.pick");
+            double wait = v.Mine.NextTransferAt - Dk.Now;
+            if (wait > 0.05) return Dk.F("desk.msg.rate", Mathf.CeilToInt((float)wait));
+            return "";
         }
 
         public override void Tick(LineView v)
         {
-            if (_armed && Time.unscaledTime - _armedAt > 4f) { _armed = false; Build(v, false); }
+            int w = Mathf.CeilToInt((float)Math.Max(0, v.Mine.NextTransferAt - Dk.Now));
+            if (w != _lastWait) { _lastWait = w; Update(v); }
         }
 
-        void Build(LineView v, bool animate)
+        void Send()
         {
-            Root.Clear();
-            _go = null;
-            var t = v.Mine.Trick;
-            var page = Box("dk-trick").AddTo(Root);
-            var side = Box("dk-trick-side").NoPick().AddTo(page);
-            var card = Dk.TrickCard(t, "dk-trick-card").AddTo(side);
-            var main = Box("dk-trick-main").AddTo(page);
-            StampText(Loc.Upper(Dk.T("desk.trick.band")), "dk-section-band").NoPick().AddTo(main);
-            Title(Dk.TrickName(t), "dk-trick-name").NoPick().AddTo(main);
-            Text(Dk.TrickHow(t), "dk-trick-how").NoPick().AddTo(main);
-            var rules = Box("dk-trick-rules").NoPick().AddTo(side);
-            var prof = Dk.Profile(v);
-            RuleLine(rules, "timer", Dk.F("desk.trick.allowance", v.Mine.TricksLeftThisWeek, v.Length == WeekLength.Full ? Dk.Config.TricksPerWeekFull : Dk.Config.TricksPerWeekShort));
-            RuleLine(rules, "warning", Dk.F("desk.trick.trace", Mathf.RoundToInt(prof.TraceChance * 100f), prof.TrickCaughtBlame));
-            RuleLine(rules, "tip_off", Dk.F("desk.trick.tip", Dk.Config.ConfirmedTipBlame));
-
-            var flow = Box("dk-trick-flow").AddTo(main);
-            bool unlocked = v.Features.TricksUnlocked;
-            if (t == TrickType.None) State(flow, "lock", Dk.T("desk.trick.none"), null);
-            else if (!unlocked) State(flow, "lock", Dk.T("desk.trick.locked"), Dk.F("desk.trick.locked_sub", Dk.DayName(Dk.Config.UnlockDayFirstWeek)));
-            else if (v.Mine.TricksLeftThisWeek <= 0 && !v.Mine.TrickUsedToday) State(flow, "check", Dk.T("desk.trick.spent"), Dk.T("desk.trick.spent_sub"));
-            else if (v.Mine.TrickUsedToday)
-            {
-                State(flow, "check", Dk.T("desk.trick.used"), Dk.T("desk.trick.used_sub"));
-                var st = Dk.Stamp(Dk.T("desk.trick.used_stamp"), null, "dk-trick-used-stamp").AddTo(card);
-                if (animate) UiMotion.Stamp(st, -14f, 0.22f, 0.3f);
-                else Dk.SetTilt(st, -14f);
-            }
-            else if (!Dk.InRound(v.Phase)) State(flow, "timer", Dk.T("desk.trick.wait"), Dk.T("desk.trick.wait_sub"));
-            else BuildUse(flow, v, t);
-            if (animate) { UiMotion.Flip(card, null, 0.45f, 0.05f); UiMotion.SlideIn(main, new Vector2(30f, 0), 0.3f, 0.1f); }
-        }
-
-        static void RuleLine(VisualElement parent, string icon, string text)
-        {
-            var r = Box("dk-rule-line").NoPick().AddTo(parent);
-            Dk.Icon(icon, "dk-rule-icon").AddTo(r);
-            Text(text, "dk-rule-text").NoPick().AddTo(r);
-        }
-
-        static void State(VisualElement parent, string icon, string title, string sub)
-        {
-            var s = Box("dk-trick-state").NoPick().AddTo(parent);
-            Dk.Icon(icon, "dk-trick-state-icon").AddTo(s);
-            var c = Box("dk-trick-state-col").NoPick().AddTo(s);
-            Bold(title, "dk-trick-state-title").NoPick().AddTo(c);
-            if (!string.IsNullOrEmpty(sub)) Text(sub, "dk-trick-state-sub").NoPick().AddTo(c);
-        }
-
-        void BuildUse(VisualElement flow, LineView v, TrickType t)
-        {
-            bool fake = t == TrickType.SahteEposta;
-            bool needs = Dk.TrickNeedsTarget(t);
-            if (needs)
-            {
-                Dk.Heading(flow, Dk.T(fake ? "desk.trick.pick_sender" : "desk.trick.pick_target"), Dk.T("trick." + t + ".target"));
-                Action<int> pick = id => { _target = id; _armed = false; Build(v, false); };
-                var upd = fake ? Dk.ChipPicker(flow, v, pick) : Dk.Picker(flow, v, pick, false, "badge-m", AwayIds(v));
-                upd(_target);
-            }
-            if (fake)
-            {
-                Dk.Heading(flow, Dk.T("desk.trick.pick_template"));
-                var grid = Box("dk-trick-templates").AddTo(flow);
-                for (int i = 0; i < Dk.Config.MailTemplates; i++)
-                {
-                    int k = i;
-                    var tile = Dk.Tile(() => { _template = k; if (!Dk.TemplateMentions(k)) _about = LineIds.None; _armed = false; Build(v, false); }, "dk-template", "dk-template-s").AddTo(grid);
-                    if (k == _template) tile.AddToClassList("dk-template-on");
-                    Bold(Dk.T("mail.personal." + k + ".subject"), "dk-template-subject").NoPick().AddTo(tile);
-                }
-                if (_template >= 0)
-                {
-                    if (Dk.TemplateMentions(_template))
-                    {
-                        Dk.Heading(flow, Dk.T("desk.mail.compose_about"));
-                        var upd2 = Dk.ChipPicker(flow, v, id => { _about = id; _armed = false; Build(v, false); }, true);
-                        upd2(_about);
-                    }
-                    var prev = Box("dk-trick-preview").NoPick().AddTo(flow);
-                    Text(Dk.F("desk.trick.preview_from", _target >= 0 ? Dk.Name(_target) : "___"), "dk-trick-preview-from").NoPick().AddTo(prev);
-                    Memo(_about >= 0 || !Dk.TemplateMentions(_template) ? Dk.PersonalBody(_template, _about) : Dk.F("mail.personal." + _template, "___"), "dk-trick-preview-body").NoPick().AddTo(prev);
-                }
-            }
-            var foot = Box("dk-trick-foot").AddTo(flow);
-            Box("spacer").NoPick().AddTo(foot);
-            bool ok = (!needs || _target >= 0) && (!fake || (_template >= 0 && (!Dk.TemplateMentions(_template) || _about >= 0))) && !Dk.ComputerBlocked(v);
-            _go = Btn(Dk.T(_armed ? "desk.trick.confirm" : "desk.trick.use"), () => Go(v, t), "btn-danger", "btn-big", "dk-primary").AddTo(foot);
-            _go.SetEnabled(ok);
-            if (_armed) UiMotion.Shake(_go, 5f, 0.3f);
-        }
-
-        static int[] AwayIds(LineView v)
-        {
-            int n = 0;
-            for (int i = 0; i < v.Players.Count; i++) if (!v.Players[i].Connected) n++;
-            if (n == 0) return null;
-            var ids = new int[n];
-            n = 0;
-            for (int i = 0; i < v.Players.Count; i++) if (!v.Players[i].Connected) ids[n++] = v.Players[i].Id;
-            return ids;
-        }
-
-        void Go(LineView v, TrickType t)
-        {
-            if (!_armed) { _armed = true; _armedAt = Time.unscaledTime; Build(v, false); return; }
-            _armed = false;
-            bool needs = Dk.TrickNeedsTarget(t);
-            Dk.Send(LineVerb.UseTrick, needs ? _target : LineIds.None, t == TrickType.SahteEposta ? _template : -1,
-                t == TrickType.SahteEposta && Dk.TemplateMentions(_template) ? _about : -1);
-            _target = LineIds.None; _template = -1; _about = LineIds.None;
-        }
-
-        /// <summary>UI mock: pre-fill the use flow.</summary>
-        internal void MockPick(int target, int template, int about, bool armed)
-        {
-            _target = target; _template = template; _about = about; _armed = armed; _armedAt = Time.unscaledTime + 60f;
             var v = Dk.View;
-            if (v != null) Build(v, false);
+            if (v == null || Why(v).Length > 0) { Dk.Play("deny"); return; }
+            _err = "";
+            Dk.Send(LineVerb.Transfer, _target, _amount);
+        }
+
+        public override bool OnResult(LineActionResult r, LineAction req)
+        {
+            if (req.Verb != LineVerb.Transfer) return false;
+            if (r.Accepted) { Dk.Play("coin", "toast"); _err = ""; return false; }
+            _err = Dk.T("desk.fail." + r.Failure);
+            var v = Dk.View;
+            if (v != null) Update(v);
+            return true;
+        }
+
+        void BuildHistory(LineView v)
+        {
+            _history.Clear();
+            int shown = 0;
+            var rs = v.Mine.Records;
+            for (int i = rs.Count - 1; i >= 0 && shown < 24; i--)
+            {
+                var r = rs[i];
+                if (r.Kind != RecordKind.Transfer && r.Kind != RecordKind.DealPayment && r.Kind != RecordKind.OfferAcceptance) continue;
+                shown++;
+                bool outgoing = r.Kind == RecordKind.Transfer && r.Actor == v.Me;
+                bool incoming = r.Kind == RecordKind.Transfer && r.Subject == v.Me;
+                var row = Box("dk-hist", outgoing ? "dk-hist-out" : "dk-hist-in").AddTo(_history);
+                Dk.Icon("bank_app", "dk-hist-icon").NoPick().AddTo(row);
+                var col = Box("dk-hist-col").NoPick().AddTo(row);
+                Bold(r.Kind == RecordKind.Transfer ? (outgoing ? Dk.F("desk.bank.h_out", Dk.Name(r.Subject)) : incoming ? Dk.F("desk.bank.h_in", Dk.Name(r.Actor)) : Dk.F("desk.bank.h_other", Dk.Name(r.Actor), Dk.Name(r.Subject))) : Dk.RecordKindName(r.Kind), "dk-hist-name").Plain().NoPick().AddTo(col);
+                Text(Dk.Ago(r.Time), "dk-hist-time").NoPick().AddTo(col);
+                Box("spacer").NoPick().AddTo(row);
+                int amount = r.Kind == RecordKind.Transfer ? r.N1 : r.N1;
+                MemoBold((outgoing ? "-" : "+") + Mathf.Max(0, amount), "dk-hist-amount").NoPick().AddTo(row);
+            }
+            if (shown == 0) Text(Dk.T("desk.bank.no_history"), "dk-empty").AddTo(_history);
+            Dk.NoRich(_history);
+        }
+    }
+
+    // =================================================================================================================
+    // Evidence: my records and the offers shop
+    // =================================================================================================================
+
+    public sealed class DeskEvidenceApp : DeskAppView
+    {
+        public DeskEvidenceApp(DeskUi ui) : base(ui, "dk-app-evidence") { Build(); }
+        public override DeskApp Id => DeskApp.Evidence;
+        public override string Icon => "record_app";
+
+        VisualElement _recs, _offers, _recsWrap, _offersWrap;
+        Label _counters, _status;
+        TabBar _tabs;
+        int _tab;
+        int _sig = int.MinValue;
+        string _err = "";
+
+        public override string Subtitle(LineView v) { return Dk.F("desk.evidence.sub", v.Mine.Records.Count); }
+
+        void Build()
+        {
+            _tabs = new TabBar(Root, id => { _tab = id; ApplyTab(); }, "dk-ev-tabs");
+            _tabs.Add(0, Dk.T("desk.evidence.tab_records"), "record_app");
+            _tabs.Add(1, Dk.T("desk.evidence.tab_offers"), "bank_app");
+            var scrollR = new ScrollView(ScrollViewMode.Vertical).Cls("dk-ev-scroll").AddTo(Root);
+            _recsWrap = scrollR;
+            _recs = scrollR.contentContainer;
+            var scrollO = new ScrollView(ScrollViewMode.Vertical).Cls("dk-ev-scroll").AddTo(Root);
+            _offersWrap = scrollO;
+            _offers = scrollO.contentContainer;
+            _tabs.Select(0, false);
+            ApplyTab();
+        }
+
+        internal void MockTab(int t) { _tabs.Select(t); }
+
+        void ApplyTab()
+        {
+            _recsWrap.Show(_tab == 0);
+            _offersWrap.Show(_tab == 1);
+        }
+
+        public override void OnShown() { _sig = int.MinValue; var v = Dk.View; if (v != null) Refresh(v, true); }
+
+        public override void Refresh(LineView v, bool force)
+        {
+            int sig = v.Mine.Records.Count * 31 + v.Mine.Offers.Count + v.Mine.Money * 7 + v.Mine.PurchasesLeftThisBlock * 3 + v.Mine.PurchasesLeftThisMatch * 5;
+            for (int i = 0; i < v.Mine.Offers.Count; i++) sig = sig * 3 + (v.Mine.Offers[i].Purchased ? 1 : 0) + (v.Mine.Offers[i].Available ? 2 : 0) + v.Mine.Offers[i].Price;
+            for (int i = 0; i < v.Mine.Records.Count; i++) if (v.Mine.Records[i].Presented) sig += i + 1;
+            sig = sig * 31 + (v.Features.EvidenceOpen ? 1 : 0) + (Dk.ComputerBlocked(v) ? 2 : 0);
+            if (!force && sig == _sig) return;
+            _sig = sig;
+            BuildRecords(v);
+            BuildOffers(v);
+        }
+
+        void BuildRecords(LineView v)
+        {
+            _recs.Clear();
+            Dk.Heading(_recs, Dk.T("desk.evidence.records"), Dk.T("desk.evidence.records_hint"));
+            var rs = v.Mine.Records;
+            if (rs.Count == 0) Text(Dk.T("desk.evidence.no_records"), "dk-empty").AddTo(_recs);
+            var grid = Box("dk-rec-grid").AddTo(_recs);
+            for (int i = rs.Count - 1; i >= 0; i--) Dk.RecordCard(rs[i], null, "dk-rec-tile").AddTo(grid);
+            Text(Dk.T("desk.evidence.present_hint"), "dk-evidence-foot").NoPick().AddTo(_recs);
+        }
+
+        void BuildOffers(LineView v)
+        {
+            _offers.Clear();
+            var cfg = Dk.Config;
+            Dk.Heading(_offers, Dk.T("desk.evidence.offers"), Dk.T("desk.evidence.offers_hint"));
+            var info = Box("dk-ev-info").NoPick().AddTo(_offers);
+            Bold(Dk.F("desk.evidence.money", v.Mine.Money), "dk-ev-info-chip").NoPick().AddTo(info);
+            Bold(Dk.F("desk.evidence.left", v.Mine.PurchasesLeftThisBlock, v.Mine.PurchasesLeftThisMatch), "dk-ev-info-chip").NoPick().AddTo(info);
+            Text(Dk.F("desk.evidence.price_rule", cfg.PriceStep), "dk-ev-info-rule").NoPick().AddTo(info);
+            _status = Text(_err, "dk-composer-status", "dk-composer-status-bad").NoPick().AddTo(_offers);
+            _status.Show(_err.Length > 0);
+            if (v.Mine.Offers.Count == 0) Text(Dk.T("desk.evidence.no_offers"), "dk-empty").AddTo(_offers);
+            for (int i = 0; i < v.Mine.Offers.Count; i++)
+            {
+                var o = v.Mine.Offers[i];
+                var row = Box("dk-offer").AddTo(_offers);
+                if (o.Purchased) row.AddToClassList("dk-offer-bought");
+                Dk.Icon(OfferIcon(o.Kind), "dk-offer-icon").NoPick().AddTo(row);
+                var col = Box("dk-offer-col").NoPick().AddTo(row);
+                Bold(Dk.OfferName(o), "dk-offer-name").NoPick().AddTo(col);
+                Text(Dk.T("desk.offer.desc." + o.Kind), "dk-offer-desc").NoPick().AddTo(col);
+                Box("spacer").NoPick().AddTo(row);
+                MemoBold(Dk.F("desk.evidence.price", o.Price), "dk-offer-price").NoPick().AddTo(row);
+                string why = BuyBlocker(v, o);
+                if (o.Purchased) Tag(Dk.T("desk.evidence.bought"), "tag-green").AddTo(row);
+                else
+                {
+                    var id = o.Id;
+                    var b = Btn(Dk.T("desk.evidence.buy"), () => Buy(id), why.Length == 0 ? "btn-primary" : "btn-secondary", "btn-small").AddTo(row);
+                    b.SetEnabled(why.Length == 0);
+                    if (why.Length > 0) Text(why, "dk-offer-why").NoPick().AddTo(col);
+                }
+            }
+            Dk.NoRich(_offers);
+        }
+
+        static string OfferIcon(OfferKind k) { return k == OfferKind.BankLedger ? "bank_app" : k == OfferKind.TaskAudit ? "task_app" : k == OfferKind.ITLog ? "trick_app" : "lock"; }
+
+        string BuyBlocker(LineView v, LineOfferView o)
+        {
+            if (!v.Features.EvidenceOpen) return Dk.T("desk.evidence.closed");
+            if (!o.Available) return Dk.T("desk.evidence.unavailable");
+            if (v.Mine.PurchasesLeftThisBlock <= 0) return Dk.T("desk.evidence.no_block_left");
+            if (v.Mine.PurchasesLeftThisMatch <= 0) return Dk.T("desk.evidence.no_match_left");
+            if (v.Mine.Money < o.Price) return Dk.T("desk.evidence.too_poor");
+            if (Dk.ComputerBlocked(v)) return Dk.T("desk.msg.blocked");
+            return "";
+        }
+
+        void Buy(int offerId)
+        {
+            _err = "";
+            Dk.Send(LineVerb.BuyEvidence, a: offerId);
+        }
+
+        public override bool OnResult(LineActionResult r, LineAction req)
+        {
+            if (req.Verb != LineVerb.BuyEvidence) return false;
+            if (r.Accepted) { _err = ""; return false; }
+            _err = Dk.T("desk.fail." + r.Failure);
+            _sig = int.MinValue;
+            var v = Dk.View;
+            if (v != null) Refresh(v, true);
+            return true;
+        }
+    }
+
+    // =================================================================================================================
+    // Remedial work: bounded recovery with a colleague who took part
+    // =================================================================================================================
+
+    public sealed class DeskRemedialApp : DeskAppView
+    {
+        public DeskRemedialApp(DeskUi ui) : base(ui, "dk-app-remedial") { Build(); }
+        public override DeskApp Id => DeskApp.Remedial;
+        public override string Icon => "remedial";
+
+        VisualElement _body;
+        int _task = -1, _cosigner = LineIds.None;
+        int _sig = int.MinValue, _lastSec = -1;
+        Label _timerIn, _timerOut;
+        string _err = "";
+
+        public override string Subtitle(LineView v) { return Dk.F("desk.remedial.left", v.Mine.RemedialsLeftThisBlock, v.Mine.RemedialsLeftThisMatch); }
+
+        void Build()
+        {
+            var scroll = new ScrollView(ScrollViewMode.Vertical).Cls("dk-rem-scroll").AddTo(Root);
+            _body = scroll.contentContainer;
+        }
+
+        public override int Badge(LineView v) { return v.Mine.IncomingRemedial != null ? -1 : 0; }
+
+        internal void MockPick(int task, int who) { _task = task; _cosigner = who; _sig = int.MinValue; var v = Dk.View; if (v != null) Refresh(v, true); }
+
+        public override void OnShown() { _sig = int.MinValue; var v = Dk.View; if (v != null) Refresh(v, true); }
+
+        public override void Refresh(LineView v, bool force)
+        {
+            var m = v.Mine;
+            int sig = m.RemedialOptions.Count * 31 + (m.IncomingRemedial != null ? m.IncomingRemedial.Requester + 10 : 0) + (m.OutgoingRemedial != null ? m.OutgoingRemedial.Cosigner + 20 : 0);
+            sig = sig * 31 + m.RemedialsLeftThisBlock * 3 + m.RemedialsLeftThisMatch + (v.Features.RemedialOpen ? 100 : 0) + _task * 7 + _cosigner * 13;
+            for (int i = 0; i < m.RemedialOptions.Count; i++) sig = sig * 3 + m.RemedialOptions[i];
+            sig = sig * 31 + (Dk.ComputerBlocked(v) ? 1 : 0) + _err.Length;
+            if (!force && sig == _sig) return;
+            _sig = sig;
+            Build(v);
+        }
+
+        string TaskLabel(LineView v, int number, out int output, out int max)
+        {
+            output = -1; max = -1;
+            for (int i = 0; i < v.TodayReveals.Count; i++)
+                if (v.TodayReveals[i].Number == number) { output = v.TodayReveals[i].Output; max = v.TodayReveals[i].MaxOutput; return Dk.TaskName(v.TodayReveals[i].Kind); }
+            var rs = v.Mine.Records;
+            for (int i = rs.Count - 1; i >= 0; i--)
+                if (rs[i].Kind == RecordKind.TaskOutcome && rs[i].TaskNumber == number) { output = rs[i].N1; max = rs[i].N2; return Dk.TaskName(rs[i].Task); }
+            return Dk.F("desk.remedial.task_n", number + 1);
+        }
+
+        void Build(LineView v)
+        {
+            var m = v.Mine;
+            var cfg = Dk.Config;
+            _body.Clear();
+            _timerIn = _timerOut = null;
+            _lastSec = -1;
+            // explanation
+            var info = Box("dk-rem-info").NoPick().AddTo(_body);
+            Dk.Icon("remedial", "dk-rem-info-icon").AddTo(info);
+            var ic = Box("dk-rem-info-col").NoPick().AddTo(info);
+            Title(Dk.T("desk.remedial.title"), "dk-rem-title").NoPick().AddTo(ic);
+            Text(Dk.F("desk.remedial.effect", cfg.RemedialOutput, cfg.RemedialBlame, cfg.RemedialIncome), "dk-rem-text").NoPick().AddTo(ic);
+            Text(Dk.F("desk.remedial.caps", cfg.RemedialsPerBlock, cfg.RemedialsPerMatch, Mathf.RoundToInt(cfg.Durations.RemedialTimeout)), "dk-rem-text", "dk-rem-caps").NoPick().AddTo(ic);
+
+            if (!v.Features.RemedialOpen)
+            {
+                Text(Dk.T("desk.remedial.closed"), "dk-empty").AddTo(_body);
+                return;
+            }
+
+            // incoming request
+            if (m.IncomingRemedial != null)
+            {
+                var r = m.IncomingRemedial;
+                var card = Box("dk-rem-card", "dk-rem-incoming").AddTo(_body);
+                Dk.Badge(r.Requester, "badge-m").AddTo(card);
+                var col = Box("dk-rem-col").NoPick().AddTo(card);
+                Bold(Dk.F("desk.remedial.incoming", Dk.Name(r.Requester)), "dk-rem-card-title").Plain().NoPick().AddTo(col);
+                Text(Dk.F("desk.remedial.incoming_sub", Dk.TaskName(r.Task)), "dk-rem-card-sub").Plain().NoPick().AddTo(col);
+                _timerIn = MemoBold("", "dk-rem-timer").NoPick().AddTo(card);
+                Btn(Dk.T("desk.remedial.decline"), () => Dk.Send(LineVerb.RespondRemedial, r.Requester, 0), "btn-ghost").AddTo(card);
+                Btn(Dk.T("desk.remedial.accept"), () => Dk.Send(LineVerb.RespondRemedial, r.Requester, 1), "btn-primary").AddTo(card);
+            }
+
+            // outgoing request
+            if (m.OutgoingRemedial != null)
+            {
+                var r = m.OutgoingRemedial;
+                var card = Box("dk-rem-card", "dk-rem-outgoing").AddTo(_body);
+                Dk.Badge(r.Cosigner, "badge-m").AddTo(card);
+                var col = Box("dk-rem-col").NoPick().AddTo(card);
+                Bold(Dk.F("desk.remedial.waiting", Dk.Name(r.Cosigner)), "dk-rem-card-title").Plain().NoPick().AddTo(col);
+                Text(Dk.F("desk.remedial.waiting_sub", Dk.TaskName(r.Task)), "dk-rem-card-sub").Plain().NoPick().AddTo(col);
+                _timerOut = MemoBold("", "dk-rem-timer").NoPick().AddTo(card);
+            }
+
+            // start
+            Dk.Heading(_body, Dk.T("desk.remedial.start"), Dk.T("desk.remedial.start_hint"));
+            if (m.OutgoingRemedial != null) { Text(Dk.T("desk.remedial.pending_note"), "dk-empty").AddTo(_body); Dk.NoRich(_body); return; }
+            if (m.RemedialsLeftThisBlock <= 0 || m.RemedialsLeftThisMatch <= 0) { Text(Dk.T("desk.remedial.none_left"), "dk-empty").AddTo(_body); return; }
+            if (m.RemedialOptions.Count == 0) { Text(Dk.T("desk.remedial.no_options"), "dk-empty").AddTo(_body); return; }
+            if (!m.RemedialOptions.Contains(_task)) _task = -1;
+            var list = Box("dk-opts", "dk-opts-col").AddTo(_body);
+            for (int i = 0; i < m.RemedialOptions.Count; i++)
+            {
+                int number = m.RemedialOptions[i];
+                int output, max;
+                string label = TaskLabel(v, number, out output, out max);
+                var tile = Dk.Tile(() => { _task = number; _err = ""; _sig = int.MinValue; Refresh(Dk.View, true); }, "dk-opt").AddTo(list);
+                tile.EnableInClassList("dk-opt-on", _task == number);
+                Box("dk-opt-mark").NoPick().AddTo(tile);
+                Bold(label, "dk-opt-text").NoPick().AddTo(tile);
+                if (output >= 0) Tag(Dk.F("desk.remedial.output", output, max), "tag-grey").AddTo(tile);
+            }
+            Dk.Heading(_body, Dk.T("desk.remedial.who"), Dk.T("desk.remedial.who_hint"));
+            var pick = Dk.Picker(_body, v, id => { _cosigner = id; _err = ""; _sig = int.MinValue; Refresh(Dk.View, true); }, false, "badge-m");
+            pick(_cosigner);
+            var foot = Box("dk-composer-foot").AddTo(_body);
+            string why = _task < 0 ? Dk.T("desk.remedial.pick_task") : _cosigner < 0 ? Dk.T("desk.remedial.pick_who") : Dk.ComputerBlocked(v) ? Dk.T("desk.msg.blocked") : "";
+            Text(_err.Length > 0 ? _err : why.Length > 0 ? why : Dk.T("desk.remedial.ready"), "dk-composer-status", _err.Length > 0 ? "dk-composer-status-bad" : "").NoPick().AddTo(foot);
+            Box("spacer").NoPick().AddTo(foot);
+            var send = Btn(Dk.T("desk.remedial.send"), () => { _err = ""; Dk.Send(LineVerb.StartRemedial, _cosigner, _task); }, "btn-primary", "dk-composer-send").AddTo(foot);
+            send.SetEnabled(why.Length == 0);
+            Dk.NoRich(_body);
+        }
+
+        public override void Tick(LineView v)
+        {
+            var m = v.Mine;
+            double exp = m.IncomingRemedial != null ? m.IncomingRemedial.ExpiresAt : m.OutgoingRemedial != null ? m.OutgoingRemedial.ExpiresAt : 0;
+            if (exp <= 0) return;
+            int s = Mathf.Max(0, Mathf.CeilToInt((float)(exp - Dk.Now)));
+            if (s == _lastSec) return;
+            _lastSec = s;
+            _timerIn?.SetText(ClockInt(s));
+            _timerOut?.SetText(ClockInt(s));
+        }
+
+        public override bool OnResult(LineActionResult r, LineAction req)
+        {
+            if (req.Verb != LineVerb.StartRemedial && req.Verb != LineVerb.RespondRemedial) return false;
+            if (r.Accepted) { _task = -1; _cosigner = LineIds.None; _err = ""; _sig = int.MinValue; return false; }
+            _err = Dk.T("desk.fail." + r.Failure);
+            _sig = int.MinValue;
+            var v = Dk.View;
+            if (v != null) Refresh(v, true);
+            return true;
+        }
+    }
+
+    // =================================================================================================================
+    // Dirty trick
+    // =================================================================================================================
+
+    public sealed class DeskTrickApp : DeskAppView
+    {
+        public DeskTrickApp(DeskUi ui) : base(ui, "dk-app-trick") { Build(); }
+        public override DeskApp Id => DeskApp.Trick;
+        public override string Icon => "trick_app";
+
+        VisualElement _body;
+        int _target = LineIds.None, _apparent = LineIds.None, _tpl = -1;
+        bool _confirming;
+        int _sig = int.MinValue;
+        string _err = "";
+        Dk.TextBox _box;
+        TrickType _built;
+
+        public override string Subtitle(LineView v) { return v.Mine.Trick == TrickType.None ? "" : Dk.TrickName(v.Mine.Trick); }
+
+        void Build()
+        {
+            var scroll = new ScrollView(ScrollViewMode.Vertical).Cls("dk-trick-scroll").AddTo(Root);
+            _body = scroll.contentContainer;
         }
 
         public override bool Back()
         {
-            if (_armed) { _armed = false; var v = Dk.View; if (v != null) Build(v, false); return true; }
+            if (_confirming) { _confirming = false; ForceRebuild(); return true; }
             return false;
         }
-    }
 
-    // ======================================================================== Agenda
+        internal void MockPick(int target, int apparent, int tpl) { _target = target; _apparent = apparent; _tpl = tpl; ForceRebuild(); if (tpl >= 0 && _box != null) _box.SetValue(Dk.T("mail.template." + tpl)); }
 
-    /// <summary>Ajanda / Agenda: the week calendar (today's rounds, the final day) and your hidden agenda target.</summary>
-    public sealed class DeskAgendaApp : DeskAppView
-    {
-        public DeskAgendaApp(DeskUi ui) : base(ui, "dk-app-agenda") { }
-        public override DeskApp Id => DeskApp.Agenda;
-        public override string Icon => "agenda_app";
-        int _sig = int.MinValue;
+        void ForceRebuild() { _sig = int.MinValue; var v = Dk.View; if (v != null) Refresh(v, true); }
 
-        public override string Subtitle(LineView v) { return Dk.F("desk.agenda.sub", v.Day + 1, v.DayCount); }
+        public override void OnShown() { ForceRebuild(); }
+
+        static string Unavailable(LineView v)
+        {
+            var m = v.Mine;
+            if (m.Trick == TrickType.None) return Dk.T("desk.trick.none");
+            if (!v.Features.TricksUnlocked) return Dk.T("desk.trick.locked");
+            if (m.TricksLeftThisWeek <= 0) return Dk.T("desk.trick.no_left");
+            if (m.TrickUsedToday) return Dk.T("desk.trick.used_today");
+            if (!LineClient.IsOfficePhase(v.Phase)) return Dk.T("desk.trick.not_now");
+            if (Dk.ComputerBlocked(v)) return Dk.T("desk.msg.blocked");
+            return "";
+        }
 
         public override void Refresh(LineView v, bool force)
         {
-            int sig = v.Day * 1000 + v.DayCount * 100 + v.RoundIndex * 10 + (int)v.Phase;
-            sig = sig * 31 + v.Mine.AgendaTarget;
-            sig = sig * 31 + v.TodayRounds.Count;
+            var m = v.Mine;
+            int sig = (int)m.Trick * 31 + m.TricksLeftThisWeek * 7 + (m.TrickUsedToday ? 1 : 0) + (v.Features.TricksUnlocked ? 2 : 0) + _target * 13 + _apparent * 17 + _tpl * 19 + (_confirming ? 5 : 0) + _err.Length;
+            sig = sig * 31 + (int)v.Phase + (Dk.ComputerBlocked(v) ? 1 : 0) + v.Players.Count;
             if (!force && sig == _sig) return;
+            // the free-text box must survive refreshes while it is typed into: only rebuild when something visible changed
             _sig = sig;
-            Build(v, force);
+            Build(v);
         }
 
-        void Build(LineView v, bool animate)
+        void Build(LineView v)
         {
-            Root.Clear();
-            var page = Box("dk-agenda").AddTo(Root);
-            var week = Box("dk-week").NoPick().AddTo(page);
-            for (int d = 0; d < v.DayCount; d++)
+            var m = v.Mine;
+            var t = m.Trick;
+            string text = _box != null ? _box.Value : "";
+            _body.Clear();
+            _box = null;
+            if (t == TrickType.None) { Text(Dk.T("desk.trick.none"), "dk-empty").AddTo(_body); return; }
+            if (t != _built) { _built = t; _target = _apparent = LineIds.None; _tpl = -1; _confirming = false; text = ""; }
+            string unavailable = Unavailable(v);
+
+            var top = Box("dk-trick-top").AddTo(_body);
+            Dk.TrickCard(t, "dk-trick-card").AddTo(top);
+            var col = Box("dk-trick-col").NoPick().AddTo(top);
+            StampText(Loc.Upper(Dk.T("desk.trick.band")), "dk-section-band").NoPick().AddTo(col);
+            Title(Dk.TrickName(t), "dk-trick-name").NoPick().AddTo(col);
+            Text(Dk.TrickHow(t), "dk-trick-how").NoPick().AddTo(col);
+            var chips = Box("dk-ev-info").NoPick().AddTo(col);
+            Bold(Dk.F("desk.trick.left", m.TricksLeftThisWeek), "dk-ev-info-chip").NoPick().AddTo(chips);
+            Bold(Dk.T(m.TrickUsedToday ? "desk.trick.used_chip" : "desk.trick.ready_chip"), "dk-ev-info-chip").NoPick().AddTo(chips);
+            var warn = Box("dk-trick-warn").NoPick().AddTo(col);
+            Dk.Icon("warning", "dk-trick-warn-icon").AddTo(warn);
+            Text(Dk.F("desk.trick.warning", Dk.Config.CareerSabotagePenalty, Dk.Config.ExposedSabotageBlame), "dk-trick-warn-text").NoPick().AddTo(warn);
+
+            if (unavailable.Length > 0) { Text(unavailable, "dk-composer-status", "dk-composer-status-bad").NoPick().AddTo(_body); Dk.NoRich(_body); return; }
+
+            if (Dk.TrickNeedsTarget(t))
             {
-                var col = Box("dk-day").NoPick().AddTo(week);
-                bool past = d < v.Day, today = d == v.Day, last = d == v.DayCount - 1;
-                if (past) col.AddToClassList("dk-day-past");
-                if (today) col.AddToClassList("dk-day-today");
-                if (last) col.AddToClassList("dk-day-last");
-                var head = Box("dk-day-head").NoPick().AddTo(col);
-                StampText(Loc.Upper(Dk.DayName(d)), "dk-day-name").NoPick().AddTo(head);
-                var body = Box("dk-day-body").NoPick().AddTo(col);
-                if (today)
+                Dk.Heading(_body, Dk.T(t == TrickType.SahteEposta ? "desk.trick.victim_mail" : "desk.trick.victim"));
+                var pick = Dk.Picker(_body, v, id => { _target = id; if (_apparent == id) _apparent = LineIds.None; _err = ""; _confirming = false; ForceRebuild(); }, false, "badge-m");
+                pick(_target);
+            }
+            if (t == TrickType.SahteEposta)
+            {
+                Dk.Heading(_body, Dk.T("desk.trick.apparent"), Dk.T("desk.trick.apparent_hint"));
+                var ap = Dk.ChipPicker(_body, v, id => { _apparent = id; _err = ""; _confirming = false; ForceRebuild(); }, false, _target >= 0 ? new[] { _target } : null);
+                ap(_apparent);
+                Dk.Heading(_body, Dk.T("desk.trick.body"), Dk.T("desk.trick.body_hint"));
+                var tpls = Box("dk-chips").AddTo(_body);
+                for (int i = 0; i < Dk.Config.MailTemplates; i++)
                 {
-                    for (int i = 0; i < v.TodayRounds.Count; i++)
-                    {
-                        var item = Box("dk-day-item").NoPick().AddTo(body);
-                        bool done = v.RoundIndex > i || (v.RoundIndex == i && v.Phase == LinePhase.RoundReveal);
-                        bool now = v.RoundIndex == i && !done;
-                        if (done) item.AddToClassList("dk-day-item-done");
-                        if (now) item.AddToClassList("dk-day-item-now");
-                        Dk.Icon(done ? "sticky_check" : "sticky_todo", "dk-day-item-icon").AddTo(item);
-                        Bold(Dk.RoundName(v.TodayRounds[i]), "dk-day-item-text").NoPick().AddTo(item);
-                    }
-                    var meet = Box("dk-day-item").NoPick().AddTo(body);
-                    Dk.Icon("meeting", "dk-day-item-icon").AddTo(meet);
-                    Bold(Dk.T(last ? "desk.agenda.final" : "desk.agenda.meeting"), "dk-day-item-text").NoPick().AddTo(meet);
+                    int idx = i;
+                    var chip = Dk.Tile(() => { _tpl = idx; if (_box != null) _box.SetValue(Dk.T("mail.template." + idx)); UpdateButtons(); }, "dk-chip", "dk-chip-tpl").AddTo(tpls);
+                    chip.EnableInClassList("dk-chip-on", _tpl == i);
+                    Bold(Dk.T("mail.template." + i + ".title"), "dk-chip-text").NoPick().AddTo(chip);
                 }
-                else if (past)
-                {
-                    var s = Dk.Stamp(Dk.T("desk.agenda.done"), null, "dk-day-stamp").AddTo(body);
-                    Dk.SetTilt(s, Dk.Tilt(d, 8f) - 8f);
-                }
-                else
-                {
-                    Text(Dk.T(last ? "desk.agenda.future_last" : "desk.agenda.future"), "dk-day-future").NoPick().AddTo(body);
-                }
-                if (last && !past)
-                {
-                    var f = Box("dk-day-final").NoPick().AddTo(col);
-                    Dk.Icon("defense", "dk-day-final-icon").AddTo(f);
-                    Bold(Dk.T("desk.agenda.firing"), "dk-day-final-text").NoPick().AddTo(f);
-                }
-                if (animate) UiMotion.SlideIn(col, new Vector2(0, 30f), 0.26f, 0.05f * d);
+                _box = Dk.TextInput(_body, Dk.Config.EmailMaxChars, true, Dk.T("desk.trick.placeholder"), "dk-composer-box", "dk-mail-box");
+                _box.SetValue(text);
+                _box.Changed = () => { if (_tpl >= 0 && _box.Value != Dk.T("mail.template." + _tpl)) { _tpl = -1; } _err = ""; UpdateButtons(); };
             }
 
-            // hidden agenda: a confidential folder
-            var folder = Box("dk-agenda-folder").NoPick().AddTo(page);
-            var fl = Box("dk-agenda-folder-left").NoPick().AddTo(folder);
-            StampText(Loc.Upper(Dk.T("desk.agenda.hidden")), "dk-section-band").NoPick().AddTo(fl);
-            var trow = Box("dk-agenda-titlerow").NoPick().AddTo(fl);
-            var crosshair = Dk.Icon("agenda_target", "dk-agenda-cross").AddTo(trow);
-            Title(Dk.T("desk.agenda.target_title"), "dk-agenda-title").NoPick().AddTo(trow);
-            Text(Dk.F("desk.agenda.target_text", Dk.Config.AgendaPointsPerIhtar, Dk.Config.AgendaPoints), "dk-agenda-text").NoPick().AddTo(fl);
-            Text(Dk.T("desk.agenda.target_hint"), "dk-agenda-hint").NoPick().AddTo(fl);
-            var target = Box("dk-agenda-target").NoPick().AddTo(folder);
-            Dk.Badge(v.Mine.AgendaTarget, "badge-xl").AddTo(target);
-            Title(v.Mine.AgendaTarget >= 0 ? Dk.Name(v.Mine.AgendaTarget) : "?", "dk-agenda-name").NoPick().AddTo(target);
-            var stamp = Dk.Stamp(Dk.T("desk.agenda.confidential"), Loc.Language == "tr" ? "stamps/stamp_gizli" : "stamps_v3/stamp_confidential", "dk-agenda-stamp").AddTo(folder);
-            if (animate)
+            var foot = Box("dk-composer-foot").AddTo(_body);
+            _status = Text("", "dk-composer-status").NoPick().AddTo(foot);
+            Box("spacer").NoPick().AddTo(foot);
+            _use = Btn(Dk.T("desk.trick.use"), OnUse, "btn-danger", "dk-composer-send").AddTo(foot);
+            if (_confirming)
             {
-                UiMotion.SlideIn(folder, new Vector2(0, 40f), 0.3f, 0.2f);
-                UiMotion.Stamp(stamp, -8f, 0.24f, 0.7f, () => Dk.Play("stamp", null, 0.7f));
-                UiMotion.Pulse(crosshair, 0.15f, 0.4f);
+                var cf = Box("dk-confirm").AddTo(_body);
+                Title(Dk.T("desk.sab.title"), "dk-confirm-title").NoPick().AddTo(cf);
+                Bold(Dk.TrickName(t) + (_target >= 0 ? " - " + Dk.Name(_target) : ""), "dk-confirm-opt").Plain().NoPick().AddTo(cf);
+                Text(Dk.F("desk.trick.confirm", Dk.Config.CareerSabotagePenalty, Dk.Config.ExposedSabotageBlame), "dk-confirm-rule").NoPick().AddTo(cf);
+                var row = Box("dk-confirm-row").AddTo(cf);
+                Btn(Dk.T("desk.sab.back"), () => { _confirming = false; ForceRebuild(); }, "btn-secondary").AddTo(row);
+                Btn(Dk.T("desk.trick.do"), DoUse, "btn-danger", "dk-confirm-do").AddTo(row);
+                UiMotion.PopIn(cf, 0.2f, 0f, 0.92f);
             }
-            else Dk.SetTilt(stamp, -8f);
+            UpdateButtons();
+            Dk.NoRich(_body);
+        }
+
+        Label _status;
+        Button _use;
+
+        bool Ready(LineView v, out string why)
+        {
+            why = "";
+            var t = v.Mine.Trick;
+            if (Dk.TrickNeedsTarget(t) && _target < 0) { why = Dk.T("desk.trick.pick_victim"); return false; }
+            if (t == TrickType.SahteEposta)
+            {
+                if (_apparent < 0) { why = Dk.T("desk.trick.pick_apparent"); return false; }
+                if (_box == null || _box.Value.Trim().Length == 0) { why = Dk.T("desk.trick.pick_body"); return false; }
+            }
+            return true;
+        }
+
+        void UpdateButtons()
+        {
+            var v = Dk.View;
+            if (v == null || _use == null) return;
+            string why;
+            bool ok = Ready(v, out why);
+            _use.SetEnabled(ok && !_confirming);
+            _status.SetText(_err.Length > 0 ? _err : why.Length > 0 ? why : Dk.T("desk.trick.ready"));
+            _status.EnableInClassList("dk-composer-status-bad", _err.Length > 0);
+        }
+
+        void OnUse()
+        {
+            var v = Dk.View;
+            string why;
+            if (v == null || !Ready(v, out why)) { Dk.Play("deny"); return; }
+            _confirming = true;
+            ForceRebuild();
+        }
+
+        void DoUse()
+        {
+            var v = Dk.View;
+            string why;
+            if (v == null || !Ready(v, out why)) { _confirming = false; ForceRebuild(); return; }
+            var t = v.Mine.Trick;
+            _err = "";
+            if (t == TrickType.SahteEposta) Dk.Send(LineVerb.UseTrick, _target, _tpl, _apparent, -1, _box.Value.Trim());
+            else Dk.Send(LineVerb.UseTrick, Dk.TrickNeedsTarget(t) ? _target : LineIds.None);
+            _confirming = false;
+            Dk.Play("stamp");
+            ForceRebuild();
+        }
+
+        public override bool OnResult(LineActionResult r, LineAction req)
+        {
+            if (req.Verb != LineVerb.UseTrick) return false;
+            if (r.Accepted) { _target = _apparent = LineIds.None; _tpl = -1; _confirming = false; _err = ""; ForceRebuild(); return false; }
+            _confirming = false;
+            _err = Dk.T("desk.fail." + r.Failure);
+            ForceRebuild();
+            return true;
         }
     }
 }
