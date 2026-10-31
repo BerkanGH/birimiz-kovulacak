@@ -382,6 +382,23 @@ namespace BirimizKovulacak.Telemetry.Tests
         }
 
         [Test]
+        public void ViewsAreBuiltAtTheBatchTimeNeverAtOlderEventTimes()
+        {
+            // Regression (v4 network run): events drained in one batch carry earlier times than the host frame;
+            // building views at those times threw (non-monotonic) inside the real engine.
+            var rig = InRound();
+            rig.Engine.Reveals.Add(new LineTaskReveal { Number = 0, Output = 80, MaxOutput = 100 });
+            rig.Go(1099, LinePhase.RoundReveal, 10);
+            rig.Engine.Tick(1105);
+            rig.Engine.FrameTime = 1105;
+            int failuresBefore = rig.Named("technical_failure").Count();
+            rig.Host.EngineEvents(rig.Engine, new System.Collections.Generic.List<LineEvent> { Ev.Pub(LineEventType.TaskResolved, 1099, a: 0, b: 80) }, 1105);
+            Assert.AreEqual(failuresBefore, rig.Named("technical_failure").Count());
+            Assert.AreEqual(1, rig.Named("task_output_resolved").Count());
+            Assert.AreEqual(100, One(rig, "task_output_resolved").GetInt("max_output"), "max read from the view at batch time");
+        }
+
+        [Test]
         public void Rounds_WithoutEarlySubmitOmitsSavedSeconds()
         {
             var rig = InRound();

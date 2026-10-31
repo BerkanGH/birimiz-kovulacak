@@ -110,10 +110,19 @@ namespace BirimizKovulacak.Telemetry.Tests
             return v;
         }
 
-        public void Tick(double now) { }
+        /// <summary>Like the real engine: time never goes backwards (BuildView ticks too).</summary>
+        public double LastTick = double.MinValue;
+        /// <summary>Telemetry must never advance the engine beyond the host's frame time.</summary>
+        public double FrameTime = double.MaxValue;
+        public void Tick(double now)
+        {
+            if (now < LastTick) throw new System.ArgumentOutOfRangeException(nameof(now), "Host time must be finite and monotonic.");
+            if (now > FrameTime) throw new System.InvalidOperationException("telemetry advanced the engine past the host frame time");
+            LastTick = now;
+        }
         public LineActionResult Apply(int player, LineAction action, double now) { throw new NotSupportedException(); }
         public void SetConnected(int player, bool connected, double now) { Disconnected[player] = !connected; }
-        public LineView BuildView(int player, double now) { return ViewFn(player, now); }
+        public LineView BuildView(int player, double now) { Tick(now); return ViewFn(player, now); }
         public List<LineEvent> DrainEvents() { return new List<LineEvent>(); }
         public LineSessionHistory NextHistory() { return new LineSessionHistory(); }
         public List<LineMessage> MessagesFor(int player, long afterSeq) { return new List<LineMessage>(); }

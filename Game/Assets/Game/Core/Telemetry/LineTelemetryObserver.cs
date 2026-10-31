@@ -122,17 +122,23 @@ namespace BirimizKovulacak.Telemetry
             catch (Exception) { }
         }
 
+        /// <summary>
+        /// Host time of the current batch/frame. Views are always built at this time: BuildView ticks the engine, so an
+        /// older event time would be rejected as non-monotonic and a later one would advance gameplay from telemetry.
+        /// </summary>
+        double _viewTime;
+
         LineView PublicView(double now)
         {
             if (_ids.Count == 0) return null;
-            try { return _e.BuildView(_ids[0], now); }
+            try { return _e.BuildView(_ids[0], _viewTime > 0 ? _viewTime : now); }
             catch (Exception ex) { Fail(ex); return null; }
         }
 
         LineView ViewOf(int player, double now)
         {
             if (!_ids.Contains(player)) return null;
-            try { return _e.BuildView(player, now); }
+            try { return _e.BuildView(player, _viewTime > 0 ? _viewTime : now); }
             catch (Exception ex) { Fail(ex); return null; }
         }
 
@@ -189,6 +195,7 @@ namespace BirimizKovulacak.Telemetry
         public void OnEvents(List<LineEvent> events, double now)
         {
             if (!_started || _ended || events == null || !_t.IsEnabled) return;
+            if (now > _viewTime) _viewTime = now;
             for (int i = 0; i < events.Count; i++)
             {
                 var e = events[i];
@@ -246,6 +253,7 @@ namespace BirimizKovulacak.Telemetry
         public void Tick(double now)
         {
             if (!_started || _ended || !_t.IsEnabled) return;
+            if (now > _viewTime) _viewTime = now;
             try
             {
                 if (!_stuckReported && _phase != LinePhase.None && _phase != LinePhase.WeekResults && _phase != LinePhase.Abandoned && !_e.IsFinished)
@@ -341,7 +349,8 @@ namespace BirimizKovulacak.Telemetry
             { LinePhase.Morning, new[] { LinePhase.RoundIntro } },
             { LinePhase.RoundIntro, new[] { LinePhase.RoundPlay } },
             { LinePhase.RoundPlay, new[] { LinePhase.RoundReveal } },
-            { LinePhase.RoundReveal, new[] { LinePhase.Break } },
+            // Task A → Break; task B → meeting (non-final block) or closing Break (last block).
+            { LinePhase.RoundReveal, new[] { LinePhase.Break, LinePhase.MeetingDossier } },
             { LinePhase.Break, new[] { LinePhase.RoundIntro, LinePhase.MeetingDossier } },
             { LinePhase.MeetingDossier, new[] { LinePhase.MeetingDiscussion } },
             { LinePhase.MeetingDiscussion, new[] { LinePhase.MeetingVote, LinePhase.FinalDefense, LinePhase.FinalVerdict } },
