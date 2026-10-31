@@ -118,6 +118,7 @@ namespace BirimizKovulacak.Game
             Port = port;
             LastErrorKey = "";
             LineClient.I.ResetSession();
+            if (!string.IsNullOrEmpty(reconnectToken)) TelemetryBootstrap.Client?.NoteJoinKind("rejoin");
             return Connect(reconnectToken ?? "");
         }
 
