@@ -145,9 +145,10 @@ namespace BirimizKovulacak.Core
                 case TaskKind.PhishingCheck:
                     t.OtherRole=Role(t.Number); t.Role=Role(t.Number,t.OtherRole,false); t.Roles[t.Role]=1;
                     int fake=1000+rng.Index(9000); t.Code=fake;
+                    // Everyone but the fake-mail holder shares the one real account: comparing endings finds the odd one.
+                    int account; do { account=1000+rng.Index(9000); } while(account==fake);
                     foreach(int id in ids)
                     {
-                        int account; do { account=1000+rng.Index(9000); } while(account==fake);
                         t.D[id,0]=id==t.OtherRole?fake:account; t.Facts[id].Add(Fact("account",t.D[id,0]));
                         var ctrl=new LineControlView{Kind=ControlKind.Player,Field=TaskField.Target,Key="flag",Required=true,AllowSelf=true};
                         foreach(int p in ids) ctrl.Options.Add(new LineOption{Key="player",Value=p,P=p}); t.Controls[id].Add(ctrl);

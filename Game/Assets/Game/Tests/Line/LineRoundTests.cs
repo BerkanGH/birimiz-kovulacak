@@ -104,6 +104,19 @@ namespace BirimizKovulacak.Core.Tests
             m.Submit(0,-1,1,fields:TaskField.B);Assert.AreEqual(output,m.Reveal().Output);Assert.IsTrue(m.View().Mine.Records.Any(r=>r.Kind==RecordKind.OfferAcceptance&&r.ProofOf>0));
         }
         [Test]
+        public void PhishingEveryoneButTheHolderSharesOneAccount()
+        {
+            // Regression (lead review): the real account was drawn per player, so endings could not be compared.
+            for(int seed=1;seed<=40;seed++) for(int n=3;n<=6;n++)
+            {
+                var m=LineTest.Task(TaskKind.PhishingCheck,n,seed:seed);m.Until(LinePhase.RoundPlay);
+                var accounts=m.Views().Select(v=>v.Task.Facts.Single(f=>f.Key=="account").N1).ToList();
+                var groups=accounts.GroupBy(a=>a).OrderByDescending(g=>g.Count()).ToList();
+                Assert.AreEqual(2,groups.Count,"seed "+seed+" players "+n);
+                Assert.AreEqual(n-1,groups[0].Count());Assert.AreEqual(1,groups[1].Count());
+            }
+        }
+        [Test]
         public void PhishingTiesBlockNothingAndAcceptanceIsProofEvenWithoutPayoff()
         {
             var m=LineTest.Task(TaskKind.PhishingCheck);m.Until(LinePhase.RoundPlay);var insider=m.Views().Single(v=>v.Task.Role==1);m.Submit(insider.Me,-1,1,fields:TaskField.B);

@@ -208,7 +208,8 @@ namespace BirimizKovulacak.Core
         public int PatronColleagues = 2;
         public int TeamPlayerTasks = 3;
         public int TeamPlayerOutput = 90;
-        public int ArchivistRecords = 6;
+        /// <summary>Records obtained by purchase or partner visibility (not own calls/transfers or public records).</summary>
+        public int ArchivistRecords = 4;
         public int ArchivistColleagues = 2;
         public int PresenterRecords = 2;
         public float RivalGuardianSameTarget = 0.5f;
