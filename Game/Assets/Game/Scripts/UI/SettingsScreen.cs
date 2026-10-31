@@ -9,12 +9,13 @@ namespace BirimizKovulacak.Game
     /// <summary>
     /// Settings: audio (master / sfx / ambience / voice / per-player), microphone (device, push-to-talk vs open mic,
     /// VAD threshold with a live meter, mute), controls (first-person look: sensitivity, invert Y, field of view; the
-    /// v3 key bindings), display + language (switches live: the whole UI is rebuilt by <see cref="UIRoot"/>).
+    /// v4 key bindings), display (fullscreen is remembered) + language (switches live: the whole UI is rebuilt by
+    /// <see cref="UIRoot"/>), and the Privacy tab (analytics consent and local data controls, when telemetry is installed).
     /// Values persist in PlayerPrefs (keys in <see cref="UiSettings"/> and <see cref="Rooms"/>).
     /// </summary>
     public sealed class SettingsScreen : UiKit.Screen
     {
-        public enum Tab { Audio = 0, Mic = 1, Controls = 2, Display = 3 }
+        public enum Tab { Audio = 0, Mic = 1, Controls = 2, Display = 3, Privacy = 4 }
         static SettingsScreen _i;
 
         /// <summary>First-person look defaults (the world reads the same PlayerPrefs keys).</summary>
@@ -25,6 +26,7 @@ namespace BirimizKovulacak.Game
         Tab _tab = Tab.Audio;
         VisualElement _levelFill;
         float _nextMeter;
+        string _musicBucket;
 
         public SettingsScreen(VisualElement parent) : base(parent, "dim", "center")
         {
@@ -39,6 +41,7 @@ namespace BirimizKovulacak.Game
             _tabs.Add((int)Tab.Mic, Loc.T("settings.tab.mic"), "mic_on");
             _tabs.Add((int)Tab.Controls, Loc.T("settings.tab.controls"), "info");
             _tabs.Add((int)Tab.Display, Loc.T("settings.tab.display"), "objective");
+            _tabs.Add((int)Tab.Privacy, Loc.T("settings.tab.privacy"), "lock_screen");
             var scroll = new ScrollView().Cls("settings-body").AddTo(_card);
             _body = scroll.contentContainer;
         }
@@ -50,6 +53,7 @@ namespace BirimizKovulacak.Game
         {
             if (_i == null) return;
             bool wasOpen = _i.Visible;
+            if (tab == (int)Tab.Privacy && TelemetryHooks.Privacy == null) tab = (int)Tab.Display;
             if (tab >= 0) { _i._tab = (Tab)tab; _i._tabs.Select(tab, false); }
             _i.SetVisible(true);
             if (wasOpen) _i.Build();
@@ -72,6 +76,8 @@ namespace BirimizKovulacak.Game
 
         protected override void OnShow()
         {
+            _tabs.SetTabVisible((int)Tab.Privacy, TelemetryHooks.Privacy != null);
+            if (_tab == Tab.Privacy && TelemetryHooks.Privacy == null) { _tab = Tab.Audio; _tabs.Select((int)Tab.Audio, false); }
             Build();
             UiMotion.PopIn(_card, 0.26f, 0f, 0.94f);
         }
@@ -87,6 +93,7 @@ namespace BirimizKovulacak.Game
                 case Tab.Mic: BuildMic(); break;
                 case Tab.Controls: BuildControls(); break;
                 case Tab.Display: BuildDisplay(); break;
+                case Tab.Privacy: PrivacyUi.BuildTab(_body, Build); break;
             }
             UiMotion.SlideIn(_body, new Vector2(0f, 14f), 0.2f);
         }
@@ -112,6 +119,18 @@ namespace BirimizKovulacak.Game
             SliderRow(_body, "settings.volume", 0f, 1f, Sfx.Volume, v => Sfx.Volume = v, Percent(1f));
             SliderRow(_body, "settings.sfx_volume", 0f, 1f, Sfx.EffectsVolume, v => Sfx.EffectsVolume = v, Percent(1f));
             SliderRow(_body, "settings.ambience_volume", 0f, 1f, Sfx.AmbienceVolume, v => Sfx.AmbienceVolume = v, Percent(1f));
+            SliderRow(_body, "settings.music_volume", 0f, 1f, MusicSettings.Volume, v =>
+            {
+                MusicSettings.Volume = v;
+                string bucket = (Mathf.RoundToInt(v * 4f) * 25).ToString(); // coarse bucket, never the raw value
+                if (bucket != _musicBucket) { _musicBucket = bucket; TelemetryHooks.SettingChanged("music_volume", bucket); }
+            }, Percent(1f));
+            var musicMute = new Toggle(Loc.T("settings.music_mute")) { value = MusicSettings.Muted }.Cls("toggle").AddTo(_body);
+            musicMute.RegisterValueChangedCallback(e =>
+            {
+                MusicSettings.Muted = e.newValue;
+                TelemetryHooks.SettingChanged("music_mute", e.newValue ? "on" : "off");
+            });
             var vset = VoiceSettingsNow();
             SliderRow(_body, "settings.voice_volume", 0f, 2f, vset.MasterVolume, v => vset.MasterVolume = v, Percent(1f));
 
@@ -129,7 +148,7 @@ namespace BirimizKovulacak.Game
                 string n = name;
                 var vs = VoiceSystem.Instance;
                 float cur = vs != null ? vs.GetPlayerVolume(slot) : vset.GetPlayerVolume(n);
-                var s = new Slider(n, 0f, 2f) { value = cur }.Cls("slider", "grow").AddTo(row);
+                var s = new Slider(n, 0f, 2f) { value = cur }.Cls("slider", "grow").PlainLabel().AddTo(row); // n is a player name: no markup
                 var val = Text(Mathf.RoundToInt(cur * 100f) + "%", "setting-value").AddTo(row);
                 s.RegisterValueChangedCallback(e =>
                 {
@@ -250,14 +269,19 @@ UiSettings.SetFloat(Rooms.PrefSensitivity, v), v => v.ToString("0.00") + "×");
             Text(Loc.T("settings.language_note"), "t-small", "t-muted").AddTo(_body);
 
             Section(_body, Loc.T("settings.display"), "objective");
-            var fs = new Toggle(Loc.T("settings.fullscreen")) { value = UnityEngine.Screen.fullScreen }.Cls("toggle").AddTo(_body);
-            fs.RegisterValueChangedCallback(e => UnityEngine.Screen.fullScreen = e.newValue);
+            var fs = new Toggle(Loc.T("settings.fullscreen")) { value = DisplaySettings.Fullscreen }.Cls("toggle").AddTo(_body);
+            fs.RegisterValueChangedCallback(e =>
+            {
+                DisplaySettings.Fullscreen = e.newValue; // remembered across launches
+                TelemetryHooks.SettingChanged("fullscreen", e.newValue ? "on" : "off");
+            });
+            Text(Loc.T("settings.fullscreen_note"), "t-small", "t-muted").AddTo(_body);
         }
 
         static void LangCard(VisualElement parent, string lang, string name, string sub)
         {
             bool on = Loc.Language == lang;
-            var b = Btn("", () => { if (Loc.Language != lang) Loc.SetLanguage(lang); }, on ? "btn-selected" : "btn-secondary", "lang-card").AddTo(parent);
+            var b = Btn("", () => { if (Loc.Language != lang) { TelemetryHooks.SettingChanged("language", lang); Loc.SetLanguage(lang); } }, on ? "btn-selected" : "btn-secondary", "lang-card").AddTo(parent);
             Title(name, "lang-card-name").NoPick().AddTo(b);
             Text(sub, "lang-card-sub").NoPick().AddTo(b);
             if (on) Tag(Loc.T("settings.language_current"), "tag-green", "lang-card-tag").AddTo(b);
@@ -274,21 +298,21 @@ UiSettings.SetFloat(Rooms.PrefSensitivity, v), v => v.ToString("0.00") + "×");
         }
     }
 
-    /// <summary>"Nasıl Oynanır" v3: seven illustrated pages (onboarding/ob_1..7), one short paragraph each.</summary>
+    /// <summary>"Nasıl Oynanır" v4: seven illustrated pages, one short paragraph each (goal, tasks, phone and text, company and career, blame and the final vote, evidence, recordings and privacy).</summary>
     public sealed class HowToPlayScreen : UiKit.Screen
     {
         static HowToPlayScreen _i;
         public const int Pages = 7;
         static readonly string[] PageArt =
         {
-            "onboarding/ob_1_rooms", "onboarding/ob_2_phone", "onboarding/ob_3_rounds", "onboarding/ob_4_blame",
-            "onboarding/ob_5_tricks", "onboarding/ob_6_recording", "onboarding/ob_7_friday",
+            "onboarding/ob_1_rooms", "onboarding/ob_3_rounds", "onboarding/ob_2_phone", "onboarding/ob_7_friday",
+            "onboarding/ob_4_blame", "onboarding/ob_5_tricks", "onboarding/ob_6_recording",
         };
         /// <summary>Fallback when an illustration is missing: one big icon on a paper tile.</summary>
         static readonly string[] PageIcon =
         {
-            "icons_v3/meeting", "icons_v3/manager_line", "icons_v3/task_app", "icons_v3/blame",
-            "icons_v3/coffee_spill", "icons_v3/recording", "icons_v3/defense",
+            "icons_v3/meeting", "icons_v3/task_app", "icons_v3/manager_line", "icons_v3/agenda_target",
+            "icons_v3/blame", "icons_v3/trick_app", "icons_v3/recording",
         };
 
         readonly VisualElement _card, _pic, _text, _dots;

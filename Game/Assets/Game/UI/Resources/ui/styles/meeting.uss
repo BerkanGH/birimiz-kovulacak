@@ -433,3 +433,139 @@
 .pick-stamp { position: absolute; left: 10px; right: 10px; top: 110px; height: 90px; -unity-background-scale-mode: scale-to-fit; }
 .pick-stamp .stamp-text-label { font-size: 40px; }
 .pick-note { font-size: 16px; color: rgb(107, 111, 128); margin-top: 16px; }
+
+/* ================================================================ v4 additions (hybrid office) */
+
+/* ---------------------------------------------------------------- projector shifts left while the side drawer is open */
+.mt-proj-side { left: 24px; margin-left: 0; }
+
+/* ---------------------------------------------------------------- side drawer: meeting chat + evidence picker */
+.mt-side { position: absolute; right: 22px; top: 150px; bottom: 200px; width: 470px; }
+.side-card { flex-grow: 1; padding: 12px 14px 10px 14px; }
+.side-tabs { flex-direction: row; margin-bottom: 6px; }
+.side-tab { margin-right: 6px; }
+.side-page { flex-grow: 1; min-height: 0; }
+.side-note { font-size: 14px; color: rgb(107, 111, 128); white-space: normal; margin-bottom: 4px; }
+.side-chat { flex-grow: 1; min-height: 120px; background-color: rgb(255, 253, 247); border-width: 2px; border-color: rgba(31, 42, 68, 0.25); border-radius: 10px; padding: 4px 6px; }
+.chat-line { flex-direction: row; align-items: flex-start; padding: 4px 4px; border-bottom-width: 1px; border-color: rgba(31, 42, 68, 0.08); }
+.chat-line .pbadge { margin-right: 8px; margin-top: 2px; }
+.chat-me { background-color: rgba(59, 185, 176, 0.14); border-radius: 8px; }
+.chat-name { font-size: 15px; color: rgb(31, 42, 68); }
+.chat-text { font-size: 18px; color: rgb(31, 42, 68); white-space: normal; }
+.side-status { font-size: 14px; color: rgb(107, 111, 128); margin-top: 4px; }
+.side-input { flex-direction: row; align-items: center; margin-top: 4px; }
+.side-field { margin: 0 8px 0 0; }
+.side-count-row { flex-direction: row; justify-content: flex-end; }
+.side-counter { font-size: 13px; color: rgb(107, 111, 128); }
+.side-error { font-size: 15px; color: rgb(210, 56, 47); white-space: normal; min-height: 4px; }
+.side-rec-info { font-size: 17px; color: rgb(31, 42, 68); margin-bottom: 2px; }
+.side-rec-scroll { flex-grow: 1; min-height: 120px; }
+.mt-side-look .side-card { opacity: 0.88; }
+.mt-side-look .side-chat { min-height: 200px; }
+.rp-row { flex-direction: row; align-items: center; padding: 6px 8px; margin: 2px 0; border-radius: 10px; background-color: rgb(255, 253, 247); border-width: 2px; border-color: rgba(31, 42, 68, 0.15); }
+.rp-row .icon { margin-right: 8px; }
+.rp-row-done { opacity: 0.6; }
+.rp-text { font-size: 16px; color: rgb(31, 42, 68); white-space: normal; }
+.rp-meta { font-size: 13px; color: rgb(107, 111, 128); }
+
+/* ---------------------------------------------------------------- presented records */
+.pc-grid { flex-direction: row; flex-wrap: wrap; align-content: flex-start; margin-top: 8px; }
+.pc-card { width: 520px; margin: 8px 12px 8px 0; padding: 14px 18px 12px 18px; background-color: rgb(255, 253, 247); border-width: 3px; border-color: rgb(31, 42, 68); border-bottom-width: 6px; border-radius: 10px; }
+.pc-head { flex-direction: row; align-items: center; margin-bottom: 6px; }
+.pc-head .icon { margin-right: 10px; }
+.pc-source { font-size: 18px; color: rgb(31, 42, 68); }
+.pc-time { font-size: 15px; color: rgb(107, 111, 128); }
+.pc-body { font-size: 24px; color: rgb(31, 42, 68); white-space: normal; margin: 4px 0 8px 0; }
+.pc-foot { flex-direction: row; align-items: center; }
+.pc-foot .pbadge { margin-right: 8px; }
+.pc-by { font-size: 16px; color: rgb(107, 111, 128); }
+.pc-note { font-size: 16px; color: rgb(107, 111, 128); white-space: normal; margin-top: 6px; }
+.pc-note-repeat { color: rgb(150, 100, 30); -unity-font-style: italic; }
+.pc-exposed { border-color: rgb(210, 56, 47); background-color: rgb(255, 240, 234); }
+.pc-repeat { opacity: 0.85; }
+.pc-stamp { margin-top: 8px; padding: 6px 12px; border-width: 5px; border-color: rgb(210, 56, 47); border-radius: 10px; rotate: -3deg; align-items: center; }
+.pc-stamp-text { font-size: 34px; color: rgb(210, 56, 47); letter-spacing: 3px; white-space: normal; -unity-text-align: middle-center; }
+.pc-actor { font-size: 20px; color: rgb(210, 56, 47); }
+
+/* ---------------------------------------------------------------- company productivity */
+.company-top { flex-direction: row; align-items: center; margin: 4px 0 0 0; }
+.company-big { font-size: 96px; color: rgb(31, 42, 68); margin-right: 28px; min-width: 260px; }
+.company-target { font-size: 28px; color: rgb(31, 42, 68); }
+.company-verdict { font-size: 22px; white-space: normal; }
+.company-good { color: rgb(47, 107, 79); }
+.company-bad { color: rgb(210, 56, 47); }
+.company-last { font-size: 17px; color: rgb(107, 111, 128); white-space: normal; }
+.company-gauge { margin: 8px 0 6px 0; }
+.gauge-wrap { height: 62px; margin-top: 4px; }
+.gauge { height: 30px; border-width: 3px; border-color: rgb(31, 42, 68); border-radius: 15px; background-color: rgba(31, 42, 68, 0.08); overflow: hidden; }
+.gauge-fill { height: 100%; border-radius: 12px; }
+.gauge-ok { background-color: rgb(47, 107, 79); }
+.gauge-low { background-color: rgb(210, 56, 47); }
+.gauge-measuring { background-color: rgb(150, 152, 165); }
+.gauge-target { position: absolute; top: -4px; bottom: -4px; width: 5px; margin-left: -2px; background-color: rgb(31, 42, 68); }
+.gauge-target-label { position: absolute; top: 34px; }
+.gauge-target-text { font-size: 15px; color: rgb(31, 42, 68); margin-left: -30px; white-space: nowrap; }
+.task-good { color: rgb(47, 107, 79); }
+.task-bad { color: rgb(210, 56, 47); }
+.round-card .bar { height: 14px; margin-top: 6px; }
+
+/* ---------------------------------------------------------------- complaints */
+.complaint-row { flex-direction: row; align-items: center; padding: 8px 14px; margin: 4px 0; background-color: rgb(255, 250, 225); border-width: 2px; border-color: rgb(196, 140, 40); border-radius: 10px; rotate: -0.4deg; }
+.complaint-row .icon { margin-right: 14px; }
+.complaint-text { font-size: 26px; color: rgb(31, 42, 68); white-space: normal; }
+.complaint-label { margin-right: 6px; }
+.complaint-foot { font-size: 18px; color: rgb(150, 100, 30); margin-top: 8px; white-space: normal; }
+.incident-all { background-color: rgba(31, 42, 68, 0.08); border-radius: 12px; }
+.tape-context { font-size: 14px; color: rgb(107, 111, 128); }
+
+/* ---------------------------------------------------------------- ballot (v4) */
+.ballot-voted-row { flex-direction: row; align-items: center; flex-wrap: wrap; margin-top: 8px; }
+.ballot-voted-row .pbadge { margin-left: 4px; }
+.ballot-secret { margin-left: 12px; color: rgb(150, 100, 30); }
+.ballot-foot { flex-direction: row; justify-content: flex-end; margin-top: 6px; }
+.ballot-roster { color: rgb(31, 42, 68); }
+.ballot-nobody-icon { margin-right: 14px; }
+.tally-nobody { background-color: rgb(236, 240, 247); }
+.tally-nobody .icon { margin-right: 12px; }
+.spot-note { margin-top: 8px; font-size: 17px; color: rgba(244, 239, 227, 0.8); }
+
+/* ---------------------------------------------------------------- final verdict (v4) */
+.final-tally { width: auto; margin: 0; }
+.final-need { font-size: 30px; color: rgb(31, 42, 68); }
+.final-reason { font-size: 20px; color: rgb(31, 42, 68); white-space: normal; margin: 4px 0 10px 0; }
+.final-closed { }
+.final-closed-title { font-size: 56px; color: rgb(210, 56, 47); letter-spacing: 4px; }
+
+/* ---------------------------------------------------------------- results (v4) */
+.wr4-banner { flex-direction: row; align-items: center; padding: 8px 20px; margin-bottom: 8px; background-color: rgb(236, 245, 238); border-width: 3px; border-color: rgb(47, 107, 79); border-radius: 12px; }
+.wr4-banner-closed { background-color: rgb(255, 232, 224); border-color: rgb(210, 56, 47); }
+.wr4-banner-label { font-size: 14px; color: rgb(107, 111, 128); }
+.wr4-banner-big { font-size: 64px; }
+.wr4-banner-mid { margin: 0 24px; }
+.wr4-gauge { margin: 0 0 2px 0; }
+.wr4-headline { font-size: 24px; white-space: normal; margin-top: 12px; }
+.wr4-line { font-size: 18px; color: rgb(31, 42, 68); white-space: normal; }
+.wr4-banner-stamp { width: 230px; height: 90px; -unity-background-scale-mode: scale-to-fit; rotate: -6deg; align-items: center; justify-content: center; }
+.wr4-banner-stamp .stamp-text-label { font-size: 34px; }
+.wr4-scroll { flex-grow: 1; margin-right: 20px; }
+.wr4-side { width: 380px; }
+.wr4-row { flex-direction: row; align-items: center; padding: 6px 8px; margin: 3px 0; min-height: 88px; background-color: rgb(255, 253, 247); border-width: 2px; border-color: rgba(31, 42, 68, 0.15); border-radius: 12px; }
+.wr4-rank { font-size: 44px; width: 52px; color: rgb(107, 111, 128); -unity-text-align: middle-center; }
+.wr4-rank-first { color: rgb(196, 140, 40); }
+.wr4-who { flex-direction: row; align-items: center; width: 270px; flex-shrink: 0; }
+.wr4-who .pbadge { margin-right: 10px; }
+.wr4-tags { flex-wrap: wrap; }
+.wr4-tags .tag { margin: 1px 4px 1px 0; }
+.wr4-mid { width: 430px; flex-shrink: 0; margin: 0 10px; }
+.wr4-facts { flex-wrap: wrap; align-items: center; }
+.wr4-facts .wr-small { margin-right: 12px; }
+.wr4-career { flex-grow: 1; flex-shrink: 1; min-width: 160px; }
+.wr4-nocareer { color: rgb(107, 111, 128); -unity-text-align: middle-right; }
+.wr4-total { margin-left: 8px; }
+.wr4-eotm { margin-top: 14px; padding: 10px 12px; border-width: 2px; border-color: rgb(196, 140, 40); border-radius: 12px; background-color: rgb(255, 247, 222); }
+.wr4-incidents { margin-top: 12px; padding: 10px 12px; border-width: 2px; border-color: rgba(31, 42, 68, 0.3); border-radius: 12px; background-color: rgb(255, 253, 247); }
+.wr4-inc { flex-direction: row; align-items: center; margin-top: 4px; }
+.wr4-inc .pbadge { margin-right: 8px; }
+.wr4-rematch { flex-direction: row; align-items: center; margin-right: 18px; }
+.wr4-rematch-badges { align-items: center; margin-left: 10px; }
+.wr4-rematch-badges .pbadge { margin-right: 4px; }

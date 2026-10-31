@@ -175,3 +175,33 @@ how-to, modals, meeting, results and the undismissed briefing — **not** for th
 7. Emote wheel drawing matches feel's sector order and cursor; Y/N in the call widget; held-item (G) prompt.
 8. LOS fade of crew-row call / ringing / speaking indicators; power-cut and outage banners with timers.
 9. Esc / Tab routing; `TextInputFocused` true only while a menu field is focused (fields blur when the menu hides).
+
+
+## v4 meeting / results / shell track (hybrid office)
+
+Owner: meeting + shell UI. Rules: `docs/GAMEPLAY_REDESIGN.md`; contract: `docs/CONTRACTS_V4.md`.
+
+- **Rich text is off everywhere.** `UiKit.Text` (and so Title/Bold/Memo/Hand/Tag/StampText) and `UiKit.Btn` set `enableRichText = false`,
+  so a player name like `<size=300>` renders literally. Field labels that can carry a name use `.PlainLabel()`. Never build rich-text
+  strings around player text.
+- **Dossier slides** (`MeetingSlides.cs`, `DossierDeck`): cover, company productivity vs target (gauge, task outcomes, favourite),
+  office log (observable incident effects, missed inputs, remedial reports), anonymous complaints (labelled
+  "anonymous · unverified · not evidence"), recordings (tape deck + task context), presented records, blame board. No culprit is ever shown.
+- **Side drawer** (`MeetingSide.cs`): public meeting chat (`SendMeetingChat`, limits from `Mine.MeetingChatLeft` / `NextMessageAt`,
+  rejection reasons) and the evidence picker (`PresentRecord`). Presentations render as cards (`MeetingRecords.cs`): source, time,
+  "authenticated record", presenter; `EXPOSED: <incident kind>` stamp naming the record's actor; repeats say "no new consequence".
+- **Ballots** (`MeetingPanels.cs`): colleagues + "No action"/"Fire nobody" (`LineIds.Nobody`) + withdraw; voters shown, votes not;
+  verdict reveals every vote and explains each `VoteOutcome`. Final: defense for everyone in `DefenseOrder`, "needs N of M", verdict
+  fired / nobody / company closed (`FinalVerdictView.cs`).
+- **Results** (`WeekResultsView.cs`): company outcome first; closed = shared defeat (no ranks); itemised career lines, shared ranks,
+  EotM / "no award", objectives, exposed incidents only (+ total count), money, contribution quality, session board, next-manager pick,
+  "Play again" (`RequestRematch`, `TelemetryHooks.RematchRequested`; `RematchPromptShown` once per match with >= 3 players).
+- **Shell** (`ShellOverlays.cs`): first-launch flow `ShellFlow.Next()` = language picker -> consent prompt (default No) -> 3-card intro
+  (art `ui/onboarding_v4/intro_{1_company,2_secret,3_meeting}`, falls back to `onboarding/ob_*`); reopenable from the menu.
+  Settings: music slider + mute (`MusicSettings`), fullscreen via `DisplaySettings`, Privacy tab (only when `TelemetryHooks.Privacy != null`).
+  Moment marker: F8 or the corner flag -> category picker -> `TelemetryHooks.MomentMarked(category)`; 1 per 20 s, 15 per match.
+- **Lobby**: v4 status keys (`lobby.need_players`, `lobby.need_ready`, `lobby.pool_too_small`), Short/Full with approximate minutes,
+  recordings toggle, host-only playtest group code (`LobbyScreen.GroupCodeSetter`), declared experiments, rematch intents per seat.
+- **Mocks**: `MeetingMocks.cs` (`-uimock "meeting.*"`, `final.*`, `results.*`, `menu.*`, `lobby.*`, `howto.*`, `match.*`, each `.tr` / `.en`).
+- **Localisation**: `tr/en.meeting.json` (rewritten for v4), new `tr/en.privacy.json` (consent, privacy, intro, moment marker), plus patches in
+  `tr/en.json` (how-to, lobby, settings, menu). Check with `python -I Tools/scripts/loc_parity_meeting.py`.

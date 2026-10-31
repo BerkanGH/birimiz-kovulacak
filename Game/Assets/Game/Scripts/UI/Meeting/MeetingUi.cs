@@ -8,10 +8,11 @@ using static BirimizKovulacak.Game.UiKit;
 namespace BirimizKovulacak.Game
 {
     /// <summary>
-    /// v3 meeting/final/week-results UI (owner: meeting UI track): dossier slides on the projector (rendered into a
+    /// v4 meeting/final/results UI (owner: meeting UI track): dossier slides on the projector (rendered into a
     /// RenderTexture for the 3D room and shown in screen space when the player looks at it), call-recording playback,
-    /// discussion timer with who is speaking, voting (3D seat click or the paper ballot), the İhtar verdict, the final
-    /// (defense spotlight, final vote, fire-score breakdown, firing letter) and the week results.
+    /// the side drawer (public meeting chat, evidence presentation), discussion timer with who is speaking, voting (3D
+    /// seat click or the paper ballot, with "No action" / "Fire nobody"), the warning verdict, the final (defense for every
+    /// present player, final vote, verdict fired / nobody / company closed) and the results.
     /// Created by <see cref="UIRoot"/>; visible from MeetingDossier to WeekResults.
     /// <para>Two layouts: with a 3D room (<see cref="Rooms.Presenter"/>) the screen stays mostly free and Tab switches
     /// between looking around (crosshair) and the screen view (projector / ballot, free cursor). Without a room
@@ -27,7 +28,8 @@ namespace BirimizKovulacak.Game
         readonly Button _prev, _next, _follow;
         readonly List<Seat> _seats = new List<Seat>();
         readonly Ballot _ballot;
-        readonly IhtarVerdictView _verdict;
+        readonly WarningVerdictView _verdict;
+        readonly MeetingSide _side;
         readonly DefenseView _defense;
         readonly FinalVerdictView _final;
         readonly WeekResultsView _results;
@@ -40,7 +42,7 @@ namespace BirimizKovulacak.Game
         bool _screen, _room, _projectorSent, _managerTalking;
         float _manualUntil;
         PovMode _lastMode = (PovMode)(-1);
-        int _spot = int.MinValue, _fired = int.MinValue;
+        int _spot = int.MinValue, _fired = int.MinValue, _presCount;
 
         public MeetingUi(VisualElement parent) : base(parent, "meeting-ui")
         {
@@ -76,7 +78,8 @@ namespace BirimizKovulacak.Game
 
             // ---- phase panels
             _ballot = new Ballot(Root, Vote);
-            _verdict = new IhtarVerdictView(Root);
+            _verdict = new WarningVerdictView(Root);
+            _side = new MeetingSide(Root);
             _defense = new DefenseView(Root);
             _final = new FinalVerdictView(Root);
             _results = new WeekResultsView(Root);
@@ -97,6 +100,20 @@ namespace BirimizKovulacak.Game
 
         /// <summary>The live instance (UI mocks).</summary>
         internal static MeetingUi Current;
+
+        /// <summary>Mocks: show the dossier slide at this index (clamped; 99 = last).</summary>
+        internal void JumpTo(int index)
+        {
+            var v = LineClient.I != null ? LineClient.I.View : null;
+            if (_deck == null || v == null || _deck.Count == 0) return;
+            int i = Mathf.Clamp(index, 0, _deck.Count - 1);
+            _manualSlide = i;
+            _manualUntil = Time.unscaledTime + 60f;
+            _deck.Show(i, v);
+        }
+
+        /// <summary>Mocks: force look mode (false) or screen view (true) in the 3D room.</summary>
+        internal void ToggleScreenTo(bool screen) { if (_room) _screen = screen; }
 
         /// <summary>What Tab does in the room: switch between looking around and the screen view.</summary>
         internal void ToggleScreen() { if (_room) _screen = !_screen; }
@@ -160,6 +177,7 @@ namespace BirimizKovulacak.Game
             UpdateProjector(v, now, dt);
             DriveRoom(v, now);
 
+            if (_side.Visible) { _side.SetLook(_room && !_screen); _side.Tick(v, now); }
             if (_ballot.Visible) _ballot.Tick(v, now);
             if (_verdict.Visible) _verdict.Tick(v, now);
             if (_defense.Visible) _defense.Tick(v, now);
@@ -218,6 +236,8 @@ namespace BirimizKovulacak.Game
             }
             else ProjectorSurface.SetActive(false);
 
+            _presCount = v.Meeting != null ? v.Meeting.Presentations.Count : 0;
+            _side.SetVisible(SideWanted(v), v);
             _ballot.SetVisible(IsVote(_phase), v);
             _verdict.SetVisible(_phase == LinePhase.MeetingVerdict, v);
             _defense.SetVisible(_phase == LinePhase.FinalDefense, v);
@@ -250,6 +270,9 @@ namespace BirimizKovulacak.Game
                 else _deck.Refresh(v);
             }
             _sub.text = SubLine(v);
+            _side.SetVisible(SideWanted(v), v);
+            _side.Refresh(v);
+            CheckPresentations(v);
             _ballot.Refresh(v);
             _verdict.Refresh(v);
             _defense.Refresh(v);
@@ -260,12 +283,15 @@ namespace BirimizKovulacak.Game
         string SubLine(LineView v)
         {
             var m = v.Meeting;
+            bool closed = v.Company.Closed || (m != null && m.CompanyClosed);
             switch (v.Phase)
             {
-                case LinePhase.MeetingDossier: return Loc.T("meeting.sub.dossier");
-                case LinePhase.MeetingDiscussion: return Loc.T(m != null && m.IsFinal ? "meeting.sub.discussion_final" : "meeting.sub.discussion");
+                case LinePhase.MeetingDossier: return Loc.T(closed && m != null && m.IsFinal ? "meeting.sub.postmortem" : "meeting.sub.dossier");
+                case LinePhase.MeetingDiscussion:
+                    if (closed && m != null && m.IsFinal) return Loc.T("meeting.sub.postmortem");
+                    return Loc.T(m != null && m.IsFinal ? "meeting.sub.discussion_final" : "meeting.sub.discussion");
                 case LinePhase.MeetingVote: return Loc.F("meeting.sub.vote", MeetingText.CountVoted(v), MeetingText.CountConnected(v));
-                case LinePhase.FinalVote: return Loc.F("meeting.sub.final_vote", MeetingText.CountVoted(v), MeetingText.CountConnected(v));
+                case LinePhase.FinalVote: return Loc.F("meeting.sub.final_vote", MeetingText.CountVoted(v), m != null ? m.Roster.Count : MeetingText.CountConnected(v), m != null ? m.MajorityNeeded : 0);
                 case LinePhase.FinalDefense:
                     if (m != null && m.Defender >= 0)
                         return m.Defender == v.Me ? Loc.T("meeting.sub.defense_me") : Loc.F("meeting.sub.defense", MeetingText.Name(m.Defender));
@@ -273,6 +299,33 @@ namespace BirimizKovulacak.Game
                 case LinePhase.MeetingVerdict: return Loc.T("meeting.sub.verdict");
                 default: return "";
             }
+        }
+
+        /// <summary>The side drawer (chat + evidence) belongs to the talking and voting phases of a meeting.</summary>
+        static bool SideWanted(LineView v)
+        {
+            if (v.Meeting == null) return false;
+            bool phase = v.Phase == LinePhase.MeetingDossier || v.Phase == LinePhase.MeetingDiscussion || v.Phase == LinePhase.MeetingVote || v.Phase == LinePhase.FinalVote;
+            return phase && (v.Features.MeetingChatOpen || v.Features.PresentationOpen);
+        }
+
+        /// <summary>A new presented record: everyone's projector jumps to the records slide.</summary>
+        void CheckPresentations(LineView v)
+        {
+            int n = v.Meeting != null ? v.Meeting.Presentations.Count : 0;
+            if (n > _presCount && _deck != null)
+            {
+                int idx = _deck.RecordsIndex;
+                if (idx >= 0)
+                {
+                    _manualSlide = idx;
+                    _manualUntil = Time.unscaledTime + 25f;
+                    _deck.Show(idx, v, true);
+                    var last = v.Meeting.Presentations[n - 1];
+                    Sfx.Play(last.ExposedIncident >= 0 ? "fired" : "evidence", 0.8f);
+                }
+            }
+            _presCount = n;
         }
 
         // ------------------------------------------------------------------ layout
@@ -290,6 +343,7 @@ namespace BirimizKovulacak.Game
             // The room view leaves the projector to the 3D screen; the screen view shows the readable copy.
             _proj.Show(talk && screenView);
             _proj.EnableInClassList("mt-proj-room", _room);
+            _proj.EnableInClassList("mt-proj-side", _side.Visible);
             _top.Show(meeting && p != LinePhase.FinalVerdict);
             _seatRow.Show(meeting && (talk || vote || p == LinePhase.FinalDefense));
             _seatRow.EnableInClassList("mt-seats-compact", _room && !_screen);
@@ -353,7 +407,7 @@ namespace BirimizKovulacak.Game
             public int Id;
             public VisualElement Root, Badge, Ring, Marks, Voted;
             public Label Name, Blame;
-            public int ShownBlame = int.MinValue, ShownIhtars = -1;
+            public int ShownBlame = int.MinValue, ShownWarnings = -1;
             public bool Speaking, ShownVoted, ShownConnected = true;
         }
 
@@ -414,11 +468,11 @@ namespace BirimizKovulacak.Game
                     s.Blame.text = Loc.F("meeting.blame_n", p.Blame);
                     if (up) UiMotion.Shake(s.Root, 6f, 0.3f);
                 }
-                if (force || p.Ihtars != s.ShownIhtars)
+                if (force || p.Warnings != s.ShownWarnings)
                 {
-                    s.ShownIhtars = p.Ihtars;
+                    s.ShownWarnings = p.Warnings;
                     s.Marks.Clear();
-                    for (int k = 0; k < p.Ihtars; k++) DossierDeck.IhtarMark(s.Marks);
+                    for (int k = 0; k < p.Warnings; k++) DossierDeck.WarningMark(s.Marks);
                 }
                 bool voted = vote && p.Voted;
                 if (force || voted != s.ShownVoted)
@@ -434,9 +488,6 @@ namespace BirimizKovulacak.Game
                 }
                 s.Root.EnableInClassList("seat-chosen", vote && myVote == s.Id);
                 s.Root.EnableInClassList("seat-defender", v.Phase == LinePhase.FinalDefense && v.Meeting != null && v.Meeting.Defender == s.Id);
-                bool shortlisted = v.Meeting != null && v.Meeting.IsFinal && v.Meeting.Shortlist.Contains(s.Id) && v.Phase != LinePhase.MeetingDossier;
-                s.Root.EnableInClassList("seat-short", shortlisted);
-                s.Root.EnableInClassList("seat-safe", v.Meeting != null && v.Meeting.IsFinal && v.Meeting.Shortlist.Count > 0 && !shortlisted && v.Phase != LinePhase.MeetingDossier);
             }
         }
 
@@ -517,6 +568,7 @@ namespace BirimizKovulacak.Game
             int spot = v.Phase == LinePhase.FinalDefense && v.Meeting != null ? v.Meeting.Defender : -1;
             if (spot != _spot) { _spot = spot; rooms.SetSpotlight(spot); }
             int fired = (v.Phase == LinePhase.FinalVerdict || v.Phase == LinePhase.WeekResults) && v.Meeting != null ? v.Meeting.Fired : (v.Result != null ? v.Result.Fired : -1);
+            if (fired < 0) fired = -1; // nobody fired / company closed
             if (fired != _fired)
             {
                 _fired = fired;

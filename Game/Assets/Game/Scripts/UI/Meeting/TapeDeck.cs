@@ -82,7 +82,7 @@ namespace BirimizKovulacak.Game
         readonly float[] _levels = new float[Bars];
         readonly VisualElement[] _leds = new VisualElement[5];
         int _lit = -1;
-        readonly Label _callerName, _calleeName, _clock, _status, _calleeArrow;
+        readonly Label _callerName, _calleeName, _clock, _status, _calleeArrow, _context;
         readonly bool _art;
         LineRecordingPick _pick;
         int _shownIndex = int.MinValue, _shownCall = int.MinValue, _shownCaller = int.MinValue;
@@ -108,6 +108,7 @@ namespace BirimizKovulacak.Game
             _calleeArrow = Title("→", "tape-label-arrow").NoPick().AddTo(lrow);
             _labelCallee = Hand("", "tape-label-text").NoPick().AddTo(lrow);
             _clock = Memo("", "tape-label-clock").NoPick().AddTo(label);
+            _context = Memo("", "tape-label-clock", "tape-context").NoPick().AddTo(label);
 
             _deck = Box("tape-deck").NoPick().AddTo(center);
             _art = UiArt.Apply(_deck, "meeting_v3/tape_player");
@@ -209,6 +210,9 @@ namespace BirimizKovulacak.Game
             _labelCallee.text = known ? MeetingText.Name(callee) : "";
             _calleeArrow.Show(known);
             _clock.text = known && pick.CallStart >= 0 ? Loc.F("rec.label_time", MeetingText.Day(v != null ? v.Day : 0), MeetingText.OfficeClock(pick.CallStart, v)) : Loc.T("rec.label_blank");
+            bool ctx = known && pick.Context != TaskKind.None;
+            _context.Show(ctx);
+            if (ctx) _context.text = Loc.F("rec.context", MeetingText.Task(pick.Context));
             if (newPick)
             {
                 _stamped = false;

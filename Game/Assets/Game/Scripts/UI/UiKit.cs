@@ -88,6 +88,7 @@ namespace BirimizKovulacak.Game
         public static Label Text(string text, params string[] classes)
         {
             var l = new Label(text).Cls(classes);
+            l.enableRichText = false; // names, chat and complaint text are player-authored: never markup
             l.style.whiteSpace = WhiteSpace.Normal;
             return l;
         }
@@ -98,6 +99,13 @@ namespace BirimizKovulacak.Game
         public static Label Memo(string text, params string[] classes) { var l = Text(text, classes).Cls("t-mono"); UseFont(l, MonoFont); return l; }
         public static Label MemoBold(string text, params string[] classes) { var l = Text(text, classes).Cls("t-mono"); UseFont(l, MonoBoldFont); return l; }
         public static Label StampText(string text, params string[] classes) { var l = Text(text, classes).Cls("t-stamp"); UseFont(l, StampFont); return l; }
+
+        /// <summary>Turns markup off on a field's built-in label (Slider/Toggle/TextField/Dropdown labels that show player names).</summary>
+        public static T PlainLabel<T>(this T f) where T : BaseField<float>
+        {
+            if (f.labelElement != null) f.labelElement.enableRichText = false;
+            return f;
+        }
 
         static bool HasVariant(string[] classes)
         {
@@ -115,6 +123,7 @@ namespace BirimizKovulacak.Game
             var b = new Button(() => { Sfx.Play("click"); onClick?.Invoke(); }) { text = text }.Cls("btn").Cls(classes);
             if (!HasVariant(classes)) b.AddToClassList("btn-secondary");
             UseFont(b, BoldFont);
+            b.enableRichText = false;
             b.style.unitySliceScale = 0.5f;
             return b;
         }
