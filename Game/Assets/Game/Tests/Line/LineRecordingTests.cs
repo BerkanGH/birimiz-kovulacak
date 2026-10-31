@@ -1,132 +1,41 @@
+using System;
+using System.Collections.Generic;
 using System.Linq;
 using NUnit.Framework;
+using BirimizKovulacak.Core.Tests.Line;
 
-namespace BirimizKovulacak.Core.Tests.Line
+namespace BirimizKovulacak.Core.Tests
 {
     [TestFixture]
     public sealed class LineRecordingTests
     {
-        [Test]
-        public void RecordingSelectionFavorsDurationAcrossFixedSeeds()
+        [TestCase(RecordingSelection.Legacy),TestCase(RecordingSelection.Context)]
+        public void RecordingCandidatesStayHostOnlyAndChosenContextBecomesPublic(RecordingSelection mode)
         {
-            int longPicked = 0;
-            for (int seed = 0; seed < 100; seed++)
-            {
-                var m = new LineTest(LineTest.MakeSetup(seed: seed)); m.Until(LinePhase.RoundPlay);
-                m.Ok(0, LineVerb.Call, 1); m.Ok(1, LineVerb.Answer); int longCall = m.Engine.ConnectedCallId(0);
-                m.Advance(60); m.Ok(0, LineVerb.HangUp);
-                m.Ok(0, LineVerb.Call, 1); m.Ok(1, LineVerb.Answer); m.Advance(6); m.Ok(0, LineVerb.HangUp);
-                m.Until(LinePhase.MeetingDossier);
-                if (m.Engine.RecordingPicks[0].CandidateCallIds[0] == longCall) longPicked++;
-            }
-            // Fixed seeds make this reproducible. A wide bound detects uniform/shortest-first selection
-            // while leaving substantial room around the specified 60/(60+6) expected share.
-            Assert.Greater(longPicked, 70); Assert.Less(longPicked, 100);
+            var m=new LineTest(null,c=>c.RecordingSelection=mode);m.Until(LinePhase.RoundPlay);int peer=m.View().Task.Group[0];m.Ok(0,LineVerb.Call,peer);m.Ok(peer,LineVerb.Answer);int call=m.Engine.ConnectedCallId(0);m.Advance(8);m.Ok(0,LineVerb.HangUp);m.Submit(0,0);
+            m.Until(LinePhase.MeetingDossier);Assert.AreEqual(1,m.Engine.RecordingPicks.Count);var p=m.Engine.RecordingPicks[0];Assert.Contains(call,p.CandidateCallIds);Assert.AreEqual(0,m.View(2).Meeting.Recordings[0].CandidateCallIds.Count);Assert.AreEqual(-1,m.View(2).Meeting.Recordings[0].Caller);
+            m.Advance(p.PlayAt-m.Now);m.Engine.ReportRecording(0,call,m.Now);Assert.AreEqual(0,m.View(2).Meeting.Recordings[0].Caller);Assert.AreEqual(TaskKind.BonusPool,m.View(2).Meeting.Recordings[0].Context);Assert.IsTrue(m.View(2).Meeting.Recordings[0].Played);
+            m.Engine.ReportRecording(0,call,m.Now);Assert.AreEqual(1,m.Engine.DrainEvents().Count(e=>e.Type==LineEventType.RecordingStarted));m.Next();Assert.AreEqual(0,m.Engine.RecordingPicks.Count);
         }
-
-        [TestCase(false)] [TestCase(true)]
-        public void RecordingFocusFavorsTrioPartnersAndTodaysHiddenPlayer(bool hidden)
-        {
-            int focused = 0;
-            for (int seed = 0; seed < 160; seed++)
-            {
-                var setup = LineTest.MakeSetup(5, seed);
-                setup.ForceRounds = new System.Collections.Generic.List<RoundType> {
-                    hidden ? RoundType.TerfiListesi : RoundType.PrimHavuzu,
-                    hidden ? RoundType.FarkliEposta : RoundType.TerfiListesi };
-                setup.ForceHidden = new System.Collections.Generic.List<int> { -1, 4 };
-                var m = new LineTest(setup); m.Until(LinePhase.RoundPlay);
-                int caller, partner, outsider;
-                if (hidden) { caller = 0; partner = 4; outsider = 1; }
-                else
-                {
-                    int trio = m.View().Players.First(p => m.View(p.Id).Round.Partners.Count == 2).Id;
-                    // Both other members of the trio are partners too.
-                    var partners = m.View(trio).Round.Partners;
-                    caller = partners[0]; partner = partners[1];
-                    outsider = m.View().Players.First(p => p.Id != trio && !partners.Contains(p.Id)).Id;
-                }
-                m.Ok(caller, LineVerb.Call, partner); m.Ok(partner, LineVerb.Answer);
-                int focusCall = m.Engine.ConnectedCallId(caller); m.Advance(8); m.Ok(caller, LineVerb.HangUp);
-                m.Ok(caller, LineVerb.Call, outsider); m.Ok(outsider, LineVerb.Answer);
-                m.Advance(8); m.Ok(caller, LineVerb.HangUp);
-                m.Until(LinePhase.MeetingDossier);
-                if (m.Engine.RecordingPicks[0].CandidateCallIds[0] == focusCall) focused++;
-            }
-            Assert.Greater(focused, 95); Assert.Less(focused, 145);
-        }
-
         [Test]
-        public void RecordingNoSpeechReportIsPrivateAndIdempotent()
+        public void RecordingDisabledAndShortCallsYieldNoPicks()
         {
-            var m = new LineTest(); m.Ok(0, LineVerb.Call, 1); m.Ok(1, LineVerb.Answer);
-            m.Advance(8); m.Ok(0, LineVerb.HangUp); m.Until(LinePhase.MeetingDossier);
-            int candidate = m.Engine.RecordingPicks[0].CandidateCallIds[0];
-            foreach (var p in m.Setup.Players)
-            {
-                var pick = m.View(p.Id).Meeting.Recordings[0]; Assert.IsEmpty(pick.CandidateCallIds);
-                Assert.AreEqual(-1, pick.ChosenCallId); Assert.AreEqual(-1, pick.Caller); Assert.AreEqual(-1, pick.Callee);
-            }
-            m.Engine.ReportRecording(0, candidate + 1000, m.Now); Assert.IsFalse(m.Engine.RecordingPicks[0].Played);
-            m.Engine.DrainEvents(); m.Advance(4); m.Engine.ReportRecording(0, -1, m.Now);
-            Assert.IsTrue(m.Engine.RecordingPicks[0].Played); Assert.AreEqual(-1, m.Engine.RecordingPicks[0].ChosenCallId);
-            Assert.IsFalse(m.Engine.DrainEvents().Any(e => e.Type == LineEventType.RecordingStarted));
-            long version = m.Engine.StateVersion; m.Engine.ReportRecording(0, candidate, m.Now);
-            Assert.AreEqual(version, m.Engine.StateVersion); Assert.AreEqual(-1, m.View().Meeting.Recordings[0].Caller);
+            var s=LineTest.MakeSetup();s.RecordingsEnabled=false;var m=new LineTest(s);m.Ok(0,LineVerb.Call,1);m.Ok(1,LineVerb.Answer);m.Advance(10);m.Ok(0,LineVerb.HangUp);m.Until(LinePhase.MeetingDossier);Assert.AreEqual(0,m.Engine.RecordingPicks.Count);
+            var shortCall=new LineTest();shortCall.Ok(0,LineVerb.Call,1);shortCall.Ok(1,LineVerb.Answer);shortCall.Advance(2);shortCall.Ok(0,LineVerb.HangUp);shortCall.Until(LinePhase.MeetingDossier);Assert.AreEqual(0,shortCall.Engine.RecordingPicks.Count);
         }
-
         [Test]
-        public void RecordingMinimumDurationAndReport()
+        public void ParanoyakHasTwoPicksWithoutRepeatedCandidatesAndReportRejectsForeignCall()
         {
-            var m = LineTest.WithTrick(TrickType.KahveDok);
-            m.Ok(2, LineVerb.Call, 3); m.Ok(3, LineVerb.Answer); int shortCall = m.Engine.ConnectedCallId(2);
-            m.Advance(5); m.Ok(2, LineVerb.HangUp);
-            m.Ok(2, LineVerb.Call, 3); m.Ok(3, LineVerb.Answer); int eligible = m.Engine.ConnectedCallId(2); double start = m.Now;
-            m.Advance(15); m.Ok(3, LineVerb.HangUp); m.Until(LinePhase.MeetingDossier);
-            var picks = m.Engine.RecordingPicks; Assert.AreEqual(1, picks.Count);
-            CollectionAssert.AreEqual(new[] { eligible }, picks[0].CandidateCallIds);
-            CollectionAssert.DoesNotContain(picks[0].CandidateCallIds, shortCall);
-            Assert.AreEqual(m.Now + 4, picks[0].PlayAt); Assert.AreEqual(m.Config.RecordingSnippetSeconds, picks[0].Seconds);
-            Assert.AreEqual(m.Config.Durations.Dossier + m.Config.Durations.DossierPerRecording, m.Engine.PhaseEndTime - m.Now);
-            Assert.AreEqual(-1, m.View().Meeting.Recordings[0].Caller); Assert.AreEqual(-1, m.View().Meeting.Recordings[0].Callee);
-            m.Advance(4); m.Engine.ReportRecording(0, eligible, m.Now);
-            var played = m.View().Meeting.Recordings[0]; Assert.IsTrue(played.Played); Assert.AreEqual(eligible, played.ChosenCallId);
-            Assert.AreEqual(2, played.Caller); Assert.AreEqual(3, played.Callee); Assert.AreEqual(start, played.CallStart);
-            Assert.IsTrue(m.Engine.DrainEvents().Any(e => e.Type == LineEventType.RecordingStarted));
-            m.Next(); Assert.IsEmpty(m.Engine.RecordingPicks);
+            var s=LineTest.MakeSetup();s.ManagerProfileId="paranoyak";var m=new LineTest(s,c=>c.RecordingCandidates=1);
+            m.Ok(0,LineVerb.Call,1);m.Ok(1,LineVerb.Answer);m.Advance(8);m.Ok(0,LineVerb.HangUp);m.Ok(2,LineVerb.Call,3);m.Ok(3,LineVerb.Answer);m.Advance(8);m.Ok(2,LineVerb.HangUp);m.Until(LinePhase.MeetingDossier);
+            Assert.AreEqual(2,m.Engine.RecordingPicks.Count);var ids=m.Engine.RecordingPicks.SelectMany(p=>p.CandidateCallIds).ToList();Assert.AreEqual(ids.Count,ids.Distinct().Count());m.Advance(m.Engine.RecordingPicks[0].PlayAt-m.Now);m.Engine.ReportRecording(0,999,m.Now);Assert.IsFalse(m.View().Meeting.Recordings[0].Played);
         }
-
         [Test]
-        public void RecordingSelectionIsDeterministicDistinctAndBounded()
+        public void ContextWeightUsesGroupsDecisionTransferAndMatchWideExposureDecay()
         {
-            var a = LineTest.WithTrick(TrickType.KahveDok, c => c.Profiles.ForEach(p => p.Recordings = 2));
-            var b = LineTest.WithTrick(TrickType.KahveDok, c => c.Profiles.ForEach(p => p.Recordings = 2));
-            foreach (var m in new[] { a, b })
-            {
-                for (int i = 0; i < 7; i++)
-                {
-                    m.Ok(0, LineVerb.Call, 1); m.Ok(1, LineVerb.Answer); m.Advance(6 + i); m.Ok(0, LineVerb.HangUp);
-                }
-                m.Until(LinePhase.MeetingDossier);
-            }
-            Assert.AreEqual(2, a.Engine.RecordingPicks.Count);
-            Assert.AreNotEqual(a.Engine.RecordingPicks[0].CandidateCallIds[0], a.Engine.RecordingPicks[1].CandidateCallIds[0]);
-            for (int i = 0; i < 2; i++)
-            {
-                var pick = a.Engine.RecordingPicks[i]; Assert.LessOrEqual(pick.CandidateCallIds.Count, a.Config.RecordingCandidates);
-                Assert.AreEqual(pick.CandidateCallIds.Count, pick.CandidateCallIds.Distinct().Count());
-                CollectionAssert.AreEqual(pick.CandidateCallIds, b.Engine.RecordingPicks[i].CandidateCallIds);
-                Assert.AreEqual(a.Now + 4 + i * a.Config.Durations.DossierPerRecording, pick.PlayAt);
-            }
-        }
-
-        [Test]
-        public void RecordingToggleRemovesPicksAndTimeExtension()
-        {
-            var m = new LineTest(configure: c => c.RecordingsEnabled = false);
-            m.Ok(0, LineVerb.Call, 1); m.Ok(1, LineVerb.Answer); m.Advance(10); m.Ok(0, LineVerb.HangUp);
-            m.Until(LinePhase.MeetingDossier); Assert.IsEmpty(m.Engine.RecordingPicks);
-            Assert.AreEqual(m.Config.Durations.Dossier, m.Engine.PhaseEndTime - m.Now);
+            var m=new LineTest();m.Until(LinePhase.RoundPlay);int peer=m.View().Task.Group[0];m.Ok(0,LineVerb.Call,peer);m.Ok(peer,LineVerb.Answer);int callId=m.Engine.ConnectedCallId(0);m.Advance(8);m.Ok(0,LineVerb.HangUp);m.Submit(0,0);m.Ok(0,LineVerb.Transfer,peer,1);
+            var flags=System.Reflection.BindingFlags.Instance|System.Reflection.BindingFlags.NonPublic;var calls=(System.Collections.IList)m.Engine.GetType().GetField("calls",flags).GetValue(m.Engine);object call=calls[0];var method=m.Engine.GetType().GetMethod("RecordingWeight",flags);
+            Assert.AreEqual(8*2*1.5*1.5,(double)method.Invoke(m.Engine,new[]{call}));m.Until(LinePhase.MeetingDossier);m.Advance(m.Engine.RecordingPicks[0].PlayAt-m.Now);m.Engine.ReportRecording(0,callId,m.Now);Assert.AreEqual(8*2*1.5*1.5*0.5,(double)method.Invoke(m.Engine,new[]{call}));
         }
     }
 }

@@ -8,17 +8,24 @@ namespace BirimizKovulacak.Core
         private sealed class Seat
         {
             internal LinePlayerInfo Info;
-            internal bool Connected = true, HasRequest, Submitted, Voted, TrickUsed, TipUsed, Erased;
+            internal bool Connected = true, HasRequest, TrickUsed;
             internal uint LastRequest;
-            internal int Blame, Ihtars, Agenda, TricksUsed, TipsUsed, MailsSent, Target = -1, A = -1, Vote = -1, Attempts;
-            internal TrickType Trick, BlockedBy;
-            internal double BlockedUntil, CoffeeUntil, OfflineUntil, DeadUntil, TapUntil;
-            internal int Call = -1;
-            internal int TapTarget = -1;
+            internal int Blame, Warnings, Money, RawIncome, Purchases, BlockPurchases, Presentations, Remedials, BlockRemedials;
+            internal int TricksUsed, Texts, Emails, Complaints, Chats, Received, Quality, TasksConnected, Credits, Opportunities;
+            internal int Vote = -1, TapTarget = -1, Call = -1, RoleUses;
+            internal readonly int[] Paid = new int[6];
+            internal ObjectiveKind Objective;
+            internal int ObjectiveTarget = -1;
+            internal bool ObjectiveDone;
+            internal TrickType Trick;
+            internal double CoffeeUntil, OfflineUntil, DeadUntil, TapUntil, NextMessage, NextTransfer;
+            internal long MessageSeq;
             internal LinePhoneView Phone = new LinePhoneView();
-            internal readonly List<LineMailView> Inbox = new List<LineMailView>();
-            internal readonly List<LineMailView> PendingMail = new List<LineMailView>();
+            internal readonly List<LineMessage> Messages = new List<LineMessage>();
             internal readonly List<LineCallRecordView> Log = new List<LineCallRecordView>();
+            internal readonly HashSet<int> Access = new HashSet<int>();
+            internal readonly HashSet<int> Bought = new HashSet<int>();
+            internal readonly HashSet<int> Presented = new HashSet<int>();
         }
         private readonly LineSetup setup;
         private readonly LineConfig c;
@@ -26,18 +33,24 @@ namespace BirimizKovulacak.Core
         private readonly LineRandom rng;
         private readonly Seat[] seats = new Seat[6];
         private readonly List<int> ids = new List<int>();
-        private readonly List<RoundType> schedule = new List<RoundType>();
-        private readonly List<RoundType> seen = new List<RoundType>();
-        private readonly List<int> usedTopics = new List<int>();
-        private readonly List<LineRoundReveal> reveals = new List<LineRoundReveal>();
+        private readonly List<TaskKind> schedule = new List<TaskKind>();
+        private readonly List<TaskState> tasks = new List<TaskState>();
+        private readonly List<TaskKind> seen = new List<TaskKind>();
         private List<LineEvent> events = new List<LineEvent>();
         private readonly bool firstWeek;
         private readonly int days;
-        private double now, phaseStart, insufficientSince = -1;
+        private double now, phaseStart, insufficientSince = -1, carry;
+        private float carried;
         private int roundIndex = -1, favourite = -1, defenderIndex;
-        private bool firstTimeRound;
+        private bool firstTimeTask, shortened, closed;
+        private int finalProductivity = -1;
+        private CompanyChange lastChange;
+        private TaskKind lastTask;
+        private int lastDelta;
+        private TaskState task;
         private LineMeetingView meeting;
         private LineWeekResult result;
+        private PhaseEndReason endReason = PhaseEndReason.Start;
 
         public LineConfig Config { get { return LineCodec.Clone(c); } }
         public LineSetup Setup { get { return LineCodec.Clone(setup); } }
@@ -47,291 +60,298 @@ namespace BirimizKovulacak.Core
         public long StateVersion { get; private set; }
         public bool IsFinished { get; private set; }
         public LineWeekResult Result { get { return LineCodec.Clone(result); } }
-        private bool Office { get { return Phase >= LinePhase.Morning && Phase <= LinePhase.RoundReveal; } }
-        private bool InRound { get { return Phase >= LinePhase.RoundIntro && Phase <= LinePhase.RoundReveal; } }
+        private bool Office { get { return InTask || Phase == LinePhase.Morning || Phase == LinePhase.Break; } }
+        private bool InTask { get { return Phase >= LinePhase.RoundIntro && Phase <= LinePhase.RoundReveal; } }
+        private bool IsMeeting { get { return Phase >= LinePhase.MeetingDossier && Phase <= LinePhase.FinalVerdict; } }
+        private bool EvidenceOpen { get { return Office || PresentOpen; } }
+        private bool PresentOpen { get { return Phase == LinePhase.MeetingDossier || Phase == LinePhase.MeetingDiscussion; } }
+        private bool TransfersOpen { get { return Office || PresentOpen || (Phase == LinePhase.MeetingVote && Day < days - 1); } }
+        private bool RemedialOpen { get { return Phase == LinePhase.Morning || Phase == LinePhase.RoundReveal || Phase == LinePhase.Break; } }
         private bool Unlocked { get { return !firstWeek || Day >= c.UnlockDayFirstWeek; } }
-        // LineDurations.Scale scales RoundPlay but cannot scale the separate head-count list.
-        private double RoundPlayLength { get { return c.RoundPlayByPlayers[ids.Count - 3] * (c.Durations.RoundPlay / 150.0); } }
+        private int TrickAllowance { get { return setup.Length == WeekLength.Short ? c.TricksPerWeekShort : c.TricksPerWeekFull; } }
+        private bool HasSeat(int id) { return id >= 0 && id < 6 && seats[id] != null; }
+        private int Prior(List<int> values, int id) { return values != null && id < values.Count ? values[id] : 0; }
+        private int PriorPoints(int id) { return setup.History == null ? 0 : Prior(setup.History.SessionPoints, id); }
+        private void Changed() { StateVersion++; }
 
         internal LineEngine(LineSetup input, LineConfig config)
         {
-            if (input == null || input.Players == null || input.Players.Count < 3 || input.Players.Count > 6)
-                throw new ArgumentException("A week requires three to six distinct seats.", nameof(input));
+            if (input == null || input.Players == null || input.Players.Count < 3 || input.Players.Count > 6 ||
+                !Finite(input.StartTime) || input.StartTime < 0 || !Enum.IsDefined(typeof(WeekLength), input.Length))
+                throw new ArgumentException("Invalid match setup.");
             bool[] present = new bool[6];
-            for (int i = 0; i < input.Players.Count; i++)
+            foreach (var p in input.Players)
             {
-                var p = input.Players[i];
-                if (p == null || p.Id < 0 || p.Id >= 6 || present[p.Id]) throw new ArgumentException("Invalid or duplicate seat.", nameof(input));
+                if (p == null || p.Id < 0 || p.Id >= 6 || present[p.Id]) throw new ArgumentException("Invalid or duplicate seat.");
                 present[p.Id] = true;
             }
-            // Public timers use zero/-1 for inactive values, so host seconds must start at or above zero.
-            if (double.IsNaN(input.StartTime) || double.IsInfinity(input.StartTime) || input.StartTime < 0)
-                throw new ArgumentException("Start time must be finite and nonnegative.", nameof(input));
-            if (input.Length != WeekLength.Short && input.Length != WeekLength.Full)
-                throw new ArgumentException("Unknown week length.", nameof(input));
-            if (input.History != null && (input.History.SessionPoints == null || input.History.PastManagers == null ||
-                input.History.SeenRounds == null || input.History.UsedTopics == null || input.History.TimesFired == null ||
-                input.History.HiddenRoles == null || input.History.RoundUses == null))
-                throw new ArgumentException("History collections cannot be null.", nameof(input));
-            setup = LineCodec.Clone(input);
-            c = LineCodec.Clone(config ?? LineConfig.CreateDefault());
+            var h = input.History;
+            if (h != null && (h.SessionPoints == null || h.PastManagers == null || h.SeenTasks == null || h.TaskUses == null ||
+                h.TimesFired == null || h.RoleUses == null || h.WeeksPlayed < 0)) throw new ArgumentException("Invalid history.");
+            try { setup = LineCodec.Clone(input); c = LineCodec.Clone(config ?? LineConfig.CreateDefault()); }
+            catch (FormatException ex) { throw new ArgumentException("Invalid setup/config schema.", ex); }
             ValidateConfig();
             rng = new LineRandom(setup.Seed);
-            firstWeek = setup.History == null || setup.History.WeeksPlayed == 0;
+            firstWeek = h == null || h.WeeksPlayed == 0;
             days = c.DaysFor(setup.Length);
             for (int id = 0; id < 6; id++) if (present[id])
             {
-                LinePlayerInfo info = null;
-                for (int i = 0; i < setup.Players.Count; i++) if (setup.Players[i].Id == id) info = setup.Players[i];
-                ids.Add(id); seats[id] = new Seat { Info = info, Blame = c.StartBlame };
+                LinePlayerInfo info = setup.Players.Find(p => p.Id == id);
+                ids.Add(id); seats[id] = new Seat { Info = info, Blame = c.StartBlame, Money = c.StartMoney };
             }
-            if (setup.History != null)
-            {
-                seen.AddRange(setup.History.SeenRounds);
-                usedTopics.AddRange(setup.History.UsedTopics);
-            }
-            var profiles = new List<LineProfile>();
-            string last = setup.History != null && setup.History.PastManagers.Count > 0 ? setup.History.PastManagers[setup.History.PastManagers.Count - 1] : "";
-            for (int i = 0; i < c.Profiles.Count; i++) if (c.Profiles[i].Id != last) profiles.Add(c.Profiles[i]);
-            if (profiles.Count == 0) profiles.AddRange(c.Profiles);
+            if (h != null) seen.AddRange(h.SeenTasks);
             string manager = setup.ManagerProfileId;
-            if (string.IsNullOrEmpty(manager) && setup.History != null) manager = setup.History.NextManager;
-            profile = string.IsNullOrEmpty(manager) ? profiles[rng.Index(profiles.Count)] : c.Profile(manager);
-            int leader = -1, best = int.MinValue, leaders = 0;
-            foreach (int id in ids)
+            if (string.IsNullOrEmpty(manager) && h != null) manager = h.NextManager;
+            if (string.IsNullOrEmpty(manager))
             {
-                int points = PriorPoints(id);
-                if (points > best) { best = points; leader = id; leaders = 1; }
-                else if (points == best) leaders++;
+                string last = h != null && h.PastManagers.Count > 0 ? h.PastManagers[h.PastManagers.Count - 1] : "";
+                var options = c.Profiles.FindAll(p => p.Id != last);
+                if (options.Count == 0) options.AddRange(c.Profiles);
+                profile = options[rng.Index(options.Count)];
             }
-            if (leaders == 1) seats[leader].Blame += c.LeaderStartBonus;
-            AssignSecrets();
-            MakeSchedule();
-            now = setup.StartTime;
-            StartMorning(now);
+            else
+            {
+                profile = c.Profiles.Find(p => p.Id == manager);
+                if (profile == null) throw new ArgumentException("Unknown manager.");
+            }
+            if (!LineSchedule.Validate(c, ids.Count, setup.Length, profile.Id, out string reason)) throw new ArgumentException(reason);
+            int leader = -1, best = int.MinValue, ties = 0;
+            foreach (int id in ids) { int points = PriorPoints(id); if (points > best) { best = points; leader = id; ties = 1; } else if (points == best) ties++; }
+            if (ties == 1) seats[leader].Blame += c.LeaderStartBonus;
+            if (setup.ForceRoles != null) foreach (int role in setup.ForceRoles)
+                if (role < -1 || role >= 0 && !HasSeat(role)) throw new ArgumentException("Invalid forced role.");
+            AssignSecrets(); MakeSchedule(); now = setup.StartTime; StartMorning(now);
         }
 
+        private static bool Finite(double v) { return !double.IsNaN(v) && !double.IsInfinity(v); }
         private void ValidateConfig()
         {
-            if (c.Durations == null || c.Rounds == null || c.Profiles == null || c.Profiles.Count == 0 ||
-                c.RoundsPerDay != 2 || c.ShortWeekDays < 1 || c.FullWeekDays < 1 ||
-                c.TopicCategories < 2 || c.TopicsPerCategory < 1 || c.MailTemplates < 1 || c.Rounds.ComplaintReasons < 1 ||
-                c.RoundPlayByPlayers == null || c.RoundPlayByPlayers.Count != 4 || c.StartBlame < 0 || c.LeaderStartBonus < 0 ||
-                c.FinalShortlistSmall < 2 || c.FinalShortlistSmall > 3 || c.FinalShortlistLarge < 2 || c.FinalShortlistLarge > 5 ||
-                c.MaxIhtarsPerPlayerPerWeek < 1 || c.TricksPerWeekShort < 0 || c.TricksPerWeekFull < 0 || c.TipsPerWeek < 0)
-                throw new ArgumentException("Invalid line config.");
-            var d = c.Durations;
-            float[] lengths = { d.Morning, d.MorningFirst, d.RoundIntro, d.RoundIntroFirst, d.RoundPlay, d.AllSubmittedRemaining,
-                d.RoundReveal, d.Dossier, d.DossierPerRecording, d.Discussion, d.FinalDiscussion, d.Vote, d.Verdict,
-                d.DefensePerPlayer, d.FinalVote, d.FinalVerdict, d.WeekResults, d.Ring, c.CoffeeSeconds,
-                c.PhoneDeadSeconds, c.InternetSeconds, c.WiretapSeconds, c.RecordingMinCallSeconds, c.RecordingSnippetSeconds };
-            for (int i = 0; i < lengths.Length; i++) if (float.IsNaN(lengths[i]) || float.IsInfinity(lengths[i]) || lengths[i] < 0)
-                throw new ArgumentException("Durations must be finite and nonnegative.");
-            foreach (float length in c.RoundPlayByPlayers)
-                if (float.IsNaN(length) || float.IsInfinity(length) || length < 0) throw new ArgumentException("Invalid head-count duration.");
-            if (c.RecordingCandidates < 0 || c.MailsPerDay < 0 || float.IsNaN(c.RecordingFocusWeight) ||
-                float.IsInfinity(c.RecordingFocusWeight) || c.RecordingFocusWeight < 0)
-                throw new ArgumentException("Invalid line limits or recording weight.");
-            for (int i = 0; i < c.Profiles.Count; i++)
+            if (c.ConfigVersion != 4 || c.Durations == null || c.Tasks == null || c.TaskRules == null || c.Profiles == null || c.Profiles.Count == 0 ||
+                c.RoundsPerDay != 2 || c.ShortWeekDays < 1 || c.FullWeekDays < 1 || c.MinSpareTasks < 0 || c.RoundPlayByPlayers == null || c.RoundPlayByPlayers.Count != 4)
+                throw new ArgumentException("Invalid config structure.");
+            // Validate every numeric tunable, including ones added to the public config in future revisions.
+            ValidateNumbers(c); ValidateNumbers(c.Durations); ValidateNumbers(c.TaskRules);
+            if (c.CompanyTargetPercent > 100 || c.CareerTargetPercent > 100 || c.BlockIncomeCap < c.BlockIncomeFull ||
+                c.RivalGuardianSameTarget > 1 || c.RecordingExposureDecay > 1 || c.MessagesKeptPerPlayer < 1 || c.RecordingCandidates > 4096 ||
+                c.TextMaxChars > 512 || c.EmailMaxChars > 512 || c.ComplaintMaxChars > 512 || c.MeetingChatMaxChars > 512 ||
+                c.Durations.RoundPlay <= 0 || c.Durations.DefensePerPlayer <= 0 || c.Durations.BreakMax < c.Durations.Break || c.Durations.BreakMax < c.Durations.BreakClosing)
+                throw new ArgumentException("Invalid config range.");
+            foreach (float v in c.RoundPlayByPlayers) if (!Finite(v) || v <= 0) throw new ArgumentException("Invalid play duration.");
+            var kinds = new HashSet<TaskKind>();
+            foreach (var t in c.Tasks)
+                if (t == null || t.Kind == TaskKind.None || !kinds.Add(t.Kind) || t.Version != 1 || t.MaxOutput < 1 || t.MaxOutput > 100000 ||
+                    t.PlayFactor < 1 || t.PlayFactor > 1000 || t.MinPlayers < 3 || t.MaxPlayers > 6 || t.MaxPlayers < t.MinPlayers)
+                    throw new ArgumentException("Invalid task config.");
+            var managers = new HashSet<string>();
+            foreach (var p in c.Profiles)
             {
-                var p = c.Profiles[i];
-                if (p == null || string.IsNullOrEmpty(p.Id) || !ValidChance(p.TraceChance) || !ValidChance(p.LeakChance) || p.Recordings < 0)
-                    throw new ArgumentException("Invalid manager profile.");
+                if (p == null || Array.IndexOf(LineManagerIds.All, p.Id) < 0 || !managers.Add(p.Id) || p.TaskWeights == null) throw new ArgumentException("Invalid profile.");
+                ValidateNumbers(p); foreach (int w in p.TaskWeights) if (w < 0 || w > 100000) throw new ArgumentException("Invalid task weight.");
+            }
+            if (c.TaskRules.BonusPairOutput == null || c.TaskRules.BonusPairOutput.Count != 3 || c.TaskRules.BonusTrioOutput == null || c.TaskRules.BonusTrioOutput.Count != 4)
+                throw new ArgumentException("Invalid bonus table.");
+            foreach (int x in c.TaskRules.BonusPairOutput) if (x < 0 || x > 100) throw new ArgumentException("Invalid output.");
+            foreach (int x in c.TaskRules.BonusTrioOutput) if (x < 0 || x > 100) throw new ArgumentException("Invalid output.");
+        }
+        private static void ValidateNumbers(object value)
+        {
+            foreach (var f in value.GetType().GetFields())
+            {
+                if (f.FieldType == typeof(int)) { int n = (int)f.GetValue(value); if (n < 0 || n > 1000000) throw new ArgumentException("Invalid " + f.Name); }
+                if (f.FieldType == typeof(float)) { float n = (float)f.GetValue(value); if (!Finite(n) || n < 0 || n > 1000000) throw new ArgumentException("Invalid " + f.Name); }
             }
         }
-
-        private static bool ValidChance(float value)
-        { return !float.IsNaN(value) && value >= 0 && value <= 1; }
-
         private void AssignSecrets()
         {
-            var targets = new List<int>();
-            bool valid;
-            do
+            var objectives = new List<ObjectiveKind>(); for (int k = 1; k <= 9; k++) objectives.Add((ObjectiveKind)k); rng.Shuffle(objectives);
+            var tricks = new List<TrickType>(); for (int k = 1; k <= 5; k++) tricks.Add((TrickType)k); rng.Shuffle(tricks);
+            var dealt = new HashSet<ObjectiveKind>();
+            foreach (int id in ids)
             {
-                targets.Clear(); valid = true; int[] targetCounts = new int[6];
-                foreach (int id in ids)
+                var s = seats[id]; int i = ids.IndexOf(id);
+                s.Objective = setup.ForceObjectives != null && setup.ForceObjectives.Count > id ? setup.ForceObjectives[id] : ObjectiveKind.None;
+                if (s.Objective != ObjectiveKind.None && !dealt.Add(s.Objective)) throw new ArgumentException("Duplicate objective.");
+                s.Trick = setup.ForceTricks != null && setup.ForceTricks.Count > id ? setup.ForceTricks[id] : tricks[i < 5 ? i : rng.Index(5)];
+            }
+            foreach (int id in ids) if (seats[id].Objective == ObjectiveKind.None)
+            {
+                var kind = objectives.Find(k => !dealt.Contains(k)); seats[id].Objective = kind; dealt.Add(kind);
+            }
+            int rival = ids.Find(id => seats[id].Objective == ObjectiveKind.Rival), guardian = ids.Find(id => seats[id].Objective == ObjectiveKind.Guardian);
+            bool hasRival = ids.Exists(id => seats[id].Objective == ObjectiveKind.Rival), hasGuardian = ids.Exists(id => seats[id].Objective == ObjectiveKind.Guardian);
+            foreach (int id in ids)
+            {
+                var s = seats[id]; if (s.Objective != ObjectiveKind.Rival && s.Objective != ObjectiveKind.Guardian) continue;
+                var targets = ids.FindAll(p => p != id); s.ObjectiveTarget = targets[rng.Index(targets.Count)];
+            }
+            if (hasRival && hasGuardian)
+            {
+                if (rng.Unit() < c.RivalGuardianSameTarget)
                 {
-                    int target;
-                    do { target = ids[rng.Index(ids.Count)]; } while (target == id);
-                    targets.Add(target);
-                    if (++targetCounts[target] > 2) valid = false;
+                    var common = ids.FindAll(id => id != rival && id != guardian);
+                    int target = common[rng.Index(common.Count)]; seats[rival].ObjectiveTarget = seats[guardian].ObjectiveTarget = target;
                 }
-            } while (!valid);
-            var tricks = new List<TrickType> { TrickType.SahteEposta, TrickType.KahveDok, TrickType.FisCek, TrickType.InternetKes, TrickType.HatDinle };
-            rng.Shuffle(tricks);
-            for (int i = 0; i < ids.Count; i++)
+                else
+                {
+                    var distinct = ids.FindAll(id => id != guardian && id != seats[rival].ObjectiveTarget);
+                    seats[guardian].ObjectiveTarget = distinct[rng.Index(distinct.Count)];
+                }
+            }
+            foreach (int id in ids) if (setup.ForceObjectiveTargets != null && setup.ForceObjectiveTargets.Count > id)
             {
-                int id = ids[i];
-                seats[id].Agenda = setup.ForceAgendas != null && setup.ForceAgendas.Count > id ? setup.ForceAgendas[id] : targets[i];
-                seats[id].Trick = setup.ForceTricks != null && setup.ForceTricks.Count > id ? setup.ForceTricks[id] : tricks[i < tricks.Count ? i : rng.Index(tricks.Count)];
-                if (!HasSeat(seats[id].Agenda) || seats[id].Agenda == id || seats[id].Trick < TrickType.None || seats[id].Trick >= TrickType.KayitSil)
-                    throw new ArgumentException("Invalid forced secret.");
+                var s = seats[id]; if (s.Objective != ObjectiveKind.Rival && s.Objective != ObjectiveKind.Guardian) continue;
+                s.ObjectiveTarget = setup.ForceObjectiveTargets[id];
+                if (!HasSeat(s.ObjectiveTarget) || s.ObjectiveTarget == id) throw new ArgumentException("Invalid objective target.");
             }
         }
-
         private void MakeSchedule()
         {
-            int[] counts = new int[7]; int hiddenRounds = 0;
-            if (setup.History != null)
-                for (int k = 1; k <= 6 && k < setup.History.RoundUses.Count; k++) counts[k] = setup.History.RoundUses[k];
-            for (int day = 0; day < days; day++)
+            if (setup.ForceTasks != null && setup.ForceTasks.Count > days * 2) throw new ArgumentException("Too many forced tasks.");
+            for (int i = 0; i < days * 2; i++)
             {
-                bool[] today = new bool[7];
-                for (int r = 0; r < c.RoundsPerDay; r++)
+                TaskKind kind;
+                if (setup.ForceTasks != null && i < setup.ForceTasks.Count) kind = setup.ForceTasks[i];
+                else if (firstWeek && i < 2 && !schedule.Contains(i == 0 ? TaskKind.BonusPool : TaskKind.InvoiceReconcile) &&
+                    LineSchedule.Eligible(c.Task(i == 0 ? TaskKind.BonusPool : TaskKind.InvoiceReconcile), ids.Count, profile.Id))
+                    kind = i == 0 ? TaskKind.BonusPool : TaskKind.InvoiceReconcile;
+                else
                 {
-                    RoundType type;
-                    int flat = day * c.RoundsPerDay + r;
-                    if (setup.ForceRounds != null && setup.ForceRounds.Count > flat) type = setup.ForceRounds[flat];
-                    else if (firstWeek && day == 0) type = r == 0 ? RoundType.PrimHavuzu : RoundType.FarkliEposta;
-                    else
+                    var pool = c.Tasks.FindAll(t => LineSchedule.Eligible(t, ids.Count, profile.Id) && !schedule.Contains(t.Kind));
+                    int minimum = int.MaxValue;
+                    foreach (var t in pool) minimum = Math.Min(minimum, setup.History == null ? 0 : Prior(setup.History.TaskUses, (int)t.Kind));
+                    pool.RemoveAll(t => (setup.History == null ? 0 : Prior(setup.History.TaskUses, (int)t.Kind)) != minimum);
+                    if (i % 2 == 1)
                     {
-                        var candidates = new List<RoundType>(); int minimum = int.MaxValue;
-                        for (int k = 1; k <= 6; k++)
-                        {
-                            var candidate = (RoundType)k;
-                            bool deal = candidate == RoundType.PrimHavuzu || candidate == RoundType.OrtakSifre;
-                            if (today[k] || deal != (r == 0) ||
-                                (candidate == RoundType.KayipRapor && ids.Count < Math.Max(4, c.Rounds.KayipRaporMinPlayers)) ||
-                                (candidate == RoundType.IhbarKutusu && ids.Count < c.Rounds.ComplaintMinPlayers) ||
-                                (IsHiddenRound(candidate) && hiddenRounds >= ids.Count)) continue;
-                            if (counts[k] < minimum) { minimum = counts[k]; candidates.Clear(); }
-                            if (counts[k] == minimum) candidates.Add(candidate);
-                        }
-                        type = candidates[rng.Index(candidates.Count)];
+                        bool wantAll = LineTasks.Family(schedule[i - 1]) != TaskFamily.All;
+                        var preferred = pool.FindAll(t => (LineTasks.Family(t.Kind) == TaskFamily.All) == wantAll);
+                        if (preferred.Count > 0) pool = preferred;
                     }
-                    if (type < RoundType.PrimHavuzu || type > RoundType.OrtakSifre ||
-                        (type == RoundType.KayipRapor && ids.Count < Math.Max(4, c.Rounds.KayipRaporMinPlayers)) ||
-                        (type == RoundType.IhbarKutusu && ids.Count < c.Rounds.ComplaintMinPlayers)) throw new ArgumentException("Invalid forced round.");
-                    today[(int)type] = true; counts[(int)type]++; schedule.Add(type);
-                    if (IsHiddenRound(type)) hiddenRounds++;
+                    int total = 0; foreach (var t in pool) total += Weight(t.Kind);
+                    int draw = rng.Index(Math.Max(1, total)); kind = pool[0].Kind;
+                    foreach (var t in pool) { draw -= Weight(t.Kind); if (draw < 0) { kind = t.Kind; break; } }
                 }
+                if (schedule.Contains(kind) || !LineSchedule.Eligible(c.Task(kind), ids.Count, profile.Id)) throw new ArgumentException("Invalid/repeated forced task.");
+                schedule.Add(kind);
             }
         }
-
-        private static bool IsHiddenRound(RoundType type)
-        { return type == RoundType.FarkliEposta || type == RoundType.KayipRapor || type == RoundType.OrtakSifre; }
-
-        private bool HasSeat(int id) { return id >= 0 && id < seats.Length && seats[id] != null; }
-        private void Changed() { StateVersion++; }
-        private void Emit(LineEventType type, double time, int actor = -1, int target = -1, int a = -1, int b = -1, int recipient = -1)
+        private int Weight(TaskKind kind) { return (int)kind < profile.TaskWeights.Count ? profile.TaskWeights[(int)kind] : 1; }
+        private int Role(int number, int exclude = -1, bool forced = true)
         {
-            events.Add(new LineEvent { Type = type, Time = time, Actor = actor, Target = target, A = a, B = b,
-                Audience = recipient < 0 ? LineAudience.All : LineAudience.Player, AudiencePlayer = recipient });
+            int pick = forced && setup.ForceRoles != null && number < setup.ForceRoles.Count ? setup.ForceRoles[number] : -1;
+            if (pick >= 0 && (!HasSeat(pick) || pick == exclude)) throw new ArgumentException("Invalid forced role.");
+            if (pick < 0)
+            {
+                var pool = ids.FindAll(id => id != exclude); int min = int.MaxValue, history = int.MaxValue;
+                foreach (int id in pool) min = Math.Min(min, seats[id].RoleUses);
+                pool.RemoveAll(id => seats[id].RoleUses != min);
+                foreach (int id in pool) history = Math.Min(history, setup.History == null ? 0 : Prior(setup.History.RoleUses, id));
+                pool.RemoveAll(id => (setup.History == null ? 0 : Prior(setup.History.RoleUses, id)) != history);
+                pick = pool[rng.Index(pool.Count)];
+            }
+            seats[pick].RoleUses++; return pick;
+        }
+        private void Emit(LineEventType type, double time, int actor = -1, int target = -1, int a = -1, int b = -1, int recipient = -1, int extra = -1, bool host = false)
+        {
+            events.Add(new LineEvent { Type = type, Time = time, Actor = actor, Target = target, A = a, B = b, C = extra,
+                Audience = host ? LineAudience.Host : recipient < 0 ? LineAudience.All : LineAudience.Player, AudiencePlayer = recipient });
         }
         private void Enter(LinePhase phase, double time, double duration)
         {
             Phase = phase; phaseStart = time; PhaseEndTime = time + duration; Changed();
-            if (!Office) EndAllCalls(time, CallEndReason.PhaseEnd);
-            Emit(LineEventType.PhaseChanged, time, a: (int)phase);
+            if (!Office) { EndAllCalls(time, CallEndReason.PhaseEnd); EndRemedials(time); }
+            Emit(LineEventType.PhaseChanged, time, a: (int)phase, b: (int)endReason); endReason = PhaseEndReason.Timer;
         }
-
         private void StartMorning(double time)
         {
-            roundIndex = -1; round = null; meeting = null; reveals.Clear(); traces.Clear(); tips.Clear(); complaints.Clear(); calls.Clear();
+            task = null; roundIndex = -1; meeting = null; calls.Clear(); picks.Clear(); complaints.Clear(); carried = 0;
             foreach (int id in ids)
             {
-                var s = seats[id]; s.TrickUsed = s.TipUsed = s.Erased = s.Submitted = s.Voted = false;
-                s.MailsSent = s.Attempts = 0; s.Target = s.A = s.Vote = -1;
+                var s = seats[id]; s.TrickUsed = false; s.RawIncome = s.BlockPurchases = s.BlockRemedials = s.Texts = s.Emails = s.Complaints = s.Chats = s.Presentations = 0; s.Vote = -1;
             }
             favourite = -1;
             if (profile.HasFavourite)
             {
-                int max = -1, leaders = 0;
-                foreach (int id in ids) { if (seats[id].Blame > max) { max = seats[id].Blame; leaders = 1; } else if (seats[id].Blame == max) leaders++; }
-                var options = new List<int>();
-                foreach (int id in ids) if (leaders != 1 || seats[id].Blame != max) options.Add(id);
-                favourite = options[rng.Index(options.Count)];
+                int max = -1, count = 0; foreach (int id in ids) { if (seats[id].Blame > max) { max = seats[id].Blame; count = 1; } else if (seats[id].Blame == max) count++; }
+                var options = ids.FindAll(id => count != 1 || seats[id].Blame != max); favourite = options[rng.Index(options.Count)];
             }
             Enter(LinePhase.Morning, time, firstWeek && Day == 0 ? c.Durations.MorningFirst : c.Durations.Morning);
             if (favourite >= 0) Emit(LineEventType.FavouriteNamed, time, target: favourite);
-            int memoId = nextMailId++;
-            foreach (int id in ids) DeliverMail(id, MailKind.Manager, LineIds.Manager, 0, -1, true, time, memoId);
+            Deliver(MessageKind.Manager, LineIds.Manager, -1, "", 0, -1, -1, time);
         }
-
         public void Tick(double time)
         {
-            if (double.IsNaN(time) || double.IsInfinity(time) || time < now) throw new ArgumentOutOfRangeException(nameof(time), "Host time must be finite and monotonic.");
-            if (IsFinished) { now = time; return; }
+            if (!Finite(time) || time < now) throw new ArgumentOutOfRangeException(nameof(time), "Host seconds must be finite and monotonic.");
             while (!IsFinished)
             {
                 double due = PhaseEndTime;
                 if (insufficientSince >= 0) due = Math.Min(due, insufficientSince + 60);
-                if (Phase == LinePhase.FinalDefense && defenderIndex + 1 < meeting.DefenseOrder.Count)
-                    due = Math.Min(due, phaseStart + (defenderIndex + 1) * c.Durations.DefensePerPlayer);
+                if (Phase == LinePhase.FinalDefense && defenderIndex + 1 < meeting.DefenseOrder.Count) due = Math.Min(due, phaseStart + (defenderIndex + 1) * c.Durations.DefensePerPlayer);
                 foreach (int id in ids)
                 {
-                    var s = seats[id];
-                    if (s.Phone.Status == CallStatus.Dialing) due = Math.Min(due, s.Phone.RingUntil);
-                    if (s.BlockedUntil > 0) due = Math.Min(due, s.BlockedUntil);
-                    if (s.CoffeeUntil > 0) due = Math.Min(due, s.CoffeeUntil);
-                    if (s.OfflineUntil > 0) due = Math.Min(due, s.OfflineUntil);
-                    if (s.DeadUntil > 0) due = Math.Min(due, s.DeadUntil);
-                    if (s.TapUntil > 0) due = Math.Min(due, s.TapUntil);
+                    var s = seats[id]; if (s.Phone.Status == CallStatus.Dialing) due = Math.Min(due, s.Phone.RingUntil);
+                    if (s.CoffeeUntil > 0) due = Math.Min(due, s.CoffeeUntil); if (s.OfflineUntil > 0) due = Math.Min(due, s.OfflineUntil);
+                    if (s.DeadUntil > 0) due = Math.Min(due, s.DeadUntil); if (s.TapUntil > 0) due = Math.Min(due, s.TapUntil);
                 }
-                if (due > time) break;
-                now = due;
+                foreach (var r in remedials) due = Math.Min(due, r.ExpiresAt);
+                if (due > time) break; now = due;
                 if (insufficientSince >= 0 && insufficientSince + 60 <= due)
                 {
-                    Enter(LinePhase.Abandoned, due, 0); IsFinished = true; result = null; break;
+                    endReason = PhaseEndReason.Abandoned; FreezeCompany(); Enter(LinePhase.Abandoned, due, 0); IsFinished = true; break;
                 }
                 Expire(due);
                 if (due >= PhaseEndTime) Advance(due);
-                else if (Phase == LinePhase.FinalDefense)
-                {
-                    // Compare the very same absolute boundary used above, avoiding floating-point division
-                    // rounding a scaled boundary back into the previous defender (and an endless due loop).
-                    if (phaseStart + (defenderIndex + 1) * c.Durations.DefensePerPlayer <= due)
-                    { defenderIndex++; Changed(); }
-                }
+                else if (Phase == LinePhase.FinalDefense && phaseStart + (defenderIndex + 1) * c.Durations.DefensePerPlayer <= due) { defenderIndex++; Changed(); }
             }
             now = time;
         }
-
         private void Expire(double time)
         {
             foreach (int id in ids)
             {
-                var s = seats[id];
-                if (s.Phone.Status == CallStatus.Dialing && s.Phone.RingUntil <= time) EndCall(id, time, CallEndReason.Missed);
-                if (s.CoffeeUntil > 0 && s.CoffeeUntil <= time) { s.CoffeeUntil = 0; RefreshBlock(s); Changed(); }
-                if (s.OfflineUntil > 0 && s.OfflineUntil <= time)
-                {
-                    s.OfflineUntil = 0; RefreshBlock(s); Changed();
-                    for (int i = 0; i < s.PendingMail.Count; i++) { s.Inbox.Add(s.PendingMail[i]); Emit(LineEventType.MailReceived, time, a: s.PendingMail[i].Id, recipient: id); }
-                    s.PendingMail.Clear();
-                }
+                var s = seats[id]; if (s.Phone.Status == CallStatus.Dialing && s.Phone.RingUntil <= time) EndCall(id, time, CallEndReason.Missed);
+                if (s.CoffeeUntil > 0 && s.CoffeeUntil <= time) { s.CoffeeUntil = 0; Changed(); }
+                if (s.OfflineUntil > 0 && s.OfflineUntil <= time) { s.OfflineUntil = 0; Changed(); }
                 if (s.DeadUntil > 0 && s.DeadUntil <= time) { s.DeadUntil = 0; Changed(); }
-                if (s.TapUntil > 0 && s.TapUntil <= time)
-                { Emit(LineEventType.Wiretap, time, target: s.TapTarget, a: 0, recipient: id); s.TapUntil = 0; s.TapTarget = -1; Changed(); }
+                if (s.TapUntil > 0 && s.TapUntil <= time) { Emit(LineEventType.Wiretap, time, target: s.TapTarget, a: 0, recipient: id); s.TapUntil = 0; s.TapTarget = -1; Changed(); }
             }
+            for (int i = remedials.Count - 1; i >= 0; i--) if (remedials[i].ExpiresAt <= time) ResolveRemedial(i, false, time);
         }
-
         private void Advance(double time)
         {
             switch (Phase)
             {
-                case LinePhase.Morning: roundIndex = 0; StartRound(time); break;
-                case LinePhase.RoundIntro: Enter(LinePhase.RoundPlay, time, RoundPlayLength); break;
-                case LinePhase.RoundPlay: RevealRound(time); Enter(LinePhase.RoundReveal, time, c.Durations.RoundReveal); break;
+                case LinePhase.Morning: roundIndex = 0; StartTask(time); break;
+                case LinePhase.RoundIntro: task.PlayEnd = time + PlayLength(task.Kind); Enter(LinePhase.RoundPlay, time, PlayLength(task.Kind)); break;
+                case LinePhase.RoundPlay:
+                    if (shortened) endReason = PhaseEndReason.TimerShortened;
+                    ResolveTask(time); Enter(LinePhase.RoundReveal, time, c.Durations.RoundReveal); break;
                 case LinePhase.RoundReveal:
-                    if (++roundIndex < c.RoundsPerDay) StartRound(time); else { roundIndex = -1; StartDossier(time); } break;
+                    if (roundIndex == 0 || Day == days - 1) StartBreak(time); else { roundIndex = -1; task = null; StartDossier(time); } break;
+                case LinePhase.Break:
+                    carried = 0;
+                    if (roundIndex == 0) { roundIndex = 1; StartTask(time); } else { roundIndex = -1; task = null; StartDossier(time); } break;
                 case LinePhase.MeetingDossier: Enter(LinePhase.MeetingDiscussion, time, Day == days - 1 ? c.Durations.FinalDiscussion : c.Durations.Discussion); break;
                 case LinePhase.MeetingDiscussion:
-                    if (Day == days - 1) StartDefense(time); else Enter(LinePhase.MeetingVote, time, c.Durations.Vote); break;
+                    if (Day < days - 1) Enter(LinePhase.MeetingVote, time, c.Durations.Vote);
+                    else if (closed) { FinalVerdict(time); endReason = PhaseEndReason.Skipped; Enter(LinePhase.FinalVerdict, time, c.Durations.FinalVerdict); }
+                    else StartDefense(time); break;
                 case LinePhase.MeetingVote: DailyVerdict(time); Enter(LinePhase.MeetingVerdict, time, c.Durations.Verdict); break;
                 case LinePhase.MeetingVerdict: Day++; StartMorning(time); break;
-                case LinePhase.FinalDefense: Enter(LinePhase.FinalVote, time, c.Durations.FinalVote); break;
+                case LinePhase.FinalDefense: StartFinalVote(time); break;
                 case LinePhase.FinalVote: FinalVerdict(time); Enter(LinePhase.FinalVerdict, time, c.Durations.FinalVerdict); break;
-                case LinePhase.FinalVerdict: FinishResult(); Enter(LinePhase.WeekResults, time, c.Durations.WeekResults); break;
+                case LinePhase.FinalVerdict: FinishResult(time); Enter(LinePhase.WeekResults, time, c.Durations.WeekResults); calls.Clear(); picks.Clear(); break;
                 case LinePhase.WeekResults: IsFinished = true; Changed(); break;
             }
         }
-
+        private void StartBreak(double time)
+        {
+            double baseline = roundIndex == 0 ? c.Durations.Break : c.Durations.BreakClosing;
+            carried = (float)Math.Min(carry, Math.Max(0, c.Durations.BreakMax - baseline)); carry = 0;
+            Enter(LinePhase.Break, time, baseline + carried);
+        }
         public LineActionResult Apply(int player, LineAction action, double time)
         {
-            Tick(time);
-            if (action == null) return LineActionResult.Fail(0, LineFailure.BadParam);
+            Tick(time); if (action == null) return LineActionResult.Fail(0, LineFailure.BadParam);
             LineFailure fail;
             if (action.WeekId != setup.WeekId) fail = LineFailure.StaleWeek;
             else if (!HasSeat(player)) fail = LineFailure.InvalidTarget;
@@ -341,8 +361,7 @@ namespace BirimizKovulacak.Core
                 if (s.HasRequest && action.RequestId <= s.LastRequest) fail = LineFailure.Duplicate;
                 else
                 {
-                    s.HasRequest = true; s.LastRequest = action.RequestId;
-                    Changed(); // Consuming a fresh request changes replay/deduplication state even on rejection.
+                    s.HasRequest = true; s.LastRequest = action.RequestId; Changed();
                     if (!s.Connected) fail = LineFailure.Absent;
                     else if (action.Verb == LineVerb.HostContinue) fail = LineFailure.HostOnly;
                     else if (IsFinished) fail = LineFailure.WrongPhase;
@@ -352,50 +371,40 @@ namespace BirimizKovulacak.Core
             if (fail != LineFailure.None) return LineActionResult.Fail(action.RequestId, fail);
             Changed(); return LineActionResult.Ok(action.RequestId);
         }
-
         private LineFailure Act(int id, LineAction a, double time)
         {
             switch (a.Verb)
             {
                 case LineVerb.Call: case LineVerb.Answer: case LineVerb.Decline: case LineVerb.HangUp: return PhoneAction(id, a, time);
-                case LineVerb.SubmitChoice: case LineVerb.Attempt: return RoundAction(id, a, time);
-                case LineVerb.UseTrick: case LineVerb.TipOff: return TrickAction(id, a, time);
-                case LineVerb.SendMail: return MailAction(id, a, time);
+                case LineVerb.SubmitTask: case LineVerb.GiveItem: return TaskAction(id, a, time);
+                case LineVerb.UseTrick: return TrickAction(id, a, time);
+                case LineVerb.SendText: case LineVerb.SendEmail: case LineVerb.SendMeetingChat: case LineVerb.FileComplaint: return MessageAction(id, a, time);
+                case LineVerb.Transfer: case LineVerb.BuyEvidence: case LineVerb.PresentRecord: case LineVerb.StartRemedial: case LineVerb.RespondRemedial: return EvidenceAction(id, a, time);
                 case LineVerb.PickNextManager: return PickNextManager(id, a, time);
                 case LineVerb.Vote:
                     if (Phase != LinePhase.MeetingVote && Phase != LinePhase.FinalVote) return LineFailure.WrongPhase;
-                    var valid = TargetFailure(id, a.Target, false, true); if (valid != LineFailure.None) return valid;
-                    if (Phase == LinePhase.FinalVote && a.Target != -1 && !meeting.Shortlist.Contains(a.Target)) return LineFailure.InvalidTarget;
-                    seats[id].Voted = true; seats[id].Vote = a.Target; Emit(LineEventType.VoteCast, time, actor: id); return LineFailure.None;
+                    if (Phase == LinePhase.FinalVote && !meeting.Roster.Contains(id)) return LineFailure.NotAvailable;
+                    if (a.Target != -1 && a.Target != LineIds.Nobody) { var f = TargetFailure(id, a.Target, false); if (f != LineFailure.None) return f; }
+                    seats[id].Vote = a.Target; Emit(LineEventType.VoteCast, time, actor: id); return LineFailure.None;
                 default: return LineFailure.BadParam;
             }
         }
-
-        private LineFailure TargetFailure(int actor, int target, bool present = true, bool abstain = false)
+        private LineFailure TargetFailure(int actor, int target, bool present = true)
         {
-            if (abstain && target == -1) return LineFailure.None;
-            if (!HasSeat(target)) return LineFailure.InvalidTarget;
-            if (target == actor) return LineFailure.Self;
+            if (!HasSeat(target)) return LineFailure.InvalidTarget; if (target == actor) return LineFailure.Self;
             return present && !seats[target].Connected ? LineFailure.Absent : LineFailure.None;
         }
-
         public void SetConnected(int player, bool connected, double time)
         {
-            Tick(time);
-            if (!HasSeat(player)) throw new ArgumentException("Unknown seat.", nameof(player));
+            Tick(time); if (!HasSeat(player)) throw new ArgumentException("Unknown seat.");
             var s = seats[player]; if (s.Connected == connected || IsFinished) return;
-            s.Connected = connected; Changed(); Emit(LineEventType.Presence, time, target: player, a: connected ? 1 : 0);
-            if (!connected)
-            {
-                EndCall(player, time, CallEndReason.Disconnected);
-                s.Submitted = s.Voted = false; s.Target = s.A = s.Vote = -1;
-            }
+            s.Connected = connected; if (connected && (Phase == LinePhase.RoundIntro || Phase == LinePhase.RoundPlay)) task.Participated[player] = true; Changed(); Emit(LineEventType.Presence, time, target: player, a: connected ? 1 : 0);
+            if (!connected) { EndCall(player, time, CallEndReason.Disconnected); if (Phase != LinePhase.FinalVote) s.Vote = -1; }
             int count = 0; foreach (int id in ids) if (seats[id].Connected) count++;
             if (count < 2) { if (insufficientSince < 0) insufficientSince = time; } else insufficientSince = -1;
             if (Phase == LinePhase.RoundPlay) Shorten(time);
         }
-
         public List<LineEvent> DrainEvents() { var drained = events; events = new List<LineEvent>(); return drained; }
-        public void HostContinue(double time) { Tick(time); if (Phase == LinePhase.WeekResults && !IsFinished) { IsFinished = true; Changed(); } }
+        public void HostContinue(double time) { Tick(time); if (Phase == LinePhase.WeekResults && !IsFinished) { endReason = PhaseEndReason.HostContinue; IsFinished = true; Changed(); Emit(LineEventType.PhaseChanged, time, a: (int)Phase, b: (int)endReason); } }
     }
 }

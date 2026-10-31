@@ -5,307 +5,280 @@ namespace BirimizKovulacak.Core
 {
     internal sealed partial class LineEngine
     {
-        private sealed class RoundState
+        private sealed class TaskState
         {
-            internal RoundType Type;
-            internal int Hidden = -1, Topic = -1, OddTopic = -1, Code, SolvedBy = -1;
-            internal bool Solved;
-            internal readonly int[] Partners = { -1, -1, -1, -1, -1, -1 };
-            internal readonly int[] SecondPartners = { -1, -1, -1, -1, -1, -1 };
-            internal readonly int[] Clues = { -1, -1, -1, -1, -1, -1 };
-            internal readonly int[] Digits = new int[6];
-            internal readonly List<int> Order = new List<int>();
-            internal readonly List<int> Options = new List<int>();
-            internal readonly List<int> NoAlibi = new List<int>();
-            internal readonly List<LineAttemptView> Attempts = new List<LineAttemptView>();
-            internal LineRoundReveal Reveal;
-        }
-        private sealed class Complaint
-        {
-            internal int Author, Target, Reason;
-        }
-        private RoundState round;
-        private readonly int[] hiddenRoleUses = new int[6];
-        private readonly int[] roundUses = new int[7];
-        private readonly List<Complaint> complaints = new List<Complaint>();
-
-        private void StartRound(double time)
-        {
-            int flat = Day * c.RoundsPerDay + roundIndex;
-            round = new RoundState { Type = schedule[flat] };
-            roundUses[(int)round.Type]++;
-            firstTimeRound = !seen.Contains(round.Type);
-            if (firstTimeRound) seen.Add(round.Type);
-            foreach (int id in ids)
+            internal TaskKind Kind;
+            internal int Number, Max, Role = -1, OtherRole = -1, Code, Output, Opt;
+            internal double PlayEnd;
+            internal bool Resolved, Remedied;
+            internal readonly int[] A = new int[6], B = new int[6], Target = new int[6], Roles = new int[6], Q = new int[6], GroupScore = new int[6];
+            internal readonly TaskField[] Fields = new TaskField[6];
+            internal readonly bool[] Participated = new bool[6], Credit = new bool[6], Opportunity = new bool[6];
+            internal readonly int[,] D = new int[6, 12];
+            internal readonly List<int>[] Group = new List<int>[6], Items = new List<int>[6];
+            internal readonly List<LineFact>[] Facts = new List<LineFact>[6];
+            internal readonly List<LineControlView>[] Controls = new List<LineControlView>[6];
+            internal readonly List<LineFact> Public = new List<LineFact>();
+            internal readonly List<List<int>> Groups = new List<List<int>>();
+            internal readonly List<int> Extra = new List<int>();
+            internal readonly List<Decision> Decisions = new List<Decision>();
+            internal LineTaskReveal Reveal;
+            internal TaskState()
             {
-                var s = seats[id]; s.Submitted = false; s.Target = s.A = -1; s.Attempts = 0;
+                for (int i = 0; i < 6; i++) { A[i] = B[i] = Target[i] = -1; Group[i] = new List<int>(); Items[i] = new List<int>(); Facts[i] = new List<LineFact>(); Controls[i] = new List<LineControlView>(); }
             }
-            round.Order.AddRange(ids); rng.Shuffle(round.Order);
-            if (round.Type == RoundType.PrimHavuzu)
+        }
+        private static LineFact Fact(string key, int n1 = -1, int n2 = -1, int n3 = -1, int p = -1, int scope = 0)
+        { return new LineFact { Key = key, N1 = n1, N2 = n2, N3 = n3, P = p, Scope = scope }; }
+        private static LineOption Option(string key, int value, int n1 = -1, int n2 = -1, bool sabotage = false)
+        { return new LineOption { Key = key, Value = value, N1 = n1, N2 = n2, Sabotage = sabotage }; }
+        private LineControlView Choice(TaskState t, int id, string key, TaskField field, bool required, params LineOption[] options)
+        {
+            var v = new LineControlView { Kind = ControlKind.Choice, Field = field, Key = key, Required = required };
+            v.Options.AddRange(options); t.Controls[id].Add(v); return v;
+        }
+        private void YesNo(TaskState t, int id, string key)
+        { Choice(t, id, key, TaskField.B, false, Option("no", 0), Option("yes", 1, sabotage: true)).Sabotage = true; }
+        private void Number(TaskState t, int id, string key, int min, int max, int digits = 0)
+        { t.Controls[id].Add(new LineControlView { Kind = ControlKind.Number, Field = TaskField.A, Key = key, Min = min, Max = max, Digits = digits, Required = true }); }
+        private double PlayLength(TaskKind kind) { return c.RoundPlayByPlayers[ids.Count - 3] * (c.Durations.RoundPlay / 75.0) * c.Task(kind).PlayFactor / 100.0; }
+        private void StartTask(double time)
+        {
+            int number = Day * 2 + roundIndex; var kind = schedule[number];
+            task = new TaskState { Number = number, Kind = kind, Max = c.Task(kind).MaxOutput }; tasks.Add(task); shortened = false; carry = 0;
+            firstTimeTask = !seen.Contains(kind); if (firstTimeTask) seen.Add(kind);
+            var order = new List<int>(ids); rng.Shuffle(order);
+            if (LineTasks.Family(kind) == TaskFamily.Pair)
             {
-                for (int i = 0; i < round.Order.Count;)
-                {
-                    int size = round.Order.Count - i == 3 ? 3 : 2;
-                    for (int j = 0; j < size; j++)
+                int i = 0; while (i < order.Count) { int size = order.Count - i == 3 ? 3 : 2; task.Groups.Add(order.GetRange(i, size)); i += size; }
+                foreach (var group in task.Groups) foreach (int id in group) foreach (int peer in group) if (peer != id) { task.Group[id].Add(peer); task.Facts[id].Add(Fact("partner", p: peer, scope: 1)); }
+            }
+            else foreach (int id in ids) foreach (int peer in ids) if (id != peer) task.Group[id].Add(peer);
+            foreach (int id in ids) task.Participated[id] = seats[id].Connected;
+            DealTask(task, order);
+            double intro = firstTimeTask ? c.Durations.RoundIntroFirst : c.Durations.RoundIntro;
+            task.PlayEnd = time + intro + PlayLength(kind); Enter(LinePhase.RoundIntro, time, intro);
+        }
+        private void DealTask(TaskState t, List<int> order)
+        {
+            int n = ids.Count;
+            switch (t.Kind)
+            {
+                case TaskKind.InvoiceReconcile:
+                    foreach (int id in ids)
                     {
-                        int id = round.Order[i + j];
-                        round.Partners[id] = round.Order[i + (j + 1) % size];
-                        if (size == 3) round.SecondPartners[id] = round.Order[i + (j + 2) % size];
+                        for (int j = 0; j < 2; j++) { t.D[id,j] = 1 + rng.Index(9); t.Facts[id].Add(Fact("line", j + 1, t.D[id,j])); }
+                        Number(t,id,"total",0,99); YesNo(t,id,"pad");
                     }
-                    i += size;
-                }
+                    foreach (var g in t.Groups) { int sum = 0; foreach (int id in g) sum += t.D[id,0] + t.D[id,1]; foreach (int id in g) t.D[id,2] = sum; } break;
+                case TaskKind.BudgetSplit:
+                    foreach (int id in ids) t.D[id,0] = 1;
+                    for (int i = 0; i < n; i++) { var eligible = ids.FindAll(id => t.D[id,0] < 4); t.D[eligible[rng.Index(eligible.Count)],0]++; }
+                    foreach (int id in ids) { t.Facts[id].Add(Fact("need",t.D[id,0])); Number(t,id,"request",0,2*n+2); }
+                    t.Public.Add(Fact("budget",2*n+2,n,scope:2)); break;
+                case TaskKind.CustomerSpec:
+                    {
+                        int color = rng.Index(3), size = rng.Index(3), day = rng.Index(3), packed = color*9+size*3+day;
+                        var specs = new List<int> { packed };
+                        for (int a = 0; a < 3; a++) for (int x = 1; x <= 2; x++)
+                            specs.Add(((a==0 ? (color+x)%3 : color)*9)+((a==1 ? (size+x)%3 : size)*3)+(a==2 ? (day+x)%3 : day));
+                        specs.RemoveAt(1+rng.Index(6)); rng.Shuffle(specs); int correct = specs.IndexOf(packed);
+                        for(int k=0;k<6;k++)t.Public.Add(Fact("spec",k,specs[k],scope:2));
+                        foreach(var g in t.Groups)
+                        for (int i = 0; i < g.Count; i++)
+                        {
+                            int id = g[i]; t.D[id,0] = correct; t.D[id,1] = packed;
+                            var decoys = new List<int>(); for(int k=0;k<6;k++) if(k!=correct) decoys.Add(k);
+                            t.D[id,2] = decoys[rng.Index(5)]; t.Facts[id].Add(Fact("commission",t.D[id,2]));
+                            if (g.Count==2) { if(i==0) { t.Facts[id].Add(Fact("color",color)); t.Facts[id].Add(Fact("size",size)); } else t.Facts[id].Add(Fact("day",day)); }
+                            else t.Facts[id].Add(Fact(i==0?"color":i==1?"size":"day",i==0?color:i==1?size:day));
+                            var control = Choice(t,id,"order",TaskField.A,true);
+                            // Catalogues are group-local: their contents are public to each member's task screen.
+                            for(int k=0;k<6;k++) { control.Options.Add(Option("spec",k,specs[k])); }
+                        }
+                    } break;
+                case TaskKind.ReportReview:
+                    for (int i=0;i<n;i++)
+                    {
+                        int id=order[i], preparer=order[(i+n-1)%n], approver=order[(i+1)%n], audited=order[(i+n-2)%n];
+                        t.D[id,0]=10+rng.Index(80); t.D[id,1]=t.D[id,0]+new[]{8,12,15}[rng.Index(3)]; t.D[id,2]=preparer; t.D[id,3]=approver; t.D[id,4]=audited;
+                        t.Group[id].Clear(); t.Group[id].Add(preparer); t.Group[id].Add(approver);
+                        Choice(t,id,"version",TaskField.A,true,Option("accurate",0),Option("polished",1,sabotage:true)).Locks=true;
+                        Choice(t,id,"decision",TaskField.B,true,Option("approve",0),Option("reject",1));
+                    }
+                    foreach(int id in ids) { t.Facts[id].Add(Fact("my_figure",t.D[id,0],t.D[id,1])); t.Facts[id].Add(Fact("audit_figure",t.D[t.D[id,4],0],p:t.D[id,4])); }
+                    break;
+                case TaskKind.RoomBooking:
+                    t.Public.Add(Fact("slots",n-1,scope:2));
+                    for(int i=0;i<n;i++)
+                    {
+                        int id=order[i]; t.D[id,0]=2+rng.Index(4); t.D[id,1]=i%(n-1);
+                        do { t.D[id,2]=rng.Index(n-1); } while(t.D[id,2]==t.D[id,1]);
+                        t.Facts[id].Add(Fact("value",t.D[id,0])); t.Facts[id].Add(Fact("ok_slot",t.D[id,1])); t.Facts[id].Add(Fact("ok_slot",t.D[id,2]));
+                        var ctrl=Choice(t,id,"slot",TaskField.A,true); for(int k=0;k<n-1;k++) ctrl.Options.Add(Option("slot",k,k)); ctrl.Options.Add(Option("yield",9));
+                    }
+                    t.Opt=RoomOpt(t,0,0); break;
+                case TaskKind.ArchiveVisitor:
+                    t.Role=Role(t.Number); t.OtherRole=ids.Find(id=>id!=t.Role); int capacity=Math.Max(1,n-2);
+                    var titles=new List<int>(); for(int j=0;j<10;j++) titles.Add(j); rng.Shuffle(titles); t.Extra.AddRange(titles.GetRange(0,6));
+                    var codes=new List<int>{0,1,2,3,4,5}; rng.Shuffle(codes); int pos=0;
+                    foreach(int id in ids) if(id!=t.Role) { t.D[id,0]=codes[pos++]; t.Roles[id]=2; t.Facts[id].Add(Fact("need_doc",t.Extra[t.D[id,0]])); t.Group[id].Clear(); t.Group[id].Add(t.Role); }
+                    t.D[t.Role,0]=codes[pos]; t.Roles[t.Role]=1;
+                    t.Public.Add(Fact("visitor",p:t.Role,scope:2)); t.Public.Add(Fact("capacity",capacity,scope:2));
+                    foreach(int id in ids)
+                    {
+                        if(id==t.Role)
+                        {
+                            var ctrl=new LineControlView{Kind=ControlKind.Multi,Field=TaskField.A,Key="fetch",Required=true,MaxPicks=capacity}; t.Controls[id].Add(ctrl);
+                            for(int k=0;k<6;k++) { ctrl.Options.Add(Option("doc",k,n2:t.Extra[k])); t.Facts[id].Add(Fact("doc",k,t.Extra[k])); }
+                            t.Facts[id].Add(Fact("hr_file",t.D[id,0],p:t.OtherRole)); YesNo(t,id,"copy");
+                        }
+                        else { var ctrl=Choice(t,id,"confirm",TaskField.A,true); for(int k=0;k<6;k++) ctrl.Options.Add(Option("doc",k,n2:t.Extra[k])); }
+                    } break;
+                case TaskKind.BonusPool:
+                    foreach(int id in ids) Choice(t,id,"choice",TaskField.A,true,Option("share",0),Option("take",1)); break;
+                case TaskKind.ServerCode:
+                    t.Role=Role(t.Number); t.Roles[t.Role]=1;
+                    for(int i=0;i<n;i++) { int id=order[i]; t.D[id,0]=i; t.D[id,1]=(i==0?1:0)+rng.Index(i==0?9:10); t.Code=t.Code*10+t.D[id,1]; t.Public.Add(Fact("position",i,p:id,scope:2)); }
+                    for(int i=0;i<n;i++) { int id=order[i], next=order[(i+1)%n]; t.Facts[id].Add(Fact("my_digit",i,t.D[id,1])); t.Facts[id].Add(Fact("next_digit",(i+1)%n,t.D[next,1])); Number(t,id,"code",Pow10(n-1),Pow10(n)-1,n); }
+                    t.Facts[t.Role].Add(Fact("offer",c.TaskRules.ServerOffer)); YesNo(t,t.Role,"accept"); break;
+                case TaskKind.PhishingCheck:
+                    t.OtherRole=Role(t.Number); t.Role=Role(t.Number,t.OtherRole,false); t.Roles[t.Role]=1;
+                    int fake=1000+rng.Index(9000); t.Code=fake;
+                    foreach(int id in ids)
+                    {
+                        int account; do { account=1000+rng.Index(9000); } while(account==fake);
+                        t.D[id,0]=id==t.OtherRole?fake:account; t.Facts[id].Add(Fact("account",t.D[id,0]));
+                        var ctrl=new LineControlView{Kind=ControlKind.Player,Field=TaskField.Target,Key="flag",Required=true,AllowSelf=true};
+                        foreach(int p in ids) ctrl.Options.Add(new LineOption{Key="player",Value=p,P=p}); t.Controls[id].Add(ctrl);
+                    }
+                    t.Facts[t.Role].Add(Fact("insider_offer",fake,c.TaskRules.PhishingKickback)); YesNo(t,t.Role,"accept"); break;
+                case TaskKind.ShiftCover:
+                    int shifts=(n+1)/2; t.Public.Add(Fact("shifts",shifts,scope:2));
+                    for(int i=0;i<n;i++)
+                    {
+                        int id=order[i]; t.D[id,0]=i%shifts; t.D[id,1]=rng.Unit()<0.5?-1:(i+1)%shifts; t.D[id,2]=rng.Index(3);
+                        t.Facts[id].Add(Fact("available",t.D[id,0])); if(t.D[id,1]>=0) t.Facts[id].Add(Fact("available",t.D[id,1])); t.Facts[id].Add(Fact("cost",t.D[id,2]));
+                        var ctrl=Choice(t,id,"volunteer",TaskField.A,true); for(int k=0;k<shifts;k++) ctrl.Options.Add(Option("shift",k,k)); ctrl.Options.Add(Option("decline",9));
+                    } break;
+                case TaskKind.VendorPick:
+                    t.Extra.AddRange(new[]{3,5,7,9}); rng.Shuffle(t.Extra); t.Role=Role(t.Number); t.Roles[t.Role]=1;
+                    var weak=new List<int>(); for(int k=0;k<4;k++) if(t.Extra[k]<=5) weak.Add(k); t.Code=weak[rng.Index(weak.Count)];
+                    for(int i=0;i<n;i++) { int id=order[i],vendor=i%4; t.D[id,0]=vendor; t.Facts[id].Add(Fact("tested",vendor,t.Extra[vendor])); var ctrl=Choice(t,id,"vote",TaskField.A,true); for(int k=0;k<4;k++) ctrl.Options.Add(Option("vendor",k,k)); }
+                    t.Facts[t.Role].Add(Fact("kickback",t.Code,c.TaskRules.VendorKickback)); YesNo(t,t.Role,"accept"); break;
+                case TaskKind.SupplySwap:
+                    var types=new List<int>(); for(int i=0;i<n+2;i++) types.Add(i); rng.Shuffle(types);
+                    var tokens=new List<int>();
+                    for(int i=0;i<n;i++) { int id=order[i]; t.D[id,0]=types[(2*i)%(n+2)]; t.D[id,1]=types[(2*i+1)%(n+2)]; tokens.Add(t.D[id,0]);tokens.Add(t.D[id,1]); }
+                    rng.Shuffle(tokens);
+                    if(!DealItems(t,tokens,order,0))throw new InvalidOperationException("No exact cover.");
+                    for(int i=0;i<n;i++)
+                    {
+                        int id=order[i]; var bonus=tokens.FindAll(x=>x!=t.D[id,0]&&x!=t.D[id,1]);t.D[id,2]=bonus[rng.Index(bonus.Count)];
+                        t.Facts[id].Add(Fact("need",t.D[id,0])); t.Facts[id].Add(Fact("need",t.D[id,1])); t.Facts[id].Add(Fact("collector",t.D[id,2]));
+                        t.Controls[id].Add(new LineControlView{Kind=ControlKind.Items,Field=TaskField.Target,Key="give"}); Choice(t,id,"done",TaskField.A,false,Option("done",1));
+                    } break;
             }
-            if (round.Type == RoundType.FarkliEposta || round.Type == RoundType.KayipRapor || round.Type == RoundType.OrtakSifre)
-            {
-                round.Hidden = ChooseHidden();
-                if (setup.ForceHidden != null && setup.ForceHidden.Count > flat && setup.ForceHidden[flat] != -1)
-                {
-                    if (!HasSeat(setup.ForceHidden[flat])) throw new ArgumentException("Invalid forced hidden player.");
-                    round.Hidden = setup.ForceHidden[flat];
-                }
-                hiddenRoleUses[round.Hidden]++;
-            }
-            if (round.Type == RoundType.FarkliEposta)
-            {
-                round.Topic = ChooseTopic(-1);
-                int category = round.Topic / c.TopicsPerCategory;
-                round.OddTopic = ChooseTopic(category);
-                for (int i = 0; i < c.TopicsPerCategory; i++) round.Options.Add(category * c.TopicsPerCategory + i);
-                rng.Shuffle(round.Options);
-            }
-            if (round.Type == RoundType.KayipRapor)
-            {
-                DealSlips();
-            }
-            if (round.Type == RoundType.OrtakSifre)
-                // Codes are integer actions with exactly N digits, so the first digit is nonzero.
-                for (int i = 0; i < ids.Count; i++) { int digit = i == 0 ? 1 + rng.Index(9) : rng.Index(10); round.Digits[round.Order[i]] = digit; round.Code = round.Code * 10 + digit; }
-            Enter(LinePhase.RoundIntro, time, firstTimeRound ? c.Durations.RoundIntroFirst : c.Durations.RoundIntro);
         }
-
-        private int ChooseHidden()
+        private bool DealItems(TaskState t,List<int> tokens,List<int> owners,int index)
         {
-            var options = new List<int>(); int minWeek = int.MaxValue, minSession = int.MaxValue;
-            foreach (int id in ids)
-            {
-                int session = setup.History != null && setup.History.HiddenRoles.Count > id ? setup.History.HiddenRoles[id] : 0;
-                if (hiddenRoleUses[id] < minWeek || (hiddenRoleUses[id] == minWeek && session < minSession))
-                { minWeek = hiddenRoleUses[id]; minSession = session; options.Clear(); }
-                if (hiddenRoleUses[id] == minWeek && session == minSession) options.Add(id);
-            }
-            // Normal schedules have at most N hidden rounds; forced test schedules can exhaust the seats.
-            return options[rng.Index(options.Count)];
+            if(index==tokens.Count)return true;int item=tokens[index];
+            foreach(int id in owners)if(t.Items[id].Count<2&&t.D[id,0]!=item&&t.D[id,1]!=item)
+            {t.Items[id].Add(item);if(DealItems(t,tokens,owners,index+1))return true;t.Items[id].RemoveAt(t.Items[id].Count-1);}
+            return false;
         }
-
-        private int ChooseTopic(int excludedCategory)
+        private static int Pow10(int n) { int x=1; while(n-->0) x*=10; return x; }
+        private int RoomOpt(TaskState t,int index,int used)
         {
-            var options = new List<int>();
-            for (int pass = 0; pass < 2 && options.Count == 0; pass++)
-                for (int topic = 0; topic < c.TopicCategories * c.TopicsPerCategory; topic++)
-                    if (topic / c.TopicsPerCategory != excludedCategory && (pass != 0 || !usedTopics.Contains(topic))) options.Add(topic);
-            int chosen = options[rng.Index(options.Count)];
-            if (!usedTopics.Contains(chosen)) usedTopics.Add(chosen);
-            return chosen;
+            if(index==ids.Count) return 0; int id=ids[index], best=RoomOpt(t,index+1,used);
+            for(int j=1;j<=2;j++) { int s=t.D[id,j]; if((used&(1<<s))==0) best=Math.Max(best,t.D[id,0]+RoomOpt(t,index+1,used|(1<<s))); }
+            return best;
         }
-
-        private void DealSlips()
+        private bool Complete(TaskState t,int id)
         {
-            var named = new List<int>();
-            foreach (int id in ids) if (id != round.Hidden) named.Add(id);
-            rng.Shuffle(named);
-            int missing = ids.Count == 6 ? 2 : 1;
-            for (int i = 0; i < missing; i++) { round.NoAlibi.Add(named[0]); named.RemoveAt(0); }
-            // Give each named innocent a witness first, then fill the other holders independently.
-            var holders = new List<int>(ids);
-            foreach (int innocent in named)
-            {
-                var options = new List<int>();
-                foreach (int holder in holders) if (holder != innocent && holder != round.Hidden) options.Add(holder);
-                int witness = options[rng.Index(options.Count)];
-                round.Clues[witness] = innocent; holders.Remove(witness);
-            }
-            foreach (int holder in holders)
-            {
-                var options = new List<int>();
-                foreach (int innocent in named) if (holder != innocent) options.Add(innocent);
-                round.Clues[holder] = options[rng.Index(options.Count)];
-            }
+            if(t.Kind==TaskKind.SupplySwap) return false;
+            foreach(var ctrl in t.Controls[id]) if(ctrl.Required && ctrl.Enabled && (t.Fields[id]&ctrl.Field)==0) return false;
+            return true;
         }
-
-        private LineFailure RoundAction(int id, LineAction a, double time)
+        private static int Bits(int value) { int count=0; while(value!=0) { value&=value-1; count++; } return count; }
+        private bool Needs(TaskState t,int id) { return t.Items[id].Contains(t.D[id,0]) && t.Items[id].Contains(t.D[id,1]); }
+        private LineFailure TaskAction(int id,LineAction a,double time)
         {
-            if (Phase != LinePhase.RoundPlay) return LineFailure.WrongPhase;
-            // v3.1 has a changeable private entry, never a live password attempt.
-            if (a.Verb == LineVerb.Attempt) return LineFailure.BadParam;
-            var s = seats[id];
-            if (s.BlockedUntil > time) return LineFailure.ComputerBlocked;
-            if (round.Type == RoundType.OrtakSifre)
+            if(Phase!=LinePhase.RoundPlay) return LineFailure.WrongPhase;
+            if(Math.Max(seats[id].CoffeeUntil,seats[id].OfflineUntil)>time) return LineFailure.ComputerBlocked;
+            var t=task;
+            if(a.Verb==LineVerb.GiveItem)
             {
-                int minimum = 1; for (int i = 1; i < ids.Count; i++) minimum *= 10;
-                if (a.A < minimum || a.A >= minimum * 10) return LineFailure.BadParam;
+                if(t.Kind!=TaskKind.SupplySwap) return LineFailure.NotAvailable;
+                var f=TargetFailure(id,a.Target); if(f!=LineFailure.None) return f;
+                if(a.A<0 || a.A>=t.Items[id].Count) return LineFailure.NotOwned;
+                bool before=Needs(t,a.Target); int item=t.Items[id][a.A]; t.Items[id].RemoveAt(a.A); t.Items[a.Target].Add(item); bool completes=!before&&Needs(t,a.Target);
+                if(completes) t.Credit[id]=true;
+                AddRecord(RecordKind.ItemTransfer,RecordSource.TaskSystem,time,id,a.Target,item,taskNumber:t.Number,access:new[]{id,a.Target});
+                Emit(LineEventType.ItemGiven,time,id,a.Target,item,recipient:id); Emit(LineEventType.ItemGiven,time,id,a.Target,item,recipient:a.Target);
+                Emit(LineEventType.HostChoice,time,id,(int)TaskField.Target,completes?1:0,t.Number,extra:0,host:true); return LineFailure.None;
             }
-            else if (round.Type == RoundType.PrimHavuzu)
-            { if (a.A != 0 && a.A != 1) return LineFailure.BadParam; }
-            else
+            if(a.C<=0 || (a.C&~7)!=0) return LineFailure.BadParam;
+            var mask=(TaskField)a.C;
+            // Validate every requested field before changing any of them.
+            foreach(TaskField field in new[]{TaskField.Target,TaskField.A,TaskField.B}) if((mask&field)!=0)
             {
-                bool abstain = round.Type == RoundType.IhbarKutusu || round.Type == RoundType.TerfiListesi;
-                var target = TargetFailure(id, a.Target, false, abstain); if (target != LineFailure.None) return target;
-                if (round.Type == RoundType.IhbarKutusu && a.Target != -1 && (a.A < 0 || a.A >= c.Rounds.ComplaintReasons)) return LineFailure.BadParam;
-                if (round.Type == RoundType.FarkliEposta && a.A != -1 && (round.Hidden != id || !round.Options.Contains(a.A))) return LineFailure.BadParam;
+                var ctrl=t.Controls[id].Find(x=>x.Field==field && x.Kind!=ControlKind.Items);
+                if(ctrl==null || !ctrl.Enabled) return LineFailure.NotAvailable;
+                if(ctrl.Locks && (t.Fields[id]&field)!=0) return LineFailure.Locked;
+                if(t.Kind==TaskKind.ReportReview && field==TaskField.B && (t.Fields[t.D[id,2]]&TaskField.A)==0) return LineFailure.Waiting;
+                int value=field==TaskField.Target?a.Target:field==TaskField.A?a.A:a.B;
+                if(ctrl.Kind==ControlKind.Number && (value<ctrl.Min || value>ctrl.Max)) return LineFailure.BadParam;
+                if(ctrl.Kind==ControlKind.Multi)
+                { if(value<0 || (value>>ctrl.Options.Count)!=0 || Bits(value)>ctrl.MaxPicks) return LineFailure.BadParam; }
+                else if(ctrl.Kind!=ControlKind.Number && !ctrl.Options.Exists(x=>x.Value==value&&x.Enabled)) return LineFailure.BadParam;
+                if(ctrl.Kind==ControlKind.Player && value==id && !ctrl.AllowSelf) return LineFailure.Self;
             }
-            s.Submitted = true; s.Target = round.Type == RoundType.PrimHavuzu || round.Type == RoundType.OrtakSifre ? -1 : a.Target;
-            s.A = round.Type == RoundType.KayipRapor || round.Type == RoundType.TerfiListesi ? -1 : a.A;
-            Emit(LineEventType.RoundSubmitted, time, actor: id);
-            Shorten(time); return LineFailure.None;
+            bool change=false; TaskField oldFields=t.Fields[id];
+            foreach(TaskField field in new[]{TaskField.Target,TaskField.A,TaskField.B}) if((mask&field)!=0)
+            {
+                int value=field==TaskField.Target?a.Target:field==TaskField.A?a.A:a.B;
+                int old=field==TaskField.Target?t.Target[id]:field==TaskField.A?t.A[id]:t.B[id];
+                if(old!=value || (oldFields&field)==0) change=true;
+                if(field==TaskField.Target)t.Target[id]=value; else if(field==TaskField.A)t.A[id]=value; else t.B[id]=value;
+                t.Fields[id]|=field;
+                Emit(LineEventType.HostChoice,time,id,(int)field,Category(t,id,field,value),t.Number,extra:(oldFields&field)!=0?1:0,host:true);
+            }
+            if(change) Emit(LineEventType.TaskSubmitted,time,actor:id);
+            t.Decisions.Add(new Decision{Player=id,Time=time}); Shorten(time); return LineFailure.None;
         }
-
         private void Shorten(double time)
         {
-            foreach (int id in ids) if (seats[id].Connected && !seats[id].Submitted) return;
-            double end = Math.Min(PhaseEndTime, time + c.Durations.AllSubmittedRemaining);
-            if (end != PhaseEndTime) { PhaseEndTime = end; Changed(); }
+            if(shortened || task.Kind==TaskKind.SupplySwap) return;
+            int count=0; foreach(int id in ids) if(seats[id].Connected) { count++; if(!Complete(task,id))return; }
+            if(count==0) return; shortened=true;
+            double saved=Math.Max(0,PhaseEndTime-(time+c.Durations.AllSubmittedRemaining));
+            PhaseEndTime-=saved; task.PlayEnd=PhaseEndTime;
+            bool canCarry=roundIndex==0 || Day==days-1;
+            if(c.EarlySubmit==EarlySubmitPolicy.CarryToBreak && canCarry)
+                carry=Math.Min(saved,Math.Max(0,c.Durations.BreakMax-(roundIndex==0?c.Durations.Break:c.Durations.BreakClosing)));
+            Emit(LineEventType.HostEarlySubmit,time,a:(int)Math.Round(saved*1000),b:(int)Math.Round(carry*1000),extra:task.Number,host:true); Changed();
         }
-
-        private int Choice(int id) { return seats[id].Connected && seats[id].Submitted ? seats[id].A : 0; }
-        private int ChoiceTarget(int id) { return seats[id].Connected && seats[id].Submitted ? seats[id].Target : -1; }
-        private int Plurality(int[] counts, bool blameTie = false)
+        private int Category(TaskState t,int id,TaskField field,int value)
         {
-            int best = -1, max = 0; bool tied = false;
-            foreach (int id in ids)
+            if(field==TaskField.B)
+            { if(t.Kind==TaskKind.ReportReview) { int p=t.D[id,2]; bool right=t.A[p]>=0&&((t.A[p]==0)==(value==0)); return value+(right?10:0); } return value; }
+            switch(t.Kind)
             {
-                if (counts[id] > max) { max = counts[id]; best = id; tied = false; }
-                else if (counts[id] > 0 && counts[id] == max)
-                {
-                    if (blameTie && seats[id].Blame > seats[best].Blame) { best = id; tied = false; }
-                    else if (!blameTie || seats[id].Blame == seats[best].Blame) tied = true;
-                }
+                case TaskKind.InvoiceReconcile:return value==t.D[id,2]?1:0;
+                case TaskKind.BudgetSplit:return value<t.D[id,0]?0:value==t.D[id,0]?1:value==t.D[id,0]+1?2:3;
+                case TaskKind.CustomerSpec:return value==t.D[id,0]?1:value==t.D[id,2]?2:0;
+                case TaskKind.ReportReview:return value;
+                case TaskKind.RoomBooking:return value==9?0:value==t.D[id,1]||value==t.D[id,2]?1:2;
+                case TaskKind.ArchiveVisitor: if(id!=t.Role)return value==t.D[id,0]?1:0; int needed=0; foreach(int p in ids)if(p!=id&&(value&(1<<t.D[p,0]))!=0)needed++;return needed;
+                case TaskKind.BonusPool:return value;
+                case TaskKind.ServerCode:return value==t.Code?1:0;
+                case TaskKind.PhishingCheck:return value==id?2:value==t.OtherRole?1:0;
+                case TaskKind.ShiftCover:return value==9?0:value==t.D[id,0]||value==t.D[id,1]?1:2;
+                case TaskKind.VendorPick:return t.Extra[value];
+                default:return 1;
             }
-            return tied ? -1 : best;
         }
-
-        private LineBlameDelta Blame(int id, int amount, BlameReason reason, double time, RoundType type = RoundType.None, TrickType trick = TrickType.None)
-        {
-            var s = seats[id];
-            if (amount > 0 && id == favourite) amount--;
-            int applied = Math.Max(0, s.Blame + amount) - s.Blame;
-            s.Blame += applied;
-            if (applied != 0)
-            {
-                Changed();
-                Emit(LineEventType.BlameChanged, time, target: id, a: applied, b: (int)reason);
-            }
-            return new LineBlameDelta { Player = id, Delta = applied, Reason = reason, Round = type, Trick = trick, Day = Day };
-        }
-        private void Delta(LineRoundReveal reveal, int id, int amount, double time)
-        { if (id != LineIds.Intern) reveal.Deltas.Add(Blame(id, amount, BlameReason.Round, time, round.Type)); }
-
-        private void RevealRound(double time)
-        {
-            var r = new LineRoundReveal { Type = round.Type, Index = roundIndex }; var rules = c.Rounds;
-            if (round.Type == RoundType.PrimHavuzu)
-            {
-                for (int i = 0; i < round.Order.Count;)
-                {
-                    int a = round.Order[i], b = round.Partners[a], ca = Choice(a), cb = Choice(b);
-                    int third = round.SecondPartners[a];
-                    if (third >= 0)
-                    {
-                        int cc = Choice(third), takers = ca + cb + cc;
-                        r.Pairs.Add(new LinePairReveal { A = a, B = b, C = third, ChoiceA = ca, ChoiceB = cb, ChoiceC = cc });
-                        Delta(r, a, TrioDelta(ca, takers), time); Delta(r, b, TrioDelta(cb, takers), time); Delta(r, third, TrioDelta(cc, takers), time);
-                        i += 3; continue;
-                    }
-                    r.Pairs.Add(new LinePairReveal { A = a, B = b, ChoiceA = ca, ChoiceB = cb });
-                    int da, db;
-                    if (ca == 0 && cb == 0) da = db = rules.PrimBothShare;
-                    else if (ca == 1 && cb == 1) da = db = rules.PrimBothTake;
-                    else { int taker = rules.PrimTakerWins - profile.GreedBonus; da = ca == 1 ? taker : rules.PrimSharerLoses; db = cb == 1 ? taker : rules.PrimSharerLoses; }
-                    Delta(r, a, da, time); Delta(r, b, db, time);
-                    i += 2;
-                }
-            }
-            else if (round.Type == RoundType.OrtakSifre)
-            {
-                int correct = 0;
-                for (int id = 0; id < seats.Length; id++)
-                {
-                    int code = HasSeat(id) && seats[id].Connected && seats[id].Submitted ? seats[id].A : -1;
-                    r.CodesByPlayer.Add(code);
-                    if (code == round.Code) correct++;
-                }
-                round.Solved = correct > ids.Count / 2;
-                if (round.Solved) Emit(LineEventType.PasswordCracked, time);
-                r.Hidden = round.Hidden; r.Code = round.Code; r.Solved = round.Solved; r.SolvedBy = round.SolvedBy;
-                foreach (int id in ids) Delta(r, id, round.Solved ? (id == round.Hidden ? rules.PasswordCrackedSaboteur : rules.PasswordCracked) :
-                    (id == round.Hidden ? rules.PasswordFailedSaboteur : rules.PasswordFailed), time);
-            }
-            else
-            {
-                int[] counts = new int[6];
-                foreach (int id in ids)
-                {
-                    int target = ChoiceTarget(id); if (target >= 0) counts[target]++;
-                    if (round.Type == RoundType.IhbarKutusu)
-                    {
-                        if (target >= 0)
-                        {
-                            r.Complaints.Add(new LineComplaintView { Target = target, Reason = seats[id].A });
-                            complaints.Add(new Complaint { Author = id, Target = target, Reason = seats[id].A });
-                        }
-                    }
-                    else r.Votes.Add(new LineVoteView { Voter = id, Target = target });
-                }
-                r.Counts.AddRange(counts);
-                if (round.Type == RoundType.IhbarKutusu)
-                {
-                    rng.Shuffle(r.Complaints); int max = 0;
-                    foreach (int id in ids) max = Math.Max(max, counts[id]);
-                    if (max > 0) foreach (int id in ids) if (counts[id] == max || counts[id] == 0)
-                        Delta(r, id, counts[id] == max ? rules.ComplaintTop : rules.ComplaintNone, time);
-                }
-                else
-                {
-                    r.Winner = Plurality(counts);
-                    if (round.Type == RoundType.TerfiListesi)
-                    {
-                        if (r.Winner >= 0)
-                        {
-                            Delta(r, r.Winner, rules.PromotionWinner, time);
-                            foreach (int id in ids) if (ChoiceTarget(id) == r.Winner) Delta(r, id, rules.PromotionBacker, time);
-                        }
-                    }
-                    else
-                    {
-                        r.Hidden = round.Hidden;
-                        if (round.Type == RoundType.FarkliEposta)
-                        {
-                            r.TopicId = round.Topic;
-                            r.OddGuess = seats[round.Hidden].Connected && seats[round.Hidden].Submitted ? seats[round.Hidden].A : -1;
-                            r.OddGuessCorrect = r.OddGuess == round.Topic;
-                        }
-                        else r.Clues.AddRange(round.Clues);
-                        if (r.Winner == round.Hidden)
-                        {
-                            Delta(r, round.Hidden, r.OddGuessCorrect ? rules.OddCaughtButGuessed : rules.HiddenCaught, time);
-                            foreach (int id in ids) if (ChoiceTarget(id) == round.Hidden) Delta(r, id, rules.CorrectVoter, time);
-                        }
-                        else
-                        {
-                            Delta(r, round.Hidden, rules.HiddenEscaped, time);
-                            if (r.Winner >= 0) Delta(r, r.Winner, rules.WrongInnocent, time);
-                        }
-                    }
-                }
-            }
-            round.Reveal = r; reveals.Add(r); Changed();
-        }
-
-        private int TrioDelta(int choice, int takers)
-        {
-            if (takers == 0) return c.Rounds.PrimTrioNobodyTakes;
-            if (takers == 3) return c.Rounds.PrimTrioAllTake;
-            if (choice == 0) return c.Rounds.PrimTrioSharer;
-            return (takers == 1 ? c.Rounds.PrimTrioSoloTaker : c.Rounds.PrimTrioPairTakers) - profile.GreedBonus;
-        }
+        private sealed class Decision { internal int Player; internal double Time; }
     }
 }

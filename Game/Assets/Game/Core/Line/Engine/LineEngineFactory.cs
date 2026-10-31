@@ -2,9 +2,6 @@
 {
     public static class LineEngineFactory
     {
-        public static ILineEngine Create(LineSetup setup, LineConfig config)
-        {
-            return new LineEngine(setup, config);
-        }
+        public static ILineEngine Create(LineSetup setup, LineConfig config = null) { return new LineEngine(setup, config); }
     }
 }
