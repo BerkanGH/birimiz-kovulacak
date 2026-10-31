@@ -31,6 +31,8 @@ namespace BirimizKovulacak.Game
         public int ExpectPlayers = 4;
         public string ManagerProfile;
         public string VoiceTest;
+        /// <summary>Playtest facilitator's friend-group code (analytics grouping), e.g. G07.</summary>
+        public string PlaytestGroup;
 
         public static LaunchArgs Current { get; private set; } = new LaunchArgs();
 
@@ -64,6 +66,7 @@ namespace BirimizKovulacak.Game
                     case "-week": a.WeekMode = true; break;
                     case "-expectplayers": a.ExpectPlayers = int.Parse(next, CultureInfo.InvariantCulture); i++; break;
                     case "-manager": a.ManagerProfile = next; i++; break;
+                    case "-playtestgroup": a.PlaytestGroup = next; i++; break;
                     case "-voicetest":
                         if (next != null && !next.StartsWith("-")) { a.VoiceTest = next; i++; }
                         else a.VoiceTest = "sine";

@@ -75,6 +75,8 @@ namespace BirimizKovulacak.Game
                 PlayerName = PlayerName,
                 ReconnectToken = token ?? "",
                 Language = Loc.Language,
+                TelemetryConsent = TelemetryHooks.Privacy != null ? TelemetryHooks.Privacy.Consent : 0,
+                AnonymousPlayerId = TelemetryHooks.Privacy != null ? TelemetryHooks.Privacy.AnonymousId ?? "" : "",
             });
         }
 

@@ -7,20 +7,21 @@ using UnityEngine;
 namespace BirimizKovulacak.Game
 {
     /// <summary>
-    /// v3 host session authority: lobby seats (humans + host-side bots), connection approval and reconnect tokens,
-    /// the <see cref="ILineEngine"/> week, per-recipient view/event routing, recordings hand-off to voice, and the
-    /// session history between weeks. Lives for one hosting session. The lobby UI calls only the public lobby API.
+    /// v4 host session authority: lobby seats (humans + host-side bots), connection approval and reconnect tokens,
+    /// the <see cref="ILineEngine"/> match, per-recipient view/event/message routing, recordings hand-off to voice,
+    /// analytics consent per seat (HostTelemetryBridge) and the session history between matches. Lives for one hosting
+    /// session. The lobby UI calls only the public lobby API.
     /// </summary>
     public sealed class HostLineController
     {
         /// <summary>Host of the current session (null on clients and offline).</summary>
         public static HostLineController Current { get; internal set; }
 
-        /// <summary>
-        /// Voice hook (set by the voice integration): play one recording pick to everyone now; returns the call id
-        /// actually played (a candidate with speech) or -1. When null the first candidate is reported without audio.
-        /// </summary>
-        public static Func<LineRecordingPick, int> PlayRecording;
+        /// <summary>Voice hook: play one recording pick to everyone now; returns the call id played (or -1) and what happened.</summary>
+        public delegate int RecordingPlayer(LineRecordingPick pick, out RecordingPlayInfo info);
+
+        /// <summary>Set by the voice integration (HostLineVoiceBridge). When null the first candidate is reported without audio.</summary>
+        public static RecordingPlayer PlayRecording;
 
         public const int SlotCount = LineProtocol.MaxPlayers;
         const double ViewInterval = 0.1;      // max 10 Hz per client
@@ -40,11 +41,20 @@ namespace BirimizKovulacak.Game
             public bool IsHost;
             public LineBot Bot;
             public LineView BotView;
+            /// <summary>"Play again" pressed on the last results screen.</summary>
+            public bool WantsRematch;
+            /// <summary>Analytics consent of the seat's player (0 unknown, 1 denied, 2 local, 3 cloud) and pseudonymous id.</summary>
+            public int TelemetryConsent;
+            public string AnonymousId = "";
+            /// <summary>Highest message seq pushed to this seat's client.</summary>
+            public long MessagesSent;
+            public bool MessagesDirty;
         }
 
         readonly Slot[] _slots = new Slot[SlotCount];
         readonly Dictionary<ulong, int> _clientSlot = new Dictionary<ulong, int>();
         readonly Dictionary<ulong, int> _pendingApprovals = new Dictionary<ulong, int>();
+        readonly Dictionary<ulong, LineConnectionPayload> _pendingPayloads = new Dictionary<ulong, LineConnectionPayload>();
         readonly System.Random _rng = new System.Random();
         readonly HashSet<int> _recordingsTriggered = new HashSet<int>();
         NetSession _session;
@@ -56,6 +66,10 @@ namespace BirimizKovulacak.Game
         double _lastViewSend, _lastHeartbeat, _nextBotTick;
         double _abandonedAt = -1;
         bool _resultLogged;
+        bool _matchEndReported = true;
+        string _matchId = "";
+        string _lastMatchId = "";
+        readonly List<string> _experiments = new List<string>();
         int _recordingsPhaseKey = -1;
         LinePhase _lastPhase = LinePhase.None;
         IReadOnlyList<LineRecordingPick> _picks;
@@ -67,6 +81,11 @@ namespace BirimizKovulacak.Game
         public bool RecordingsEnabled { get; private set; } = true;
         public int WeeksPlayed => _history != null ? _history.WeeksPlayed : 0;
         public string ConfigJson { get; private set; }
+        /// <summary>Random id of this hosting session (analytics correlation only).</summary>
+        public string SessionId { get; private set; }
+        /// <summary>Pseudonymous friend-group id: facilitator code (-playtestgroup / lobby field) or random per session.</summary>
+        public string GroupId { get; private set; }
+        public string MatchId => _matchId;
 
         /// <summary>Host time for the engine: NGO server time, clamped so it never goes backwards (the engine requires monotonic time).</summary>
         public double Now
@@ -86,6 +105,8 @@ namespace BirimizKovulacak.Game
             for (int i = 0; i < SlotCount; i++) _slots[i] = new Slot { Index = i };
             ConfigJson = GameConfig.ToJson(GameConfig.Line);
             if (LaunchArgs.Current.WeekMode) Length = WeekLength.Full;
+            SessionId = "s-" + RandomHex(8);
+            GroupId = ValidGroupCode(LaunchArgs.Current.PlaytestGroup) ? LaunchArgs.Current.PlaytestGroup : "g-" + RandomHex(6);
             Current = this;
         }
 
@@ -96,9 +117,61 @@ namespace BirimizKovulacak.Game
             foreach (var s in _slots)
                 if (s.Occupied && !s.Virtual && s.Connected)
                     _session.SendLineWelcome(s.ClientId, new LineWelcome { Slot = s.Index, ReconnectToken = s.Token, WeekId = _weekId }, ConfigJson);
+            HostTelemetryBridge.LobbyCreated(SessionId, GroupId, Length, RecordingsEnabled);
             if (LaunchArgs.Current.FillBots > 0)
                 for (int k = 0; k < LaunchArgs.Current.FillBots; k++) AddBot();
             BroadcastLobby();
+        }
+
+        static string RandomHex(int bytes)
+        {
+            var b = new byte[bytes];
+            using (var rng = System.Security.Cryptography.RandomNumberGenerator.Create()) rng.GetBytes(b);
+            var sb = new System.Text.StringBuilder(bytes * 2);
+            foreach (var x in b) sb.Append(x.ToString("x2"));
+            return sb.ToString();
+        }
+
+        static bool ValidGroupCode(string code)
+        {
+            if (string.IsNullOrEmpty(code) || code.Length > 16) return false;
+            foreach (char c in code) if (!(c < 128 && (char.IsLetterOrDigit(c) || c == '-' || c == '_'))) return false;
+            return true;
+        }
+
+        /// <summary>Host lobby: facilitator's playtest group code (letters, digits, - and _; max 16). Empty → random id.</summary>
+        public void SetGroupCode(string code)
+        {
+            if (WeekRunning) return;
+            code = (code ?? "").Trim();
+            if (code.Length == 0 && GroupId.StartsWith("g-")) return;
+            string next = ValidGroupCode(code) ? code : "g-" + RandomHex(6);
+            if (next == GroupId) return;
+            GroupId = next;
+            HostTelemetryBridge.LobbyCreated(SessionId, GroupId, Length, RecordingsEnabled);
+            BroadcastLobby();
+        }
+
+        static bool ValidAnonymousId(string id)
+        {
+            if (string.IsNullOrEmpty(id) || id.Length != 34 || !id.StartsWith("p-")) return false;
+            for (int i = 2; i < id.Length; i++) { char c = id[i]; if (!((c >= '0' && c <= '9') || (c >= 'a' && c <= 'f'))) return false; }
+            return true;
+        }
+
+        void SetConsent(int slot, int consent, string anonymousId)
+        {
+            var s = _slots[slot];
+            s.TelemetryConsent = consent < 0 || consent > 3 ? 0 : consent;
+            s.AnonymousId = s.TelemetryConsent >= 2 && ValidAnonymousId(anonymousId) ? anonymousId : "";
+            HostTelemetryBridge.PlayerConsent(slot, s.TelemetryConsent, s.AnonymousId, s.Virtual);
+        }
+
+        /// <summary>A client changed its analytics consent (NetSession RPC).</summary>
+        public void OnTelemetryConsent(ulong clientId, int consent, string anonymousId)
+        {
+            int slot;
+            if (_clientSlot.TryGetValue(clientId, out slot)) SetConsent(slot, consent, anonymousId);
         }
 
         // ================================================================ approval & connections
@@ -142,13 +215,18 @@ namespace BirimizKovulacak.Game
                 s.IsHost = isHostClient;
             }
             _pendingApprovals[clientId] = slot;
+            _pendingPayloads[clientId] = p;
             return new Approval { Approved = true, Slot = slot };
         }
 
         string SanitizeName(string name, int slot)
         {
+            // Same rules as player text (no markup or control characters); names never reach analytics.
             name = (name ?? "").Trim();
             if (name.Length > 16) name = name.Substring(0, 16);
+            LineFailure failure;
+            name = LineText.Sanitize(name, 16, false, out failure) ?? "";
+            if (failure != LineFailure.None) name = "";
             if (name.Length == 0) name = Loc.T("player.default." + slot);
             for (int i = 0; i < SlotCount; i++)
                 if (i != slot && _slots[i].Occupied && string.Equals(_slots[i].Name, name, StringComparison.OrdinalIgnoreCase))
@@ -161,6 +239,9 @@ namespace BirimizKovulacak.Game
             int slot;
             if (!_pendingApprovals.TryGetValue(clientId, out slot)) return;
             _pendingApprovals.Remove(clientId);
+            LineConnectionPayload payload;
+            _pendingPayloads.TryGetValue(clientId, out payload);
+            _pendingPayloads.Remove(clientId);
             var s = _slots[slot];
             if (!s.Occupied)
             {
@@ -172,14 +253,18 @@ namespace BirimizKovulacak.Game
             bool reconnect = WeekRunning && InWeek(slot);
             s.ClientId = clientId;
             s.Connected = true;
+            s.MessagesSent = 0;      // (re)connected client: resend every message of the match
+            s.MessagesDirty = true;
             _clientSlot[clientId] = slot;
+            if (payload != null) SetConsent(slot, payload.TelemetryConsent, payload.AnonymousPlayerId);
             MatchLog.Write("host: client " + clientId + " -> slot " + slot + (reconnect ? " (reconnect)" : ""));
             if (_session != null && _session.IsSpawned)
                 _session.SendLineWelcome(clientId, new LineWelcome { Slot = slot, ReconnectToken = s.Token, Reconnected = reconnect, WeekId = _weekId }, ConfigJson);
             if (reconnect && _engine != null)
             {
                 try { _engine.SetConnected(slot, true, Now); }
-                catch (Exception e) { Debug.LogException(e); }
+                catch (Exception e) { Debug.LogException(e); HostTelemetryBridge.TechnicalFailure("engine_exception", e); }
+                HostTelemetryBridge.PlayerConnection(slot, true, Now);
                 SendViewTo(slot);
             }
             BroadcastLobby();
@@ -195,6 +280,7 @@ namespace BirimizKovulacak.Game
         public void OnClientDisconnected(ulong clientId)
         {
             int pending;
+            _pendingPayloads.Remove(clientId);
             if (_pendingApprovals.TryGetValue(clientId, out pending))
             {
                 _pendingApprovals.Remove(clientId);
@@ -211,9 +297,14 @@ namespace BirimizKovulacak.Game
             if (_engine != null && InWeek(slot))
             {
                 try { _engine.SetConnected(slot, false, Now); }
-                catch (Exception e) { Debug.LogException(e); }
+                catch (Exception e) { Debug.LogException(e); HostTelemetryBridge.TechnicalFailure("engine_exception", e); }
+                HostTelemetryBridge.PlayerConnection(slot, false, Now);
             }
-            else { s.Occupied = false; s.Ready = false; s.Name = ""; }
+            else
+            {
+                s.Occupied = false; s.Ready = false; s.Name = ""; s.WantsRematch = false; s.TelemetryConsent = 0; s.AnonymousId = "";
+                HostTelemetryBridge.SeatReleased(slot);
+            }
             BroadcastLobby();
         }
 
@@ -226,8 +317,29 @@ namespace BirimizKovulacak.Game
         {
             int slot;
             if (WeekRunning || !_clientSlot.TryGetValue(clientId, out slot)) return;
+            if (_slots[slot].Ready == ready) return;
             _slots[slot].Ready = ready;
+            HostTelemetryBridge.PlayerReadyChanged(slot, ready);
             BroadcastLobby();
+        }
+
+        /// <summary>"Play again" intent from a results screen (shown in the lobby; the host still starts the match).</summary>
+        public void SetRematch(ulong clientId, bool want)
+        {
+            int slot;
+            if (!_clientSlot.TryGetValue(clientId, out slot) || _slots[slot].WantsRematch == want) return;
+            _slots[slot].WantsRematch = want;
+            BroadcastLobby();
+        }
+
+        /// <summary>A client noticed missing messages (view seq ahead of what arrived): resend after its last seq.</summary>
+        public void ResyncMessages(ulong clientId, long afterSeq)
+        {
+            int slot;
+            if (!_clientSlot.TryGetValue(clientId, out slot)) return;
+            var s = _slots[slot];
+            s.MessagesSent = Math.Max(0, Math.Min(afterSeq, s.MessagesSent));
+            s.MessagesDirty = true;
         }
 
         /// <summary>Put a bot in the lowest free seat.</summary>
@@ -240,6 +352,7 @@ namespace BirimizKovulacak.Game
                 var s = _slots[i];
                 s.Occupied = true; s.Virtual = true; s.Connected = true; s.Ready = true; s.Token = "";
                 s.Name = Loc.T("player.bot." + i);
+                SetConsent(i, 2, ""); // synthetic seat: covered by the host's own consent, always flagged is_bot
                 BroadcastLobby();
                 return;
             }
@@ -250,6 +363,7 @@ namespace BirimizKovulacak.Game
             if (WeekRunning || slot < 0 || slot >= SlotCount || !_slots[slot].Virtual) return;
             var s = _slots[slot];
             s.Occupied = false; s.Virtual = false; s.Connected = false; s.Ready = false; s.Name = ""; s.Bot = null; s.BotView = null;
+            HostTelemetryBridge.SeatReleased(slot);
             BroadcastLobby();
         }
 
@@ -282,6 +396,11 @@ namespace BirimizKovulacak.Game
             int need = LaunchArgs.Current.AutoStart ? Mathf.Clamp(LaunchArgs.Current.ExpectPlayers, LineProtocol.MinPlayers, SlotCount) : LineProtocol.MinPlayers;
             if (occupied < need) { reasonKey = "lobby.need_players"; return false; }
             if (ready < occupied) { reasonKey = "lobby.need_ready"; return false; }
+            string poolKey;
+            bool poolOk;
+            try { poolOk = LineSchedule.Validate(GameConfig.Line, occupied, Length, LaunchArgs.Current.ManagerProfile ?? "", out poolKey); }
+            catch (Exception e) { Debug.LogException(e); poolOk = false; poolKey = "lobby.pool_too_small"; }
+            if (!poolOk) { reasonKey = string.IsNullOrEmpty(poolKey) ? "lobby.pool_too_small" : poolKey; return false; }
             reasonKey = "lobby.ready_to_start";
             return true;
         }
@@ -294,13 +413,26 @@ namespace BirimizKovulacak.Game
             {
                 BuildId = GameConfig.BuildId, WeekRunning = WeekRunning, WeekId = _weekId, Length = Length,
                 RecordingsEnabled = RecordingsEnabled, WeeksPlayed = WeeksPlayed, StatusKey = reason,
+                SessionId = SessionId, GroupId = GroupId,
             };
+            lv.Experiments.AddRange(CurrentExperiments());
             foreach (var s in _slots)
             {
                 int pts = _history != null && s.Index < _history.SessionPoints.Count ? _history.SessionPoints[s.Index] : 0;
-                lv.Slots.Add(new LineLobbySlot { Slot = s.Index, Occupied = s.Occupied, Connected = s.Connected, Ready = s.Ready, IsHost = s.IsHost, IsBot = s.Virtual, Name = s.Name, SessionPoints = pts });
+                lv.Slots.Add(new LineLobbySlot { Slot = s.Index, Occupied = s.Occupied, Connected = s.Connected, Ready = s.Ready, IsHost = s.IsHost, IsBot = s.Virtual, Name = s.Name, SessionPoints = pts, WantsRematch = s.WantsRematch });
             }
             return lv;
+        }
+
+        /// <summary>Declared experiment assignments of the next/current match ("id=variant").</summary>
+        List<string> CurrentExperiments()
+        {
+            var cfg = GameConfig.Line;
+            _experiments.Clear();
+            _experiments.Add("rec_select=" + (cfg.RecordingSelection == RecordingSelection.Context ? "context" : "legacy"));
+            _experiments.Add("early_submit=" + (cfg.EarlySubmit == EarlySubmitPolicy.CarryToBreak ? "carry" : "shorten"));
+            _experiments.Add("recording_awareness=" + (RecordingsEnabled ? "on" : "off"));
+            return _experiments;
         }
 
         public void BroadcastLobby()
@@ -317,12 +449,22 @@ namespace BirimizKovulacak.Game
         public bool StartWeek(bool force)
         {
             string reason;
-            if (!CanStart(out reason) && !force) { MatchLog.Write("host: cannot start: " + reason); return false; }
+            int humans = 0, bots = 0, readyCount = 0, rematchRequests = 0;
+            foreach (var s in _slots)
+            {
+                if (!s.Occupied) continue;
+                if (s.Virtual) bots++; else humans++;
+                if (s.Ready && s.Connected) readyCount++;
+                if (s.WantsRematch && !s.Virtual) rematchRequests++;
+            }
+            HostTelemetryBridge.MatchStartAttempted(humans, bots, readyCount);
+            if (!CanStart(out reason) && !force) { MatchLog.Write("host: cannot start: " + reason); HostTelemetryBridge.MatchStartFailed(reason); return false; }
             _weekId++;
             var args = LaunchArgs.Current;
             var setup = new LineSetup
             {
                 WeekId = _weekId,
+                MatchId = "m-" + RandomHex(8),
                 Seed = args.Seed != 0 ? args.Seed + _weekId - 1 : _rng.Next(1, int.MaxValue),
                 StartTime = Now, // the engine clock starts here; anything earlier would be time going backwards
                 Length = Length,
@@ -338,17 +480,32 @@ namespace BirimizKovulacak.Game
             catch (Exception e)
             {
                 Debug.LogException(e);
-                MatchLog.Write("host: engine failed to start: " + e.Message);
+                MatchLog.Write("host: engine failed to start: " + e.GetType().Name);
+                HostTelemetryBridge.MatchStartFailed("engine_error");
+                HostTelemetryBridge.TechnicalFailure("engine_exception", e);
                 _engine = null;
                 _weekId--;
                 return false;
+            }
+            bool rematch = _weeksCompleted > 0 && !string.IsNullOrEmpty(_lastMatchId);
+            _matchId = setup.MatchId;
+            _matchEndReported = false;
+            HostTelemetryBridge.MatchStarted(_engine, setup, CurrentExperiments(), Now);
+            if (rematch)
+            {
+                int returning = 0;
+                foreach (var s in _slots) if (s.Occupied && !s.Virtual && s.Connected) returning++;
+                HostTelemetryBridge.RematchStarted(_lastMatchId, returning, rematchRequests, LaunchArgs.Current.AutoStart);
             }
             ConfigJson = GameConfig.ToJson(config);
             for (int i = 0; i < SlotCount; i++)
             {
                 var s = _slots[i];
+                s.WantsRematch = false;
+                s.MessagesSent = 0;
+                s.MessagesDirty = false;
                 if (!s.Occupied) continue;
-                if (s.Virtual) { s.Bot = new LineBot(i, setup.Seed * 31 + i); s.BotView = null; }
+                if (s.Virtual) { s.Bot = new LineBot(i, setup.Seed * 31 + i, LineBotPolicy.Talk); s.BotView = null; }
                 else if (s.Connected && _session != null)
                     _session.SendLineWelcome(s.ClientId, new LineWelcome { Slot = i, ReconnectToken = s.Token, WeekId = _weekId }, ConfigJson);
                 if (!s.Connected) _engine.SetConnected(i, false, Now);
@@ -375,6 +532,8 @@ namespace BirimizKovulacak.Game
         /// <summary>Stops the current week and returns everyone to the lobby.</summary>
         public void ReturnToLobby()
         {
+            if (_engine != null)
+                ReportMatchEnd(_engine.Phase == LinePhase.Abandoned ? "abandoned" : _engine.IsFinished || _engine.Phase == LinePhase.WeekResults ? "results" : "host_closed");
             if (_engine != null && _engine.Phase == LinePhase.WeekResults && !_engine.IsFinished)
             {
                 try { _engine.HostContinue(Now); } // results are final: keep the session points / next manager
@@ -410,17 +569,29 @@ namespace BirimizKovulacak.Game
             catch (Exception e) { Debug.LogException(e); }
         }
 
+        /// <summary>Exactly one MatchEnded per match (results, abandon or the host closing it).</summary>
+        void ReportMatchEnd(string reason)
+        {
+            if (_matchEndReported || _engine == null) return;
+            _matchEndReported = true;
+            _lastMatchId = _matchId;
+            HostTelemetryBridge.MatchEnded(_engine, reason, Now);
+        }
+
         void LogResult()
         {
             _resultLogged = true;
             _weeksCompleted++;
             var r = _engine.Result;
             if (r != null) MatchLog.Write("host: results week=" + r.WeekId + " hash=" + r.ResultHash + " fired=" + r.Fired + " manager=" + r.ManagerProfileId);
+            // Results are public now: telemetry may flush the private-until-match-end buffer.
+            if (_engine.Phase == LinePhase.WeekResults || _engine.IsFinished) ReportMatchEnd("results");
         }
 
         public void Abort()
         {
             // Clients learn about it from the lobby (WeekRunning=false) or the transport going away.
+            ReportMatchEnd("host_closed");
             _engine = null;
             BroadcastLobby();
         }
@@ -443,7 +614,8 @@ namespace BirimizKovulacak.Game
                 return;
             }
             try { _engine.Tick(now); }
-            catch (Exception e) { Debug.LogException(e); }
+            catch (Exception e) { Debug.LogException(e); HostTelemetryBridge.TechnicalFailure("engine_exception", e); }
+            HostTelemetryBridge.EngineTick(_engine, now);
             if (_engine.Phase != _lastPhase)
             {
                 // Recordings live for one day only: drop them when the next day (or the results) begins.
@@ -456,8 +628,13 @@ namespace BirimizKovulacak.Game
 
             List<LineEvent> events;
             try { events = _engine.DrainEvents(); }
-            catch (Exception e) { Debug.LogException(e); events = null; }
-            if (events != null && events.Count > 0) RouteEvents(events);
+            catch (Exception e) { Debug.LogException(e); HostTelemetryBridge.TechnicalFailure("engine_exception", e); events = null; }
+            if (events != null && events.Count > 0)
+            {
+                HostTelemetryBridge.EngineEvents(_engine, events, now);
+                RouteEvents(events);
+            }
+            PushMessages();
 
             bool changed = _engine.StateVersion != _lastSentVersion;
             if ((changed && now - _lastViewSend >= ViewInterval) || now - _lastHeartbeat >= HeartbeatInterval) SendViewsToAll();
@@ -467,6 +644,7 @@ namespace BirimizKovulacak.Game
             {
                 if (_engine.Phase == LinePhase.Abandoned)
                 {
+                    ReportMatchEnd("abandoned");
                     if (_abandonedAt < 0) _abandonedAt = now;
                     else if (now - _abandonedAt > 10.0) ReturnToLobby();
                 }
@@ -485,7 +663,7 @@ namespace BirimizKovulacak.Game
                     var a = s.Bot.Next(s.BotView, _engine.Config, now);
                     if (a != null) _engine.Apply(s.Index, a, now);
                 }
-                catch (Exception e) { Debug.LogException(e); }
+                catch (Exception e) { Debug.LogException(e); HostTelemetryBridge.TechnicalFailure("engine_exception", e); }
             }
         }
 
@@ -522,14 +700,16 @@ namespace BirimizKovulacak.Game
                 if (_recordingsTriggered.Contains(p.Index) || now < p.PlayAt) continue;
                 _recordingsTriggered.Add(p.Index);
                 int chosen = LineIds.None;
+                var info = new RecordingPlayInfo { Candidates = p.CandidateCallIds.Count, ChosenRank = -1, Failure = "voice_unavailable" };
                 try
                 {
-                    if (PlayRecording != null) chosen = PlayRecording(p);
-                    else if (p.CandidateCallIds.Count > 0) chosen = p.CandidateCallIds[0];
+                    if (PlayRecording != null) chosen = PlayRecording(p, out info);
+                    else if (p.CandidateCallIds.Count > 0) { chosen = p.CandidateCallIds[0]; info.ChosenRank = 0; info.Failure = "none"; }
                 }
-                catch (Exception e) { Debug.LogException(e); }
-                MatchLog.Write("host: recording pick=" + p.Index + " candidates=" + string.Join(",", p.CandidateCallIds) + " played=" + chosen);
+                catch (Exception e) { Debug.LogException(e); HostTelemetryBridge.TechnicalFailure("voice_exception", e); }
+                MatchLog.Write("host: recording pick=" + p.Index + " candidates=" + p.CandidateCallIds.Count + " played=" + (chosen >= 0 ? "yes" : "no") + " failure=" + info.Failure);
                 _engine.ReportRecording(p.Index, chosen, now);
+                HostTelemetryBridge.RecordingStarted(_engine, p, chosen, info, now);
                 break; // one per frame; the next waits until this tape has finished
             }
         }
@@ -544,12 +724,31 @@ namespace BirimizKovulacak.Game
                 foreach (var e in events)
                 {
                     if (!e.IsVisibleTo(i)) continue;
+                    if (e.Type == LineEventType.MessageReceived) s.MessagesDirty = true;
                     if (mine == null) mine = new List<LineEvent>();
                     mine.Add(e);
                 }
                 if (mine != null) _session.SendLineEvents(s.ClientId, mine);
             }
-            foreach (var e in events) if (e.Audience == LineAudience.Host) MatchLog.Write("host-event " + e);
+            // Host-audience events carry private choices/incidents: HostTelemetryBridge only, never logs or clients.
+        }
+
+        /// <summary>Pushes new messages (free text) to each human client; reconnects and resync requests resend from their seq.</summary>
+        void PushMessages()
+        {
+            if (_engine == null || _session == null) return;
+            for (int i = 0; i < SlotCount; i++)
+            {
+                var s = _slots[i];
+                if (!s.MessagesDirty || !s.Occupied || !s.Connected || s.Virtual) continue;
+                s.MessagesDirty = false;
+                List<LineMessage> batch;
+                try { batch = _engine.MessagesFor(i, s.MessagesSent); }
+                catch (Exception e) { Debug.LogException(e); HostTelemetryBridge.TechnicalFailure("engine_exception", e); continue; }
+                if (batch == null || batch.Count == 0) continue;
+                _session.SendLineMessages(s.ClientId, _weekId, batch);
+                s.MessagesSent = batch[batch.Count - 1].Seq;
+            }
         }
 
         void SendViewsToAll()
@@ -578,7 +777,7 @@ namespace BirimizKovulacak.Game
             if (!_clientSlot.TryGetValue(clientId, out slot)) return;
             LineAction req;
             try { req = LineCodec.DecodeAction(payload); }
-            catch (Exception) { return; }
+            catch (Exception e) { HostTelemetryBridge.TechnicalFailure("rpc_decode", e); return; }
             LineActionResult result;
             if (_engine == null) result = LineActionResult.Fail(req.RequestId, LineFailure.StaleWeek);
             else
@@ -591,6 +790,7 @@ namespace BirimizKovulacak.Game
                 catch (Exception e)
                 {
                     Debug.LogException(e);
+                    HostTelemetryBridge.TechnicalFailure("engine_exception", e);
                     result = LineActionResult.Fail(req.RequestId, LineFailure.BadParam);
                 }
             }
@@ -599,6 +799,7 @@ namespace BirimizKovulacak.Game
 
         public void Dispose()
         {
+            ReportMatchEnd("host_closed");
             if (Current == this) Current = null;
             _engine = null;
             HostLineVoiceBridge.Unbind();

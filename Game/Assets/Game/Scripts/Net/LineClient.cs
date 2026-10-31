@@ -42,6 +42,11 @@ namespace BirimizKovulacak.Game
         public static Action<long> MessageResyncTransport;
         /// <summary>Set by the network adapter: "Play again" intent on the results screen.</summary>
         public static Action<bool> RematchTransport;
+        /// <summary>Set by the network adapter: my analytics consent (0..3) and pseudonymous id changed.</summary>
+        public static Action<int, string> TelemetryConsentTransport;
+
+        /// <summary>Tell the host my analytics consent changed (telemetry track calls this; no-op offline).</summary>
+        public static void SendTelemetryConsent(int consent, string anonymousId) { TelemetryConsentTransport?.Invoke(consent, anonymousId ?? ""); }
 
         public void SetReady(bool ready) { ReadyTransport?.Invoke(ready); }
 

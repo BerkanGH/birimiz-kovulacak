@@ -26,10 +26,25 @@ namespace BirimizKovulacak.Game
                 string safe = string.IsNullOrEmpty(playerName) ? "player" : MakeSafe(playerName);
                 string path = Path.Combine(_dir, safe + "_" + System.Diagnostics.Process.GetCurrentProcess().Id + ".log");
                 _writer = new StreamWriter(path, false, new UTF8Encoding(false)) { AutoFlush = true };
-                Write("start build=" + GameConfig.BuildId + " unity=" + Application.unityVersion + " args=" + string.Join(" ", Environment.GetCommandLineArgs()));
+                Write("start build=" + GameConfig.BuildId + " unity=" + Application.unityVersion + " args=" + RedactedArgs());
                 Application.logMessageReceived += OnUnityLog;
             }
             catch (Exception e) { Debug.LogWarning("[MatchLog] " + e.Message); }
+        }
+
+        /// <summary>Command line without values that identify people or machines (names, addresses, group codes).</summary>
+        static string RedactedArgs()
+        {
+            var args = Environment.GetCommandLineArgs();
+            var sb = new StringBuilder();
+            for (int i = 1; i < args.Length; i++)
+            {
+                string a = args[i];
+                sb.Append(' ').Append(a.StartsWith("-") ? a : "…");
+                string k = a.ToLowerInvariant();
+                if ((k == "-name" || k == "-autojoin" || k == "-logdir" || k == "-playtestgroup" || k == "-cohort") && i + 1 < args.Length) { sb.Append(" <redacted>"); i++; }
+            }
+            return sb.ToString();
         }
 
         static string MakeSafe(string s)

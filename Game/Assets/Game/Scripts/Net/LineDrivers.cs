@@ -6,7 +6,7 @@ using UnityEngine;
 
 namespace BirimizKovulacak.Game
 {
-    /// <summary>v3 automated player for a network client (-bot): feeds its own view to <see cref="LineBot"/> and sends what it decides.</summary>
+    /// <summary>Automated player for a network client (-bot): feeds its own view to <see cref="LineBot"/> and sends what it decides.</summary>
     public sealed class LineBotDriver : MonoBehaviour
     {
         LineBot _bot;
@@ -21,14 +21,14 @@ namespace BirimizKovulacak.Game
             if (_week != v.WeekId || _bot == null)
             {
                 _week = v.WeekId;
-                _bot = new LineBot(lc.MySlot, LaunchArgs.Current.Seed * 131 + lc.MySlot * 7 + v.WeekId * 1009);
+                _bot = new LineBot(lc.MySlot, LaunchArgs.Current.Seed * 131 + lc.MySlot * 7 + v.WeekId * 1009, LineBotPolicy.Talk);
             }
             if (Time.unscaledTime < _next) return;
             _next = Time.unscaledTime + 0.25f;
             LineAction a;
             try { a = _bot.Next(v, lc.Config, lc.Now); }
             catch (System.Exception e) { Debug.LogException(e); return; }
-            if (a != null) lc.Send(a.Verb, a.Target, a.A, a.B);
+            if (a != null) lc.Send(a.Verb, a.Target, a.A, a.B, a.C, a.Text);
         }
     }
 
@@ -46,6 +46,7 @@ namespace BirimizKovulacak.Game
                 case LinePhase.RoundIntro: delays = new[] { 3f }; break;
                 case LinePhase.RoundPlay: delays = new[] { 20f, 70f }; break;
                 case LinePhase.RoundReveal: delays = new[] { 4f }; break;
+                case LinePhase.Break: delays = new[] { 5f }; break;
                 case LinePhase.MeetingDossier: delays = new[] { 6f }; break;
                 case LinePhase.MeetingDiscussion: delays = new[] { 10f }; break;
                 case LinePhase.MeetingVote: delays = new[] { 8f }; break;
@@ -67,7 +68,7 @@ namespace BirimizKovulacak.Game
                 if (v == null || v.Phase != phase || v.Day != day) yield break;
                 string dir = Path.GetFullPath(Path.Combine(MatchLog.Directory ?? Application.persistentDataPath, "shots"));
                 Directory.CreateDirectory(dir);
-                string file = Path.Combine(dir, string.Format("{0}_w{1}_d{2}_{3}{4}_{5:000}.png", ConnectionManager.I.PlayerName, week, day, phase,
+                string file = Path.Combine(dir, string.Format("slot{0}_w{1}_d{2}_{3}{4}_{5:000}.png", LineClient.I.MySlot, week, day, phase,
                     round >= 0 && LineClient.IsOfficePhase(phase) && phase != LinePhase.Morning ? "_r" + round : "", (int)(Time.realtimeSinceStartup - start)));
                 yield return new WaitForEndOfFrame();
                 ScreenCapture.CaptureScreenshot(file);
@@ -150,8 +151,9 @@ namespace BirimizKovulacak.Game
         {
             if (v.Mine.ComputerBlockedUntil > now) return v.Mine.ComputerBlockedBy == TrickType.KahveDok ? MonitorState.Coffee : MonitorState.Offline;
             if (v.Phase == LinePhase.RoundIntro) return MonitorState.Alert;
-            var inbox = v.Mine.Inbox;
-            if (inbox.Count > 0 && inbox[inbox.Count - 1].Time > now - 8.0) return MonitorState.Alert;
+            // New mail/texts blink the monitor for a few seconds (messages arrive outside the view).
+            var msgs = LineClient.I != null ? LineClient.I.Messages : null;
+            if (msgs != null && msgs.Count > 0 && msgs[msgs.Count - 1].Time > now - 8.0 && msgs[msgs.Count - 1].From != v.Me) return MonitorState.Alert;
             return MonitorState.Normal;
         }
 
@@ -159,7 +161,7 @@ namespace BirimizKovulacak.Game
         static float TimeOfDay(LineView v, double now)
         {
             if (v.Phase == LinePhase.Morning) return 0.05f;
-            int rounds = Mathf.Max(1, v.TodayRounds.Count);
+            int rounds = Mathf.Max(1, v.TodayTasks.Count);
             float within = 0f;
             double len = v.PhaseEndTime - v.PhaseStartTime;
             if (len > 0.01) within = Mathf.Clamp01((float)((now - v.PhaseStartTime) / len));
