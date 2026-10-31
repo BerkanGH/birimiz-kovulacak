@@ -196,7 +196,9 @@ namespace BirimizKovulacak.Telemetry.Tests
             Feed(Ev.Phase(t, to, reason));
         }
 
-        public List<TelemetryEvent> Events { get { return H.Flushed(); } }
+        /// <summary>Tests that read private_until_match_end events mid-match opt in (the default view is what the log shows).</summary>
+        public bool AutoRelease;
+        public List<TelemetryEvent> Events { get { if (AutoRelease) H.Service.ReleasePrivate(); return H.Flushed(); } }
         public IEnumerable<TelemetryEvent> Named(string n) { return Events.Where(e => e.Name == n); }
     }
 }

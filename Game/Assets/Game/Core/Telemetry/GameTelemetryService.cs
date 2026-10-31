@@ -37,6 +37,8 @@ namespace BirimizKovulacak.Telemetry
         volatile bool _enabled;
         int _localConsent;
         long _autoKey;
+        int _epoch;
+        readonly int[] _consentVer = new int[MaxSeats];
         long _dropOverflowReport, _dropWithdrawReport;
         bool _disposed;
 
@@ -137,7 +139,7 @@ namespace BirimizKovulacak.Telemetry
             bool keyed = e.Source == TelemetryAuthority.Host && logicalKey != null;
             if (e.Source == TelemetryAuthority.Host)
             {
-                e.EventKey = TelemetryNames.HostEventKey(e.MatchId ?? "", def.Name, logicalKey ?? ("auto" + System.Threading.Interlocked.Increment(ref _autoKey)));
+                e.EventKey = TelemetryNames.HostEventKey(string.IsNullOrEmpty(e.MatchId) ? "s:" + e.SessionId : e.MatchId, def.Name, logicalKey ?? ("auto" + System.Threading.Interlocked.Increment(ref _autoKey)));
                 e.EventId = TelemetryNames.HostEventId(e.EventKey);
             }
             else e.EventId = TelemetryNames.RandomId("c-", _random64);
@@ -178,10 +180,12 @@ namespace BirimizKovulacak.Telemetry
         public void SetLocalConsent(int level)
         {
             level = Math.Max(0, Math.Min(3, level));
-            bool withdrawn;
+            bool withdrawn, lowered;
             lock (_gate)
             {
                 withdrawn = _localConsent >= 2 && level < 2;
+                lowered = level < _localConsent;
+                if (lowered) _epoch++;
                 _localConsent = level;
                 if (withdrawn)
                 {
@@ -189,6 +193,22 @@ namespace BirimizKovulacak.Telemetry
                     PurgeWhere(e => e.Source == TelemetryAuthority.Client || e.Def.Consent == ConsentRule.HostAggregate || (local >= 0 && e.References(local)), true);
                 }
             }
+            if (lowered) NotifySinksWithdrawn();
+        }
+
+        /// <summary>Cloud sinks drop their own pending data when consent was lowered (their queues are outside this service).</summary>
+        void NotifySinksWithdrawn()
+        {
+            ITelemetrySink[] sinks;
+            lock (_gate) sinks = _sinks.ToArray();
+            foreach (var s in sinks) { try { s.OnConsentWithdrawn(); } catch (Exception) { } }
+        }
+
+        /// <summary>Changes whenever the slot's observed state (consent >= 2) flips; observers use it to discard partially observed windows.</summary>
+        public int ConsentVersion(int slot)
+        {
+            if (slot < 0 || slot >= MaxSeats) return 0;
+            lock (_gate) return _consentVer[slot];
         }
 
         public void SetParticipant(int slot, int consent, string anonymousId, bool isBot)
@@ -197,12 +217,14 @@ namespace BirimizKovulacak.Telemetry
             lock (_gate)
             {
                 var p = _seats[slot];
+                bool observedBefore = p.Present && p.Consent >= 2;
                 bool withdrawn = p.Present && !p.IsBot && p.Consent >= 2 && consent < 2;
                 p.Present = true;
                 p.IsBot = isBot;
                 p.Consent = isBot ? 2 : Math.Max(0, Math.Min(3, consent));
                 p.AnonId = !isBot && p.Consent >= 2 && TelemetryNames.IsValidId(IdKind.PlayerId, anonymousId) ? anonymousId : "";
-                if (withdrawn) PurgeWhere(e => e.References(slot), true);
+                if (observedBefore != (p.Present && p.Consent >= 2)) _consentVer[slot]++;
+                if (withdrawn) { _epoch++; PurgeWhere(e => e.References(slot), true); }
             }
         }
 
@@ -213,6 +235,7 @@ namespace BirimizKovulacak.Telemetry
             {
                 var p = _seats[slot];
                 bool had = p.Present && p.Consent >= 2;
+                if (had) { _consentVer[slot]++; _epoch++; }
                 p.Present = false;
                 p.Consent = 0;
                 p.AnonId = "";
@@ -260,11 +283,12 @@ namespace BirimizKovulacak.Telemetry
         }
 
         /// <summary>Applies the event's consent rule. Returns false = suppress. May rewrite a vote target to "unconsented".</summary>
-        bool Evaluate(TelemetryEvent e, out bool cloud)
+        bool Evaluate(TelemetryEvent e, out bool local, out bool cloud)
         {
             var def = e.Def;
             int level;
             cloud = false;
+            local = false;
             switch (def.Consent)
             {
                 case ConsentRule.HostAggregate:
@@ -297,10 +321,9 @@ namespace BirimizKovulacak.Telemetry
             if (level < 2) return false;
             bool localOk = _cfg.Local || _cfg.Cloud;
             if (!localOk) return false;
-            e.RouteLocal = _cfg.Local;
+            local = _cfg.Local;
             // cloud copy needs every referenced participant AND the local machine at level 3
             cloud = _cfg.Cloud && (def.Routing & TelemetryRouting.Cloud) != 0 && level >= 3 && _localConsent >= 3;
-            e.RouteCloud = cloud;
             return true;
         }
 
@@ -312,8 +335,9 @@ namespace BirimizKovulacak.Telemetry
             {
                 _stats.Emitted++;
                 _byName[e.Def.Index]++;
-                bool cloud;
-                if (!Evaluate(e, out cloud)) { _stats.Suppressed++; return false; }
+                bool cloud, local;
+                if (!Evaluate(e, out local, out cloud)) { _stats.Suppressed++; return false; }
+                e.RouteLocal = local; e.RouteCloud = cloud;
                 // identity of the subject
                 if (e.Source == TelemetryAuthority.Host)
                 {
@@ -394,7 +418,7 @@ namespace BirimizKovulacak.Telemetry
         {
             lock (_gate)
             {
-                foreach (var e in _private) Enqueue(e, true);
+                foreach (var e in _private) Enqueue(e, false); // bounded: overflow is counted and reported
                 _private.Clear();
             }
         }
@@ -415,19 +439,25 @@ namespace BirimizKovulacak.Telemetry
                 if (!_enabled) return;
                 ReportDrops();
                 ITelemetrySink[] sinks;
+                int batchEpoch;
                 lock (_gate)
                 {
                     _batch.Clear();
                     foreach (var e in _queue) _batch.Add(e);
                     _queue.Clear();
                     sinks = _sinks.ToArray();
+                    Revalidate(_batch);
+                    batchEpoch = _epoch;
                 }
                 if (_batch.Count == 0) { FlushSinks(sinks); return; }
                 foreach (var sink in sinks)
                 {
+                    // consent may have been lowered since the batch was detached (or since the previous sink): check again
+                    lock (_gate) { if (_epoch != batchEpoch) { Revalidate(_batch); batchEpoch = _epoch; } }
                     _sinkBatch.Clear();
                     foreach (var e in _batch)
                     {
+                        if (e.Revoked) continue;
                         if (sink.Kind == TelemetrySinkKind.Cloud ? e.RouteCloud : (sink.Kind == TelemetrySinkKind.Debug || e.RouteLocal))
                             _sinkBatch.Add(e);
                     }
@@ -446,6 +476,26 @@ namespace BirimizKovulacak.Telemetry
                 FlushSinks(sinks);
                 _batch.Clear();
                 _sinkBatch.Clear();
+            }
+        }
+
+        /// <summary>Must hold _gate. Re-applies the consent rules to events that are already accepted (delivery-time check).</summary>
+        void Revalidate(List<TelemetryEvent> events)
+        {
+            for (int i = 0; i < events.Count; i++)
+            {
+                var e = events[i];
+                if (e.Revoked) continue;
+                bool local, cloud;
+                if (!Evaluate(e, out local, out cloud))
+                {
+                    e.Revoked = true;
+                    _stats.DroppedWithdrawal++;
+                    _dropWithdrawReport++;
+                    continue;
+                }
+                e.RouteLocal = local;
+                e.RouteCloud = cloud;
             }
         }
 
@@ -497,7 +547,7 @@ namespace BirimizKovulacak.Telemetry
             StampContext(e);
             if (e.Source == TelemetryAuthority.Host)
             {
-                e.EventKey = TelemetryNames.HostEventKey(e.MatchId ?? "", def.Name, "auto" + System.Threading.Interlocked.Increment(ref _autoKey));
+                e.EventKey = TelemetryNames.HostEventKey(string.IsNullOrEmpty(e.MatchId) ? "s:" + e.SessionId : e.MatchId, def.Name, "auto" + System.Threading.Interlocked.Increment(ref _autoKey));
                 e.EventId = TelemetryNames.HostEventId(e.EventKey);
             }
             else e.EventId = TelemetryNames.RandomId("c-", _random64);

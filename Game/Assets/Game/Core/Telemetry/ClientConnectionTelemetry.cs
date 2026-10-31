@@ -62,6 +62,13 @@ namespace BirimizKovulacak.Telemetry
             if (midMatch) _midMatch = true;
             var prev = _state;
             _state = state;
+            if (prev == ClientConnState.Hosting && state != ClientConnState.Hosting)
+            {
+                // hosting ended: this process is a plain client again (a later join must adopt the other host's session and match)
+                _t.HostMode = false;
+                _t.Context.EndMatch();
+                _t.Context.LocalSlot = -1;
+            }
             switch (state)
             {
                 case ClientConnState.Connecting:

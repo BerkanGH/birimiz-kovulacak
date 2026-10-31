@@ -53,6 +53,13 @@ namespace BirimizKovulacak.Telemetry.UGS
         public void Flush() { }
         public void Dispose() { }
 
+        /// <summary>Consent was lowered: drop everything still waiting for the main thread (nothing is sent after a withdrawal).</summary>
+        public void OnConsentWithdrawn()
+        {
+            Pending p;
+            while (Queue.TryDequeue(out p)) { }
+        }
+
         static string Bucket(double v, double[] edges)
         {
             for (int i = 0; i < edges.Length; i++) if (v < edges[i]) return "lt_" + edges[i].ToString("0");

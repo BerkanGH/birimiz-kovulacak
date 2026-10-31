@@ -9,6 +9,12 @@ namespace BirimizKovulacak.Telemetry
         readonly Dictionary<int, double> _pending = new Dictionary<int, double>();
         readonly Dictionary<int, double> _busyAt = new Dictionary<int, double>();
 
+        // Measurement is gated at the time activity occurs: a player whose consent flipped during the window is only
+        // partially observed, so nothing accumulated before the grant may be reported (summary omitted, excluded from aggregates).
+        readonly int[] _verAtRound = new int[Seats];
+        readonly HashSet<int> _unobservedCalls = new HashSet<int>();
+        bool Stable(int p) { return Valid(p) && _t.ConsentVersion(p) == _verAtRound[p]; }
+
         static int PairKey(int caller, int callee) { return caller * 8 + callee; }
 
         // ---- round window ------------------------------------------------------------------------
@@ -25,6 +31,7 @@ namespace BirimizKovulacak.Telemetry
             {
                 var pr = _pr[id];
                 pr.Reset();
+                _verAtRound[id] = _t.ConsentVersion(id);
                 var pv = ViewOf(id, t);
                 var me = PlayerIn(v, id);
                 pr.Eligible = !_isBot[id] && (me != null ? me.Connected : _connected[id]);
@@ -64,6 +71,7 @@ namespace BirimizKovulacak.Telemetry
             int caller = e.Actor, callee = e.Target, id = e.A;
             if (!Valid(caller) || !Valid(callee)) return;
             if (!_calls.Open(id, caller, callee, e.Time)) return;
+            if (_t.ConsentOfSlot(caller) < 2 || _t.ConsentOfSlot(callee) < 2) _unobservedCalls.Add(id); // started while someone was not consenting
             double ring = -1;
             int key = PairKey(caller, callee);
             double reqAt;
@@ -140,6 +148,7 @@ namespace BirimizKovulacak.Telemetry
 
         void EmitCallFinished(CallInterval c, CallEndReason reason, double t)
         {
+            if (_unobservedCalls.Contains(c.CallId)) return; // its start was never observed: do not report its length later
             string endName = TelemetryNames.Of(reason);
             if (endName.Length == 0) endName = "none";
             B("phone_call_finished", t, "fin|" + c.CallId).Int("call_id", c.CallId).Slot("caller", c.A).Slot("callee", c.B)
@@ -238,18 +247,32 @@ namespace BirimizKovulacak.Telemetry
         readonly System.Collections.Generic.Dictionary<int, double> _pendingTaskOutTime = new System.Collections.Generic.Dictionary<int, double>();
         readonly System.Collections.Generic.List<int> _flushKeys = new System.Collections.Generic.List<int>();
 
+        // HostTaskOutcome may arrive before or after TaskResolved: cache each half by task number and join in either order.
+        readonly System.Collections.Generic.Dictionary<int, int[]> _taskDetail = new System.Collections.Generic.Dictionary<int, int[]>();
+
+        void EmitTaskOutput(int number, double time, int output, int max, int[] detail)
+        {
+            var b = B("task_output_resolved", time, "taskres|" + number).Int("output", output).Int("max_output", max);
+            if (detail != null)
+            {
+                int groups = detail[1] >= 0 ? detail[1] / 10 : -1, full = detail[1] >= 0 ? detail[1] % 10 : -1;
+                if (detail[0] >= 0) b.Int("sabotage_loss", detail[0]);
+                if (groups > 0) b.Int("groups", groups).Int("groups_full", full);
+            }
+            b.Emit();
+        }
+
         void OnHostTaskOutcome(LineEvent e)
         {
             int number = e.A;
             int[] p;
-            if (!_pendingTaskOut.TryGetValue(number, out p)) return;
-            int groups = e.C >= 0 ? e.C / 10 : -1, full = e.C >= 0 ? e.C % 10 : -1;
-            var b = B("task_output_resolved", _pendingTaskOutTime[number], "taskres|" + number).Int("output", p[0]).Int("max_output", p[1]);
-            if (e.B >= 0) b.Int("sabotage_loss", e.B);
-            if (groups > 0) b.Int("groups", groups).Int("groups_full", full);
-            b.Emit();
-            _pendingTaskOut.Remove(number);
-            _pendingTaskOutTime.Remove(number);
+            if (_pendingTaskOut.TryGetValue(number, out p))
+            {
+                EmitTaskOutput(number, _pendingTaskOutTime[number], p[0], p[1], new[] { e.B, e.C });
+                _pendingTaskOut.Remove(number);
+                _pendingTaskOutTime.Remove(number);
+            }
+            else _taskDetail[number] = new[] { e.B, e.C }; // detail first: TaskResolved joins it
         }
 
         void FlushPendingTaskOutputs()
@@ -261,7 +284,7 @@ namespace BirimizKovulacak.Telemetry
             foreach (int number in _flushKeys)
             {
                 var p = _pendingTaskOut[number];
-                B("task_output_resolved", _pendingTaskOutTime[number], "taskres|" + number).Int("output", p[0]).Int("max_output", p[1]).Emit();
+                EmitTaskOutput(number, _pendingTaskOutTime[number], p[0], p[1], null);
             }
             _pendingTaskOut.Clear();
             _pendingTaskOutTime.Clear();
@@ -312,8 +335,9 @@ namespace BirimizKovulacak.Telemetry
             if (max < 0) max = output;
             _dayOutput += output; _dayMax += max;
             // Written together with HostTaskOutcome (same batch) so sabotage loss and group counts can be attached.
-            _pendingTaskOut[number] = new[] { output, max, 0 };
-            _pendingTaskOutTime[number] = e.Time;
+            int[] early0;
+            if (_taskDetail.TryGetValue(number, out early0)) { _taskDetail.Remove(number); EmitTaskOutput(number, e.Time, output, max, early0); }
+            else { _pendingTaskOut[number] = new[] { output, max, 0 }; _pendingTaskOutTime[number] = e.Time; }
             int submitted = 0, connected = 0;
             foreach (int id in _ids) { if (_pr[id].Submitted) submitted++; if (_connected[id]) connected++; }
             double[] early;
@@ -353,7 +377,7 @@ namespace BirimizKovulacak.Telemetry
             int eligible = 0, observed = 0, participating = 0, attempts = 0;
             var pairs = new HashSet<int>();
             var connectedCalls = new HashSet<int>();
-            Func<int, bool> isObserved = p => Valid(p) && _pr[p].Eligible && _t.ConsentOfSlot(p) >= 2;
+            Func<int, bool> isObserved = p => Valid(p) && _pr[p].Eligible && _t.ConsentOfSlot(p) >= 2 && Stable(p);
             foreach (int id in _ids)
             {
                 var pr = _pr[id];
@@ -380,6 +404,7 @@ namespace BirimizKovulacak.Telemetry
 
             foreach (int id in _ids)
             {
+                if (!Stable(id)) continue; // consent changed during the window: partially observed, no per-player summary
                 var pr = _pr[id];
                 int partners;
                 int connected = _calls.CountOverlap(id, start, end, end, out partners);

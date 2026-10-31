@@ -144,6 +144,8 @@ namespace BirimizKovulacak.Telemetry
 
         // routing decision (set by the service)
         public bool RouteLocal, RouteCloud;
+        /// <summary>Set when consent was lowered after the event was accepted: it is never delivered.</summary>
+        public bool Revoked;
         /// <summary>Primary subject slot (first slot parameter), -1 when none.</summary>
         public int Subject = -1;
 

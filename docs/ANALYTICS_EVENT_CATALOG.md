@@ -36,13 +36,13 @@ Envelope fields (every event, omitted when not applicable): schema_version, even
 | [`day_finished`](#day_finished) | host | public | host_aggregate | local | implemented |
 | [`week_finished`](#week_finished) | host | public | host_aggregate | local | implemented |
 | [`week_completed`](#week_completed) | host | public | host_aggregate | local+cloud | implemented |
-| [`phone_call_requested`](#phone_call_requested) | host | public | all_participants | local | implemented |
-| [`phone_call_connected`](#phone_call_connected) | host | public | all_participants | local | implemented |
-| [`phone_call_rejected`](#phone_call_rejected) | host | public | all_participants | local | implemented |
-| [`phone_call_missed`](#phone_call_missed) | host | public | all_participants | local | implemented |
-| [`phone_call_failed`](#phone_call_failed) | host | public | all_participants | local | implemented |
-| [`phone_call_finished`](#phone_call_finished) | host | public | all_participants | local | implemented |
-| [`phone_round_summary`](#phone_round_summary) | host | public | host_aggregate | local | implemented |
+| [`phone_call_requested`](#phone_call_requested) | host | private until match end | all_participants | local | implemented |
+| [`phone_call_connected`](#phone_call_connected) | host | private until match end | all_participants | local | implemented |
+| [`phone_call_rejected`](#phone_call_rejected) | host | private until match end | all_participants | local | implemented |
+| [`phone_call_missed`](#phone_call_missed) | host | private until match end | all_participants | local | implemented |
+| [`phone_call_failed`](#phone_call_failed) | host | private until match end | all_participants | local | implemented |
+| [`phone_call_finished`](#phone_call_finished) | host | private until match end | all_participants | local | implemented |
+| [`phone_round_summary`](#phone_round_summary) | host | private until match end | host_aggregate | local | implemented |
 | [`secret_info_presented`](#secret_info_presented) | host | private until match end | self | local | implemented |
 | [`choice_ui_opened`](#choice_ui_opened) | client | public | self | local | pending_integration |
 | [`choice_submitted`](#choice_submitted) | host | private until match end | self | local | implemented |
@@ -71,15 +71,15 @@ Envelope fields (every event, omitted when not applicable): schema_version, even
 | [`task_output_resolved`](#task_output_resolved) | host | public | host_aggregate | local | implemented |
 | [`productivity_changed`](#productivity_changed) | host | public | host_aggregate | local | implemented |
 | [`recovery_opportunities`](#recovery_opportunities) | host | public | host_aggregate | local | implemented |
-| [`remedial_requested`](#remedial_requested) | host | public | all_participants | local | implemented |
-| [`remedial_resolved`](#remedial_resolved) | host | public | all_participants | local | implemented |
+| [`remedial_requested`](#remedial_requested) | host | private until match end | all_participants | local | implemented |
+| [`remedial_resolved`](#remedial_resolved) | host | private until match end | all_participants | local | implemented |
 | [`income_credited`](#income_credited) | host | private until match end | self | local | implemented |
 | [`money_transferred`](#money_transferred) | host | private until match end | all_participants | local | implemented |
 | [`evidence_purchased`](#evidence_purchased) | host | private until match end | self | local | implemented |
 | [`incident_created`](#incident_created) | host | private until match end | self | local | implemented |
 | [`sabotage_verified`](#sabotage_verified) | host | public | self | local | implemented |
 | [`objective_assigned`](#objective_assigned) | host | private until match end | self | local | implemented |
-| [`objective_completed`](#objective_completed) | host | public | self | local | implemented |
+| [`objective_completed`](#objective_completed) | host | private until match end | self | local | implemented |
 | [`career_breakdown`](#career_breakdown) | host | public | self | local | implemented |
 | [`company_result`](#company_result) | host | public | host_aggregate | local+cloud | implemented |
 | [`company_failed`](#company_failed) | host | public | host_aggregate | local | implemented |
@@ -555,7 +555,7 @@ Envelope fields (every event, omitted when not applicable): schema_version, even
 - **Meaning**: A caller dialled.
 - **Trigger location**: `Core/Telemetry/LineTelemetryObserver.cs OnCallIncoming`
 - **Authority**: host
-- **Privacy / consent**: public (written immediately); consent rule `all_participants`
+- **Privacy / consent**: private_until_match_end (held in host memory, written at results/abandon); consent rule `all_participants`
 - **Routing**: local
 - **Expected max frequency**: <=20/task
 - **KPI contribution**: phone_participation
@@ -574,7 +574,7 @@ Envelope fields (every event, omitted when not applicable): schema_version, even
 - **Meaning**: The callee answered.
 - **Trigger location**: `Core/Telemetry/LineTelemetryObserver.cs OnCallConnected`
 - **Authority**: host
-- **Privacy / consent**: public (written immediately); consent rule `all_participants`
+- **Privacy / consent**: private_until_match_end (held in host memory, written at results/abandon); consent rule `all_participants`
 - **Routing**: local
 - **Expected max frequency**: <=10/task
 - **KPI contribution**: phone_participation
@@ -594,7 +594,7 @@ Envelope fields (every event, omitted when not applicable): schema_version, even
 - **Meaning**: The callee declined.
 - **Trigger location**: `Core/Telemetry/LineTelemetryObserver.cs OnCallEnded (Declined)`
 - **Authority**: host
-- **Privacy / consent**: public (written immediately); consent rule `all_participants`
+- **Privacy / consent**: private_until_match_end (held in host memory, written at results/abandon); consent rule `all_participants`
 - **Routing**: local
 - **Expected max frequency**: <=5/task
 - **KPI contribution**: phone_participation
@@ -613,7 +613,7 @@ Envelope fields (every event, omitted when not applicable): schema_version, even
 - **Meaning**: Nobody answered (ring timeout or caller hung up).
 - **Trigger location**: `Core/Telemetry/LineTelemetryObserver.cs OnCallEnded (Missed/HungUp while ringing)`
 - **Authority**: host
-- **Privacy / consent**: public (written immediately); consent rule `all_participants`
+- **Privacy / consent**: private_until_match_end (held in host memory, written at results/abandon); consent rule `all_participants`
 - **Routing**: local
 - **Expected max frequency**: <=5/task
 - **KPI contribution**: phone_participation
@@ -631,7 +631,7 @@ Envelope fields (every event, omitted when not applicable): schema_version, even
 - **Meaning**: The call never rang.
 - **Trigger location**: `Core/Telemetry/LineTelemetryObserver.cs OnCallBusy / OnCallEnded`
 - **Authority**: host
-- **Privacy / consent**: public (written immediately); consent rule `all_participants`
+- **Privacy / consent**: private_until_match_end (held in host memory, written at results/abandon); consent rule `all_participants`
 - **Routing**: local
 - **Expected max frequency**: <=5/task
 - **KPI contribution**: phone_participation, accessibility
@@ -650,7 +650,7 @@ Envelope fields (every event, omitted when not applicable): schema_version, even
 - **Meaning**: A connected call ended.
 - **Trigger location**: `Core/Telemetry/LineTelemetryObserver.cs OnCallEnded`
 - **Authority**: host
-- **Privacy / consent**: public (written immediately); consent rule `all_participants`
+- **Privacy / consent**: private_until_match_end (held in host memory, written at results/abandon); consent rule `all_participants`
 - **Routing**: local
 - **Expected max frequency**: <=10/task
 - **KPI contribution**: phone_participation
@@ -672,7 +672,7 @@ Envelope fields (every event, omitted when not applicable): schema_version, even
 - **Meaning**: Per task phone usage of observed players.
 - **Trigger location**: `Core/Telemetry/LineTelemetryObserver.cs SummarizeRound`
 - **Authority**: host
-- **Privacy / consent**: public (written immediately); consent rule `host_aggregate`
+- **Privacy / consent**: private_until_match_end (held in host memory, written at results/abandon); consent rule `host_aggregate`
 - **Routing**: local
 - **Expected max frequency**: 1/task
 - **KPI contribution**: phone_participation
@@ -1240,7 +1240,7 @@ Envelope fields (every event, omitted when not applicable): schema_version, even
 - **Meaning**: A remedial report was requested.
 - **Trigger location**: `Core/Telemetry/LineTelemetryObserver.cs OnRemedialRequested`
 - **Authority**: host
-- **Privacy / consent**: public (written immediately); consent rule `all_participants`
+- **Privacy / consent**: private_until_match_end (held in host memory, written at results/abandon); consent rule `all_participants`
 - **Routing**: local
 - **Expected max frequency**: <=2/match
 - **KPI contribution**: economy, blame_tension
@@ -1257,7 +1257,7 @@ Envelope fields (every event, omitted when not applicable): schema_version, even
 - **Meaning**: A remedial request resolved.
 - **Trigger location**: `Core/Telemetry/LineTelemetryObserver.cs OnRemedialResolved`
 - **Authority**: host
-- **Privacy / consent**: public (written immediately); consent rule `all_participants`
+- **Privacy / consent**: private_until_match_end (held in host memory, written at results/abandon); consent rule `all_participants`
 - **Routing**: local
 - **Expected max frequency**: <=2/match
 - **KPI contribution**: economy, blame_tension
@@ -1388,9 +1388,9 @@ Envelope fields (every event, omitted when not applicable): schema_version, even
 
 - **Name / version**: `objective_completed` v1
 - **Meaning**: Objective evaluated.
-- **Trigger location**: `Core/Telemetry/LineTelemetryObserver.cs OnHostObjective (emitted at WeekResults)`
+- **Trigger location**: `Core/Telemetry/LineTelemetryObserver.cs EmitResults (engine.Result at WeekResults; the FinalVerdict HostObjective event is not written early)`
 - **Authority**: host
-- **Privacy / consent**: public (written immediately); consent rule `self`
+- **Privacy / consent**: private_until_match_end (held in host memory, written at results/abandon); consent rule `self`
 - **Routing**: local
 - **Expected max frequency**: <=6/match
 - **KPI contribution**: career
