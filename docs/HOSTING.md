@@ -23,8 +23,10 @@ tut, konuş** (bas-konuş). İstersen açık mikrofon moduna geçebilirsin.
 1. Ana menüde adını yaz → **Lobi Kur**.
 2. Windows Güvenlik Duvarı izin isterse **İzin ver** (en azından "Özel ağlar").
 3. Lobi ekranının üst kısmında arkadaşlarının bağlanacağı **IP adres(ler)i ve port (7777, UDP)** yazar.
-4. Mod seç: **Hızlı Oyun** (tek maç, her şey açık, rastgele müdür) veya **İş Haftası** (Pazartesi→Cuma 5 maç,
-   kariyer puanı, Cuma finali ve "Ayın Elemanı"). İş Haftasında yeni sistemler gün gün açılır.
+4. Maç uzunluğu seç: **Kısa Maç** (3 blok ≈ 20 dk) veya **Tam Maç** (5 blok ≈ 33 dk). Her blokta iki görev ve bir
+   toplantı var; son toplantıda kovma oylaması (veya "Kimse kovulmasın") yapılır. Şirket verimliliği %65'in altında
+   kalırsa şirket kapanır ve herkes kovulur. "Görüşmeler kaydedilebilir" kutusu toplantıda 7 saniyelik kayıt çalınmasını
+   açar/kapatır. Oyun testi yürütüyorsanız "Deneme grubu kodu" alanına grubunuzun kodunu (ör. G07) yazın.
 5. En az **3**, en çok **6** kişi. Eksik koltuklara **Bot ekle** ile bot koyabilirsin.
 6. Herkes **Hazırım** dediğinde **Maçı Başlat**'a bas.
 
@@ -59,15 +61,17 @@ Ev sahibinin lobi ekranında gösterilen yerel IP'yi (ör. `192.168.1.23`) kulla
 |---|---|
 | Fare | Etrafına bak (masada otururken) · nesnenin üstüne gelince ipucu çıkar |
 | Sol tık | Bakılan şey: monitör = bilgisayar, telefon = masa telefonu, kupa/çekmece/isimlik = küçük şakalar |
-| E | Bilgisayar (KOVA OS): Görev · E-posta · Sicil · Kirli İş · Ajanda (F1–F5 uygulamalar arasında) |
-| Tab | Masa telefonu: rehber (1–6 hızlı arama), **0 = Müdür Hattı** (haftada bir ihbar), arama geçmişi |
+| E | Bilgisayar (KOVA OS): Görev · Mesajlar · E-posta · Banka · Kayıtlar (kanıt) · Düzeltme (telafi işi) · Kirli İş · Şikâyet |
+| Tab | Masa telefonu: rehber (1–6 hızlı arama), cevapsız aramalar (geri ara / yazı gönder), arama geçmişi |
+| F8 | (Oyun testi izni varsa) komik/şaşırtıcı bir anı işaretle — sadece test ekibi görür |
 | Y / N | Gelen aramayı aç / reddet · aramayı kapat |
 | V (basılı) | Bas-konuş (Ayarlar'dan açık mikrofona geçilebilir). Gündüz sadece telefondaki kişi duyar; toplantıda herkes |
 | Enter | Sabah çağrısı / kural kartı / kilit açma kartında devam |
 | Esc / sağ tık | Geri (bilgisayardan/telefondan çık) · menü |
 | Tab (toplantıda) | Etrafa bakmak ↔ projeksiyon/oy pusulası arasında geçiş; oylamada bir arkadaşa tıklamak da oy verir |
 
-Ayarlar → Görünüm: fare hassasiyeti, Y eksenini ters çevir, görüş açısı (FOV). Ayarlar → Dil: Türkçe / English.
+Ayarlar → Görünüm: fare hassasiyeti, Y eksenini ters çevir, görüş açısı (FOV). Ayarlar → Görüntü ve Dil: tam ekran,
+Türkçe / English. Ayarlar → Ses: müzik sesi ve müziği kapat. Ayarlar → Gizlilik: oyun testi verisi izni.
 
 ## 6. Test için botlar
 
@@ -87,14 +91,21 @@ Botlar konuşmaz; görevleri yapar, sabotaj yapar, arar ve oy kullanır.
 | Lobi kurulamadı | 7777 portunu kullanan başka bir program olabilir; farklı bir port seçip arkadaşlarına söyle. |
 
 Kayıtlar (hata bildirirken ekleyin): `%USERPROFILE%\AppData\LocalLow\Leonidas Studio\Birimiz Kovulacak\` altındaki
-`Player.log` ve `logs\` klasörü.
+`Player.log` ve `logs\` klasörü. Bu dosyalarda kendi oyun hamlelerin bulunur; yalnızca geliştiriciyle paylaş.
+
+Oyun testi verileri (yalnızca izin verdiysen): aynı klasördeki `telemetry\` altında. En kolayı Ayarlar → Gizlilik →
+"Kayıtları dışa aktar": oluşan zip dosyasını test yürütücüsüne verin. Ses, kayıt, yazdığın metinler ve adın bu
+dosyalarda yoktur. İzni istediğin an geri alabilir ve verilerini silebilirsin (ev sahibinin bilgisayarına daha önce
+yazılmış maç olayları için test yürütücüsünden silinmesini isteyin).
 
 ---
 
 ### English summary
 Unzip, run `BirimizKovulacak.exe`. Voice chat is built in (proximity in the office, private phone calls, everyone in
-the meeting; push-to-talk V) — do not use Discord. Host: *Lobi Kur* (allow the firewall prompt), pick Quick Play or
-Work Week, share the shown IP + UDP port 7777. Clients: enter IP/port → *Lobiye Katıl* → *Hazırım*; 3–6 players
+the meeting; push-to-talk V) — do not use Discord; texts, email and meeting chat are a full alternative to voice.
+Host: *Lobi Kur* (allow the firewall prompt), pick Short (≈ 20 min) or Full (≈ 33 min), optionally type the playtest
+group code, share the shown IP + UDP port 7777. Optional playtest analytics: Settings → Privacy (export the zip at the
+end of a test). Clients: enter IP/port → *Lobiye Katıl* → *Hazırım*; 3–6 players
 (bots can fill seats); the host starts when everyone is ready. For internet play use
 Tailscale/ZeroTier (no router changes) or forward UDP 7777 to the host. Drops auto-reconnect for 30 s; a crashed client
 can restart and use *Maça geri dön*. Host leaving or a player missing the grace period abandons the match.
