@@ -8,20 +8,16 @@ namespace BirimizKovulacak.Game
 {
     /// <summary>
     /// The desk phone: an LCD (status, timers, "ON RECORD"), speed-dial keys with a paper label per colleague (digits
-    /// 1–6 on the keyboard), the red Manager Line key (0) whose IVR runs the tip-off flow, and a call-log notepad.
+    /// 1-6 on the keyboard) plus a one-tap "text" key each, a busy / missed-call strip with "call back" and "send a text",
+    /// and a call-log notepad. Calls are allowed in every office phase, the break included.
     /// </summary>
     public sealed class DeskPhone
     {
-        enum Ivr { Off, Pick, Confirm, Done }
-
         readonly DeskUi _ui;
-        readonly VisualElement _layer, _console, _lcdIcon, _rec, _dial, _actions, _log, _pad;
+        readonly VisualElement _layer, _console, _lcdIcon, _rec, _dial, _actions, _log, _pad, _miss;
         readonly Label _lcd1, _lcd2, _lcdTime;
         bool _open;
         int _sig = int.MinValue, _lastSec = -1;
-        Ivr _ivr;
-        int _ivrTarget = LineIds.None;
-        float _ivrDoneAt;
         int _busyWho = LineIds.None;
         float _busyAt = -10f;
         readonly List<int> _speed = new List<int>();
@@ -48,6 +44,8 @@ namespace BirimizKovulacak.Game
             if (!Dk.Art(_rec, "deskphone/rec_badge")) { _rec.AddToClassList("dk-lcd-rec-fallback"); MemoBold("REC", "dk-lcd-rec-text").NoPick().AddTo(_rec); }
             _rec.Show(false);
 
+            _miss = Box("dk-phone-miss").AddTo(_console);
+            _miss.Show(false);
             var label = Box("dk-dial-label").NoPick().AddTo(_console);
             StampText(Loc.Upper(Dk.T("desk.phone.speed_dial")), "dk-dial-label-text").NoPick().AddTo(label);
             Box("spacer").NoPick().AddTo(label);
@@ -74,7 +72,6 @@ namespace BirimizKovulacak.Game
             _sig = int.MinValue;
             if (!was)
             {
-                _ivr = Ivr.Off;
                 UiMotion.SlideIn(_console, new Vector2(0, 90f), 0.34f, 0f, UiMotion.Ease.OutBack);
                 UiMotion.SlideIn(_pad, new Vector2(60f, 20f), 0.34f, 0.1f, UiMotion.Ease.OutBack);
             }
@@ -86,34 +83,22 @@ namespace BirimizKovulacak.Game
         {
             if (!_open) return;
             _open = false;
-            _ivr = Ivr.Off;
             _layer.Show(false);
             _layer.pickingMode = PickingMode.Ignore;
         }
 
-        public bool Back()
-        {
-            if (_ivr != Ivr.Off) { _ivr = Ivr.Off; _sig = int.MinValue; return true; }
-            return false;
-        }
+        public bool Back() { return false; }
 
         public void Digit(int d)
         {
             var v = Dk.View;
             if (v == null) return;
-            if (d == 0) { ManagerLine(v); return; }
+            if (d == 0) return;
             int i = d - 1;
             if (i >= 0 && i < _speed.Count) Press(v, _speed[i]);
         }
 
-        /// <summary>UI mock: 1 = manager line menu, 2 = confirm tip on <paramref name="target"/>, 3 = tip received.</summary>
-        internal void MockIvr(int stage, int target)
-        {
-            _ivr = (Ivr)stage;
-            _ivrTarget = target;
-            _ivrDoneAt = Time.unscaledTime + 60f;
-            _sig = int.MinValue;
-        }
+        public void OnMiss() { _sig = int.MinValue; }
 
         public void OnConnected() { _sig = int.MinValue; }
         public void OnEnded() { _sig = int.MinValue; }
@@ -128,53 +113,19 @@ namespace BirimizKovulacak.Game
 
         // ------------------------------------------------------------------ actions
 
-        void Press(LineView v, int who)
-        {
-            if (_ivr == Ivr.Pick || _ivr == Ivr.Confirm)
-            {
-                _ivrTarget = who;
-                _ivr = Ivr.Confirm;
-                _sig = int.MinValue;
-                Dk.Play("click");
-                return;
-            }
-            _ui.Call(who);
-        }
-
-        void ManagerLine(LineView v)
-        {
-            if (!v.Features.TipLineUnlocked) { Dk.Play("deny"); Dk.Shake(_console, 6f, 0.3f); return; }
-            if (TipSpent(v) || Dk.PhoneDead(v) || v.Mine.Phone.Status != CallStatus.Idle) { Dk.Play("deny"); return; }
-            _ivr = _ivr == Ivr.Off ? Ivr.Pick : Ivr.Off;
-            _ivrTarget = LineIds.None;
-            _sig = int.MinValue;
-            Dk.Play("tip_dial", "click");
-        }
-
-        static bool TipSpent(LineView v) { return v.Mine.TipUsedToday || v.Mine.TipsLeftThisWeek <= 0; }
-
-        void ConfirmTip()
-        {
-            if (_ivrTarget < 0) return;
-            Dk.Send(LineVerb.TipOff, _ivrTarget);
-            Dk.Play("stamp");
-            _ivr = Ivr.Done;
-            _ivrDoneAt = Time.unscaledTime;
-            _sig = int.MinValue;
-        }
+        void Press(LineView v, int who) { _ui.Call(who); }
 
         // ------------------------------------------------------------------ tick
 
         public void Tick(LineView v, bool changed)
         {
             if (!_open) return;
-            if (_ivr == Ivr.Done && Time.unscaledTime - _ivrDoneAt > 2.5f) { _ivr = Ivr.Off; _sig = int.MinValue; }
             bool busyFlash = Time.unscaledTime - _busyAt < 2.2f;
             var ph = v.Mine.Phone;
             bool dead = Dk.PhoneDead(v);
             int sig = (int)ph.Status * 1000 + ph.Other;
-            sig = sig * 31 + (dead ? 1 : 0) + (TipSpent(v) ? 2 : 0) + (v.Features.TipLineUnlocked ? 4 : 0) + (v.Features.RecordingsEnabled ? 8 : 0) + (busyFlash ? 16 : 0);
-            sig = sig * 31 + (int)_ivr * 10 + _ivrTarget;
+            sig = sig * 31 + (dead ? 1 : 0) + (v.Features.RecordingsEnabled ? 8 : 0) + (busyFlash ? 16 : 0) + (v.Features.CallsOpen ? 32 : 0);
+            sig = sig * 31 + (int)_ui.State.Miss * 10 + _ui.State.MissWho + (int)_ui.State.MissAt;
             sig = sig * 31 + v.Mine.CallLog.Count;
             int lastEnd = v.Mine.CallLog.Count > 0 ? (int)v.Mine.CallLog[v.Mine.CallLog.Count - 1].End : 0;
             sig = sig * 31 + lastEnd;
@@ -196,10 +147,7 @@ namespace BirimizKovulacak.Game
             _lastSec = -1;
             // LCD
             string icon = null;
-            if (_ivr == Ivr.Done) { Lcd(Dk.T("desk.phone.lcd.tip_done"), Dk.T("desk.phone.lcd.tip_done_2")); icon = "deskphone/rec_badge"; }
-            else if (_ivr == Ivr.Confirm) Lcd(Dk.F("desk.phone.lcd.tip_confirm", Loc.Upper(Dk.Name(_ivrTarget))), Dk.T("desk.phone.lcd.tip_confirm_2"));
-            else if (_ivr == Ivr.Pick) Lcd(Dk.T("desk.phone.lcd.ivr"), Dk.T("desk.phone.lcd.ivr_2"));
-            else if (dead) { Lcd(Dk.T("desk.phone.lcd.dead"), Dk.T("desk.phone.lcd.dead_2")); icon = "deskphone/line_dead"; }
+            if (dead) { Lcd(Dk.T("desk.phone.lcd.dead"), Dk.T("desk.phone.lcd.dead_2")); icon = "deskphone/line_dead"; }
             else if (busyFlash && ph.Status == CallStatus.Idle) { Lcd(Dk.F("desk.phone.lcd.busy", Loc.Upper(Dk.Name(_busyWho))), Dk.T("desk.phone.lcd.busy_2")); icon = "deskphone/busy"; }
             else switch (ph.Status)
             {
@@ -213,14 +161,15 @@ namespace BirimizKovulacak.Game
             bool rec = ph.Status == CallStatus.Connected && v.Features.RecordingsEnabled;
             if (rec && _rec.style.display == DisplayStyle.None) UiMotion.PopIn(_rec, 0.3f);
             _rec.Show(rec);
-            _console.EnableInClassList("dk-phone-ivr", _ivr != Ivr.Off);
             _console.EnableInClassList("dk-phone-dead", dead);
+
+            // busy / missed strip: call back or send a text
+            BuildMiss(v, dead);
 
             // speed dial
             _dial.Clear();
             _speed.Clear();
-            bool idle = ph.Status == CallStatus.Idle && !dead;
-            bool ivr = _ivr == Ivr.Pick || _ivr == Ivr.Confirm;
+            bool idle = ph.Status == CallStatus.Idle && !dead && v.Features.CallsOpen;
             int n = 0;
             for (int i = 0; i < v.Players.Count; i++)
             {
@@ -229,58 +178,29 @@ namespace BirimizKovulacak.Game
                 n++;
                 _speed.Add(p.Id);
                 int who = p.Id;
-                var row = Dk.Tile(() => Press(Dk.View, who), "dk-dial-row").AddTo(_dial);
-                var key = Box("dk-dial-key").NoPick().AddTo(row);
+                var row = Box("dk-dial-row").AddTo(_dial);
+                var call = Dk.Tile(() => Press(Dk.View, who), "dk-dial-callarea").AddTo(row);
+                var key = Box("dk-dial-key").NoPick().AddTo(call);
                 Dk.Skin(key, "deskphone/key");
                 MemoBold(Num(n), "dk-dial-key-text").NoPick().AddTo(key);
-                Dk.Badge(who, "badge-s").AddTo(row);
-                Bold(p.Name, "dk-dial-name").NoPick().AddTo(row);
-                Box("spacer").NoPick().AddTo(row);
+                Dk.Badge(who, "badge-s").AddTo(call);
+                Bold(p.Name, "dk-dial-name").Plain().NoPick().AddTo(call);
+                Box("spacer").NoPick().AddTo(call);
                 string tag = null;
                 if (ph.Other == who && ph.Status == CallStatus.Connected) tag = Dk.T("desk.phone.tag.talking");
                 else if (ph.Other == who && ph.Status != CallStatus.Idle) tag = Dk.T("desk.phone.tag.ringing");
                 else if (busyFlash && _busyWho == who) tag = Dk.T("desk.phone.tag.busy");
                 else if (!p.Connected) tag = Dk.T("desk.away");
-                if (tag != null) Tag(tag, ph.Other == who ? "tag-green" : "tag-grey").AddTo(row);
-                if (ivr)
-                {
-                    row.AddToClassList("dk-dial-row-ivr");
-                    if (who == _ivrTarget) row.AddToClassList("dk-dial-row-on");
-                    Bold(Dk.T("desk.phone.tip_this"), "dk-dial-tip").NoPick().AddTo(row);
-                }
-                else Dk.Icon("call", "dk-dial-call").AddTo(row);
-                row.SetEnabled(ivr || (idle && p.Connected));
+                if (tag != null) Tag(tag, ph.Other == who ? "tag-green" : "tag-grey").AddTo(call);
+                Dk.Icon("call", "dk-dial-call").AddTo(call);
+                call.SetEnabled(idle && p.Connected);
+                var text = IconBtn("text", Dk.T("desk.phone.text"), () => { _ui.OpenMessages(who); }, "btn-secondary", "btn-small", "dk-dial-text").AddTo(row);
+                text.SetEnabled(p.Connected || true);
             }
-            // manager line
-            var mgr = Dk.Tile(() => ManagerLine(Dk.View), "dk-dial-row", "dk-dial-manager").AddTo(_dial);
-            var mkey = Box("dk-dial-key", "dk-dial-key-red").NoPick().AddTo(mgr);
-            MemoBold("0", "dk-dial-key-text").NoPick().AddTo(mkey);
-            Dk.Icon("manager_line", "dk-dial-mgr-icon").AddTo(mgr);
-            var mc = Box("dk-dial-mgr-col").NoPick().AddTo(mgr);
-            Bold(Dk.T("desk.phone.manager_line"), "dk-dial-name").NoPick().AddTo(mc);
-            string mgrSub = !v.Features.TipLineUnlocked ? Dk.F("desk.phone.manager_locked", Dk.DayName(Dk.Config.TipUnlockDayFirstWeek))
-                : TipSpent(v) ? Dk.T("desk.phone.manager_used")
-                : Dk.T("desk.phone.manager_sub");
-            Text(mgrSub, "dk-dial-mgr-sub").NoPick().AddTo(mc);
-            if (!v.Features.TipLineUnlocked) Dk.Icon("lock", "dk-dial-call").AddTo(mgr);
-            mgr.SetEnabled(v.Features.TipLineUnlocked && !TipSpent(v) && idle);
 
             // actions
             _actions.Clear();
-            if (_ivr == Ivr.Confirm)
-            {
-                Text(Dk.F("desk.phone.tip_rule", Dk.Config.ConfirmedTipBlame, Dk.Config.FalseTipBlame), "dk-phone-rule").NoPick().AddTo(_actions);
-                Box("spacer").NoPick().AddTo(_actions);
-                Btn(Dk.T("desk.cancel"), () => { _ivr = Ivr.Off; _sig = int.MinValue; }, "btn-ghost").AddTo(_actions);
-                Btn(Dk.T("desk.phone.tip_send"), ConfirmTip, "btn-danger", "dk-primary").AddTo(_actions);
-            }
-            else if (_ivr == Ivr.Pick)
-            {
-                Text(Dk.F("desk.phone.tip_rule", Dk.Config.ConfirmedTipBlame, Dk.Config.FalseTipBlame), "dk-phone-rule").NoPick().AddTo(_actions);
-                Box("spacer").NoPick().AddTo(_actions);
-                Btn(Dk.T("desk.cancel"), () => { _ivr = Ivr.Off; _sig = int.MinValue; }, "btn-ghost").AddTo(_actions);
-            }
-            else switch (ph.Status)
+            switch (ph.Status)
             {
                 case CallStatus.Ringing:
                     Box("spacer").NoPick().AddTo(_actions);
@@ -309,6 +229,29 @@ namespace BirimizKovulacak.Game
             }
 
             BuildLog(v);
+            Dk.NoRich(_dial);
+            Dk.NoRich(_miss);
+        }
+
+        void BuildMiss(LineView v, bool dead)
+        {
+            var st = _ui.State;
+            bool show = st.Miss != MissKind.None && st.MissWho >= 0 && v.Mine.Phone.Status == CallStatus.Idle && Dk.Now - st.MissAt < 90;
+            _miss.Clear();
+            _miss.Show(show);
+            if (!show) return;
+            int who = st.MissWho;
+            string key = st.Miss == MissKind.Missed ? "desk.phone.miss.missed" : st.Miss == MissKind.Busy ? "desk.phone.miss.busy" : "desk.phone.miss.noanswer";
+            Dk.Icon(st.Miss == MissKind.Missed ? "missed_call" : "busy", "dk-miss-icon").NoPick().AddTo(_miss);
+            Dk.Badge(who, "badge-s").AddTo(_miss);
+            var col = Box("dk-miss-col").NoPick().AddTo(_miss);
+            Bold(Dk.F(key, Dk.Name(who)), "dk-miss-title").Plain().NoPick().AddTo(col);
+            Text(Dk.T("desk.phone.miss.sub"), "dk-miss-sub").NoPick().AddTo(col);
+            Box("spacer").NoPick().AddTo(_miss);
+            var p = Dk.Player(who);
+            var cb = Btn(Dk.T("desk.phone.miss.callback"), () => { _ui.Call(who); }, "btn-primary", "btn-small").AddTo(_miss);
+            cb.SetEnabled(!dead && p != null && p.Connected && v.Features.CallsOpen);
+            Btn(Dk.T("desk.phone.miss.text"), () => _ui.OpenMessages(who), "btn-secondary", "btn-small").AddTo(_miss);
         }
 
         void Lcd(string a, string b)
@@ -336,7 +279,7 @@ namespace BirimizKovulacak.Game
                 Hand(what, "dk-log-what").NoPick().AddTo(col);
                 if (!c.Connected) row.AddToClassList("dk-log-row-miss");
                 Box("spacer").NoPick().AddTo(row);
-                MemoBold(Dk.OfficeClock(c.Start), "dk-log-time").NoPick().AddTo(row);
+                MemoBold(Dk.Ago(c.Start), "dk-log-time").NoPick().AddTo(row);
             }
         }
     }

@@ -6,8 +6,8 @@ using static BirimizKovulacak.Game.UiKit;
 namespace BirimizKovulacak.Game
 {
     /// <summary>
-    /// First day of the session: a sticky note on the monitor with the day's to-do list (answer the phone → open the
-    /// computer → read the card → call your partner → submit → wait for the meeting) and a hand-drawn coach arrow that
+    /// First block of the session: a sticky note on the monitor with the to-do list (answer the manager's call, open the
+    /// task, call or text your partner, submit, watch the company gauge, use the break) and a hand-drawn coach arrow that
     /// points at the thing to do next. Steps tick off as they happen (out of order is fine).
     /// </summary>
     public sealed class DeskOnboarding
@@ -49,7 +49,7 @@ namespace BirimizKovulacak.Game
             {
                 case 0: return Dk.F("onboard.step.0", Dk.KeyLabel(GameInput.AnswerCall));
                 case 1: return Dk.F("onboard.step.1", Dk.KeyLabel(GameInput.Interact));
-                case 3: return Dk.F("onboard.step.3", Dk.KeyLabel(GameInput.Phone));
+                case 2: return Dk.F("onboard.step.2", Dk.KeyLabel(GameInput.Phone));
                 default: return Dk.T("onboard.step." + i);
             }
         }
@@ -61,9 +61,10 @@ namespace BirimizKovulacak.Game
             {
                 case 0: return s.MorningAnsweredDay == v.Day || v.Phase != LinePhase.Morning && s.MorningRangDay != v.Day;
                 case 1: return s.ObOpenedComputer;
-                case 2: return s.IntroSeenKey >= 0;
-                case 3: return s.ObCalled;
-                case 4: return s.ObSubmitted;
+                case 2: return s.ObCalled;
+                case 3: return s.ObSubmitted;
+                case 4: return s.ObSawCompany;
+                case 5: return s.ObBreakSeen && v.Phase != LinePhase.Break;
                 default: return false;
             }
         }
@@ -110,15 +111,16 @@ namespace BirimizKovulacak.Game
 
         VisualElement Target(LineView v)
         {
+            bool idleDesk = !_ui.ComputerOpen && !_ui.PhoneOpen && !_ui.Cards.Visible;
             switch (_current)
             {
                 case 0: return _ui.Incoming.Visible ? _ui.Incoming.Card : null;
-                case 1: return !_ui.ComputerOpen && !_ui.PhoneOpen && !_ui.Cards.Visible ? _ui.Hud.ComputerKey : null;
-                case 2: return _ui.Cards.IntroOpen ? _ui.Cards.PrimaryButton : null;
-                case 3:
+                case 1: return idleDesk ? _ui.Hud.ComputerKey : null;
+                case 2:
                     if (_ui.ComputerOpen && _ui.Computer.App == DeskApp.Task) return _ui.Computer.Task.CallTarget;
-                    return !_ui.ComputerOpen && !_ui.PhoneOpen && !_ui.Cards.Visible ? _ui.Hud.PhoneKey : null;
-                case 4: return _ui.ComputerOpen && _ui.Computer.App == DeskApp.Task && v.Phase == LinePhase.RoundPlay ? _ui.Computer.Task.SubmitTarget : null;
+                    return idleDesk ? _ui.Hud.PhoneKey : null;
+                case 3: return _ui.ComputerOpen && _ui.Computer.App == DeskApp.Task && v.Phase == LinePhase.RoundPlay ? _ui.Computer.Task.SubmitTarget : null;
+                case 4: return !_ui.ComputerOpen ? _ui.Hud.Status.Gauge : null;
                 default: return null;
             }
         }

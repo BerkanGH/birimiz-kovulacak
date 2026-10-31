@@ -24,6 +24,8 @@ namespace BirimizKovulacak.Game
         /// <summary>Desktop icon badge (0 = none).</summary>
         public virtual int Badge(LineView v) { return 0; }
         public virtual void OnShown() { }
+        /// <summary>A request of this app's verbs was answered; return true when the app showed the outcome itself.</summary>
+        public virtual bool OnResult(LineActionResult r, LineAction req) { return false; }
     }
 
     /// <summary>
@@ -40,12 +42,16 @@ namespace BirimizKovulacak.Game
         readonly DeskAppView[] _apps;
         readonly VisualElement[] _iconTiles;
         readonly Label[] _iconBadges;
-        readonly int[] _badgeVals = { -1, -1, -1, -1, -1 };
+        readonly int[] _badgeVals = { -1, -1, -1, -1, -1, -1, -1, -1 };
+        readonly DeskStatus _status;
         internal readonly DeskTaskApp Task;
+        internal readonly DeskMessagesApp Messages;
         internal readonly DeskMailApp Mail;
-        internal readonly DeskRecordApp Record;
+        internal readonly DeskBankApp Bank;
+        internal readonly DeskEvidenceApp Evidence;
+        internal readonly DeskRemedialApp Remedial;
         internal readonly DeskTrickApp Trick;
-        internal readonly DeskAgendaApp Agenda;
+        internal readonly DeskComplaintApp Complaint;
         DeskApp _app = DeskApp.Task;
         bool _open, _refresh;
         int _lastSec = -1, _blockSig = -1, _lastBlockSec = -1, _subSig = int.MinValue;
@@ -66,11 +72,14 @@ namespace BirimizKovulacak.Game
             var desk = Box("dk-desktop").AddTo(_screen);
             _icons = Box("dk-desk-icons").AddTo(desk);
             Task = new DeskTaskApp(ui);
+            Messages = new DeskMessagesApp(ui);
             Mail = new DeskMailApp(ui);
-            Record = new DeskRecordApp(ui);
+            Bank = new DeskBankApp(ui);
+            Evidence = new DeskEvidenceApp(ui);
+            Remedial = new DeskRemedialApp(ui);
             Trick = new DeskTrickApp(ui);
-            Agenda = new DeskAgendaApp(ui);
-            _apps = new DeskAppView[] { Task, Mail, Record, Trick, Agenda };
+            Complaint = new DeskComplaintApp(ui);
+            _apps = new DeskAppView[] { Task, Messages, Mail, Bank, Evidence, Remedial, Trick, Complaint };
             _iconTiles = new VisualElement[_apps.Length];
             _iconBadges = new Label[_apps.Length];
             for (int i = 0; i < _apps.Length; i++)
@@ -115,6 +124,7 @@ namespace BirimizKovulacak.Game
             StampText(Dk.T("desk.os.brand"), "dk-tb-brand").NoPick().AddTo(start);
             _user = Box("dk-tb-user").NoPick().AddTo(bar);
             Box("spacer").NoPick().AddTo(bar);
+            _status = new DeskStatus(bar, true);
             _net = Dk.Icon("wifi_off", "dk-tb-net").AddTo(bar);
             _net.Show(false);
             var clock = Box("dk-tb-clock").NoPick().AddTo(bar);
@@ -181,7 +191,7 @@ namespace BirimizKovulacak.Game
             if (animate)
             {
                 UiMotion.SlideIn(_window, new Vector2(0, 26f), 0.26f, 0f, UiMotion.Ease.OutCubic);
-                if (app == DeskApp.Mail) _ui.State.ObOpenedComputer = true;
+                _ui.State.ObOpenedComputer = true;
             }
         }
 
@@ -203,7 +213,15 @@ namespace BirimizKovulacak.Game
         public void OnSubmitted(int actor) { Task.OnSubmitted(actor); }
         public void Refresh() { _refresh = true; }
 
-        public int UnreadCount(LineView v) { return Mail.Unread(v); }
+        public int UnreadCount(LineView v) { return Messages.Unread(v) + Mail.Unread(v); }
+
+        /// <summary>Routes an answered request to the app that owns the verb.</summary>
+        public bool OnResult(LineActionResult r, LineAction req)
+        {
+            if (req == null) return false;
+            for (int i = 0; i < _apps.Length; i++) if (_apps[i].OnResult(r, req)) return true;
+            return false;
+        }
 
         // ------------------------------------------------------------------ tick
 
@@ -213,6 +231,7 @@ namespace BirimizKovulacak.Game
             var a = _apps[(int)_app];
             if (changed || _refresh) { _refresh = false; a.Refresh(v, false); }
             a.Tick(v);
+            _status.Update(v);
 
             int sec = Mathf.CeilToInt((float)(v.PhaseEndTime - Dk.Now));
             if (sec < 0) sec = 0;
@@ -224,7 +243,7 @@ namespace BirimizKovulacak.Game
             }
             if (changed)
             {
-                int ss = (int)v.Phase * 100 + v.RoundIndex * 10 + v.Day;
+                int ss = (int)v.Phase * 100 + v.RoundIndex * 10 + v.Day + (v.Task != null ? (int)v.Task.Kind * 10000 : 0);
                 if (ss != _subSig)
                 {
                     _subSig = ss;

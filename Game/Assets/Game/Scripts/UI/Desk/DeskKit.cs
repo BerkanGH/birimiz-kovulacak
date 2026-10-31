@@ -8,8 +8,16 @@ using static BirimizKovulacak.Game.UiKit;
 namespace BirimizKovulacak.Game
 {
     /// <summary>
-    /// Desk UI helpers: view access, names, localised texts with fallbacks (the desk area file owns desk./round./trick./
-    /// mail./phone./onboard./topic./complaint. keys), art ids of the v3 kit with fallbacks to the v2 kit, small builders.
+    /// Desk UI helpers (v4): view access, names, localised texts with fallbacks, task fact/option rendering from the typed
+    /// LineFact data, objective/record/offer texts, safe text inputs and small builders. The desk area owns the desk.,
+    /// onboard., trick., desk.obj.*, desk.record.*, desk.offer.* keys (tr/en.desk.json) and the task.*, complaint.preset.*,
+    /// mail.template.* keys (tr/en.tasks.json).
+    ///
+    /// Assumed verb argument conventions (the engine owner should confirm): SendText(target, text) · SendEmail(target or
+    /// None = everyone, a = template or -1, c = replied mail id or -1, text) · FileComplaint(target, a = preset or -1, text)
+    /// · Transfer(target, a = amount) · BuyEvidence(a = offer id) · StartRemedial(cosigner, a = task number) ·
+    /// RespondRemedial(requester, a = 1 accept / 0 decline) · UseTrick(target, a = template or -1, b = apparent sender, text)
+    /// · SubmitTask(target, a, b, c = TaskField mask) · GiveItem(receiver, a = held item index).
     /// </summary>
     public static class Dk
     {
@@ -21,9 +29,9 @@ namespace BirimizKovulacak.Game
         public static LineConfig Config => LineClient.I != null ? LineClient.I.Config : LineConfig.CreateDefault();
         public static int Me => View != null ? View.Me : LineIds.None;
 
-        public static void Send(LineVerb verb, int target = LineIds.None, int a = -1, int b = -1)
+        public static void Send(LineVerb verb, int target = LineIds.None, int a = -1, int b = -1, int c = -1, string text = "")
         {
-            LineClient.I?.Send(verb, target, a, b);
+            LineClient.I?.Send(verb, target, a, b, c, text);
         }
 
         public static LinePlayerView Player(int id)
@@ -50,8 +58,7 @@ namespace BirimizKovulacak.Game
 
         public static string Name(int id)
         {
-            if (id == LineIds.None) return T("desk.nobody");
-            if (id == LineIds.Intern) return TShared("line.intern.name", "desk.intern");
+            if (id == LineIds.None || id == LineIds.Nobody) return T("desk.nobody");
             if (id == LineIds.Manager) return ManagerName(View != null ? View.ManagerProfileId : "");
             if (id == LineIds.System) return TShared("line.system.name", "desk.system");
             var p = Player(id);
@@ -73,9 +80,66 @@ namespace BirimizKovulacak.Game
 
         public static string DayName(int day) { return TShared("week.day." + day, "desk.day." + day); }
 
-        public static string RoundName(RoundType t) { return T("round." + t + ".name"); }
-        public static string RoundRule(RoundType t) { return T("round." + t + ".rule"); }
-        public static string RoundExample(RoundType t) { return T("round." + t + ".example"); }
+        public static string Pct(int permille) { return (permille / 10f).ToString(permille % 10 == 0 ? "0" : "0.0", Loc.Culture) + "%"; }
+
+        /// <summary>Signed delta for display ("+2", "–1", "0").</summary>
+        public static string Delta(int d)
+        {
+            if (d > 0) return "+" + Num(d);
+            if (d < 0) return "–" + Num(-d);
+            return "0";
+        }
+
+        public static string PhaseName(LinePhase p) { return T("desk.phase." + p); }
+
+        /// <summary>"az önce" / "3 dk önce" relative host time.</summary>
+        public static string Ago(double t)
+        {
+            int s = (int)(Now - t);
+            if (s < 60) return T("desk.time.now");
+            return F("desk.time.min_ago", s / 60);
+        }
+
+        // ------------------------------------------------------------------ tasks
+
+        public static string TaskId(TaskKind k) { return LineTasks.Id(k); }
+        public static string TaskName(TaskKind k) { return k == TaskKind.None ? T("desk.task.none") : T("task." + LineTasks.Id(k) + ".name"); }
+        public static string TaskRule(TaskKind k) { return k == TaskKind.None ? "" : T("task." + LineTasks.Id(k) + ".rule"); }
+
+        static readonly Color[] TaskColors =
+        {
+            new Color32(0x8A, 0x90, 0xA6, 255),
+            new Color32(0x3B, 0x7D, 0xD8, 255), new Color32(0x2F, 0x9E, 0x6B, 255), new Color32(0xE0, 0x7A, 0x5F, 255), new Color32(0x8E, 0x5B, 0xC7, 255),
+            new Color32(0xE0, 0xA1, 0x2E, 255), new Color32(0x5C, 0x6B, 0x8C, 255), new Color32(0xD2, 0x38, 0x2F, 255), new Color32(0x1F, 0x8F, 0x9B, 255),
+            new Color32(0xC2, 0x4F, 0x8F, 255), new Color32(0x7A, 0x9A, 0x2B, 255), new Color32(0xB8, 0x6B, 0x2E, 255), new Color32(0x4A, 0x6F, 0xB0, 255),
+        };
+
+        public static Color TaskColor(TaskKind k) { int i = (int)k; return TaskColors[i >= 0 && i < TaskColors.Length ? i : 0]; }
+
+        /// <summary>Icon id of a task (icons_v3/&lt;id&gt; with the v2 fallback glyph tile).</summary>
+        public static string TaskIcon(TaskKind k)
+        {
+            switch (k)
+            {
+                case TaskKind.InvoiceReconcile: return "task_invoice";
+                case TaskKind.BudgetSplit: return "task_budget";
+                case TaskKind.CustomerSpec: return "task_spec";
+                case TaskKind.ReportReview: return "task_report";
+                case TaskKind.RoomBooking: return "task_room";
+                case TaskKind.ArchiveVisitor: return "task_archive";
+                case TaskKind.BonusPool: return "share";
+                case TaskKind.ServerCode: return "keypad";
+                case TaskKind.PhishingCheck: return "task_phish";
+                case TaskKind.ShiftCover: return "task_shift";
+                case TaskKind.VendorPick: return "task_vendor";
+                case TaskKind.SupplySwap: return "task_swap";
+                default: return "task_app";
+            }
+        }
+
+        /// <summary>Resources "ui/tasks/task_&lt;id&gt;" (UiArt path without the ui/ prefix).</summary>
+        public static string TaskArtId(TaskKind k) { return "tasks/task_" + LineTasks.Id(k); }
+
         public static string TrickName(TrickType t) { return T("trick." + t + ".name"); }
 
         public static string TrickHow(TrickType t)
@@ -91,87 +155,7 @@ namespace BirimizKovulacak.Game
             }
         }
 
-        public static bool TrickNeedsTarget(TrickType t) { return t != TrickType.InternetKes && t != TrickType.KayitSil && t != TrickType.None; }
-
-        /// <summary>v3.1 Odd Email topic text (topic.&lt;category*4+item&gt;).</summary>
-        public static string Topic(int id) { return id < 0 ? "" : T("topic." + id); }
-        /// <summary>Complaint reason; the meeting dossier's wording wins so the form and the dossier say the same thing.</summary>
-        public static string ComplaintReason(int r)
-        {
-            if (r < 0) return "";
-            string s = TShared("dossier.reason." + r, "complaint.reason." + r);
-            return s.Length > 0 ? char.ToUpper(s[0], Loc.Culture) + s.Substring(1) : s;
-        }
-
-        /// <summary>Signed blame delta for display ("+2", "–1", "0").</summary>
-        public static string Delta(int d)
-        {
-            if (d > 0) return "+" + Num(d);
-            if (d < 0) return "–" + Num(-d);
-            return "0";
-        }
-
-        public static string PhaseName(LinePhase p) { return T("desk.phase." + p); }
-
-        // ------------------------------------------------------------------ mail
-
-        public static bool TemplateMentions(int template) { return T("mail.personal." + template).Contains("{0}"); }
-
-        public static string MailSubject(LineMailView m)
-        {
-            switch (m.Kind)
-            {
-                case MailKind.Manager: return T("mail.manager." + m.TemplateId + ".subject");
-                case MailKind.System: return T("mail.system." + m.TemplateId + ".subject");
-                default: return T("mail.personal." + m.TemplateId + ".subject");
-            }
-        }
-
-        public static string MailBody(LineMailView m)
-        {
-            switch (m.Kind)
-            {
-                case MailKind.Manager: return F("mail.manager." + m.TemplateId, ManagerName(View != null ? View.ManagerProfileId : ""));
-                case MailKind.System: return T("mail.system." + m.TemplateId);
-                default: return PersonalBody(m.TemplateId, m.About);
-            }
-        }
-
-        public static string PersonalBody(int template, int about)
-        {
-            return F("mail.personal." + template, about >= 0 ? Name(about) : T("desk.mail.someone"));
-        }
-
-        // ------------------------------------------------------------------ art ids
-
-        public static string RoundArtId(RoundType t)
-        {
-            switch (t)
-            {
-                case RoundType.PrimHavuzu: return "rounds/round_prim_havuzu";
-                case RoundType.FarkliEposta: return "rounds/round_farkli_eposta";
-                case RoundType.KayipRapor: return "rounds/round_kayip_rapor";
-                case RoundType.IhbarKutusu: return "rounds/round_ihbar_kutusu";
-                case RoundType.TerfiListesi: return "rounds/round_terfi_listesi";
-                case RoundType.OrtakSifre: return "rounds/round_ortak_sifre";
-                default: return "rounds/round_card_back";
-            }
-        }
-
-        /// <summary>(v3 icon, v2 fallback icon) of a round.</summary>
-        public static string RoundIcon(RoundType t)
-        {
-            switch (t)
-            {
-                case RoundType.PrimHavuzu: return "share";
-                case RoundType.FarkliEposta: return "odd_email";
-                case RoundType.KayipRapor: return "lost_report";
-                case RoundType.IhbarKutusu: return "complaint";
-                case RoundType.TerfiListesi: return "promotion";
-                case RoundType.OrtakSifre: return "keypad";
-                default: return "task_app";
-            }
-        }
+        public static bool TrickNeedsTarget(TrickType t) { return t != TrickType.InternetKes && t != TrickType.None; }
 
         public static string TrickArtId(TrickType t)
         {
@@ -182,7 +166,6 @@ namespace BirimizKovulacak.Game
                 case TrickType.FisCek: return "cards/card_pull_plug";
                 case TrickType.InternetKes: return "cards/card_internet";
                 case TrickType.HatDinle: return "tricks/trick_wiretap";
-                case TrickType.KayitSil: return "tricks/trick_erase_tape";
                 default: return "cards/card_back";
             }
         }
@@ -196,12 +179,288 @@ namespace BirimizKovulacak.Game
                 case TrickType.FisCek: return "phone_dead";
                 case TrickType.InternetKes: return "wifi_off";
                 case TrickType.HatDinle: return "wiretap";
-                case TrickType.KayitSil: return "erase_tape";
                 default: return "trick_app";
             }
         }
 
-        /// <summary>v2 kit icon used while the v3 icon (icons_v3/&lt;id&gt;) does not exist yet.</summary>
+        // ---- fact / option rendering
+
+        static string Q(int n) { return n < 0 ? "?" : n.ToString(); }
+
+        static string Label(string key, int n, string fallbackKey = null)
+        {
+            if (n < 0) return "?";
+            return Loc.Has(key + "." + n) ? T(key + "." + n) : (fallbackKey != null ? T(fallbackKey) : (n + 1).ToString());
+        }
+
+        /// <summary>
+        /// Fills a task template: {p} player, {n1}..{n3} numbers ("?" while unknown), {i1}..{i3} = n+1, {v} = option value + 1
+        /// plus the decoded extras {color} {size} {day} {title} {item} {slot} {shift} {vendor} {acct} {ok} {val}.
+        /// </summary>
+        public static string Fill(string tpl, TaskKind kind, string key, int p, int n1, int n2, int n3, int value = -1, bool option = false)
+        {
+            if (string.IsNullOrEmpty(tpl) || tpl.IndexOf('{') < 0) return tpl ?? "";
+            string s = tpl;
+            if (s.Contains("{p}")) s = s.Replace("{p}", p >= 0 ? Name(p) : "?");
+            s = s.Replace("{n1}", Q(n1)).Replace("{n2}", Q(n2)).Replace("{n3}", Q(n3));
+            s = s.Replace("{i1}", n1 < 0 ? "?" : (n1 + 1).ToString()).Replace("{i2}", n2 < 0 ? "?" : (n2 + 1).ToString()).Replace("{i3}", n3 < 0 ? "?" : (n3 + 1).ToString());
+            if (s.Contains("{v}")) s = s.Replace("{v}", (value + 1).ToString());
+            if (s.IndexOf('{') < 0) return s;
+            string id = LineTasks.Id(kind);
+            switch (kind)
+            {
+                case TaskKind.CustomerSpec:
+                {
+                    int packed = option ? n1 : key == "spec" ? n2 : key == "true_spec" ? n1 : -1;
+                    if (packed >= 0)
+                    {
+                        s = s.Replace("{color}", T("task.customer_spec.color." + packed / 9)).Replace("{size}", T("task.customer_spec.size." + packed / 3 % 3)).Replace("{day}", T("task.customer_spec.day." + packed % 3));
+                    }
+                    if (key == "color" || key == "size" || key == "day") s = s.Replace("{val}", n1 < 0 ? "?" : T("task.customer_spec." + key + "." + n1));
+                    break;
+                }
+                case TaskKind.ArchiveVisitor:
+                {
+                    int title = option ? n2 : key == "need_doc" ? n1 : key == "doc" ? n2 : -1;
+                    if (s.Contains("{title}")) s = s.Replace("{title}", title < 0 ? "?" : T("task.archive_visitor.title." + title));
+                    break;
+                }
+                case TaskKind.SupplySwap:
+                    if (s.Contains("{item}")) s = s.Replace("{item}", n1 < 0 ? "?" : T("task.supply_swap.item." + n1));
+                    break;
+                case TaskKind.RoomBooking:
+                    if (s.Contains("{slot}")) s = s.Replace("{slot}", n1 == 9 ? T("task.room_booking.opt.yield") : Label("task.room_booking.slot", n1));
+                    if (s.Contains("{ok}")) s = s.Replace("{ok}", n2 > 0 ? T("desk.reveal.ok") : T("desk.reveal.no"));
+                    break;
+                case TaskKind.ShiftCover:
+                    if (s.Contains("{shift}")) s = s.Replace("{shift}", n1 == 9 ? T("task.shift_cover.opt.decline") : Label("task.shift_cover.shift", n1));
+                    break;
+                case TaskKind.VendorPick:
+                    if (s.Contains("{vendor}")) s = s.Replace("{vendor}", Label("task.vendor_pick.vendor", n1));
+                    break;
+                case TaskKind.PhishingCheck:
+                    if (s.Contains("{acct}")) s = s.Replace("{acct}", n1 < 0 ? "????" : n1.ToString("0000"));
+                    break;
+                case TaskKind.BudgetSplit:
+                    if (s.Contains("{ok}")) s = s.Replace("{ok}", n3 > 0 ? T("desk.reveal.ok") : T("desk.reveal.no"));
+                    break;
+            }
+            if (s.Contains("{ok}")) s = s.Replace("{ok}", n1 > 0 ? T("desk.reveal.ok") : T("desk.reveal.no"));
+            return s;
+        }
+
+        public static string FactText(TaskKind kind, LineFact f)
+        {
+            return Fill(T("task." + LineTasks.Id(kind) + ".fact." + f.Key), kind, f.Key, f.P, f.N1, f.N2, f.N3);
+        }
+
+        public static string ControlLabel(TaskKind kind, LineControlView c) { return T("task." + LineTasks.Id(kind) + ".control." + c.Key); }
+
+        public static string OptionText(TaskKind kind, LineOption o)
+        {
+            return Fill(T("task." + LineTasks.Id(kind) + ".opt." + o.Key), kind, o.Key, o.P, o.N1, o.N2, -1, o.Value, true);
+        }
+
+        /// <summary>True when picking this option is a sabotage (option flag, or a sabotage control's non-zero value).</summary>
+        public static bool IsSabotage(LineControlView c, LineOption o)
+        {
+            if (o.Sabotage) return true;
+            if (!c.Sabotage) return false;
+            for (int i = 0; i < c.Options.Count; i++) if (c.Options[i].Sabotage) return false;
+            return o.Value != 0;
+        }
+
+        public static string ItemName(int type) { return T("task.supply_swap.item." + type); }
+
+        /// <summary>Public ballot value of a task reveal (budget request, slot, flagged colleague, shift, vendor).</summary>
+        public static string BallotText(TaskKind kind, int target)
+        {
+            switch (kind)
+            {
+                case TaskKind.PhishingCheck: return target >= 0 ? Name(target) : T("desk.reveal.abstain");
+                case TaskKind.RoomBooking: return target == 9 ? T("task.room_booking.opt.yield") : Label("task.room_booking.slot", target);
+                case TaskKind.ShiftCover: return target == 9 ? T("task.shift_cover.opt.decline") : Label("task.shift_cover.shift", target);
+                case TaskKind.VendorPick: return Label("task.vendor_pick.vendor", target);
+                default: return Q(target);
+            }
+        }
+
+        public static string RoleText(TaskKind kind, int role)
+        {
+            string key = "task." + LineTasks.Id(kind) + ".role." + role;
+            return role > 0 && Loc.Has(key) ? T(key) : "";
+        }
+
+        // ------------------------------------------------------------------ objectives
+
+        public static string ObjectiveName(ObjectiveKind k) { return T("desk.obj." + k + ".name"); }
+
+        public static string ObjectiveDesc(LineObjectiveView o)
+        {
+            return F("desk.obj." + o.Kind + ".desc", o.Target >= 0 ? Name(o.Target) : T("desk.nobody"), o.Threshold);
+        }
+
+        public static string ObjectiveProgress(LineObjectiveView o)
+        {
+            if (o.Progress < 0) return T("desk.obj.hidden");
+            return F("desk.obj.progress", o.Progress, o.Threshold);
+        }
+
+        // ------------------------------------------------------------------ records and offers
+
+        public static string RecordKindName(RecordKind k) { return T("desk.record.kind." + k + ".name"); }
+        public static string SourceName(RecordSource s) { return T("desk.record.source." + s); }
+
+        public static string RecordText(LineRecordView r)
+        {
+            string s = T("desk.record.kind." + r.Kind + ".text");
+            s = s.Replace("{a}", r.Actor >= 0 || r.Actor == LineIds.Manager || r.Actor == LineIds.System ? Name(r.Actor) : "?")
+                 .Replace("{s}", r.Subject >= 0 || r.Subject == LineIds.Manager || r.Subject == LineIds.System ? Name(r.Subject) : "?")
+                 .Replace("{n1}", Q(r.N1)).Replace("{n2}", Q(r.N2)).Replace("{n3}", Q(r.N3));
+            if (s.Contains("{task}")) s = s.Replace("{task}", r.Task != TaskKind.None ? TaskName(r.Task) : "?");
+            if (s.Contains("{trick}")) s = s.Replace("{trick}", r.N1 > 0 && r.N1 <= 5 ? TrickName((TrickType)r.N1) : "?");
+            if (s.Contains("{item}")) s = s.Replace("{item}", r.N1 >= 0 ? ItemName(r.N1) : "?");
+            if (s.Contains("{mmss}")) s = s.Replace("{mmss}", ClockInt(Mathf.Max(0, r.N1)));
+            return s;
+        }
+
+        /// <summary>"phone log · 2 min ago · authenticated record".</summary>
+        public static string Provenance(LineRecordView r)
+        {
+            return F("desk.record.prov", SourceName(r.Source), F("desk.record.block", r.Day + 1) + ", " + Ago(r.Time));
+        }
+
+        static string SourceArt(RecordSource s)
+        {
+            switch (s)
+            {
+                case RecordSource.PhoneLog: return "phone_log";
+                case RecordSource.Bank: return "bank";
+                case RecordSource.TaskSystem: return "task_system";
+                case RecordSource.ITLog: return "it_log";
+                case RecordSource.BadgeLog: return "badge_log";
+                default: return "hr";
+            }
+        }
+
+        public static string RecordIcon(RecordKind k)
+        {
+            switch (k)
+            {
+                case RecordKind.Call: return "call";
+                case RecordKind.Transfer: case RecordKind.DealPayment: case RecordKind.OfferAcceptance: return "bank_app";
+                case RecordKind.TrickLog: case RecordKind.TrickEffect: case RecordKind.SpoofedMail: return "trick_app";
+                case RecordKind.BadgeAccess: return "lock";
+                case RecordKind.Warning: return "warning_letter";
+                case RecordKind.Remedial: return "remedial";
+                case RecordKind.HrFile: return "contacts";
+                default: return "task_app";
+            }
+        }
+
+        public static string OfferName(LineOfferView o)
+        {
+            string key = "desk.offer.kind." + o.Kind;
+            string s = T(key);
+            s = s.Replace("{b}", (o.Day + 1).ToString()).Replace("{t}", (o.TaskNumber + 1).ToString());
+            if (s.Contains("{task}")) s = s.Replace("{task}", o.Task != TaskKind.None ? TaskName(o.Task) : "?");
+            return s;
+        }
+
+        /// <summary>
+        /// Reusable authenticated-record card (provenance line, kind, description, proof/presented tags). Used by the
+        /// evidence app and the meeting UI; <paramref name="onClick"/> makes it a button. All player-derived text is
+        /// rendered with rich text off.
+        /// </summary>
+        public static VisualElement RecordCard(LineRecordView r, Action onClick = null, params string[] classes)
+        {
+            VisualElement card = onClick != null ? (VisualElement)Tile(onClick, "dk-rec") : Box("dk-rec");
+            card.Cls(classes);
+            if (r.ProofOf >= 0) card.AddToClassList("dk-rec-proof");
+            if (r.Presented) card.AddToClassList("dk-rec-presented");
+            var head = Box("dk-rec-head").NoPick().AddTo(card);
+            var recIcon = Icon(RecordIcon(r.Kind), "dk-rec-icon").AddTo(head);
+            if (UiArt.Apply(recIcon, "evidence/evidence_" + SourceArt(r.Source))) { recIcon.RemoveFromClassList("icon-fallback"); recIcon.Clear(); recIcon.style.backgroundColor = StyleKeyword.Null; }
+            var col = Box("dk-rec-col").NoPick().AddTo(head);
+            Bold(RecordKindName(r.Kind), "dk-rec-kind").NoPick().AddTo(col);
+            Text(Provenance(r), "dk-rec-prov").NoPick().AddTo(col);
+            Text(RecordText(r), "dk-rec-text").NoPick().AddTo(card);
+            if (r.ProofOf >= 0 || r.Presented)
+            {
+                var tags = Box("dk-rec-tags").NoPick().AddTo(card);
+                if (r.ProofOf >= 0) Tag(T("desk.record.proof"), "tag-red").AddTo(tags);
+                if (r.Presented) Tag(T("desk.record.presented"), "tag-grey").AddTo(tags);
+            }
+            NoRich(card);
+            return card;
+        }
+
+        // ------------------------------------------------------------------ plain text safety
+
+        /// <summary>Disables rich text on this label (player-authored text must never be parsed as markup).</summary>
+        public static Label Plain(this Label l) { l.enableRichText = false; return l; }
+
+        /// <summary>Disables rich text on every label under <paramref name="root"/> (cheap safety net after building a region).</summary>
+        public static void NoRich(VisualElement root)
+        {
+            if (root == null) return;
+            if (root is TextElement te) te.enableRichText = false;
+            for (int i = 0; i < root.childCount; i++) NoRich(root[i]);
+        }
+
+        /// <summary>True when keyboard focus is inside a text field (hotkeys must not fire while typing).</summary>
+        public static bool Typing(VisualElement any)
+        {
+            var fc = any != null && any.panel != null ? any.panel.focusController : null;
+            var f = fc != null ? fc.focusedElement as VisualElement : null;
+            return f != null && (f is TextField || f.GetFirstAncestorOfType<TextField>() != null);
+        }
+
+        /// <summary>A bound text input: text field (rich text off, length limited) with a live character counter label.</summary>
+        public sealed class TextBox
+        {
+            public TextField Field;
+            public Label Counter;
+            public VisualElement Root;
+            public int Max;
+            public Action Changed;
+            public string Value => Field.value ?? "";
+
+            public void SetValue(string s) { Field.SetValueWithoutNotify(s ?? ""); Update(); }
+            public void Clear() { SetValue(""); }
+            public void Focus() { Field.Focus(); }
+            public void SetEnabled(bool on) { Field.SetEnabled(on); }
+
+            public void Update()
+            {
+                int n = Value.Length;
+                Counter.SetText(n + " / " + Max);
+                Counter.EnableInClassList("dk-count-full", n >= Max);
+                Counter.EnableInClassList("dk-count-warn", n >= Max * 0.9f && n < Max);
+            }
+        }
+
+        public static TextBox TextInput(VisualElement parent, int max, bool multiline, string placeholder, params string[] classes)
+        {
+            var b = new TextBox { Max = max };
+            b.Root = Box("dk-textbox").Cls(classes).AddTo(parent);
+            var tf = new TextField { multiline = multiline, maxLength = max, isDelayed = false };
+            tf.AddToClassList("dk-input");
+            if (multiline) tf.AddToClassList("dk-input-multi");
+            UseFont(tf, BodyFont);
+            tf.Query<TextElement>().ForEach(e => e.enableRichText = false);
+            if (!string.IsNullOrEmpty(placeholder)) tf.textEdition.placeholder = placeholder;
+            b.Field = tf;
+            tf.AddTo(b.Root);
+            b.Counter = Text("", "dk-count").NoPick().AddTo(b.Root);
+            tf.RegisterValueChangedCallback(_ => { b.Update(); b.Changed?.Invoke(); });
+            b.Update();
+            return b;
+        }
+
+        // ------------------------------------------------------------------ art ids
+
+        /// <summary>v2 kit icon used while the v3/v4 icon (icons_v3/&lt;id&gt;) does not exist yet.</summary>
         static string OldIcon(string v3)
         {
             switch (v3)
@@ -226,13 +485,25 @@ namespace BirimizKovulacak.Game
                 case "fake_email": return "sab_fake_email";
                 case "manager_line": return "manager";
                 case "tip_off": return "accuse";
-                case "intern": return "bot";
                 case "morning": return "task_coffee";
                 case "task_app": return "objective";
                 case "mail_app": return "email";
                 case "record_app": return "contacts";
                 case "trick_app": return "cards";
-                case "agenda_app": return "week_calendar";
+                case "message_app": return "task_phone";
+                case "bank_app": return "quota";
+                case "remedial": return "task_clean";
+                case "complaint_app": return "accuse";
+                case "task_invoice": return "task_mail";
+                case "task_budget": return "quota";
+                case "task_spec": return "notes";
+                case "task_report": return "task_report";
+                case "task_room": return "week_calendar";
+                case "task_archive": return "lock_screen";
+                case "task_phish": return "warning";
+                case "task_shift": return "timer";
+                case "task_vendor": return "star";
+                case "task_swap": return "cards";
                 case "sticky_check": return "check";
                 case "call": return "call";
                 case "ringing": return "ringing";
@@ -244,6 +515,8 @@ namespace BirimizKovulacak.Game
                 case "favourite": return "favor_heart";
                 case "lock": return "lock_screen";
                 case "info": return "info";
+                case "text": return "task_phone";
+                case "help": return "info";
                 default: return v3;
             }
         }
@@ -279,7 +552,7 @@ namespace BirimizKovulacak.Game
         /// <summary>Applies a v3 art id; false when missing (callers keep a USS fallback).</summary>
         public static bool Art(VisualElement e, string id) { return UiArt.Apply(e, id); }
 
-        /// <summary>Portrait badge for any participant (colleague, intern, manager, system).</summary>
+        /// <summary>Portrait badge for any participant (colleague, manager, system).</summary>
         public static VisualElement Badge(int id, string size = "badge-m")
         {
             if (id == LineIds.Manager)
@@ -290,16 +563,6 @@ namespace BirimizKovulacak.Game
                 var ic = Box("icon", "dk-system-badge-icon").NoPick().AddTo(s);
                 UiKit.SetIcon(ic, "settings");
                 return s;
-            }
-            if (id == LineIds.Intern)
-            {
-                var b = Box("pbadge", size, "dk-intern-badge").NoPick();
-                if (!UiArt.Apply(b, "icons_v3/intern"))
-                {
-                    b.AddToClassList("pbadge-fallback");
-                    Bold(T("desk.intern_initial"), "pbadge-initial").NoPick().AddTo(b);
-                }
-                return b;
             }
             var badge = Box("pbadge", size).NoPick();
             SetBadge(badge, Client != null ? Client.ColorOf(id) : id, Name(id));
@@ -323,15 +586,6 @@ namespace BirimizKovulacak.Game
 
         public static string KeyLabel(UnityEngine.InputSystem.InputAction a) { return GameInput.KeyLabel(a); }
 
-        /// <summary>Keycap + label hint ("[Y] Answer").</summary>
-        public static VisualElement Hint(string key, string text, params string[] classes)
-        {
-            var h = Box("dk-hint").Cls(classes).NoPick();
-            Key(key).AddTo(h);
-            Text(text, "dk-hint-text").NoPick().AddTo(h);
-            return h;
-        }
-
         public static void Clear(VisualElement e) { e.Clear(); }
 
         /// <summary>Deterministic small tilt for paper items (-max..max degrees) from an integer seed.</summary>
@@ -353,28 +607,34 @@ namespace BirimizKovulacak.Game
                 if (includeMe || v.Players[i].Id != v.Me) into.Add(v.Players[i]);
         }
 
-        /// <summary>
-        /// A playing card (round or trick art, 512×716 with a blank label strip at the bottom) with the localised name
-        /// printed into the strip. Without art: a manila card with the icon and the name.
-        /// </summary>
-        public static VisualElement Card(string artId, string iconId, string name, params string[] classes)
+        /// <summary>A playing card (art with a printed label strip) or a coloured fallback card with the task icon.</summary>
+        public static VisualElement TaskCard(TaskKind k, params string[] classes)
         {
-            var c = Box("dk-card").Cls(classes).NoPick();
-            if (Art(c, artId))
+            var c = Box("dk-taskcard").Cls(classes).NoPick();
+            if (UiArt.Apply(c, TaskArtId(k)))
             {
-                if (!string.IsNullOrEmpty(name)) Title(name, "dk-card-label").NoPick().AddTo(c);
+                c.AddToClassList("dk-taskcard-art");
+                return c;
             }
-            else
-            {
-                c.AddToClassList("dk-card-fallback");
-                Icon(iconId, "dk-card-fallback-icon").AddTo(c);
-                if (!string.IsNullOrEmpty(name)) Title(name, "dk-card-fallback-name").NoPick().AddTo(c);
-            }
+            c.AddToClassList("dk-taskcard-fallback");
+            c.style.backgroundColor = TaskColor(k);
+            Icon(TaskIcon(k), "dk-taskcard-icon").AddTo(c);
+            Title(TaskName(k), "dk-taskcard-name").NoPick().AddTo(c);
             return c;
         }
 
-        public static VisualElement RoundCard(RoundType t, params string[] classes) { return Card(RoundArtId(t), RoundIcon(t), RoundName(t), classes); }
-        public static VisualElement TrickCard(TrickType t, params string[] classes) { return Card(TrickArtId(t), TrickIcon(t), TrickName(t), classes); }
+        public static VisualElement TrickCard(TrickType t, params string[] classes)
+        {
+            var c = Box("dk-card").Cls(classes).NoPick();
+            if (Art(c, TrickArtId(t))) { Title(TrickName(t), "dk-card-label").NoPick().AddTo(c); }
+            else
+            {
+                c.AddToClassList("dk-card-fallback");
+                Icon(TrickIcon(t), "dk-card-fallback-icon").AddTo(c);
+                Title(TrickName(t), "dk-card-fallback-name").NoPick().AddTo(c);
+            }
+            return c;
+        }
 
         /// <summary>A plain clickable tile (no default button skin): pickers, choice cards, list rows.</summary>
         public static Button Tile(Action onClick, params string[] classes)
@@ -399,7 +659,7 @@ namespace BirimizKovulacak.Game
                 int id = p.Id;
                 var t = Tile(() => onPick(id), "dk-pick").AddTo(row);
                 Badge(id, size).AddTo(t);
-                Bold(p.Name, "dk-pick-name").NoPick().AddTo(t);
+                Bold(p.Name, "dk-pick-name").Plain().NoPick().AddTo(t);
                 if (!p.Connected) { t.AddToClassList("dk-pick-away"); Text(T("desk.away"), "dk-pick-away-tag").NoPick().AddTo(t); }
                 var check = Icon("check", "dk-pick-check").AddTo(t);
                 check.pickingMode = PickingMode.Ignore;
@@ -418,6 +678,35 @@ namespace BirimizKovulacak.Game
             };
         }
 
+        /// <summary>Compact colleague picker (rounded chips: small badge + name). Returns the selection updater.</summary>
+        public static Action<int> ChipPicker(VisualElement parent, LineView v, Action<int> onPick, bool includeMe = false, int[] disabledIds = null, bool everyone = false)
+        {
+            var row = Box("dk-chips").AddTo(parent);
+            var chips = new List<(int id, VisualElement chip)>();
+            if (everyone)
+            {
+                var c = Tile(() => onPick(LineIds.None), "dk-chip", "dk-chip-all").AddTo(row);
+                Icon("mail_app", "dk-chip-icon").AddTo(c);
+                Bold(T("desk.mail.everyone"), "dk-chip-text").NoPick().AddTo(c);
+                chips.Add((LineIds.None, c));
+            }
+            for (int i = 0; i < v.Players.Count; i++)
+            {
+                var p = v.Players[i];
+                if (!includeMe && p.Id == v.Me) continue;
+                int id = p.Id;
+                var c = Tile(() => onPick(id), "dk-chip").AddTo(row);
+                Badge(id, "badge-xs").AddTo(c);
+                Bold(p.Name, "dk-chip-text").Plain().NoPick().AddTo(c);
+                if (disabledIds != null && Array.IndexOf(disabledIds, id) >= 0) c.SetEnabled(false);
+                chips.Add((id, c));
+            }
+            return sel =>
+            {
+                for (int i = 0; i < chips.Count; i++) chips[i].chip.EnableInClassList("dk-chip-on", chips[i].id == sel);
+            };
+        }
+
         /// <summary>Shake that first finishes a running slide-in (both use the "move" channel; a cut-short slide would leave the element transparent).</summary>
         public static void Shake(VisualElement e, float amplitude = 8f, float seconds = 0.35f)
         {
@@ -426,28 +715,6 @@ namespace BirimizKovulacak.Game
             e.style.opacity = StyleKeyword.Null;
             e.style.translate = StyleKeyword.Null;
             UiMotion.Shake(e, amplitude, seconds);
-        }
-
-        /// <summary>Compact colleague picker (rounded chips: small badge + name). Returns the selection updater.</summary>
-        public static Action<int> ChipPicker(VisualElement parent, LineView v, Action<int> onPick, bool includeMe = false, int[] disabledIds = null)
-        {
-            var row = Box("dk-chips").AddTo(parent);
-            var chips = new List<(int id, VisualElement chip)>();
-            for (int i = 0; i < v.Players.Count; i++)
-            {
-                var p = v.Players[i];
-                if (!includeMe && p.Id == v.Me) continue;
-                int id = p.Id;
-                var c = Tile(() => onPick(id), "dk-chip").AddTo(row);
-                Badge(id, "badge-xs").AddTo(c);
-                Bold(p.Name, "dk-chip-text").NoPick().AddTo(c);
-                if (disabledIds != null && Array.IndexOf(disabledIds, id) >= 0) c.SetEnabled(false);
-                chips.Add((id, c));
-            }
-            return sel =>
-            {
-                for (int i = 0; i < chips.Count; i++) chips[i].chip.EnableInClassList("dk-chip-on", chips[i].id == sel);
-            };
         }
 
         /// <summary>Section heading: stamp-style band label plus an optional hint line.</summary>
@@ -459,42 +726,14 @@ namespace BirimizKovulacak.Game
             return h;
         }
 
-        /// <summary>Office wall-clock time ("14:11") of a host time — the meeting UI's mapping, so times agree everywhere.</summary>
-        public static string OfficeClock(double hostTime)
-        {
-            var v = View;
-            if (v == null || !LineClient.IsOfficePhase(v.Phase)) return MeetingText.OfficeClock(hostTime, v);
-            // MeetingText.DossierStart() is only exact from the dossier on; in office phases it returns the current phase
-            // start. Project today's dossier start forward (same durations as MeetingText's day length) and shift the
-            // time so the shared mapping sees the same distance to the meeting.
-            var d = Config.Durations;
-            double round = d.RoundIntro + d.RoundPlay + d.RoundReveal;
-            int left = Config.RoundsPerDay - Math.Max(0, v.RoundIndex) - 1;
-            double after;
-            switch (v.Phase)
-            {
-                case LinePhase.Morning: after = Config.RoundsPerDay * round; break;
-                case LinePhase.RoundIntro: after = d.RoundPlay + d.RoundReveal + left * round; break;
-                case LinePhase.RoundPlay: after = d.RoundReveal + left * round; break;
-                default: after = left * round; break;
-            }
-            double dossier = v.PhaseEndTime + Math.Max(0, after);
-            return MeetingText.OfficeClock(hostTime - dossier + v.PhaseStartTime, v);
-        }
-
-        /// <summary>"az önce" / "3 dk önce" relative host time.</summary>
-        public static string Ago(double t)
-        {
-            int s = (int)(Now - t);
-            if (s < 60) return T("desk.time.now");
-            return F("desk.time.min_ago", s / 60);
-        }
-
-        /// <summary>Plays a sound if the kit has it (new v3 ids fall back to an existing clip).</summary>
+        /// <summary>Plays a sound if the kit has it (new ids fall back to an existing clip).</summary>
         public static void Play(string id, string fallback = null, float volume = 1f)
         {
             if (Sfx.Has(id)) Sfx.Play(id, volume);
             else if (fallback != null) Sfx.Play(fallback, volume);
         }
+
+        /// <summary>The colleague a message thread is "with" (the other side), from my point of view.</summary>
+        public static int ThreadPartner(LineMessage m, int me) { return m.From == me ? m.To : m.From; }
     }
 }

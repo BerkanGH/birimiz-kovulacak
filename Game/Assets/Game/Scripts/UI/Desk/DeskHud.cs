@@ -6,13 +6,15 @@ using static BirimizKovulacak.Game.UiKit;
 namespace BirimizKovulacak.Game
 {
     /// <summary>
-    /// Office HUD-lite: a tear-off desk calendar + desk clock (top left), the call strip (top centre: dialing, in call,
-    /// dead line, wiretap), the hover hint under the crosshair and a small key strip (bottom right).
+    /// Office HUD (v4): a tear-off desk calendar + desk clock and the company status panel (top left), the call strip
+    /// (top centre: dialing, in call, dead line, wiretap) with the incoming remedial request, the hover hint under the
+    /// crosshair and a small key strip (bottom right).
     /// </summary>
     public sealed class DeskHud
     {
         readonly DeskUi _ui;
-        readonly VisualElement _block, _clockBox, _keys, _hover, _call, _tap;
+        readonly VisualElement _block, _clockBox, _keys, _hover, _call, _tap, _remedial, _left;
+        internal readonly DeskStatus Status;
         readonly Label _calBand, _calDay, _calSub, _clock, _clockSub, _hoverText, _hoverSub;
         readonly Label _keyPcText;
         /// <summary>Coach-arrow anchors.</summary>
@@ -29,7 +31,8 @@ namespace BirimizKovulacak.Game
         {
             _ui = ui;
             // desk block: calendar + clock
-            _block = Box("dk-deskblock").NoPick().AddTo(layer);
+            _left = Box("dk-hud-left").NoPick().AddTo(layer);
+            _block = Box("dk-deskblock").NoPick().AddTo(_left);
             var cal = Box("dk-cal").NoPick().AddTo(_block);
             var rings = Box("dk-cal-rings").NoPick().AddTo(cal);
             Box("dk-cal-ring").NoPick().AddTo(rings);
@@ -41,12 +44,17 @@ namespace BirimizKovulacak.Game
             _clock = MemoBold("", "dk-clock-digits").NoPick().AddTo(_clockBox);
             _clockSub = Bold("", "dk-clock-sub").NoPick().AddTo(_clockBox);
 
+            Status = new DeskStatus(_left, false);
+            _left.pickingMode = PickingMode.Ignore;
+
             // call strip
             var top = Box("dk-topwrap").NoPick().AddTo(topLayer);
             _call = Box("dk-callstrip").AddTo(top);
             _call.Show(false);
             _tap = Box("dk-tapstrip").NoPick().AddTo(top);
             _tap.Show(false);
+            _remedial = Box("dk-remstrip").AddTo(top);
+            _remedial.Show(false);
 
             // hover hint
             var mid = Box("dk-midwrap").NoPick().AddTo(layer);
@@ -71,6 +79,7 @@ namespace BirimizKovulacak.Game
         }
 
         public void Shake() { UiMotion.Shake(_block, 12f, 0.5f); }
+        public void OnProductivity() { Status.Flash(); }
 
         public void OnConnected()
         {
@@ -80,7 +89,8 @@ namespace BirimizKovulacak.Game
         public void Tick(LineView v, bool changed)
         {
             bool pc = _ui.ComputerOpen, phone = _ui.PhoneOpen;
-            _block.Show(!pc);
+            _left.Show(!pc);
+            Status.Update(v);
             _keys.Show(!pc && !phone);
 
             if (changed)
@@ -107,19 +117,22 @@ namespace BirimizKovulacak.Game
             {
                 _lastSec = sec;
                 _clock.SetText(ClockInt(sec));
-                if (!v.Features.IsLastDay) _calSub.SetText(Dk.OfficeClock(Dk.Now));
+                if (!v.Features.IsLastDay) _calSub.SetText(v.Phase == LinePhase.Break && v.Features.CarriedSeconds > 0.5f ? Dk.F("desk.cal.carried", Mathf.RoundToInt(v.Features.CarriedSeconds)) : "");
                 bool urgent = sec <= 10 && v.Phase == LinePhase.RoundPlay;
                 if (urgent != _urgent) { _urgent = urgent; _clockBox.EnableInClassList("dk-clock-urgent", urgent); }
                 if (urgent && sec > 0) UiMotion.Pulse(_clock, 0.12f, 0.3f);
             }
 
             TickCall(v, changed);
+            TickRemedial(v);
             TickHover(pc || phone || _ui.Cards.Visible);
         }
 
         static int Sig(LineView v)
         {
             int h = (int)v.Phase;
+            h = h * 31 + (int)(v.Features.CarriedSeconds * 2);
+            h = h * 31 + (v.Task != null ? (int)v.Task.Kind : 0);
             h = h * 31 + v.Day;
             h = h * 31 + v.RoundIndex;
             h = h * 31 + v.DayCount;
@@ -130,8 +143,8 @@ namespace BirimizKovulacak.Game
 
         static string ClockSub(LineView v)
         {
-            if (Dk.InRound(v.Phase) && v.RoundIndex >= 0 && v.RoundIndex < v.TodayRounds.Count)
-                return Dk.F("desk.clock.round", v.RoundIndex + 1, v.TodayRounds.Count, Dk.RoundName(v.TodayRounds[v.RoundIndex]));
+            if (Dk.InRound(v.Phase) && v.RoundIndex >= 0 && v.RoundIndex < v.TodayTasks.Count)
+                return Dk.F("desk.clock.round", v.RoundIndex + 1, v.TodayTasks.Count, Dk.TaskName(v.TodayTasks[v.RoundIndex]));
             return Dk.PhaseName(v.Phase);
         }
 
@@ -221,9 +234,48 @@ namespace BirimizKovulacak.Game
             _tap.Show(tapping);
             if (!tapping) return;
             Dk.Icon("wiretap", "dk-tap-icon").AddTo(_tap);
-            Bold(Dk.F("desk.call.tapping", Dk.Name(v.Mine.WiretapTarget)), "dk-tap-text").AddTo(_tap);
+            Bold(Dk.F("desk.call.tapping", Dk.Name(v.Mine.WiretapTarget)), "dk-tap-text").Plain().AddTo(_tap);
             _tapTimer = MemoBold("", "dk-tap-timer").AddTo(_tap);
             if (!was) UiMotion.SlideIn(_tap, new Vector2(0, -30), 0.3f);
+        }
+
+        // ------------------------------------------------------------------ incoming remedial request
+
+        int _remSig;
+        Label _remTimer;
+        int _remLastSec = -1;
+
+        void TickRemedial(LineView v)
+        {
+            var r = v.Mine.IncomingRemedial;
+            int sig = r == null ? 0 : (r.Requester + 2) * 1000 + r.TaskNumber + 1;
+            if (sig != _remSig)
+            {
+                bool was = _remSig != 0;
+                _remSig = sig;
+                _remedial.Clear();
+                _remTimer = null;
+                _remLastSec = -1;
+                _remedial.Show(r != null);
+                if (r != null)
+                {
+                    Dk.Icon("remedial", "dk-callstrip-icon").AddTo(_remedial);
+                    Dk.Badge(r.Requester, "badge-s").AddTo(_remedial);
+                    var col = Box("dk-callstrip-col").NoPick().AddTo(_remedial);
+                    Bold(Dk.F("desk.remedial.incoming", Dk.Name(r.Requester)), "dk-callstrip-name").Plain().AddTo(col);
+                    Text(Dk.F("desk.remedial.incoming_sub", Dk.TaskName(r.Task)), "dk-callstrip-sub").Plain().AddTo(col);
+                    _remTimer = MemoBold("", "dk-callstrip-timer", "dk-callstrip-timer-soft").AddTo(_remedial);
+                    Btn(Dk.T("desk.remedial.decline"), () => Dk.Send(LineVerb.RespondRemedial, r.Requester, 0), "btn-ghost", "btn-small", "dk-callstrip-btn").AddTo(_remedial);
+                    Btn(Dk.T("desk.remedial.accept"), () => Dk.Send(LineVerb.RespondRemedial, r.Requester, 1), "btn-primary", "btn-small", "dk-callstrip-btn").AddTo(_remedial);
+                    if (!was) UiMotion.SlideIn(_remedial, new Vector2(0, -50), 0.3f, 0f, UiMotion.Ease.OutBack);
+                }
+            }
+            if (r != null && _remTimer != null)
+            {
+                int s = Mathf.CeilToInt((float)(r.ExpiresAt - Dk.Now));
+                if (s < 0) s = 0;
+                if (s != _remLastSec) { _remLastSec = s; _remTimer.SetText(ClockInt(s)); }
+            }
         }
 
         static string _ptt = "V";

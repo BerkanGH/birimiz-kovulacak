@@ -8,43 +8,57 @@ using static BirimizKovulacak.Game.UiKit;
 
 namespace BirimizKovulacak.Game
 {
-    public enum DeskApp { Task = 0, Mail = 1, Record = 2, Trick = 3, Agenda = 4 }
+    public enum DeskApp { Task = 0, Messages = 1, Mail = 2, Bank = 3, Evidence = 4, Remedial = 5, Trick = 6, Complaint = 7 }
 
-    /// <summary>Client-side memory of the desk UI for one week (survives meetings and language switches).</summary>
+    /// <summary>Why a call did not connect (phone strip: call back / send a text).</summary>
+    public enum MissKind { None = 0, Missed = 1, Busy = 2, NoAnswer = 3 }
+
+    /// <summary>Client-side memory of the desk UI for one match (survives meetings and language switches).</summary>
     public sealed class DeskState
     {
         public int WeekId = -1;
-        public readonly HashSet<int> ReadMail = new HashSet<int>();
+        public readonly HashSet<int> ReadIds = new HashSet<int>();
         public int MorningRangDay = -1, MorningAnsweredDay = -1, MorningClosedDay = -1;
-        public bool TrickUnlockSeen, LineUnlockSeen;
+        public bool TrickUnlockSeen;
         public DeskApp LastApp = DeskApp.Task;
-        // onboarding (first day of the session)
-        public bool ObOpenedComputer, ObReadCard, ObCalled, ObSubmitted;
-        public int LastRoundKey = -1;
+        // onboarding (first block of the session)
+        public bool ObOpenedComputer, ObCalled, ObSubmitted, ObSawCompany, ObBreakSeen;
         public int IntroSeenKey = -1;
         // survives UIRoot.Rebuild (language switch): what was open in which phase
         public int PhaseKey = int.MinValue;
         public bool ComputerOpen, PhoneOpen;
+        // tutorials: the task number the tutorial auto-opened for, and which tasks were seen this session
+        public int TutAutoNumber = -1;
+        public readonly HashSet<int> TutSeen = new HashSet<int>();
+        // last call that did not connect
+        public int MissWho = LineIds.None;
+        public MissKind Miss;
+        public double MissAt;
+        // selected message thread / mail selection
+        public int MsgThread = LineIds.None;
 
         public void Reset(int weekId)
         {
             WeekId = weekId;
-            ReadMail.Clear();
+            ReadIds.Clear();
             MorningRangDay = MorningAnsweredDay = MorningClosedDay = -1;
-            TrickUnlockSeen = LineUnlockSeen = false;
+            TrickUnlockSeen = false;
             LastApp = DeskApp.Task;
-            ObOpenedComputer = ObReadCard = ObCalled = ObSubmitted = false;
-            LastRoundKey = -1; IntroSeenKey = -1;
+            ObOpenedComputer = ObCalled = ObSubmitted = ObSawCompany = ObBreakSeen = false;
+            IntroSeenKey = -1;
             PhaseKey = int.MinValue; ComputerOpen = PhoneOpen = false;
+            TutAutoNumber = -1;
+            MissWho = LineIds.None; Miss = MissKind.None; MissAt = 0;
+            MsgThread = LineIds.None;
         }
     }
 
     /// <summary>
-    /// v3 office-phase UI (owner: desk UI track): computer apps, desk phone, morning call, round intro/play/reveal,
-    /// onboarding steps, office HUD-lite and paper-slip notifications. Created by <see cref="UIRoot"/>; visible during
-    /// Morning..RoundReveal. Layers bottom → top: HUD, computer, phone, cards, coach (onboarding), call popup, slips.
-    /// Hotkeys: E computer, Tab phone, Y answer, N decline/hang up, Enter primary card action, F1–F5 apps,
-    /// Esc / right click back. Rebuilds only on view/sub-state changes; per-frame work is label/width updates.
+    /// v4 office-phase UI (owner: desk UI track): computer apps (task, messages, email, bank, evidence, remedial, dirty
+    /// trick, complaint), desk phone, morning call, task intro / reveal / break cards, tutorials, onboarding and HUD.
+    /// Created by <see cref="UIRoot"/>; visible during Morning..RoundReveal and Break. Layers bottom to top: HUD, computer,
+    /// phone, cards, coach (onboarding), call popup, slips. Hotkeys: E computer, Tab phone, Y answer, N decline/hang up,
+    /// Enter primary card action, F1-F8 apps, Esc / right click back. Hotkeys are ignored while typing in a text field.
     /// </summary>
     public sealed class DeskUi : UiKit.Screen
     {
@@ -52,7 +66,7 @@ namespace BirimizKovulacak.Game
         /// <summary>When true the desk UI also tells the world which state the phone and monitor props show.</summary>
         public static bool DrivesWorldProps = true;
 
-        /// <summary>One per process: UIRoot rebuilds the screens on a language switch, the week's desk memory stays.</summary>
+        /// <summary>One per process: UIRoot rebuilds the screens on a language switch, the match's desk memory stays.</summary>
         static readonly DeskState _state = new DeskState();
         internal DeskState State => _state;
         internal DeskHud Hud;
@@ -70,7 +84,6 @@ namespace BirimizKovulacak.Game
         VisualElement _pauseRoot, _settingsRoot, _howtoRoot;
         bool _overlayLookedUp;
         CallStatus _activeStatus;
-        int _activeOther = LineIds.None;
         PhoneLineState _worldPhone = (PhoneLineState)(-1);
         MonitorState _worldMonitor = (MonitorState)(-1);
 
@@ -81,7 +94,7 @@ namespace BirimizKovulacak.Game
             var sheet = Resources.Load<StyleSheet>("ui/styles/desk");
             if (sheet != null) Root.styleSheets.Add(sheet);
             _esc = new DeskEsc(new VisualElement(), Back);
-            if (Dk.View == null) _state.Reset(-1); // built (or rebuilt) outside a week: nothing to carry over
+            if (Dk.View == null) _state.Reset(-1); // built (or rebuilt) outside a match: nothing to carry over
             Build();
             Rooms.DeskClicked += OnDeskClicked;
             // UIRoot.Rebuild() drops this screen and builds a new one: let go of every static hook.
@@ -92,7 +105,7 @@ namespace BirimizKovulacak.Game
         {
             Rooms.DeskClicked -= OnDeskClicked;
             var c = LineClient.I;
-            if (c != null && _subscribed) { c.EventReceived -= OnEvent; c.ResultReceived -= OnResult; }
+            if (c != null && _subscribed) { c.EventReceived -= OnEvent; c.ResultReceived -= OnResult; c.MessagesReceived -= OnMessages; }
             _subscribed = false;
             _esc.SetOpen(false);
         }
@@ -163,6 +176,21 @@ namespace BirimizKovulacak.Game
             if (!Computer.IsOpen) Rooms.Presenter?.SetPovMode(PovMode.Office);
         }
 
+        /// <summary>Opens the messages app on a colleague's thread with the input focused ("send a text instead").</summary>
+        public void OpenMessages(int with)
+        {
+            State.MsgThread = with;
+            OpenComputer(DeskApp.Messages);
+            Computer.Messages.Select(with, true);
+        }
+
+        /// <summary>Opens the mail app on a reply to a mail (or its thread).</summary>
+        public void OpenMail(int mailId)
+        {
+            OpenComputer(DeskApp.Mail);
+            Computer.Mail.Select(mailId);
+        }
+
         /// <summary>Esc / right click: closes the innermost thing.</summary>
         public void Back()
         {
@@ -182,6 +210,7 @@ namespace BirimizKovulacak.Game
             if (Dk.PhoneDead(v)) { Notes.Post(SlipKind.Bad, "phone_dead", Dk.T("desk.note.phone_dead"), null); Dk.Play("deny"); return; }
             if (v.Mine.Phone.Status != CallStatus.Idle) { Notes.Post(SlipKind.Bad, "call", Dk.T("desk.note.already_in_call"), null); Dk.Play("deny"); return; }
             Dk.Send(LineVerb.Call, target);
+            State.ObCalled = true;
             Dk.Play("tip_dial", "click");
         }
 
@@ -201,7 +230,7 @@ namespace BirimizKovulacak.Game
         {
             bool keep = Dk.View != null && LineClient.IsOfficePhase(Dk.View.Phase);
             bool pc = State.ComputerOpen, ph = State.PhoneOpen;
-            // Meetings (or the end of the week) take the screen: close everything without moving the camera.
+            // Meetings (or the end of the match) take the screen: close everything without moving the camera.
             Computer.Close();
             Phone.Close(true);
             Cards.HideAll();
@@ -251,11 +280,12 @@ namespace BirimizKovulacak.Game
         {
             bool newPhase = old == null || old.Phase != v.Phase || old.Day != v.Day || old.RoundIndex != v.RoundIndex || old.WeekId != v.WeekId;
             var ph = v.Mine.Phone;
-            if (ph.Status != CallStatus.Idle) { _activeStatus = ph.Status; _activeOther = ph.Other; }
+            if (ph.Status != CallStatus.Idle) _activeStatus = ph.Status;
             if (ph.Status == CallStatus.Dialing) Sfx.LoopAt("desk_ringback", "ringback", Vector3.zero, 0.5f, false);
             else Sfx.StopLoop("desk_ringback");
-            if (v.Round != null && v.Round.Submitted && v.Features.OnboardingDay) State.ObSubmitted = true;
+            if (v.Task != null && v.Task.Submitted && v.Features.OnboardingDay) State.ObSubmitted = true;
             if (ph.Status == CallStatus.Connected || ph.Status == CallStatus.Dialing) State.ObCalled = true;
+            if (v.Phase == LinePhase.RoundReveal || v.Company.TasksResolved > 0 && v.Features.OnboardingDay) State.ObSawCompany = true;
             if (!newPhase) return;
             int key = PhaseKey(v);
             if (old == null && key == State.PhaseKey)
@@ -264,6 +294,7 @@ namespace BirimizKovulacak.Game
                 if (State.ComputerOpen) OpenComputer(State.LastApp);
                 else if (State.PhoneOpen) OpenPhone();
                 if (v.Phase == LinePhase.RoundReveal) Cards.ShowReveal(v);
+                else if (v.Phase == LinePhase.Break) Cards.ShowBreak(v);
                 else if (v.Phase == LinePhase.Morning && State.MorningClosedDay != v.Day) Cards.MorningRing(v);
                 return;
             }
@@ -283,7 +314,14 @@ namespace BirimizKovulacak.Game
                     Cards.MorningRing(v);
                     break;
                 case LinePhase.RoundIntro:
-                    Cards.ShowIntro(v);
+                    Cards.HideAll();
+                    if (v.Features.FirstTimeTask && v.Task != null)
+                    {
+                        // A task the player has never seen: the 5-step tutorial opens next to the task (never pauses anything).
+                        if (!Phone.IsOpen) OpenComputer(DeskApp.Task); else Computer.SetApp(DeskApp.Task);
+                        Computer.Task.AutoTutorial(v);
+                    }
+                    else Cards.ShowIntro(v);
                     break;
                 case LinePhase.RoundPlay:
                     Cards.HideIntro();
@@ -293,6 +331,9 @@ namespace BirimizKovulacak.Game
                 case LinePhase.RoundReveal:
                     Cards.ShowReveal(v);
                     break;
+                case LinePhase.Break:
+                    Cards.ShowBreak(v);
+                    break;
             }
         }
 
@@ -300,6 +341,7 @@ namespace BirimizKovulacak.Game
 
         void HandleInput(LineView v)
         {
+            if (Dk.Typing(Root)) return; // typing in a text field: no hotkeys
             var ph = v.Mine.Phone;
             if (Pressed(GameInput.AnswerCall))
             {
@@ -322,10 +364,13 @@ namespace BirimizKovulacak.Game
             if (kb != null && Computer.IsOpen)
             {
                 if (kb.f1Key.wasPressedThisFrame) OpenComputer(DeskApp.Task);
-                else if (kb.f2Key.wasPressedThisFrame) OpenComputer(DeskApp.Mail);
-                else if (kb.f3Key.wasPressedThisFrame) OpenComputer(DeskApp.Record);
-                else if (kb.f4Key.wasPressedThisFrame) OpenComputer(DeskApp.Trick);
-                else if (kb.f5Key.wasPressedThisFrame) OpenComputer(DeskApp.Agenda);
+                else if (kb.f2Key.wasPressedThisFrame) OpenComputer(DeskApp.Messages);
+                else if (kb.f3Key.wasPressedThisFrame) OpenComputer(DeskApp.Mail);
+                else if (kb.f4Key.wasPressedThisFrame) OpenComputer(DeskApp.Bank);
+                else if (kb.f5Key.wasPressedThisFrame) OpenComputer(DeskApp.Evidence);
+                else if (kb.f6Key.wasPressedThisFrame) OpenComputer(DeskApp.Remedial);
+                else if (kb.f7Key.wasPressedThisFrame) OpenComputer(DeskApp.Trick);
+                else if (kb.f8Key.wasPressedThisFrame) OpenComputer(DeskApp.Complaint);
             }
             if (kb != null)
             {
@@ -394,6 +439,13 @@ namespace BirimizKovulacak.Game
             _subscribed = true;
             c.EventReceived += OnEvent;
             c.ResultReceived += OnResult;
+            c.MessagesReceived += OnMessages;
+        }
+
+        void Miss(MissKind kind, int who)
+        {
+            State.Miss = kind; State.MissWho = who; State.MissAt = Dk.Now;
+            Phone.OnMiss();
         }
 
         void OnEvent(LineEvent e)
@@ -409,6 +461,7 @@ namespace BirimizKovulacak.Game
                     Dk.Play("call_connect");
                     Phone.OnConnected();
                     Hud.OnConnected();
+                    State.Miss = MissKind.None;
                     break;
                 case LineEventType.CallEnded:
                 {
@@ -416,13 +469,15 @@ namespace BirimizKovulacak.Game
                     var reason = (CallEndReason)e.A;
                     bool iCalled = _activeStatus == CallStatus.Dialing || (_activeStatus == CallStatus.Connected && WasCaller(v, e.Actor));
                     string who = Dk.Name(e.Actor);
+                    int other = e.Actor == v.Me ? e.Target : e.Actor;
                     switch (reason)
                     {
                         case CallEndReason.Missed:
-                            Notes.Post(SlipKind.Plain, "call", iCalled ? Dk.F("desk.note.no_answer", who) : Dk.F("desk.note.missed", who), null, e.Actor);
+                            Notes.Post(SlipKind.Plain, "call", iCalled ? Dk.F("desk.note.no_answer", who) : Dk.F("desk.note.missed", who), Dk.T("desk.note.text_instead"), e.Actor, () => OpenMessages(other));
+                            Miss(iCalled ? MissKind.NoAnswer : MissKind.Missed, other);
                             break;
                         case CallEndReason.Declined:
-                            if (iCalled) Notes.Post(SlipKind.Plain, "call", Dk.F("desk.note.declined", who), null, e.Actor);
+                            if (iCalled) { Notes.Post(SlipKind.Plain, "call", Dk.F("desk.note.declined", who), Dk.T("desk.note.text_instead"), e.Actor, () => OpenMessages(other)); Miss(MissKind.NoAnswer, other); }
                             break;
                         case CallEndReason.LineCut:
                             Notes.Post(SlipKind.Bad, "phone_dead", Dk.T("desk.note.line_cut"), Dk.F("desk.note.line_cut_sub", who));
@@ -437,28 +492,21 @@ namespace BirimizKovulacak.Game
                 }
                 case LineEventType.CallBusy:
                     Dk.Play("deny");
-                    Notes.Post(SlipKind.Plain, "busy", Dk.F("desk.note.busy", Dk.Name(e.Target)), Dk.T("desk.note.busy_sub"), e.Target);
+                    Notes.Post(SlipKind.Plain, "busy", Dk.F("desk.note.busy", Dk.Name(e.Target)), Dk.T("desk.note.busy_sub"), e.Target, () => OpenMessages(e.Target));
+                    Miss(MissKind.Busy, e.Target);
                     Phone.OnBusy(e.Target);
                     break;
-                case LineEventType.MailReceived:
-                {
-                    var m = FindMail(v, e.A);
-                    Dk.Play("email_ding", "toast");
-                    if (m != null) Notes.Post(m.Kind == MailKind.Manager ? SlipKind.Manager : SlipKind.Plain, "mail_app", Dk.MailSubject(m), Dk.F("desk.note.mail_from", Dk.Name(m.From)), m.From, () => OpenMail(m.Id));
-                    else Notes.Post(SlipKind.Plain, "mail_app", Dk.T("desk.note.mail"), null, LineIds.None, () => OpenComputer(DeskApp.Mail));
-                    break;
-                }
-                case LineEventType.RoundSubmitted:
-                    Computer.OnSubmitted(e.Actor);
-                    break;
-                case LineEventType.AttemptMade:
-                    if (e.Actor != v.Me)
-                        Notes.Post(SlipKind.Plain, "keypad", Dk.F("desk.note.attempt", Dk.Name(e.Actor), e.A, v.Round != null ? v.Round.CodeLength : 0), null, e.Actor);
+                case LineEventType.MissedCall:
                     Dk.Play("toast");
+                    Notes.Post(SlipKind.Plain, "missed_call", Dk.F("desk.note.missed", Dk.Name(e.Actor)), Dk.T("desk.note.missed_busy"), e.Actor, () => OpenMessages(e.Actor));
+                    Miss(MissKind.Missed, e.Actor);
+                    Phone.OnEnded();
                     break;
-                case LineEventType.PasswordCracked:
-                    Dk.Play("stamp");
-                    Notes.Post(SlipKind.Good, "keypad", Dk.T("desk.note.cracked"), Dk.F("desk.note.cracked_by", Dk.Name(e.Actor)), e.Actor);
+                case LineEventType.TaskSubmitted:
+                    Computer.Task.OnSubmitted(e.Actor);
+                    break;
+                case LineEventType.ItemGiven:
+                    if (e.Target == v.Me) { Dk.Play("toast"); Notes.Post(SlipKind.Good, "task_swap", Dk.F("desk.note.item_got", Dk.Name(e.Actor)), e.A >= 0 ? Dk.ItemName(e.A) : null, e.Actor); }
                     break;
                 case LineEventType.TrickHit:
                 {
@@ -477,14 +525,10 @@ namespace BirimizKovulacak.Game
                 {
                     var t = (TrickType)e.A;
                     Dk.Play("sabotage");
-                    Notes.Post(SlipKind.Dark, Dk.TrickIcon(t), Dk.F("desk.note.trick_used", Dk.TrickName(t)),
-                        e.Target >= 0 ? Dk.F("desk.note.trick_used_on", Dk.Name(e.Target)) : Dk.T("desk.note.trick_used_sub"));
+                    Notes.Post(SlipKind.Dark, Dk.TrickIcon(t), Dk.F("desk.note.trick_used", Dk.TrickName(t)), Dk.T("desk.note.trick_used_sub"));
                     Computer.Refresh();
                     break;
                 }
-                case LineEventType.TipFiled:
-                    Notes.Post(SlipKind.Dark, "manager_line", Dk.T("desk.note.tip_filed"), Dk.F("desk.note.tip_filed_sub", Dk.Name(e.Target)));
-                    break;
                 case LineEventType.FavouriteNamed:
                     Notes.Post(SlipKind.Sticky, "favourite", Dk.F("desk.note.favourite", Dk.Name(e.Target)), Dk.T("desk.note.favourite_sub"), e.Target);
                     break;
@@ -492,15 +536,59 @@ namespace BirimizKovulacak.Game
                     if (e.Target != v.Me)
                         Notes.Post(SlipKind.Plain, e.A == 1 ? "check" : "cross", Dk.F(e.A == 1 ? "desk.note.back" : "desk.note.dropped", Dk.Name(e.Target)), null, e.Target);
                     break;
-                case LineEventType.MissedCall:
-                    Dk.Play("toast");
-                    Notes.Post(SlipKind.Plain, "missed_call", Dk.F("desk.note.missed", Dk.Name(e.Actor)), Dk.T("desk.note.missed_busy"), e.Actor);
-                    Phone.OnEnded();
-                    break;
                 case LineEventType.Wiretap:
                     Notes.Post(SlipKind.Dark, "wiretap", Dk.F(e.A == 1 ? "desk.note.tap_on" : "desk.note.tap_off", Dk.Name(e.Target)), null, e.Target);
                     break;
+                case LineEventType.TransferMade:
+                    if (e.Target == v.Me) { Dk.Play("coin", "toast"); Notes.Post(SlipKind.Good, "bank_app", Dk.F("desk.note.transfer_in", Dk.Name(e.Actor), e.A), null, e.Actor, () => OpenComputer(DeskApp.Bank)); }
+                    break;
+                case LineEventType.RemedialRequested:
+                    if (e.Target == v.Me) { Dk.Play("toast"); Notes.Post(SlipKind.Sticky, "remedial", Dk.F("desk.note.remedial_in", Dk.Name(e.Actor)), Dk.T("desk.note.remedial_in_sub"), e.Actor, () => OpenComputer(DeskApp.Remedial)); }
+                    break;
+                case LineEventType.RemedialResolved:
+                    if (e.Actor == v.Me || e.Target == v.Me)
+                        Notes.Post(e.A == 1 ? SlipKind.Good : SlipKind.Plain, "remedial", Dk.T(e.A == 1 ? "desk.note.remedial_ok" : "desk.note.remedial_no"), null, e.Actor == v.Me ? e.Target : e.Actor);
+                    break;
+                case LineEventType.ProductivityChanged:
+                    Hud.OnProductivity();
+                    break;
+                case LineEventType.RecordGranted:
+                    Notes.Post(SlipKind.Plain, "record_app", Dk.T("desk.note.record"), Dk.T("desk.note.record_sub"), LineIds.None, () => OpenComputer(DeskApp.Evidence));
+                    break;
+                case LineEventType.CompanyClosed:
+                    Notes.Post(SlipKind.Bad, "warning", Dk.T("desk.note.closed"), Dk.T("desk.note.closed_sub"));
+                    break;
             }
+        }
+
+        void OnMessages(IReadOnlyList<LineMessage> batch)
+        {
+            var v = Dk.View;
+            if (v == null || !Visible) return;
+            int me = v.Me;
+            for (int i = 0; i < batch.Count; i++)
+            {
+                var m = batch[i];
+                if (m.From == me || m.Kind == MessageKind.MeetingChat || m.Kind == MessageKind.Complaint) continue;
+                Computer.Refresh();
+                bool seen = Computer.IsOpen && ((m.Kind == MessageKind.Text && Computer.App == DeskApp.Messages && State.MsgThread == m.From) || (m.Kind == MessageKind.Email && Computer.App == DeskApp.Mail));
+                if (seen) continue;
+                Dk.Play("email_ding", "toast");
+                string who = Dk.Name(m.From);
+                if (m.Kind == MessageKind.Text)
+                    Notes.Post(SlipKind.Plain, "message_app", Dk.F("desk.note.text_from", who), Preview(m.Text), m.From, () => OpenMessages(m.From));
+                else if (m.Kind == MessageKind.Email)
+                    Notes.Post(SlipKind.Plain, "mail_app", Dk.F("desk.note.mail_from", who), Preview(m.Text), m.From, () => OpenMail(m.Id));
+                else
+                    Notes.Post(m.Kind == MessageKind.Manager ? SlipKind.Manager : SlipKind.Plain, "mail_app", Dk.T("desk.note.mail"), Preview(m.Text), m.From, () => OpenMail(m.Id));
+            }
+        }
+
+        static string Preview(string s)
+        {
+            if (string.IsNullOrEmpty(s)) return null;
+            s = s.Replace('\n', ' ');
+            return s.Length > 70 ? s.Substring(0, 67) + "..." : s;
         }
 
         static bool WasCaller(LineView v, int other)
@@ -512,24 +600,26 @@ namespace BirimizKovulacak.Game
 
         void OnResult(LineActionResult r, LineAction req)
         {
-            if (r.Accepted || !Visible || Dk.View == null) return;
-            if (r.Failure == LineFailure.Busy && req != null && req.Verb == LineVerb.Call) return; // CallBusy event says it
+            if (!Visible || Dk.View == null) return;
             if (r.Failure == LineFailure.Duplicate || r.Failure == LineFailure.StaleWeek) return;
+            if (req != null && req.Verb == LineVerb.Call && r.Failure == LineFailure.Busy) return; // CallBusy event says it
+            bool handled = Computer.OnResult(r, req);
+            if (r.Accepted) { if (!handled) AcceptedSlip(req); return; }
             Dk.Play("deny");
-            Notes.Post(SlipKind.Bad, "cross", Dk.T("desk.fail." + r.Failure), null);
+            if (!handled || !Computer.IsOpen) Notes.Post(SlipKind.Bad, "cross", Dk.T("desk.fail." + r.Failure), null);
         }
 
-        static LineMailView FindMail(LineView v, int id)
+        void AcceptedSlip(LineAction req)
         {
-            var inbox = v.Mine.Inbox;
-            for (int i = inbox.Count - 1; i >= 0; i--) if (inbox[i].Id == id) return inbox[i];
-            return null;
-        }
-
-        public void OpenMail(int mailId)
-        {
-            OpenComputer(DeskApp.Mail);
-            Computer.Mail.Select(mailId);
+            if (req == null) return;
+            switch (req.Verb)
+            {
+                case LineVerb.Transfer: Notes.Post(SlipKind.Good, "bank_app", Dk.F("desk.note.transfer_out", Dk.Name(req.Target), req.A), null, req.Target); break;
+                case LineVerb.BuyEvidence: Notes.Post(SlipKind.Good, "record_app", Dk.T("desk.note.bought"), null); break;
+                case LineVerb.FileComplaint: Notes.Post(SlipKind.Dark, "complaint", Dk.T("desk.note.complaint_filed"), Dk.T("desk.note.complaint_filed_sub")); break;
+                case LineVerb.StartRemedial: Notes.Post(SlipKind.Plain, "remedial", Dk.F("desk.note.remedial_out", Dk.Name(req.Target)), null, req.Target); break;
+                case LineVerb.UseTrick: break; // TrickUsed event
+            }
         }
 
         // ------------------------------------------------------------------ world props
@@ -550,7 +640,7 @@ namespace BirimizKovulacak.Game
             if (ps != _worldPhone) { _worldPhone = ps; rooms.SetPhoneState(ps); }
             MonitorState ms;
             if (Dk.ComputerBlocked(v)) ms = v.Mine.ComputerBlockedBy == TrickType.KahveDok ? MonitorState.Coffee : MonitorState.Offline;
-            else if (!Computer.IsOpen && (v.Phase == LinePhase.RoundPlay && v.Round != null && !v.Round.Submitted || Computer.UnreadCount(v) > 0)) ms = MonitorState.Alert;
+            else if (!Computer.IsOpen && (v.Phase == LinePhase.RoundPlay && v.Task != null && !v.Task.Submitted || Computer.UnreadCount(v) > 0)) ms = MonitorState.Alert;
             else ms = MonitorState.Normal;
             if (ms != _worldMonitor) { _worldMonitor = ms; rooms.SetMonitorState(ms); }
         }
