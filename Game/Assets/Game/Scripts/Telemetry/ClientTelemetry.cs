@@ -222,7 +222,7 @@ namespace BirimizKovulacak.Game
             _t.Begin("message_thread_opened").Enum("channel", c).Int("unread", Math.Max(0, unread)).Emit();
         }
 
-        static readonly string[] Settings = { "music_volume", "sfx_volume", "voice_volume", "mic_gain", "language", "fullscreen", "quality", "sensitivity" };
+        static readonly string[] Settings = { "music_volume", "music_mute", "sfx_volume", "voice_volume", "mic_gain", "language", "fullscreen", "quality", "sensitivity" };
         static readonly string[] Values = { "off", "on", "low", "medium", "high", "tr", "en" };
 
         public void SettingChanged(string setting, string value)
@@ -252,7 +252,8 @@ namespace BirimizKovulacak.Game
             b.Emit();
         }
 
-        static readonly string[] Cues = { "menu", "office", "meeting", "final", "results", "tension" };
+        // MusicCuePlanner ids (Core/Audio) plus "none" for silence.
+        static readonly string[] Cues = { "menu_lobby", "office_work", "deadline", "meeting_intro", "meeting_discussion", "final_vote", "results_success", "results_collapse", "none" };
 
         public void MusicCueChanged(string cue, bool ducked)
         {

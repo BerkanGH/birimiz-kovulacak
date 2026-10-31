@@ -33,7 +33,7 @@ namespace BirimizKovulacak.Telemetry
             "match_started|H|P|H|LC|*i:humans,*i:bots,*e:length(short|full),*e:manager(@Manager),b:recordings_enabled,f:lobby_fill_seconds?,f:ready_seconds?|I|1/match|funnel|The engine was created.|hc:HostTelemetryCoordinator.MatchStarted|lobby_fill_seconds = lobby created to last seat joined; ready_seconds = all ready to start (omitted when not observed).",
             "match_start_failed|H|P|H|L|e:reason(lobby.need_players|lobby.need_ready|lobby.pool_too_small|engine_error)|I|rare|funnel|The match could not start.|hc:HostTelemetryCoordinator.MatchStartFailed|Unknown reason keys map to engine_error.",
             "match_abandoned|H|P|H|L|e:phase(@Phase),i:connected|I|rare|connection|Fewer than 2 players stayed connected; the engine abandoned the match.|obs:MatchEnded (reason abandoned)|",
-            "rematch_requested|C|P|S|L|f:seconds_after_results|P:UI call site TelemetryHooks.RematchRequested (results screen) missing|1/results|retention|The player pressed play again.|ct:ClientTelemetry.RematchRequested|",
+            "rematch_requested|C|P|S|L|f:seconds_after_results|I|1/results|retention|The player pressed play again.|ct:ClientTelemetry.RematchRequested via UI: Scripts/UI/Meeting/WeekResultsView.cs (Play again)|",
             "rematch_started|H|P|H|LC|id:previous_match_id(match),*i:returning_humans,*b:auto,*i:requests|I|1/rematch|retention|A new match began from the same lobby.|hc:HostTelemetryCoordinator.RematchStarted|Needs the HostLineController call site.",
 
             // ---- 5.2 progression
@@ -58,7 +58,7 @@ namespace BirimizKovulacak.Telemetry
 
             // ---- 5.4 information / choices
             "secret_info_presented|H|M|S|L|s:player,i:role,i:facts|I|<=6/task|information_asymmetry|Private facts were dealt to a player.|obs:OnPhaseChanged (RoundPlay) via BuildView|",
-            "choice_ui_opened|C|P|S|L|e:task_id(@Task),f:seconds_into_phase|P:UI call site TelemetryHooks.ChoiceUiOpened missing|1/task|accessibility,pacing|The player opened the task controls.|ct:ClientTelemetry.ChoiceUiOpened|",
+            "choice_ui_opened|C|P|S|L|e:task_id(@Task),f:seconds_into_phase|I|1/task|accessibility,pacing|The player opened the task controls.|ct:ClientTelemetry.ChoiceUiOpened via UI: Scripts/UI/Desk/DeskTaskApp.cs (task app opened)|",
             "choice_submitted|H|M|S|L|s:player,e:field(target|a|b|multiple),i:category,f:latency_seconds,b:after_contact,e:contact_channel(none|voice|text|both),b:sabotage_option|I|<=12/task|information_asymmetry,communication|A player set task controls.|obs:OnHostChoice|category per docs/CONTRACTS_V4.md section 8. No lie or intent is inferred.",
             "choice_changed|H|M|S|L|s:player,e:field(target|a|b|multiple),i:category,f:latency_seconds,b:after_contact,e:contact_channel(none|voice|text|both),b:sabotage_option,i:previous_category?|I|<=6/task|information_asymmetry|A player changed an earlier submission.|obs:OnHostChoice|",
             "choice_timed_out|H|M|S|L|s:player,e:reason(missed|blocked|absent)|I|<=6/task|accessibility,blame_tension|A submission was missing at resolution.|obs:OnHostMissedTask|",
@@ -107,12 +107,12 @@ namespace BirimizKovulacak.Telemetry
             // ---- 5.8 communication accessibility and diagnostics
             "message_sent|H|M|S|L|s:sender,e:channel(text|email|meeting_chat|complaint|fake_email),e:scope(one|all),s:recipient?,e:length_bucket(short|medium|long),b:is_reply,b:template,b:preset|I|<=100/match|communication,accessibility|A message was sent (length bucket only, never text).|obs:OnHostMessage|",
             "message_rejected|C|P|S|L|e:channel(text|email|meeting_chat|complaint|fake_email),e:reason(too_long|empty|rate_limited|limit_reached|wrong_phase)|I|rare|accessibility|The host refused a message.|ct:ClientTelemetry.OnResult|",
-            "message_thread_opened|C|P|S|L|e:channel(text|email|meeting_chat|complaint|fake_email),i:unread|P:UI call site TelemetryHooks.MessageThreadOpened missing|<=50/match|communication|The player opened a thread.|ct:ClientTelemetry.MessageThreadOpened|",
+            "message_thread_opened|C|P|S|L|e:channel(text|email|meeting_chat|complaint|fake_email),i:unread|I|<=50/match|communication|The player opened a thread.|ct:ClientTelemetry.MessageThreadOpened via UI: Scripts/UI/Desk/DeskComms.cs|",
             "ui_action_rejected|C|P|S|L|e:verb(@Verb),e:failure(@Failure)|I|<=50/match|accessibility|An action was refused by the host.|ct:ClientTelemetry.OnResult|Message verbs go to message_rejected instead.",
-            "tutorial_step_viewed|C|P|S|L|e:task_id(@Task),i:step,e:action(auto|next|back|reopen)|P:UI call site TelemetryHooks.TutorialStep missing|<=60/match|onboarding|A tutorial step was shown.|ct:ClientTelemetry.TutorialStep|",
-            "tutorial_closed|C|P|S|LC|*e:task_id(@Task),*i:steps_seen,f:seconds_open,*b:completed|P:UI call site TelemetryHooks.TutorialClosed missing|<=12/match|onboarding|The tutorial card closed.|ct:ClientTelemetry.TutorialClosed|",
-            "onboarding_intro_completed|C|P|S|L|i:cards_seen,b:skipped|P:UI call site TelemetryHooks.OnboardingIntroCompleted missing|1/match|onboarding|The intro finished.|ct:ClientTelemetry.OnboardingIntroCompleted|",
-            "settings_changed|C|P|S|L|e:setting(music_volume|sfx_volume|voice_volume|mic_gain|language|fullscreen|quality|sensitivity|other),e:value?(off|on|low|medium|high|tr|en|other),i:value_percent?|P:UI call site TelemetryHooks.SettingChanged missing|<=30/session|accessibility|A setting changed (coarse value only).|ct:ClientTelemetry.SettingChanged|",
+            "tutorial_step_viewed|C|P|S|L|e:task_id(@Task),i:step,e:action(auto|next|back|reopen)|I|<=60/match|onboarding|A tutorial step was shown.|ct:ClientTelemetry.TutorialStep via UI: Scripts/UI/Desk/DeskTutorial.cs|",
+            "tutorial_closed|C|P|S|LC|*e:task_id(@Task),*i:steps_seen,f:seconds_open,*b:completed|I|<=12/match|onboarding|The tutorial card closed.|ct:ClientTelemetry.TutorialClosed via UI: Scripts/UI/Desk/DeskTutorial.cs|",
+            "onboarding_intro_completed|C|P|S|L|i:cards_seen,b:skipped|I|1/match|onboarding|The intro finished.|ct:ClientTelemetry.OnboardingIntroCompleted via UI: Scripts/UI/ShellOverlays.cs (first-launch intro)|",
+            "settings_changed|C|P|S|L|e:setting(music_volume|music_mute|sfx_volume|voice_volume|mic_gain|language|fullscreen|quality|sensitivity|other),e:value?(off|on|low|medium|high|tr|en|other),i:value_percent?|I|<=30/session|accessibility|A setting changed (coarse value only).|ct:ClientTelemetry.SettingChanged via UI: Scripts/UI/SettingsScreen.cs|",
             "player_disconnected|H|P|S|L|s:player,e:phase(@Phase)|I|<=5/match|connection|A player dropped mid-match.|hc:HostTelemetryCoordinator.PlayerConnection|Needs the HostLineController call site.",
             "player_reconnected|H|P|S|L|s:player,e:phase(@Phase),f:downtime_seconds?|I|<=5/match|connection|A player came back.|hc:HostTelemetryCoordinator.PlayerConnection|",
             "reconnect_attempted|C|P|S|L|i:attempt,f:seconds|I|<=3/interruption|connection|The client entered the reconnect loop.|cc:ClientConnectionTelemetry.OnState (Reconnecting)|",
@@ -125,9 +125,9 @@ namespace BirimizKovulacak.Telemetry
             "technical_failure|B|P|S|LC|*e:category(engine_exception|rpc_decode|voice_exception|sink_error|ui_exception),id:type(type)|I|rare|telemetry_health|A caught exception (type name only).|ct/hc:TechnicalFailure|",
             "telemetry_queue_dropped|B|P|S|L|i:dropped,e:reason(overflow|consent_withdrawn|shutdown)|I|rare|telemetry_health|Events were dropped (counted, never silent).|svc:GameTelemetryService.Flush|",
             "telemetry_sink_error|B|P|S|L|e:sink(local_jsonl|debug|unity_analytics|other),e:category(io|exception|full|unknown)|I|rare|telemetry_health|A sink threw; reported once per fault.|svc:GameTelemetryService.Flush|",
-            "moment_marked|C|P|S|L|e:category(funny|betrayal|accusation|surprise|reveal|other),e:source(player)|P:UI call site TelemetryHooks.MomentMarked missing|<=20/match|retention,tension|The player marked a moment.|ct:ClientTelemetry.MomentMarked|",
-            "music_cue_changed|C|P|S|L|e:cue(menu|office|meeting|final|results|tension|other),b:ducked|P:Music system call site TelemetryHooks.MusicCueChanged missing|<=30/match|accessibility|Music cue changed.|ct:ClientTelemetry.MusicCueChanged|",
-            "rematch_prompt_shown|C|P|S|L||P:UI call site TelemetryHooks.RematchPromptShown missing|1/results|retention|The play again prompt appeared.|ct:ClientTelemetry.RematchPromptShown|",
+            "moment_marked|C|P|S|L|e:category(funny|betrayal|accusation|surprise|reveal|other),e:source(player)|I|<=20/match|retention,tension|The player marked a moment.|ct:ClientTelemetry.MomentMarked via UI: Scripts/UI/ShellOverlays.cs (F8 / flag)|",
+            "music_cue_changed|C|P|S|L|e:cue(menu_lobby|office_work|deadline|meeting_intro|meeting_discussion|final_vote|results_success|results_collapse|none|other),b:ducked|I|<=30/match|accessibility|Music cue changed.|ct:ClientTelemetry.MusicCueChanged via Scripts/Audio/MusicDirector.cs (cue changes only)|",
+            "rematch_prompt_shown|C|P|S|L||I|1/results|retention|The play again prompt appeared.|ct:ClientTelemetry.RematchPromptShown via UI: Scripts/UI/Meeting/WeekResultsView.cs (results with >= 3 players)|",
 
             // ---- 5.9 correlation
             "player_slot_map|H|P|S|L|s:slot,id:anonymous_player_id?(player),b:is_bot|I|1/player/match|privacy|Seat to anonymous id mapping of consenting players.|hc:HostTelemetryCoordinator.MatchStarted|Only consenting players are written.",

@@ -2,7 +2,7 @@
 
 Generated from `Game/Assets/Game/Core/Telemetry/TelemetryCatalog.cs` by the `CatalogExport` test in `Tools/TelemetryTests` (`TELEMETRY_EXPORT_DOCS=1 dotnet test Tools/TelemetryTests/TelemetryTests.csproj --filter CatalogExport`). Do not edit by hand. Machine-readable twin: `docs/analytics/event_catalog.json`. Contract: `docs/ANALYTICS_ARCHITECTURE.md`.
 
-**95 events**: 83 implemented, 11 pending_integration, 0 unsupported, 1 not_applicable.
+**95 events**: 93 implemented, 1 pending_integration, 0 unsupported, 1 not_applicable.
 
 Status meaning: `implemented` = emitting code exists in this repository, fed from sources that exist today (contract events/views, connection state), covered by tests; host events still need the `HostTelemetryBridge` call sites in `HostLineController` (see `docs/ANALYTICS_SETUP.md`) and the v4 engine emitting the contract events. `pending_integration` = a source is missing (named in the entry); the event is **not** emitted. `not_applicable` / `unsupported` = never emitted.
 
@@ -25,7 +25,7 @@ Envelope fields (every event, omitted when not applicable): schema_version, even
 | [`match_started`](#match_started) | host | public | host_aggregate | local+cloud | implemented |
 | [`match_start_failed`](#match_start_failed) | host | public | host_aggregate | local | implemented |
 | [`match_abandoned`](#match_abandoned) | host | public | host_aggregate | local | implemented |
-| [`rematch_requested`](#rematch_requested) | client | public | self | local | pending_integration |
+| [`rematch_requested`](#rematch_requested) | client | public | self | local | implemented |
 | [`rematch_started`](#rematch_started) | host | public | host_aggregate | local+cloud | implemented |
 | [`week_started`](#week_started) | host | public | host_aggregate | local | implemented |
 | [`day_started`](#day_started) | host | public | host_aggregate | local | implemented |
@@ -44,7 +44,7 @@ Envelope fields (every event, omitted when not applicable): schema_version, even
 | [`phone_call_finished`](#phone_call_finished) | host | private until match end | all_participants | local | implemented |
 | [`phone_round_summary`](#phone_round_summary) | host | private until match end | host_aggregate | local | implemented |
 | [`secret_info_presented`](#secret_info_presented) | host | private until match end | self | local | implemented |
-| [`choice_ui_opened`](#choice_ui_opened) | client | public | self | local | pending_integration |
+| [`choice_ui_opened`](#choice_ui_opened) | client | public | self | local | implemented |
 | [`choice_submitted`](#choice_submitted) | host | private until match end | self | local | implemented |
 | [`choice_changed`](#choice_changed) | host | private until match end | self | local | implemented |
 | [`choice_timed_out`](#choice_timed_out) | host | private until match end | self | local | implemented |
@@ -85,12 +85,12 @@ Envelope fields (every event, omitted when not applicable): schema_version, even
 | [`company_failed`](#company_failed) | host | public | host_aggregate | local | implemented |
 | [`message_sent`](#message_sent) | host | private until match end | self | local | implemented |
 | [`message_rejected`](#message_rejected) | client | public | self | local | implemented |
-| [`message_thread_opened`](#message_thread_opened) | client | public | self | local | pending_integration |
+| [`message_thread_opened`](#message_thread_opened) | client | public | self | local | implemented |
 | [`ui_action_rejected`](#ui_action_rejected) | client | public | self | local | implemented |
-| [`tutorial_step_viewed`](#tutorial_step_viewed) | client | public | self | local | pending_integration |
-| [`tutorial_closed`](#tutorial_closed) | client | public | self | local+cloud | pending_integration |
-| [`onboarding_intro_completed`](#onboarding_intro_completed) | client | public | self | local | pending_integration |
-| [`settings_changed`](#settings_changed) | client | public | self | local | pending_integration |
+| [`tutorial_step_viewed`](#tutorial_step_viewed) | client | public | self | local | implemented |
+| [`tutorial_closed`](#tutorial_closed) | client | public | self | local+cloud | implemented |
+| [`onboarding_intro_completed`](#onboarding_intro_completed) | client | public | self | local | implemented |
+| [`settings_changed`](#settings_changed) | client | public | self | local | implemented |
 | [`player_disconnected`](#player_disconnected) | host | public | self | local | implemented |
 | [`player_reconnected`](#player_reconnected) | host | public | self | local | implemented |
 | [`reconnect_attempted`](#reconnect_attempted) | client | public | self | local | implemented |
@@ -103,9 +103,9 @@ Envelope fields (every event, omitted when not applicable): schema_version, even
 | [`technical_failure`](#technical_failure) | both | public | self | local+cloud | implemented |
 | [`telemetry_queue_dropped`](#telemetry_queue_dropped) | both | public | self | local | implemented |
 | [`telemetry_sink_error`](#telemetry_sink_error) | both | public | self | local | implemented |
-| [`moment_marked`](#moment_marked) | client | public | self | local | pending_integration |
-| [`music_cue_changed`](#music_cue_changed) | client | public | self | local | pending_integration |
-| [`rematch_prompt_shown`](#rematch_prompt_shown) | client | public | self | local | pending_integration |
+| [`moment_marked`](#moment_marked) | client | public | self | local | implemented |
+| [`music_cue_changed`](#music_cue_changed) | client | public | self | local | implemented |
+| [`rematch_prompt_shown`](#rematch_prompt_shown) | client | public | self | local | implemented |
 | [`player_slot_map`](#player_slot_map) | host | public | self | local | implemented |
 
 ## Events
@@ -350,13 +350,13 @@ Envelope fields (every event, omitted when not applicable): schema_version, even
 
 - **Name / version**: `rematch_requested` v1
 - **Meaning**: The player pressed play again.
-- **Trigger location**: `Scripts/Telemetry/ClientTelemetry.cs ClientTelemetry.RematchRequested`
+- **Trigger location**: `Scripts/Telemetry/ClientTelemetry.cs ClientTelemetry.RematchRequested via UI: Scripts/UI/Meeting/WeekResultsView.cs (Play again)`
 - **Authority**: client
 - **Privacy / consent**: public (written immediately); consent rule `self`
 - **Routing**: local
 - **Expected max frequency**: 1/results
 - **KPI contribution**: retention
-- **Availability**: pending_integration - UI call site TelemetryHooks.RematchRequested (results screen) missing
+- **Availability**: implemented
 
 | Param | Type | Required | Cloud | Values |
 |---|---|---|---|---|
@@ -712,13 +712,13 @@ Envelope fields (every event, omitted when not applicable): schema_version, even
 
 - **Name / version**: `choice_ui_opened` v1
 - **Meaning**: The player opened the task controls.
-- **Trigger location**: `Scripts/Telemetry/ClientTelemetry.cs ClientTelemetry.ChoiceUiOpened`
+- **Trigger location**: `Scripts/Telemetry/ClientTelemetry.cs ClientTelemetry.ChoiceUiOpened via UI: Scripts/UI/Desk/DeskTaskApp.cs (task app opened)`
 - **Authority**: client
 - **Privacy / consent**: public (written immediately); consent rule `self`
 - **Routing**: local
 - **Expected max frequency**: 1/task
 - **KPI contribution**: accessibility, pacing
-- **Availability**: pending_integration - UI call site TelemetryHooks.ChoiceUiOpened missing
+- **Availability**: implemented
 
 | Param | Type | Required | Cloud | Values |
 |---|---|---|---|---|
@@ -1508,13 +1508,13 @@ Envelope fields (every event, omitted when not applicable): schema_version, even
 
 - **Name / version**: `message_thread_opened` v1
 - **Meaning**: The player opened a thread.
-- **Trigger location**: `Scripts/Telemetry/ClientTelemetry.cs ClientTelemetry.MessageThreadOpened`
+- **Trigger location**: `Scripts/Telemetry/ClientTelemetry.cs ClientTelemetry.MessageThreadOpened via UI: Scripts/UI/Desk/DeskComms.cs`
 - **Authority**: client
 - **Privacy / consent**: public (written immediately); consent rule `self`
 - **Routing**: local
 - **Expected max frequency**: <=50/match
 - **KPI contribution**: communication
-- **Availability**: pending_integration - UI call site TelemetryHooks.MessageThreadOpened missing
+- **Availability**: implemented
 
 | Param | Type | Required | Cloud | Values |
 |---|---|---|---|---|
@@ -1543,13 +1543,13 @@ Envelope fields (every event, omitted when not applicable): schema_version, even
 
 - **Name / version**: `tutorial_step_viewed` v1
 - **Meaning**: A tutorial step was shown.
-- **Trigger location**: `Scripts/Telemetry/ClientTelemetry.cs ClientTelemetry.TutorialStep`
+- **Trigger location**: `Scripts/Telemetry/ClientTelemetry.cs ClientTelemetry.TutorialStep via UI: Scripts/UI/Desk/DeskTutorial.cs`
 - **Authority**: client
 - **Privacy / consent**: public (written immediately); consent rule `self`
 - **Routing**: local
 - **Expected max frequency**: <=60/match
 - **KPI contribution**: onboarding
-- **Availability**: pending_integration - UI call site TelemetryHooks.TutorialStep missing
+- **Availability**: implemented
 
 | Param | Type | Required | Cloud | Values |
 |---|---|---|---|---|
@@ -1561,13 +1561,13 @@ Envelope fields (every event, omitted when not applicable): schema_version, even
 
 - **Name / version**: `tutorial_closed` v1
 - **Meaning**: The tutorial card closed.
-- **Trigger location**: `Scripts/Telemetry/ClientTelemetry.cs ClientTelemetry.TutorialClosed`
+- **Trigger location**: `Scripts/Telemetry/ClientTelemetry.cs ClientTelemetry.TutorialClosed via UI: Scripts/UI/Desk/DeskTutorial.cs`
 - **Authority**: client
 - **Privacy / consent**: public (written immediately); consent rule `self`
 - **Routing**: local+cloud (cloud only for consent level 3; cloud payload = parameters marked cloud)
 - **Expected max frequency**: <=12/match
 - **KPI contribution**: onboarding
-- **Availability**: pending_integration - UI call site TelemetryHooks.TutorialClosed missing
+- **Availability**: implemented
 
 | Param | Type | Required | Cloud | Values |
 |---|---|---|---|---|
@@ -1580,13 +1580,13 @@ Envelope fields (every event, omitted when not applicable): schema_version, even
 
 - **Name / version**: `onboarding_intro_completed` v1
 - **Meaning**: The intro finished.
-- **Trigger location**: `Scripts/Telemetry/ClientTelemetry.cs ClientTelemetry.OnboardingIntroCompleted`
+- **Trigger location**: `Scripts/Telemetry/ClientTelemetry.cs ClientTelemetry.OnboardingIntroCompleted via UI: Scripts/UI/ShellOverlays.cs (first-launch intro)`
 - **Authority**: client
 - **Privacy / consent**: public (written immediately); consent rule `self`
 - **Routing**: local
 - **Expected max frequency**: 1/match
 - **KPI contribution**: onboarding
-- **Availability**: pending_integration - UI call site TelemetryHooks.OnboardingIntroCompleted missing
+- **Availability**: implemented
 
 | Param | Type | Required | Cloud | Values |
 |---|---|---|---|---|
@@ -1597,17 +1597,17 @@ Envelope fields (every event, omitted when not applicable): schema_version, even
 
 - **Name / version**: `settings_changed` v1
 - **Meaning**: A setting changed (coarse value only).
-- **Trigger location**: `Scripts/Telemetry/ClientTelemetry.cs ClientTelemetry.SettingChanged`
+- **Trigger location**: `Scripts/Telemetry/ClientTelemetry.cs ClientTelemetry.SettingChanged via UI: Scripts/UI/SettingsScreen.cs`
 - **Authority**: client
 - **Privacy / consent**: public (written immediately); consent rule `self`
 - **Routing**: local
 - **Expected max frequency**: <=30/session
 - **KPI contribution**: accessibility
-- **Availability**: pending_integration - UI call site TelemetryHooks.SettingChanged missing
+- **Availability**: implemented
 
 | Param | Type | Required | Cloud | Values |
 |---|---|---|---|---|
-| `setting` | enum | yes | no | music_volume, sfx_volume, voice_volume, mic_gain, language, fullscreen, quality, sensitivity, other |
+| `setting` | enum | yes | no | music_volume, music_mute, sfx_volume, voice_volume, mic_gain, language, fullscreen, quality, sensitivity, other |
 | `value` | enum | optional (omitted, never 0) | no | off, on, low, medium, high, tr, en, other |
 | `value_percent` | int | optional (omitted, never 0) | no |  |
 
@@ -1824,13 +1824,13 @@ Envelope fields (every event, omitted when not applicable): schema_version, even
 
 - **Name / version**: `moment_marked` v1
 - **Meaning**: The player marked a moment.
-- **Trigger location**: `Scripts/Telemetry/ClientTelemetry.cs ClientTelemetry.MomentMarked`
+- **Trigger location**: `Scripts/Telemetry/ClientTelemetry.cs ClientTelemetry.MomentMarked via UI: Scripts/UI/ShellOverlays.cs (F8 / flag)`
 - **Authority**: client
 - **Privacy / consent**: public (written immediately); consent rule `self`
 - **Routing**: local
 - **Expected max frequency**: <=20/match
 - **KPI contribution**: retention, tension
-- **Availability**: pending_integration - UI call site TelemetryHooks.MomentMarked missing
+- **Availability**: implemented
 
 | Param | Type | Required | Cloud | Values |
 |---|---|---|---|---|
@@ -1841,30 +1841,30 @@ Envelope fields (every event, omitted when not applicable): schema_version, even
 
 - **Name / version**: `music_cue_changed` v1
 - **Meaning**: Music cue changed.
-- **Trigger location**: `Scripts/Telemetry/ClientTelemetry.cs ClientTelemetry.MusicCueChanged`
+- **Trigger location**: `Scripts/Telemetry/ClientTelemetry.cs ClientTelemetry.MusicCueChanged via Scripts/Audio/MusicDirector.cs (cue changes only)`
 - **Authority**: client
 - **Privacy / consent**: public (written immediately); consent rule `self`
 - **Routing**: local
 - **Expected max frequency**: <=30/match
 - **KPI contribution**: accessibility
-- **Availability**: pending_integration - Music system call site TelemetryHooks.MusicCueChanged missing
+- **Availability**: implemented
 
 | Param | Type | Required | Cloud | Values |
 |---|---|---|---|---|
-| `cue` | enum | yes | no | menu, office, meeting, final, results, tension, other |
+| `cue` | enum | yes | no | menu_lobby, office_work, deadline, meeting_intro, meeting_discussion, final_vote, results_success, results_collapse, none, other |
 | `ducked` | bool | yes | no |  |
 
 ### rematch_prompt_shown
 
 - **Name / version**: `rematch_prompt_shown` v1
 - **Meaning**: The play again prompt appeared.
-- **Trigger location**: `Scripts/Telemetry/ClientTelemetry.cs ClientTelemetry.RematchPromptShown`
+- **Trigger location**: `Scripts/Telemetry/ClientTelemetry.cs ClientTelemetry.RematchPromptShown via UI: Scripts/UI/Meeting/WeekResultsView.cs (results with >= 3 players)`
 - **Authority**: client
 - **Privacy / consent**: public (written immediately); consent rule `self`
 - **Routing**: local
 - **Expected max frequency**: 1/results
 - **KPI contribution**: retention
-- **Availability**: pending_integration - UI call site TelemetryHooks.RematchPromptShown missing
+- **Availability**: implemented
 - **Params**: none
 
 ### player_slot_map
