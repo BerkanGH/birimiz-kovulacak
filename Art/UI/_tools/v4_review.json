@@ -1,0 +1,89 @@
+{
+  "date": "2026-11-01",
+  "reviewer": "Codex, direct visual inspection in this run",
+  "allSourcesVisuallyReviewed": true,
+  "allFinalsVisuallyReviewed": true,
+  "method": "Each built-in output inspected on return, including all three corrected candidates. All 23 finished PNGs inspected on three large card sheets and one wide sheet; both card categories also inspected at 180px height.",
+  "finalSha256": {
+    "Art/UI/tasks/task_invoice_reconcile.png": "efbf2ef2fba438b8f97da007b1680bf31ea90696ba3053ff943ca325934992a5",
+    "Art/UI/tasks/task_budget_split.png": "6d293ebc421f1bddbe33a9a7818495e60a2699dd3dbccf71efff3268e4c45f90",
+    "Art/UI/tasks/task_customer_spec.png": "8b18b26e697bbfdad48df3b0cb1bd81cad1312ddee775aa5c56e6cbdcace25b4",
+    "Art/UI/tasks/task_report_review.png": "20ef09e75fb17bcd57a9a2801dc014c8344c7acdd147edee9249e0038363f305",
+    "Art/UI/tasks/task_room_booking.png": "ad4a466b88dedef59e7bf38314ce9c06b863714d12670c07364547950f7586a1",
+    "Art/UI/tasks/task_archive_visitor.png": "7b7d51740164122c070438f65ca9d00fccca5234db07c6e6009d3e47184f274f",
+    "Art/UI/tasks/task_bonus_pool.png": "6e13d70b62bb4c308a03a1d0815b0ab36e247728a322584edfb321d02a519b62",
+    "Art/UI/tasks/task_server_code.png": "e02e4baf24cd95653d81c8a4f419cadb676789fb02cf3c7979815eed8e64acb7",
+    "Art/UI/tasks/task_phishing_check.png": "0154f168b85fc5f379c5bd88cad26c5a707c35f784d57b5ade68cfb1a467d2a3",
+    "Art/UI/tasks/task_shift_cover.png": "4b0c936379d76d26db16e17cf20c505ee734570f5a661727db2b8e19ba0da2d4",
+    "Art/UI/tasks/task_vendor_pick.png": "5254db53514fe1972426de68c3101111695b8cc2025d1d5a4b1d9d5efbbf141c",
+    "Art/UI/tasks/task_supply_swap.png": "1e8872b4ae00aebac550db889b124cd4a984336e82110a4e440f77e6876a7923",
+    "Art/UI/evidence/evidence_phone_log.png": "9f33754183f89d897b366f9e49e304cfe71c9b4c3f18967acb026e9a65fee2dd",
+    "Art/UI/evidence/evidence_bank.png": "1c21077b0df4d9c1994808fd3765461d025da47627b5dca241291e2378fe2062",
+    "Art/UI/evidence/evidence_task_system.png": "af25bd70adebb48d65b619190cf580e9ade8bc4449e739b0e98b3b8de96f8d32",
+    "Art/UI/evidence/evidence_it_log.png": "91ea4043f92f90dacbaef5495ce902c3fe2f7db2960d912a74ce8170eb5f0b4d",
+    "Art/UI/evidence/evidence_badge_log.png": "cd4d1c4a81edf694f4efec2dc0a4fce81724f45bfc1529dedbcd2f88bc4ad28d",
+    "Art/UI/evidence/evidence_hr.png": "f24e5d03cd5982938e7a6461ff0241c3b75cee36daa00cd148ba1e1cbbbc2aad",
+    "Art/UI/onboarding_v4/intro_1_company.png": "552ed0778306daa8d91c92f2d00811891eb48a5e26c4a20f878765a919846fd3",
+    "Art/UI/onboarding_v4/intro_2_secret.png": "e8c6eeb7e5499906123c342d5d0bfb863116d203833b3444ff59d767766ee3ea",
+    "Art/UI/onboarding_v4/intro_3_meeting.png": "f06aa6691af7886a45054799d571ecce92dbbf4c23844d82e01c3f69ba40d439",
+    "Art/UI/results_v4/company_survived.png": "f19d8aad0ff63688e76d735d8787488754dfe9c519cb30eb3f4123a7147dc915",
+    "Art/UI/results_v4/company_closed.png": "1e71696e15a0dbb3a52e313e62e04fb6848c6ae2fb2a0e0951b5527c67972fb7"
+  },
+  "sheetSha256": {
+    "Art/UI/_sheets/v4_tasks.png": "d02b5bd27c5377761284500d32de50c975ca38ef3c78ad92eeddb38d4a67bb8d",
+    "Art/UI/_sheets/v4_evidence.png": "37533f562529dd3483a1e02cb54f659c4fef6de5ea8edff9497a529da3886136",
+    "Art/UI/_sheets/v4_tasks_detail_1.png": "cfc79234ea82e41fd0c590815fc856d89830e44925f60e6cf21f3f86da5d26a2",
+    "Art/UI/_sheets/v4_tasks_detail_2.png": "78aba672e31bc6cb89a54b7dda65412134a8394fb269c868ca41b4c8de232738",
+    "Art/UI/_sheets/v4_evidence_detail_1.png": "6d4da006da8c98544d813dca2de8bc58d00aae8890b606799ff37bad00601626",
+    "Art/UI/_sheets/v4_wide.png": "05aed9466a5acaa5716753cefdf3de8ce914dc28de63ae4e959493f2a65c8140"
+  },
+  "perAsset": {
+    "task_invoice_reconcile": "Accepted: two on-model beans, complementary torn invoice halves, no text.",
+    "task_budget_split": "Accepted: three distinct beans reach for one small sliced coin pie.",
+    "task_customer_spec": "Accepted: three box colors/sizes, neutral customer, split specification bubbles, on-model blue/pink.",
+    "task_report_review": "Accepted: absurd tall report bar, magnifier and symbol-only green/red rubber stamps.",
+    "task_room_booking": "Accepted: collision at one meeting-room doorway, readable wall calendar, on-model blue/orange.",
+    "task_archive_visitor": "Accepted: visitor lanyard, limited folder stack, archive shelves, coworkers waving outside threshold.",
+    "task_bonus_pool": "Accepted: fresh diagonal table, purple takes whole envelope, pink empty-handed; distinct from v3.",
+    "task_server_code": "Accepted after one identity correction: yellow glasses and navy pink bun restored; digits 4 1 7 2 clear.",
+    "task_phishing_check": "Accepted after one text correction: blank coin, hook through payment email, green headset identity preserved.",
+    "task_shift_cover": "Accepted: empty weekend slots, blue phone, orange hiding behind folder, purple mug and averted gaze.",
+    "task_vendor_pick": "Accepted: exactly four colored supplier samples and four face-down diamond-back score cards; yellow glasses retained.",
+    "task_supply_swap": "Accepted: stapler, toner and chair clearly traded across adjoining desks; blue/pink/orange identities retained.",
+    "evidence_phone_log": "Accepted: desk phone and three-row call log with phone/clock pictograms, no lettering.",
+    "evidence_bank": "Accepted: ruled ledger and blank gold coins, no text or currency glyphs.",
+    "evidence_task_system": "Accepted: retro checklist window, three checked rows and one empty row, no OS lettering.",
+    "evidence_it_log": "Accepted: server fanfold printout and blank-key keyboard with clear coffee ring/stains, no text.",
+    "evidence_badge_log": "Accepted: contactless reader, lanyard/portrait badge and clock access slip, no text.",
+    "evidence_hr": "Accepted: personnel folder with teal silhouette tab, wooden stamp, symbol-only impression.",
+    "intro_1_company": "Accepted after navy-bun correction: exactly six identities collaborate at one upward gauge, no text.",
+    "intro_2_secret": "Accepted: single blue tie bean on phone, broken envelope seal and hidden blank sheet below desk, no text.",
+    "intro_3_meeting": "Accepted: six locked identities, mutual pointing, projected pictorial call record, no baked text.",
+    "company_survived": "Accepted: five celebrating identities, green output chart, foreground empty chair/packing box; no orange or winner trophy.",
+    "company_closed": "Accepted: empty office, two chairs on desks, dark monitors and ceiling lights, packing boxes, drooping cord, wilted plant/biscuit comic detail."
+  },
+  "textReview": {
+    "method": "Direct visual review; no OCR claim.",
+    "onlyLetteringAsset": "task_server_code",
+    "digits": [
+      "4",
+      "1",
+      "7",
+      "2"
+    ],
+    "allOtherFinalsTextFree": true,
+    "runtimeSafeArea": [
+      52,
+      552,
+      408,
+      104
+    ],
+    "allCardSafeAreasBlank": true
+  },
+  "knownWeaknesses": [
+    "At 180px card height the visitor badge, individual accounting rules, exact folder count and toner details are small; prefer 256x358 or larger for focused cards.",
+    "The four server digits illustrate collaboration and must not be read as the seeded gameplay code.",
+    "Closure art is intentionally dimmer; confirm contrast in the final Unity layout."
+  ],
+  "unityEditorOrInGameTested": false
+}

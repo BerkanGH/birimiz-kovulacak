@@ -1,0 +1,68 @@
+[
+  {
+    "id": "evidence_badge_log",
+    "path": "Art/UI/evidence/evidence_badge_log.png",
+    "w": 512,
+    "h": 716,
+    "category": "evidence",
+    "nineSlice": null,
+    "screenRect": null,
+    "hasText": false,
+    "description": "Contactless badge reader, portrait lanyard and pictorial access log. Exact v3 rounded manila frame; blank runtime title/body safe area [52,552,408,104]."
+  },
+  {
+    "id": "evidence_bank",
+    "path": "Art/UI/evidence/evidence_bank.png",
+    "w": 512,
+    "h": 716,
+    "category": "evidence",
+    "nineSlice": null,
+    "screenRect": null,
+    "hasText": false,
+    "description": "Open ruled ledger book and blank gold coins. Exact v3 rounded manila frame; blank runtime title/body safe area [52,552,408,104]."
+  },
+  {
+    "id": "evidence_hr",
+    "path": "Art/UI/evidence/evidence_hr.png",
+    "w": 512,
+    "h": 716,
+    "category": "evidence",
+    "nineSlice": null,
+    "screenRect": null,
+    "hasText": false,
+    "description": "Manila personnel folder and rubber stamp with a symbol-only impression. Exact v3 rounded manila frame; blank runtime title/body safe area [52,552,408,104]."
+  },
+  {
+    "id": "evidence_it_log",
+    "path": "Art/UI/evidence/evidence_it_log.png",
+    "w": 512,
+    "h": 716,
+    "category": "evidence",
+    "nineSlice": null,
+    "screenRect": null,
+    "hasText": false,
+    "description": "Server fanfold printout and coffee-stained blank-key keyboard. Exact v3 rounded manila frame; blank runtime title/body safe area [52,552,408,104]."
+  },
+  {
+    "id": "evidence_phone_log",
+    "path": "Art/UI/evidence/evidence_phone_log.png",
+    "w": 512,
+    "h": 716,
+    "category": "evidence",
+    "nineSlice": null,
+    "screenRect": null,
+    "hasText": false,
+    "description": "Desk telephone and printed call log with handset and clock pictograms. Exact v3 rounded manila frame; blank runtime title/body safe area [52,552,408,104]."
+  },
+  {
+    "id": "evidence_task_system",
+    "path": "Art/UI/evidence/evidence_task_system.png",
+    "w": 512,
+    "h": 716,
+    "category": "evidence",
+    "nineSlice": null,
+    "screenRect": null,
+    "hasText": false,
+    "description": "Text-free KOVA task-system checklist window on an office monitor. Exact v3 rounded manila frame; blank runtime title/body safe area [52,552,408,104]."
+  }
+]
