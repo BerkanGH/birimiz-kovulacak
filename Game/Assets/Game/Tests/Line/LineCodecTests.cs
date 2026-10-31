@@ -126,12 +126,13 @@ namespace BirimizKovulacak.Core.Tests
                 case 4: return new Message { Type = typeof(List<LineEvent>), Encode = v => LineCodec.EncodeEvents((List<LineEvent>)v), Decode = b => LineCodec.DecodeEvents(b) };
                 case 5: return new Message { Type = typeof(LineLobbyView), Encode = v => LineCodec.EncodeLobby((LineLobbyView)v), Decode = b => LineCodec.DecodeLobby(b) };
                 case 6: return new Message { Type = typeof(LineWelcome), Encode = v => LineCodec.EncodeWelcome((LineWelcome)v), Decode = b => LineCodec.DecodeWelcome(b) };
+                case 12: return new Message { Type = typeof(List<LineMessage>), Encode = v => LineCodec.EncodeMessages((List<LineMessage>)v), Decode = b => LineCodec.DecodeMessages(b) };
                 case 7: return new Message { Type = typeof(LineConnectionPayload), Encode = v => LineCodec.EncodeConnection((LineConnectionPayload)v), Decode = b => LineCodec.DecodeConnection(b) };
                 default: throw new ArgumentOutOfRangeException(nameof(kind));
             }
         }
 
-        [TestCase(1), TestCase(2), TestCase(3), TestCase(4), TestCase(5), TestCase(6), TestCase(7)]
+        [TestCase(1), TestCase(2), TestCase(3), TestCase(4), TestCase(5), TestCase(6), TestCase(7), TestCase(12)]
         public void PublicMessagesAreVersionedDeterministicAndRoundTrip(int kind)
         {
             Message m = MessageFor(kind); int serial = 0;
@@ -145,7 +146,7 @@ namespace BirimizKovulacak.Core.Tests
             Assert.IsNull(m.Decode(m.Encode(null)));
         }
 
-        [TestCase(1), TestCase(2), TestCase(3), TestCase(4), TestCase(5), TestCase(6), TestCase(7)]
+        [TestCase(1), TestCase(2), TestCase(3), TestCase(4), TestCase(5), TestCase(6), TestCase(7), TestCase(12)]
         public void GarbageTruncationForeignMessagesAndTrailingDataThrowFormatException(int kind)
         {
             Message m = MessageFor(kind); int serial = 0;
@@ -163,10 +164,10 @@ namespace BirimizKovulacak.Core.Tests
             }
             byte[] trailing = new byte[valid.Length + 1]; Array.Copy(valid, trailing, valid.Length);
             Assert.Throws<FormatException>(() => m.Decode(trailing));
-            var random = new Random(kind);
+            uint state=(uint)kind;
             for (int i = 0; i < 100; i++)
             {
-                byte[] garbage = new byte[random.Next(0, 512)]; random.NextBytes(garbage);
+                state=unchecked(state*1664525+1013904223);byte[] garbage=new byte[state%512];for(int j=0;j<garbage.Length;j++){state=unchecked(state*1664525+1013904223);garbage[j]=(byte)state;}
                 if (garbage.Length > 0) garbage[0] = 0;
                 Assert.Throws<FormatException>(() => m.Decode(garbage));
             }
@@ -180,9 +181,9 @@ namespace BirimizKovulacak.Core.Tests
             Assert.Throws<FormatException>(() => LineCodec.DecodeAction(action));
             action[4] = 1; action[13] = 255;
             Assert.Throws<FormatException>(() => LineCodec.DecodeAction(action));
-            byte[] malformedLength = { 0xB3, 3, 0, 4, 255, 255, 255, 255, 255 };
+            byte[] malformedLength = { 0xB3, 4, 0, 4, 255, 255, 255, 255, 255 };
             Assert.Throws<FormatException>(() => LineCodec.DecodeEvents(malformedLength));
-            byte[] overlongLength = { 0xB3, 3, 0, 4, 128, 0 };
+            byte[] overlongLength = { 0xB3, 4, 0, 4, 128, 0 };
             Assert.Throws<FormatException>(() => LineCodec.DecodeEvents(overlongLength));
             byte[] welcome = LineCodec.EncodeWelcome(new LineWelcome { ReconnectToken = "a" });
             welcome[10] = 0xFF;
@@ -194,21 +195,23 @@ namespace BirimizKovulacak.Core.Tests
         {
             Assert.Throws<FormatException>(() => LineCodec.DecodeView(new byte[1024 * 1024 + 1]));
             var events = new List<LineEvent>();
-            for (int i = 0; i < 16385; i++) events.Add(null);
+            for (int i = 0; i < 4097; i++) events.Add(null);
             Assert.Throws<FormatException>(() => LineCodec.EncodeEvents(events));
-            byte[] declaredHugeList = { 0xB3, 3, 0, 4, 255, 255, 127 };
+            byte[] declaredHugeList = { 0xB3, 4, 0, 4, 255, 255, 127 };
             Assert.Throws<FormatException>(() => LineCodec.DecodeEvents(declaredHugeList));
         }
 
         [Test]
         public void NumericWireOrderIsLittleEndianAndEnumsAreOneByte()
         {
-            byte[] bytes = LineCodec.EncodeAction(new LineAction(0x01020304, 0xA1B2C3D4, LineVerb.Attempt, -1, 0x11223344, 7));
-            CollectionAssert.AreEqual(new byte[]
-            {
-                0xB3, 3, 0, 2, 1, 4, 3, 2, 1, 0xD4, 0xC3, 0xB2, 0xA1, 6,
-                255, 255, 255, 255, 0x44, 0x33, 0x22, 0x11, 7, 0, 0, 0
-            }, bytes);
+            byte[] bytes = LineCodec.EncodeAction(new LineAction(0x01020304, 0xA1B2C3D4, LineVerb.SubmitTask, -1, 0x11223344, 7));
+            CollectionAssert.AreEqual(new byte[] {0xB3,4,0,2,1,4,3,2,1,0xD4,0xC3,0xB2,0xA1,5,255,255,255,255,0x44,0x33,0x22,0x11,7,0,0,0,255,255,255,255,1},bytes);
+        }
+
+        [Test]
+        public void StringsAndEnumGapsAreBounded()
+        {
+            Assert.Throws<FormatException>(()=>LineCodec.EncodeAction(new LineAction{Text=new string('a',2049)}));
         }
 
         [Test]
@@ -218,10 +221,25 @@ namespace BirimizKovulacak.Core.Tests
             var result = new LineWeekResult { WeekId = 17, Fired = 2, ResultHash = 1234 };
             ulong first = (ulong)method.Invoke(null, new object[] { result });
             Assert.AreEqual(1234UL, result.ResultHash);
+            result.MatchId = "unrelated-host-id";
             result.ResultHash = 5678;
             Assert.AreEqual(first, (ulong)method.Invoke(null, new object[] { result }));
             result.Fired = 1;
             Assert.AreNotEqual(first, (ulong)method.Invoke(null, new object[] { result }));
+        }
+    }
+}
+namespace BirimizKovulacak.Core.Tests
+{
+    [NUnit.Framework.TestFixture]
+    public sealed class LineCodecBoundaryTests
+    {
+        [NUnit.Framework.Test]
+        public void GapsInEventEnumAreRejectedAndMaximumLegalLengthsRoundTrip()
+        {
+            var bytes=LineCodec.EncodeEvents(new System.Collections.Generic.List<LineEvent>{new LineEvent{Type=LineEventType.PhaseChanged}});bytes[6]=33;NUnit.Framework.Assert.Throws<System.FormatException>(()=>LineCodec.DecodeEvents(bytes));
+            var action=new LineAction{Text=new string('a',2048)};NUnit.Framework.Assert.AreEqual(action.Text,LineCodec.DecodeAction(LineCodec.EncodeAction(action)).Text);
+            var messages=new System.Collections.Generic.List<LineMessage>();for(int i=0;i<4096;i++)messages.Add(null);NUnit.Framework.Assert.AreEqual(4096,LineCodec.DecodeMessages(LineCodec.EncodeMessages(messages)).Count);messages.Add(null);NUnit.Framework.Assert.Throws<System.FormatException>(()=>LineCodec.EncodeMessages(messages));
         }
     }
 }

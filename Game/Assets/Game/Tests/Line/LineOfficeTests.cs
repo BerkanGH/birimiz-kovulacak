@@ -2,208 +2,119 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using NUnit.Framework;
+using BirimizKovulacak.Core.Tests.Line;
 
-namespace BirimizKovulacak.Core.Tests.Line
+namespace BirimizKovulacak.Core.Tests
 {
     [TestFixture]
     public sealed class LineOfficeTests
     {
+        private static LineTest Pad()
+        {var m=LineTest.Task(TaskKind.InvoiceReconcile);m.Perfect();m.Submit(0,-1,1,fields:TaskField.B);m.Reveal();return m;}
         [Test]
-        public void CallRingsAnswersAndHangsUpFromEitherSide()
+        public void TransfersConserveMoneyAndDeduplicateAcrossReconnects()
         {
-            var m = new LineTest(); m.Ok(0, LineVerb.Call, 1);
-            Assert.AreEqual(CallStatus.Dialing, m.View().Mine.Phone.Status); Assert.AreEqual(CallStatus.Ringing, m.View(1).Mine.Phone.Status);
-            Assert.AreEqual(LineFailure.AlreadyInCall, m.Do(0, LineVerb.Call, 2).Failure);
-            Assert.AreEqual(LineFailure.Busy, m.Do(2, LineVerb.Call, 1).Failure);
-            m.Ok(1, LineVerb.Answer); int first = m.Engine.ConnectedCallId(0); Assert.GreaterOrEqual(first, 1);
-            Assert.AreEqual(first, m.Engine.ConnectedCallId(1)); Assert.AreEqual(1, m.Engine.CallPartner(0));
-            m.Advance(7); m.Ok(1, LineVerb.HangUp); Assert.AreEqual(-1, m.Engine.CallPartner(0));
-            Assert.AreEqual(CallEndReason.HungUp, m.View().Mine.CallLog.Last().EndReason);
-            m.Ok(1, LineVerb.Call, 0); m.Ok(0, LineVerb.Answer); Assert.Greater(m.Engine.ConnectedCallId(0), first);
-            m.Ok(1, LineVerb.HangUp); Assert.AreEqual(CallStatus.Idle, m.View().Mine.Phone.Status);
+            var m=new LineTest();var action=new LineAction(42,1,LineVerb.Transfer,1,2);Assert.IsTrue(m.Engine.Apply(0,action,m.Now).Accepted);Assert.AreEqual(2,m.View().Mine.Money);Assert.AreEqual(6,m.View(1).Mine.Money);
+            Assert.AreEqual(LineFailure.Duplicate,m.Engine.Apply(0,action,m.Now).Failure);m.Engine.SetConnected(0,false,m.Now);m.Engine.SetConnected(0,true,m.Now);Assert.AreEqual(LineFailure.Duplicate,m.Engine.Apply(0,action,m.Now).Failure);
+            Assert.AreEqual(8,m.View().Mine.Money+m.View(1).Mine.Money);Assert.AreEqual(1,m.View().Mine.Records.Count(r=>r.Kind==RecordKind.Transfer));Assert.IsFalse(m.View(2).Mine.Records.Any(r=>r.Kind==RecordKind.Transfer));
+            var newer=new LineAction(42,2,LineVerb.Transfer,1,1);Assert.AreEqual(LineFailure.RateLimited,m.Engine.Apply(0,newer,m.Now).Failure);
         }
-
-        [TestCase(LineVerb.Decline, CallEndReason.Declined)] [TestCase(LineVerb.HangUp, CallEndReason.HungUp)]
-        public void RingingCanDeclineOrCallerCancel(LineVerb verb, CallEndReason reason)
-        {
-            var m = new LineTest(); m.Ok(0, LineVerb.Call, 1); m.Ok(verb == LineVerb.Decline ? 1 : 0, verb);
-            Assert.AreEqual(CallStatus.Idle, m.View().Mine.Phone.Status); Assert.AreEqual(CallStatus.Idle, m.View(1).Mine.Phone.Status);
-            var events = m.Engine.DrainEvents().Where(e => e.Type == LineEventType.CallEnded).ToList();
-            Assert.AreEqual(2, events.Count); Assert.IsTrue(events.All(e => e.A == (int)reason && e.Audience == LineAudience.Player));
-        }
-
         [Test]
-        public void RingTimesOutAtAbsoluteDeadline()
+        public void TransferLimitsAndBalancesCannotCreateMoney()
         {
-            var m = new LineTest(); m.Ok(0, LineVerb.Call, 1); double until = m.View(1).Mine.Phone.RingUntil;
-            m.Advance(until - m.Now - .01); Assert.AreEqual(CallStatus.Ringing, m.View(1).Mine.Phone.Status);
-            m.Advance(.01); Assert.AreEqual(CallStatus.Idle, m.View(1).Mine.Phone.Status);
-            var ended = m.Engine.DrainEvents().Where(e => e.Type == LineEventType.CallEnded).ToList();
-            Assert.IsTrue(ended.All(e => e.Time == until && e.A == (int)CallEndReason.Missed));
+            var m=new LineTest();Assert.AreEqual(LineFailure.BadParam,m.Do(0,LineVerb.Transfer,1,0).Failure);Assert.AreEqual(LineFailure.BadParam,m.Do(0,LineVerb.Transfer,1,11).Failure);Assert.AreEqual(LineFailure.InsufficientFunds,m.Do(0,LineVerb.Transfer,1,5).Failure);Assert.AreEqual(LineFailure.Self,m.Do(0,LineVerb.Transfer,0,1).Failure);Assert.AreEqual(16,m.Views().Sum(v=>v.Mine.Money));
         }
-
         [Test]
-        public void CallsEndOnAbsenceAndMeetingsAndRejectAbsentCallees()
+        public void EvidencePurchaseIncludesFutureRecordsAndCannotChargeTwice()
         {
-            var m = new LineTest(); m.Ok(0, LineVerb.Call, 1); m.Ok(1, LineVerb.Answer);
-            m.Engine.SetConnected(1, false, m.Now); Assert.AreEqual(CallEndReason.Disconnected, m.View().Mine.CallLog.Last().EndReason);
-            Assert.AreEqual(LineFailure.Absent, m.Do(0, LineVerb.Call, 1).Failure);
-            m.Engine.SetConnected(1, true, m.Now); m.Ok(0, LineVerb.Call, 1); m.Ok(1, LineVerb.Answer);
-            m.Until(LinePhase.MeetingDossier); Assert.AreEqual(-1, m.Engine.ConnectedCallId(0));
-            Assert.AreEqual(CallEndReason.PhaseEnd, m.View().Mine.CallLog.Last().EndReason);
-            Assert.AreEqual(LineFailure.WrongPhase, m.Do(0, LineVerb.Call, 1).Failure);
+            var m=LineTest.Task(TaskKind.InvoiceReconcile);m.Ok(1,LineVerb.BuyEvidence,a:100);Assert.AreEqual(1,m.View(1).Mine.Money);
+            m.Perfect();m.Submit(0,-1,1,fields:TaskField.B);m.Reveal();var proof=m.View(1).Mine.Records.Single(r=>r.Kind==RecordKind.DealPayment&&r.ProofOf>0);Assert.AreEqual(0,proof.Actor);
+            int before=m.View(1).Mine.Money;Assert.AreEqual(LineFailure.AlreadyUsed,m.Do(1,LineVerb.BuyEvidence,a:100).Failure);Assert.AreEqual(before,m.View(1).Mine.Money);Assert.IsFalse(m.View(2).Mine.Records.Any(r=>r.ProofOf>0));
+            m.Until(LinePhase.Morning,1);Assert.AreEqual(4,m.View(1).Mine.Offers.Single(o=>o.Id==101).Price);
         }
-
         [Test]
-        public void MailLimitsTemplatesRecipientsAndMorningMemo()
+        public void EvidencePricesDiscountAndCapsArePerBuyer()
         {
-            var m = new LineTest(); Assert.AreEqual(MailKind.Manager, m.View().Mine.Inbox.Single().Kind);
-            Assert.AreEqual(LineIds.Manager, m.View().Mine.Inbox.Single().From);
-            m.Ok(0, LineVerb.SendMail, 1, 7, 2); var mail = m.View(1).Mine.Inbox.Last();
-            Assert.AreEqual(MailKind.Personal, mail.Kind); Assert.AreEqual(0, mail.From); Assert.AreEqual(7, mail.TemplateId);
-            Assert.AreEqual(2, mail.About); Assert.IsFalse(mail.ToAll);
-            Assert.AreEqual(1, m.View(2).Mine.Inbox.Count);
-            for (int i = 1; i < m.Config.MailsPerDay; i++) m.Ok(0, LineVerb.SendMail, -1, i);
-            Assert.AreEqual(LineFailure.LimitReached, m.Do(0, LineVerb.SendMail, 1, 0).Failure);
-            Assert.AreEqual(LineFailure.BadParam, m.Do(1, LineVerb.SendMail, 0, m.Config.MailTemplates).Failure);
-            m.Until(LinePhase.Morning, 1); Assert.AreEqual(0, m.View().Mine.MailsSentToday);
+            var s=LineTest.MakeSetup();s.ManagerProfileId="paragoz";var m=new LineTest(s);Assert.AreEqual(2,m.View().Mine.Offers.Single(o=>o.Id==100).Price);
+            m.Ok(0,LineVerb.BuyEvidence,a:100);Assert.AreEqual(LineFailure.LimitReached,m.Do(0,LineVerb.BuyEvidence,a:300).Failure);m.Ok(1,LineVerb.BuyEvidence,a:100);Assert.AreEqual(2,m.View().Mine.Money);Assert.AreEqual(2,m.View(1).Mine.Money);
         }
-
         [Test]
-        public void CoffeeHidesRoundAndBlocksSubmitUntilExpiry()
+        public void PresentingProofExposesExactlyOnceIncludingAcrossMeetings()
         {
-            var m = LineTest.WithTrick(TrickType.KahveDok); m.Ok(0, LineVerb.UseTrick, 1);
-            Assert.AreEqual(m.Now + m.Config.CoffeeSeconds, m.View(1).Mine.ComputerBlockedUntil);
-            Assert.AreEqual(TrickType.KahveDok, m.View(1).Mine.ComputerBlockedBy);
-            Assert.IsTrue(m.View(1).Round == null || (m.View(1).Round.Partner == -1 && m.View(1).Round.TopicId == -1 && m.View(1).Round.ClueInnocent == -1 && m.View(1).Round.Digit == -1));
-            Assert.AreEqual(LineFailure.ComputerBlocked, m.Do(1, LineVerb.SubmitChoice, 0, 0).Failure);
-            Assert.AreEqual(LineFailure.AlreadyUsed, m.Do(0, LineVerb.UseTrick, 2).Failure);
-            m.Advance(m.Config.CoffeeSeconds); m.Ok(1, LineVerb.SubmitChoice, 0, 0);
-            Assert.LessOrEqual(m.View(1).Mine.ComputerBlockedUntil, m.Now);
+            var m=Pad();int record=m.View().Mine.Records.Single(r=>r.ProofOf>0).Id;m.Until(LinePhase.MeetingDossier);m.Ok(0,LineVerb.PresentRecord,a:record);int blame=m.Player(0).Blame;
+            m.Ok(1,LineVerb.PresentRecord,a:record);Assert.AreEqual(blame,m.Player(0).Blame);Assert.IsTrue(m.View().Meeting.Presentations[1].Repeat);Assert.AreEqual(1,m.Engine.DrainEvents().Count(e=>e.Type==LineEventType.IncidentExposed));
+            m.Until(LinePhase.MeetingDossier,1);int prior=m.Player(0).Blame;m.Ok(2,LineVerb.PresentRecord,a:record);Assert.AreEqual(prior,m.Player(0).Blame);m.Finish();Assert.AreEqual(1,m.Engine.Result.Exposed.Count);Assert.AreEqual(-50,m.Engine.Result.Players[0].Career.Single(c=>c.Item==CareerItem.ProvenSabotage).Points);
         }
-
         [Test]
-        public void PullPlugDropsCallAndDeadPhoneReportsBusyWithoutActorLeak()
+        public void PrivateRecordAndPresentationCapAreEnforced()
         {
-            var m = LineTest.WithTrick(TrickType.FisCek); m.Ok(1, LineVerb.Call, 2); m.Ok(2, LineVerb.Answer);
-            m.Ok(0, LineVerb.UseTrick, 1); Assert.AreEqual(-1, m.Engine.ConnectedCallId(2));
-            Assert.AreEqual(CallEndReason.LineCut, m.View(1).Mine.CallLog.Last().EndReason);
-            Assert.AreEqual(LineFailure.PhoneDead, m.Do(1, LineVerb.Call, 2).Failure);
-            Assert.AreEqual(LineFailure.Busy, m.Do(3, LineVerb.Call, 1).Failure);
-            foreach (var e in m.Engine.DrainEvents().Where(e => e.Type == LineEventType.TrickHit))
-            {
-                Assert.AreEqual(-1, e.Actor); Assert.IsFalse(e.IsVisibleTo(3));
-            }
-            m.Advance(m.Config.PhoneDeadSeconds); m.Ok(1, LineVerb.Call, 2);
+            var m=Pad();int id=m.View().Mine.Records.Single(r=>r.ProofOf>0).Id;m.Until(LinePhase.MeetingDossier);Assert.AreEqual(LineFailure.NotOwned,m.Do(2,LineVerb.PresentRecord,a:id).Failure);m.Ok(0,LineVerb.PresentRecord,a:id);m.Ok(0,LineVerb.PresentRecord,a:id);Assert.AreEqual(LineFailure.LimitReached,m.Do(0,LineVerb.PresentRecord,a:id).Failure);
         }
-
         [Test]
-        public void InternetBlocksEverybodyElseAndDelaysNewMail()
+        public void RemedialRecoversOnlyOnceAndHasCapsAndPublicRecord()
         {
-            var m = LineTest.WithTrick(TrickType.InternetKes); int before = m.View(1).Mine.Inbox.Count;
-            m.Ok(0, LineVerb.UseTrick, 1); Assert.AreEqual(before, m.View(1).Mine.Inbox.Count);
-            Assert.LessOrEqual(m.View().Mine.ComputerBlockedUntil, m.Now);
-            for (int p = 1; p < 4; p++) Assert.AreEqual(m.Now + m.Config.InternetSeconds, m.View(p).Mine.ComputerBlockedUntil);
-            m.Ok(0, LineVerb.SendMail, 1, 7, 2);
-            Assert.AreEqual(before, m.View(1).Mine.Inbox.Count);
-            Assert.IsTrue(m.Engine.DrainEvents().Where(e => e.Type == LineEventType.InternetDown).All(e => e.Actor == -1));
-            m.Advance(m.Config.InternetSeconds); Assert.AreEqual(before + 2, m.View(1).Mine.Inbox.Count);
-            Assert.AreEqual(MailKind.System, m.View(1).Mine.Inbox[before].Kind);
-            Assert.AreEqual(MailKind.Personal, m.View(1).Mine.Inbox[before + 1].Kind);
+            var m=Pad();int original=m.View().Task.Reveal.Output;m.Ok(1,LineVerb.StartRemedial,2,0);Assert.IsNull(m.View(0).Mine.IncomingRemedial);Assert.AreEqual(1,m.View(2).Mine.IncomingRemedial.Requester);m.Ok(2,LineVerb.RespondRemedial,1,1);
+            Assert.AreEqual(original+10,m.View().Task.Reveal.Output);Assert.AreEqual(3,m.Player(1).Blame);Assert.AreEqual(1,m.View(1).Mine.RemedialsLeftThisMatch);Assert.AreEqual(0,m.View(1).Mine.RemedialsLeftThisBlock);Assert.IsTrue(m.Views().All(v=>v.Mine.Records.Any(r=>r.Kind==RecordKind.Remedial)));
+            Assert.AreEqual(LineFailure.NotOwned,m.Do(2,LineVerb.RespondRemedial,1,1).Failure);Assert.AreEqual(LineFailure.NotAvailable,m.Do(0,LineVerb.StartRemedial,2,0).Failure);Assert.AreEqual(original+10,m.View().Company.ResolvedOutput);
         }
-
         [Test]
-        public void FakeMailShowsApparentSenderAndDossierTraceOnly()
+        public void RemedialCannotExceedMaxAndExpiresAtTimeoutOrMeeting()
         {
-            var m = LineTest.WithTrick(TrickType.SahteEposta); int ownCount = m.View().Mine.Inbox.Count;
-            m.Ok(0, LineVerb.UseTrick, 1, 7, 2); Assert.AreEqual(ownCount, m.View().Mine.Inbox.Count);
-            for (int p = 1; p < 4; p++)
-            {
-                var mail = m.View(p).Mine.Inbox.Last(); Assert.AreEqual(1, mail.From); Assert.IsTrue(mail.ToAll);
-                Assert.AreEqual(MailKind.Personal, mail.Kind); Assert.AreEqual(7, mail.TemplateId); Assert.AreEqual(2, mail.About);
-            }
-            m.Until(LinePhase.MeetingDossier); var trace = m.View().Meeting.Dossier.Single(d => d.Kind == DossierKind.TrickTrace);
-            Assert.AreEqual(7, trace.TemplateId); Assert.IsFalse(trace.Named); Assert.AreEqual(-1, trace.Player);
+            var m=LineTest.Task(TaskKind.VendorPick,3);m.Perfect();m.Reveal();if(m.View().Task.Reveal.Output==100)Assert.Pass("Seed selected the best vendor.");int before=m.View().Task.Reveal.Output;
+            m.Ok(0,LineVerb.StartRemedial,1,0);m.Advance(30);Assert.IsNull(m.View().Mine.OutgoingRemedial);Assert.AreEqual(before,m.View().Company.ResolvedOutput);
+            var p=Pad();p.Ok(0,LineVerb.StartRemedial,1,0);p.Until(LinePhase.MeetingDossier);Assert.IsNull(p.View().Mine.OutgoingRemedial);
         }
-
         [Test]
-        public void WiretapWindowIsPrivateAndUnnamedTapLeavesNoTrace()
+        public void ProductiveFilterIsRunningSumNotPerPaymentRounding()
         {
-            var m = LineTest.WithTrick(TrickType.HatDinle); m.Ok(0, LineVerb.UseTrick, 1); var buffer = new int[6];
-            Assert.AreEqual(1, m.Engine.TappersOf(1, buffer)); Assert.AreEqual(0, buffer[0]);
-            Assert.AreEqual(1, m.View().Mine.WiretapTarget); Assert.AreEqual(-1, m.View(1).Mine.WiretapTarget);
-            Assert.AreEqual(0, m.Engine.TappersOf(2, buffer));
-            m.Advance(m.Config.WiretapSeconds); Assert.AreEqual(0, m.Engine.TappersOf(1, buffer));
-            Assert.AreEqual(-1, m.View().Mine.WiretapTarget);
-            m.Until(LinePhase.MeetingDossier); Assert.IsFalse(m.View().Meeting.Dossier.Any(d => d.Trick == TrickType.HatDinle));
+            var m=LineTest.Task(TaskKind.BonusPool,4,c=>c.Profiles.Find(p=>p.Id=="disiplinci").HasFavourite=true);m.Until(LinePhase.RoundPlay);int fav=m.View().Favourite;foreach(var v in m.Views())m.Submit(v.Me,v.Me==fav?1:0);m.Reveal();Assert.AreEqual(9,m.View(fav).Mine.Money);Assert.AreEqual(5,m.View(fav).Mine.BlockIncome);
         }
-
-        [TestCase(0f)] [TestCase(1f)]
-        public void ConfirmedTipNamesTraceAndCaughtBlameIsAppliedExactlyOnce(float traceChance)
-        {
-            var m = LineTest.WithTrick(TrickType.KahveDok, c => c.Profiles.ForEach(p => p.TraceChance = traceChance));
-            m.Ok(0, LineVerb.UseTrick, 1); m.Ok(2, LineVerb.TipOff, 0);
-            Assert.AreEqual(LineFailure.AlreadyUsed, m.Do(2, LineVerb.TipOff, 1).Failure);
-            m.Until(LinePhase.MeetingDossier); var profile = m.Config.Profile(m.View().ManagerProfileId);
-            Assert.AreEqual(m.Config.StartBlame + profile.TrickCaughtBlame + m.Config.ConfirmedTipBlame, m.Player(0).Blame);
-            var trace = m.View().Meeting.Dossier.Single(d => d.Kind == DossierKind.TrickTrace);
-            Assert.IsTrue(trace.Named); Assert.AreEqual(0, trace.Player);
-            var tip = m.View().Meeting.Dossier.Single(d => d.Kind == DossierKind.TipResult);
-            Assert.AreEqual(0, tip.Player); Assert.AreEqual(1, tip.Arg); Assert.AreEqual(-1, tip.Victim);
-        }
-
         [Test]
-        public void FalseTipBlamesAndNamesTipper()
+        public void TextSanitisesNfcControlsAnglesAndUtf16Limits()
         {
-            var m = LineTest.WithTrick(TrickType.KahveDok); m.Ok(2, LineVerb.TipOff, 0);
-            m.Until(LinePhase.MeetingDossier); Assert.AreEqual(m.Config.StartBlame + m.Config.FalseTipBlame, m.Player(2).Blame);
-            var tip = m.View().Meeting.Dossier.Single(d => d.Kind == DossierKind.TipResult);
-            Assert.AreEqual(0, tip.Player); Assert.AreEqual(0, tip.Arg); Assert.AreEqual(2, tip.Victim);
+            var value=LineText.Sanitize("  I\u0307<hey>\u0001\n there  ",50,false,out var failure);Assert.AreEqual(LineFailure.None,failure);Assert.AreEqual("İ‹hey› there",value);
+            Assert.AreEqual("a\n\n\nb",LineText.Sanitize("a\n\n\n\nb",20,true,out failure));LineText.Sanitize("\u0001 ",20,false,out failure);Assert.AreEqual(LineFailure.EmptyText,failure);
+            LineText.Sanitize("🎧",1,false,out failure);Assert.AreEqual(LineFailure.TooLong,failure);Assert.AreEqual("🎧",LineText.Sanitize("🎧",2,false,out failure));
         }
-
-        [TestCase(false)] [TestCase(true)]
-        public void BusyAndDeadCalleeGetsPrivateMissedCall(bool dead)
-        {
-            var m = LineTest.WithTrick(TrickType.FisCek);
-            if (dead) m.Ok(0, LineVerb.UseTrick, 1);
-            else { m.Ok(1, LineVerb.Call, 2); m.Ok(2, LineVerb.Answer); }
-            m.Engine.DrainEvents(); Assert.AreEqual(LineFailure.Busy, m.Do(3, LineVerb.Call, 1).Failure);
-            var notice = m.Engine.DrainEvents().Single(e => e.Type == LineEventType.MissedCall);
-            Assert.AreEqual(3, notice.Actor); Assert.IsTrue(notice.IsVisibleTo(1));
-            Assert.IsFalse(notice.IsVisibleTo(0)); Assert.IsFalse(notice.IsVisibleTo(3));
-        }
-
-        [TestCase(WeekLength.Short, 1)] [TestCase(WeekLength.Full, 2)]
-        public void WeeklyTrickAndTipAllowancesDoNotResetAtMorning(WeekLength length, int allowance)
-        {
-            var s = LineTest.MakeSetup(); s.Length = length;
-            s.History = new LineSessionHistory { WeeksPlayed = 1 };
-            s.ForceTricks = new List<TrickType> { TrickType.KahveDok };
-            var m = new LineTest(s);
-            for (int day = 0; day < allowance; day++)
-            {
-                m.Until(LinePhase.RoundPlay, day);
-                Assert.AreEqual(allowance - day, m.View().Mine.TricksLeftThisWeek);
-                m.Ok(0, LineVerb.UseTrick, 1);
-                Assert.AreEqual(LineFailure.AlreadyUsed, m.Do(0, LineVerb.UseTrick, 2).Failure);
-                if (day == 0) m.Ok(0, LineVerb.TipOff, 2);
-            }
-            m.Until(LinePhase.RoundPlay, allowance);
-            Assert.AreEqual(0, m.View().Mine.TricksLeftThisWeek);
-            Assert.AreEqual(0, m.View().Mine.TipsLeftThisWeek);
-            Assert.IsFalse(m.View().Mine.TrickUsedToday); Assert.IsFalse(m.View().Mine.TipUsedToday);
-            Assert.AreEqual(LineFailure.LimitReached, m.Do(0, LineVerb.UseTrick, 1).Failure);
-            Assert.AreEqual(LineFailure.LimitReached, m.Do(0, LineVerb.TipOff, 1).Failure);
-        }
-
         [Test]
-        public void FirstWeekTipLineUnlocksOnThirdDayIndependentlyOfTricks()
+        public void MessageLimitsRateLimitsThreadsAndPerRecipientSeq()
         {
-            var m = new LineTest(); m.Until(LinePhase.RoundPlay, 1);
-            Assert.IsTrue(m.View().Features.TricksUnlocked); Assert.IsFalse(m.View().Features.TipLineUnlocked);
-            Assert.AreEqual(LineFailure.NotUnlocked, m.Do(0, LineVerb.TipOff, 1).Failure);
-            m.Until(LinePhase.Morning, 2); Assert.IsTrue(m.View().Features.TipLineUnlocked);
-            m.Ok(0, LineVerb.TipOff, 1);
+            var m=new LineTest(null,c=>{c.TextsPerBlock=1;c.EmailsPerBlock=2;});m.Ok(0,LineVerb.SendText,1,text:"private");Assert.AreEqual(LineFailure.RateLimited,m.Do(0,LineVerb.SendText,1,text:"again").Failure);m.Advance(1.5);Assert.AreEqual(LineFailure.LimitReached,m.Do(0,LineVerb.SendText,1,text:"again").Failure);
+            m.Ok(0,LineVerb.SendEmail,1,c:-1,text:"Hello\nthere");var mail=m.Engine.MessagesFor(1,0).Last();Assert.AreEqual(MessageKind.Email,mail.Kind);m.Ok(1,LineVerb.SendEmail,0,c:mail.Id,text:"Reply");var reply=m.Engine.MessagesFor(0,0).Last();Assert.AreEqual(mail.ThreadId,reply.ThreadId);Assert.AreEqual(mail.Id,reply.ReplyTo);
+            Assert.IsFalse(m.Engine.MessagesFor(2,0).Any(x=>x.Text=="private"||x.Text=="Reply"));Assert.IsTrue(m.Engine.MessagesFor(0,0).Select(x=>x.Seq).SequenceEqual(Enumerable.Range(1,4).Select(x=>(long)x)));
+            var detached=m.Engine.MessagesFor(1,0);detached.Last().Text="MUTATED";Assert.AreEqual("Reply",m.Engine.MessagesFor(1,0).Last().Text);
+            Assert.AreEqual(1,m.Engine.MessagesFor(0,3).Count);
+        }
+        [Test]
+        public void ComplaintsOnlyAppearAtDossierWithNoAuthor()
+        {
+            var m=new LineTest();m.Ok(0,LineVerb.FileComplaint,1,a:-1,text:"unverified <claim>");Assert.AreEqual(1,m.Engine.MessagesFor(1,0).Count);Assert.AreEqual(0,m.View().Mine.ComplaintsLeftThisBlock);m.Until(LinePhase.MeetingDossier);
+            foreach(var v in m.Views()){Assert.AreEqual("unverified ‹claim›",v.Meeting.Complaints.Single().Text);Assert.AreEqual(1,v.Meeting.Complaints.Single().Target);}
+            Assert.IsFalse(typeof(LineComplaintView).GetFields().Any(f=>f.Name=="Actor"||f.Name=="Author"));
+        }
+        [Test]
+        public void EmailTemplatesBroadcastAndRetentionWork()
+        {
+            var m=new LineTest(null,c=>{c.MessagesKeptPerPlayer=2;c.MessageMinInterval=0;});m.Ok(0,LineVerb.SendEmail,a:0);m.Ok(0,LineVerb.SendText,1,text:"one");m.Ok(0,LineVerb.SendText,1,text:"two");var messages=m.Engine.MessagesFor(1,0);Assert.AreEqual(2,messages.Count);Assert.AreEqual(3,messages[0].Seq);Assert.AreEqual(4,messages[1].Seq);
+            Assert.AreEqual(2,m.Engine.MessagesFor(2,0).Count);Assert.AreEqual(LineFailure.NotOwned,m.Do(2,LineVerb.SendEmail,1,c:999,text:"forged reply").Failure);
+        }
+        [TestCase(TrickType.KahveDok,IncidentKind.TrickCoffee),TestCase(TrickType.FisCek,IncidentKind.TrickPhoneCut),TestCase(TrickType.InternetKes,IncidentKind.TrickInternet),TestCase(TrickType.HatDinle,IncidentKind.TrickWiretap),TestCase(TrickType.SahteEposta,IncidentKind.TrickFakeEmail)]
+        public void EveryTrickCreatesOneHostIncidentAndItProofWithOnlyObservableDossier(TrickType trick,IncidentKind kind)
+        {
+            var s=LineTest.MakeSetup();s.History=new LineSessionHistory{WeeksPlayed=1};s.ForceTricks=new List<TrickType>{trick};var m=new LineTest(s);m.Ok(0,LineVerb.UseTrick,1,text:trick==TrickType.SahteEposta?"Pretend email":"");
+            var e=m.Engine.DrainEvents().Single(x=>x.Type==LineEventType.HostIncident);Assert.AreEqual((int)kind,e.A);Assert.AreEqual(LineAudience.Host,e.Audience);Assert.IsFalse(m.View(2).Mine.Records.Any(r=>r.ProofOf>0));
+            if(trick==TrickType.SahteEposta){var mail=m.Engine.MessagesFor(2,0).Last();Assert.AreEqual(1,mail.From);Assert.AreEqual("Pretend email",mail.Text);}
+            m.Until(LinePhase.MeetingDossier);m.Ok(2,LineVerb.BuyEvidence,a:300);Assert.AreEqual(1,m.View(2).Mine.Records.Count(r=>r.ProofOf>0));Assert.IsTrue(m.View().Meeting.Dossier.Where(d=>d.Kind==DossierKind.IncidentEffect).All(d=>d.Player== -1));
+        }
+        [Test]
+        public void CoffeeExemptsMissedBlameAndPhoneCutEndsCalls()
+        {
+            var s=LineTest.MakeSetup();s.History=new LineSessionHistory{WeeksPlayed=1};s.ForceTricks=new List<TrickType>{TrickType.KahveDok,TrickType.FisCek};var m=new LineTest(s);m.Until(LinePhase.RoundPlay);m.Advance(m.Engine.PhaseEndTime-m.Now-10);m.Ok(0,LineVerb.UseTrick,2);m.Ok(0,LineVerb.Call,1);m.Ok(1,LineVerb.Answer);m.Ok(1,LineVerb.UseTrick,0);Assert.AreEqual(-1,m.Engine.ConnectedCallId(0));m.Next();Assert.AreEqual(5,m.Player(2).Blame);Assert.AreEqual(6,m.Player(3).Blame);
+        }
+        [Test]
+        public void CallsGivePrivateLogsAndWiretapNeverNotifiesVictim()
+        {
+            var s=LineTest.MakeSetup();s.History=new LineSessionHistory{WeeksPlayed=1};s.ForceTricks=new List<TrickType>{TrickType.HatDinle};var m=new LineTest(s);m.Ok(0,LineVerb.UseTrick,1);m.Ok(1,LineVerb.Call,2);m.Ok(2,LineVerb.Answer);var buffer=new int[6];Assert.AreEqual(1,m.Engine.TappersOf(2,buffer));Assert.AreEqual(0,buffer[0]);Assert.AreEqual(0,m.View(3).Mine.CallLog.Count);m.Advance(7);m.Ok(1,LineVerb.HangUp);Assert.AreEqual(7,m.View(1).Mine.Records.Single(r=>r.Kind==RecordKind.Call).N1);Assert.IsFalse(m.Engine.DrainEvents().Any(e=>e.Type==LineEventType.TrickHit&&e.AudiencePlayer==1));
         }
     }
 }

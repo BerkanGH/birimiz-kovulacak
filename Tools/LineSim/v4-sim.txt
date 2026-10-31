@@ -1,0 +1,247 @@
+v4.0-hybrid — SYNTHETIC BOT DATA
+Bots do not talk. Talk models perfect information sharing between communication partners (calls or placeholder texts), after contact in the current task. Greedy uses only its own facts. NoComm never calls or texts.
+Default, unscaled timings. Each cell has 20 matches; seeds 1927..1946; host step 2.00 s; history resets every 10 matches.
+Command: dotnet run -c Release --project Tools/LineSim/LineSim.csproj -- --matches 20 --players all --length both --mix all --seed 1927 --step 2 --session-matches 10 --output Tools/LineSim/v4-sim.txt
+
+3 players | Short | all Talk
+Productivity % mean/min/p10/median/p90/max: 95.58 / 83.80 / 83.80 / 96.60 / 100.00 / 100.00
+Closure: 0.00%; EotM award: 55.00%; incidents created/exposed: 8/8 (100.00% exposed)
+Daily warnings/no-action: 6/34 of 40 (15.00% / 85.00%); firing/no-majority: 5/15 of 20 (25.00% / 75.00%) surviving-company final ballots (NoVotes included with no-majority)
+Early-submit triggers: 110; carried seconds: 1920.00 total, 96.00 per match; accepted actions/Busy: 1913/0
+Career component mean points/player: NotFired=91.67, CompanyTarget=75.00, SecretObjective=35.00, EmployeeOfMonth=7.33, ProvenSabotage=-6.67
+Output/task (mean points, instances): invoice_reconcile=85.00 (10), budget_split=100.00 (10), customer_spec=86.60 (10), report_review=100.00 (10), room_booking=100.00 (10), archive_visitor=100.00 (10), bonus_pool=94.00 (10), server_code=100.00 (10), phishing_check=100.00 (10), shift_cover=70.00 (10), vendor_pick=95.60 (10), supply_swap=100.00 (10)
+Objective completion by kind: Saver=0/8 (0.00%), Broker=1/4 (25.00%), Patron=0/8 (0.00%), TeamPlayer=7/7 (100.00%), CleanRecord=5/5 (100.00%), Rival=0/6 (0.00%), Guardian=5/5 (100.00%), Archivist=6/6 (100.00%), Presenter=11/11 (100.00%)
+Six-player block-2 play view maximum: 0 bytes; result aggregate hash: 1A4A88E845725F67
+
+3 players | Short | all NoComm
+Productivity % mean/min/p10/median/p90/max: 54.41 / 25.80 / 33.10 / 49.10 / 72.10 / 78.30
+Closure: 75.00%; EotM award: 25.00%; incidents created/exposed: 0/0 (0.00% exposed)
+Daily warnings/no-action: 0/40 of 40 (0.00% / 100.00%); firing/no-majority: 0/5 of 5 (0.00% / 100.00%) surviving-company final ballots (NoVotes included with no-majority)
+Early-submit triggers: 110; carried seconds: 1920.00 total, 96.00 per match; accepted actions/Busy: 1117/0
+Career component mean points/player: NotFired=25.00, CompanyTarget=18.75, SecretObjective=11.00, EmployeeOfMonth=3.33, ProvenSabotage=0.00
+Output/task (mean points, instances): invoice_reconcile=9.90 (10), budget_split=100.00 (10), customer_spec=9.90 (10), report_review=100.00 (10), room_booking=36.70 (10), archive_visitor=30.00 (10), bonus_pool=61.00 (10), server_code=22.00 (10), phishing_check=32.50 (10), shift_cover=70.00 (10), vendor_pick=75.60 (10), supply_swap=19.80 (10)
+Objective completion by kind: Saver=0/8 (0.00%), Broker=0/4 (0.00%), Patron=0/8 (0.00%), TeamPlayer=2/7 (28.57%), CleanRecord=5/5 (100.00%), Rival=0/6 (0.00%), Guardian=2/5 (40.00%), Archivist=6/6 (100.00%), Presenter=11/11 (100.00%)
+Six-player block-2 play view maximum: 0 bytes; result aggregate hash: 63BDAD4EA455708F
+
+3 players | Short | Talk + one Greedy
+Productivity % mean/min/p10/median/p90/max: 83.24 / 68.60 / 68.80 / 85.30 / 92.60 / 95.80
+Closure: 0.00%; EotM award: 70.00%; incidents created/exposed: 58/27 (46.55% exposed)
+Daily warnings/no-action: 18/22 of 40 (45.00% / 55.00%); firing/no-majority: 15/5 of 20 (75.00% / 25.00%) surviving-company final ballots (NoVotes included with no-majority)
+Early-submit triggers: 110; carried seconds: 1920.00 total, 96.00 per match; accepted actions/Busy: 1824/0
+Career component mean points/player: NotFired=75.00, CompanyTarget=75.00, SecretObjective=29.00, EmployeeOfMonth=9.33, ProvenSabotage=-22.50
+Output/task (mean points, instances): invoice_reconcile=39.80 (10), budget_split=96.60 (10), customer_spec=62.70 (10), report_review=90.00 (10), room_booking=60.70 (10), archive_visitor=68.50 (10), bonus_pool=67.00 (10), server_code=100.00 (10), phishing_check=100.00 (10), shift_cover=70.00 (10), vendor_pick=95.60 (10), supply_swap=86.40 (10)
+Objective completion by kind: Saver=0/8 (0.00%), Broker=0/4 (0.00%), Patron=0/8 (0.00%), TeamPlayer=5/7 (71.43%), CleanRecord=3/5 (60.00%), Rival=0/6 (0.00%), Guardian=4/5 (80.00%), Archivist=6/6 (100.00%), Presenter=11/11 (100.00%)
+Six-player block-2 play view maximum: 0 bytes; result aggregate hash: D7E663B5D0D64267
+
+3 players | Full | all Talk
+Productivity % mean/min/p10/median/p90/max: 97.93 / 91.00 / 92.30 / 98.00 / 100.00 / 100.00
+Closure: 0.00%; EotM award: 80.00%; incidents created/exposed: 11/7 (63.64% exposed)
+Daily warnings/no-action: 7/73 of 80 (8.75% / 91.25%); firing/no-majority: 5/15 of 20 (25.00% / 75.00%) surviving-company final ballots (NoVotes included with no-majority)
+Early-submit triggers: 184; carried seconds: 3070.00 total, 153.50 per match; accepted actions/Busy: 3056/0
+Career component mean points/player: NotFired=91.67, CompanyTarget=75.00, SecretObjective=39.00, EmployeeOfMonth=10.67, ProvenSabotage=-5.83
+Output/task (mean points, instances): invoice_reconcile=94.38 (16), budget_split=100.00 (17), customer_spec=93.75 (16), report_review=100.00 (18), room_booking=100.00 (16), archive_visitor=96.67 (18), bonus_pool=90.63 (16), server_code=100.00 (17), phishing_check=100.00 (17), shift_cover=91.18 (17), vendor_pick=97.25 (16), supply_swap=100.00 (16)
+Objective completion by kind: Saver=5/8 (62.50%), Broker=1/4 (25.00%), Patron=0/8 (0.00%), TeamPlayer=7/7 (100.00%), CleanRecord=4/5 (80.00%), Rival=0/6 (0.00%), Guardian=5/5 (100.00%), Archivist=6/6 (100.00%), Presenter=11/11 (100.00%)
+Six-player block-2 play view maximum: 0 bytes; result aggregate hash: 8482C55FB84E7104
+
+3 players | Full | all NoComm
+Productivity % mean/min/p10/median/p90/max: 56.19 / 34.10 / 39.10 / 53.90 / 69.30 / 74.20
+Closure: 70.00%; EotM award: 30.00%; incidents created/exposed: 0/0 (0.00% exposed)
+Daily warnings/no-action: 0/80 of 80 (0.00% / 100.00%); firing/no-majority: 0/6 of 6 (0.00% / 100.00%) surviving-company final ballots (NoVotes included with no-majority)
+Early-submit triggers: 184; carried seconds: 3070.00 total, 153.50 per match; accepted actions/Busy: 1739/0
+Career component mean points/player: NotFired=30.00, CompanyTarget=22.50, SecretObjective=9.00, EmployeeOfMonth=4.00, ProvenSabotage=0.00
+Output/task (mean points, instances): invoice_reconcile=8.25 (16), budget_split=100.00 (17), customer_spec=16.50 (16), report_review=100.00 (18), room_booking=45.56 (16), archive_visitor=44.44 (18), bonus_pool=65.00 (16), server_code=28.24 (17), phishing_check=29.41 (17), shift_cover=76.47 (17), vendor_pick=69.50 (16), supply_swap=14.44 (16)
+Objective completion by kind: Saver=3/8 (37.50%), Broker=0/4 (0.00%), Patron=0/8 (0.00%), TeamPlayer=5/7 (71.43%), CleanRecord=5/5 (100.00%), Rival=0/6 (0.00%), Guardian=1/5 (20.00%), Archivist=6/6 (100.00%), Presenter=11/11 (100.00%)
+Six-player block-2 play view maximum: 0 bytes; result aggregate hash: 5F88AB87880C129D
+
+3 players | Full | Talk + one Greedy
+Productivity % mean/min/p10/median/p90/max: 85.08 / 74.40 / 74.60 / 86.20 / 90.20 / 92.30
+Closure: 0.00%; EotM award: 95.00%; incidents created/exposed: 99/36 (36.36% exposed)
+Daily warnings/no-action: 29/51 of 80 (36.25% / 63.75%); firing/no-majority: 17/3 of 20 (85.00% / 15.00%) surviving-company final ballots (NoVotes included with no-majority)
+Early-submit triggers: 184; carried seconds: 3070.00 total, 153.50 per match; accepted actions/Busy: 2942/0
+Career component mean points/player: NotFired=71.67, CompanyTarget=75.00, SecretObjective=37.00, EmployeeOfMonth=12.67, ProvenSabotage=-30.00
+Output/task (mean points, instances): invoice_reconcile=38.13 (16), budget_split=98.00 (17), customer_spec=53.63 (16), report_review=90.00 (18), room_booking=72.19 (16), archive_visitor=72.78 (18), bonus_pool=60.63 (16), server_code=100.00 (17), phishing_check=100.00 (17), shift_cover=88.24 (17), vendor_pick=97.25 (16), supply_swap=89.38 (16)
+Objective completion by kind: Saver=5/8 (62.50%), Broker=1/4 (25.00%), Patron=0/8 (0.00%), TeamPlayer=7/7 (100.00%), CleanRecord=2/5 (40.00%), Rival=1/6 (16.67%), Guardian=4/5 (80.00%), Archivist=6/6 (100.00%), Presenter=11/11 (100.00%)
+Six-player block-2 play view maximum: 0 bytes; result aggregate hash: E6950234E52B4A9A
+
+4 players | Short | all Talk
+Productivity % mean/min/p10/median/p90/max: 97.65 / 89.10 / 91.60 / 100.00 / 100.00 / 100.00
+Closure: 0.00%; EotM award: 75.00%; incidents created/exposed: 5/4 (80.00% exposed)
+Daily warnings/no-action: 5/35 of 40 (12.50% / 87.50%); firing/no-majority: 3/17 of 20 (15.00% / 85.00%) surviving-company final ballots (NoVotes included with no-majority)
+Early-submit triggers: 110; carried seconds: 1920.00 total, 96.00 per match; accepted actions/Busy: 2667/0
+Career component mean points/player: NotFired=96.25, CompanyTarget=75.00, SecretObjective=36.00, EmployeeOfMonth=7.50, ProvenSabotage=-2.50
+Output/task (mean points, instances): invoice_reconcile=97.00 (10), budget_split=100.00 (10), customer_spec=92.50 (10), report_review=100.00 (10), room_booking=100.00 (10), archive_visitor=98.50 (10), bonus_pool=88.00 (10), server_code=100.00 (10), phishing_check=100.00 (10), shift_cover=80.00 (10), vendor_pick=100.00 (10), supply_swap=100.00 (10)
+Objective completion by kind: Saver=1/9 (11.11%), Broker=1/6 (16.67%), Patron=0/9 (0.00%), TeamPlayer=9/9 (100.00%), CleanRecord=10/10 (100.00%), Rival=1/10 (10.00%), Guardian=7/8 (87.50%), Archivist=7/7 (100.00%), Presenter=12/12 (100.00%)
+Six-player block-2 play view maximum: 0 bytes; result aggregate hash: 905D71EA0557415E
+
+4 players | Short | all NoComm
+Productivity % mean/min/p10/median/p90/max: 57.77 / 27.50 / 40.80 / 59.10 / 72.30 / 76.30
+Closure: 80.00%; EotM award: 20.00%; incidents created/exposed: 0/0 (0.00% exposed)
+Daily warnings/no-action: 0/40 of 40 (0.00% / 100.00%); firing/no-majority: 0/4 of 4 (0.00% / 100.00%) surviving-company final ballots (NoVotes included with no-majority)
+Early-submit triggers: 110; carried seconds: 1920.00 total, 96.00 per match; accepted actions/Busy: 1417/0
+Career component mean points/player: NotFired=20.00, CompanyTarget=15.00, SecretObjective=6.00, EmployeeOfMonth=2.00, ProvenSabotage=0.00
+Output/task (mean points, instances): invoice_reconcile=5.00 (10), budget_split=92.50 (10), customer_spec=12.50 (10), report_review=100.00 (10), room_booking=58.30 (10), archive_visitor=35.00 (10), bonus_pool=76.00 (10), server_code=20.00 (10), phishing_check=32.50 (10), shift_cover=85.00 (10), vendor_pick=66.80 (10), supply_swap=20.00 (10)
+Objective completion by kind: Saver=0/9 (0.00%), Broker=0/6 (0.00%), Patron=0/9 (0.00%), TeamPlayer=3/9 (33.33%), CleanRecord=10/10 (100.00%), Rival=0/10 (0.00%), Guardian=1/8 (12.50%), Archivist=7/7 (100.00%), Presenter=12/12 (100.00%)
+Six-player block-2 play view maximum: 0 bytes; result aggregate hash: F011885B78C9E0B1
+
+4 players | Short | Talk + one Greedy
+Productivity % mean/min/p10/median/p90/max: 90.11 / 77.10 / 78.10 / 89.10 / 99.10 / 100.00
+Closure: 0.00%; EotM award: 70.00%; incidents created/exposed: 56/30 (53.57% exposed)
+Daily warnings/no-action: 22/18 of 40 (55.00% / 45.00%); firing/no-majority: 14/6 of 20 (70.00% / 30.00%) surviving-company final ballots (NoVotes included with no-majority)
+Early-submit triggers: 110; carried seconds: 1920.00 total, 96.00 per match; accepted actions/Busy: 2569/0
+Career component mean points/player: NotFired=82.50, CompanyTarget=75.00, SecretObjective=30.75, EmployeeOfMonth=7.00, ProvenSabotage=-18.75
+Output/task (mean points, instances): invoice_reconcile=63.00 (10), budget_split=90.00 (10), customer_spec=67.50 (10), report_review=92.00 (10), room_booking=73.10 (10), archive_visitor=87.00 (10), bonus_pool=74.00 (10), server_code=100.00 (10), phishing_check=100.00 (10), shift_cover=85.00 (10), vendor_pick=100.00 (10), supply_swap=100.00 (10)
+Objective completion by kind: Saver=0/9 (0.00%), Broker=1/6 (16.67%), Patron=0/9 (0.00%), TeamPlayer=9/9 (100.00%), CleanRecord=5/10 (50.00%), Rival=0/10 (0.00%), Guardian=7/8 (87.50%), Archivist=7/7 (100.00%), Presenter=12/12 (100.00%)
+Six-player block-2 play view maximum: 0 bytes; result aggregate hash: E97E5B8E91C8CDB0
+
+4 players | Full | all Talk
+Productivity % mean/min/p10/median/p90/max: 97.28 / 91.50 / 94.50 / 96.00 / 100.00 / 100.00
+Closure: 0.00%; EotM award: 85.00%; incidents created/exposed: 13/9 (69.23% exposed)
+Daily warnings/no-action: 8/72 of 80 (10.00% / 90.00%); firing/no-majority: 3/17 of 20 (15.00% / 85.00%) surviving-company final ballots (NoVotes included with no-majority)
+Early-submit triggers: 184; carried seconds: 3030.00 total, 151.50 per match; accepted actions/Busy: 4320/0
+Career component mean points/player: NotFired=96.25, CompanyTarget=75.00, SecretObjective=37.50, EmployeeOfMonth=8.50, ProvenSabotage=-5.63
+Output/task (mean points, instances): invoice_reconcile=97.19 (16), budget_split=100.00 (17), customer_spec=93.75 (16), report_review=100.00 (17), room_booking=100.00 (16), archive_visitor=96.67 (18), bonus_pool=91.76 (17), server_code=100.00 (17), phishing_check=100.00 (17), shift_cover=71.88 (16), vendor_pick=100.00 (17), supply_swap=100.00 (16)
+Objective completion by kind: Saver=4/9 (44.44%), Broker=1/6 (16.67%), Patron=0/9 (0.00%), TeamPlayer=9/9 (100.00%), CleanRecord=10/10 (100.00%), Rival=0/10 (0.00%), Guardian=7/8 (87.50%), Archivist=7/7 (100.00%), Presenter=12/12 (100.00%)
+Six-player block-2 play view maximum: 0 bytes; result aggregate hash: E5D2A73B3F269872
+
+4 players | Full | all NoComm
+Productivity % mean/min/p10/median/p90/max: 60.15 / 41.30 / 49.50 / 60.00 / 66.50 / 76.00
+Closure: 80.00%; EotM award: 20.00%; incidents created/exposed: 0/0 (0.00% exposed)
+Daily warnings/no-action: 0/80 of 80 (0.00% / 100.00%); firing/no-majority: 0/4 of 4 (0.00% / 100.00%) surviving-company final ballots (NoVotes included with no-majority)
+Early-submit triggers: 184; carried seconds: 3030.00 total, 151.50 per match; accepted actions/Busy: 2284/0
+Career component mean points/player: NotFired=20.00, CompanyTarget=15.00, SecretObjective=9.75, EmployeeOfMonth=2.00, ProvenSabotage=0.00
+Output/task (mean points, instances): invoice_reconcile=10.94 (16), budget_split=95.59 (17), customer_spec=25.00 (16), report_review=100.00 (17), room_booking=60.63 (16), archive_visitor=58.33 (18), bonus_pool=68.24 (17), server_code=20.00 (17), phishing_check=25.00 (17), shift_cover=87.50 (16), vendor_pick=63.53 (17), supply_swap=20.31 (16)
+Objective completion by kind: Saver=3/9 (33.33%), Broker=0/6 (0.00%), Patron=0/9 (0.00%), TeamPlayer=4/9 (44.44%), CleanRecord=10/10 (100.00%), Rival=0/10 (0.00%), Guardian=4/8 (50.00%), Archivist=7/7 (100.00%), Presenter=12/12 (100.00%)
+Six-player block-2 play view maximum: 0 bytes; result aggregate hash: B7AD9CB5EEFAFE5E
+
+4 players | Full | Talk + one Greedy
+Productivity % mean/min/p10/median/p90/max: 90.11 / 80.40 / 85.20 / 90.10 / 94.50 / 96.00
+Closure: 0.00%; EotM award: 95.00%; incidents created/exposed: 98/41 (41.84% exposed)
+Daily warnings/no-action: 33/47 of 80 (41.25% / 58.75%); firing/no-majority: 14/6 of 20 (70.00% / 30.00%) surviving-company final ballots (NoVotes included with no-majority)
+Early-submit triggers: 184; carried seconds: 3030.00 total, 151.50 per match; accepted actions/Busy: 4175/0
+Career component mean points/player: NotFired=82.50, CompanyTarget=75.00, SecretObjective=32.25, EmployeeOfMonth=9.50, ProvenSabotage=-25.63
+Output/task (mean points, instances): invoice_reconcile=61.56 (16), budget_split=94.12 (17), customer_spec=70.31 (16), report_review=92.00 (17), room_booking=67.00 (16), archive_visitor=90.28 (18), bonus_pool=75.29 (17), server_code=100.00 (17), phishing_check=100.00 (17), shift_cover=78.13 (16), vendor_pick=100.00 (17), supply_swap=95.31 (16)
+Objective completion by kind: Saver=4/9 (44.44%), Broker=1/6 (16.67%), Patron=0/9 (0.00%), TeamPlayer=9/9 (100.00%), CleanRecord=4/10 (40.00%), Rival=0/10 (0.00%), Guardian=6/8 (75.00%), Archivist=7/7 (100.00%), Presenter=12/12 (100.00%)
+Six-player block-2 play view maximum: 0 bytes; result aggregate hash: 129A7222660496A1
+
+5 players | Short | all Talk
+Productivity % mean/min/p10/median/p90/max: 97.81 / 92.60 / 92.60 / 99.10 / 100.00 / 100.00
+Closure: 0.00%; EotM award: 55.00%; incidents created/exposed: 4/3 (75.00% exposed)
+Daily warnings/no-action: 5/35 of 40 (12.50% / 87.50%); firing/no-majority: 3/17 of 20 (15.00% / 85.00%) surviving-company final ballots (NoVotes included with no-majority)
+Early-submit triggers: 110; carried seconds: 1920.00 total, 96.00 per match; accepted actions/Busy: 3749/0
+Career component mean points/player: NotFired=97.00, CompanyTarget=75.00, SecretObjective=33.00, EmployeeOfMonth=4.40, ProvenSabotage=-1.50
+Output/task (mean points, instances): invoice_reconcile=97.00 (10), budget_split=100.00 (10), customer_spec=95.80 (10), report_review=100.00 (10), room_booking=100.00 (10), archive_visitor=98.50 (10), bonus_pool=88.50 (10), server_code=100.00 (10), phishing_check=100.00 (10), shift_cover=76.20 (10), vendor_pick=100.00 (10), supply_swap=100.00 (10)
+Objective completion by kind: Saver=2/11 (18.18%), Broker=1/12 (8.33%), Patron=0/13 (0.00%), TeamPlayer=10/10 (100.00%), CleanRecord=14/14 (100.00%), Rival=0/10 (0.00%), Guardian=8/10 (80.00%), Archivist=8/8 (100.00%), Presenter=12/12 (100.00%)
+Six-player block-2 play view maximum: 0 bytes; result aggregate hash: C48DABFAC2176F82
+
+5 players | Short | all NoComm
+Productivity % mean/min/p10/median/p90/max: 63.35 / 37.10 / 47.50 / 62.60 / 76.80 / 79.50
+Closure: 50.00%; EotM award: 50.00%; incidents created/exposed: 0/0 (0.00% exposed)
+Daily warnings/no-action: 0/40 of 40 (0.00% / 100.00%); firing/no-majority: 0/10 of 10 (0.00% / 100.00%) surviving-company final ballots (NoVotes included with no-majority)
+Early-submit triggers: 110; carried seconds: 1920.00 total, 96.00 per match; accepted actions/Busy: 1747/0
+Career component mean points/player: NotFired=50.00, CompanyTarget=37.50, SecretObjective=13.80, EmployeeOfMonth=4.00, ProvenSabotage=0.00
+Output/task (mean points, instances): invoice_reconcile=10.70 (10), budget_split=96.00 (10), customer_spec=27.50 (10), report_review=100.00 (10), room_booking=69.50 (10), archive_visitor=59.40 (10), bonus_pool=70.00 (10), server_code=20.00 (10), phishing_check=40.00 (10), shift_cover=93.20 (10), vendor_pick=69.10 (10), supply_swap=18.00 (10)
+Objective completion by kind: Saver=0/11 (0.00%), Broker=1/12 (8.33%), Patron=0/13 (0.00%), TeamPlayer=3/10 (30.00%), CleanRecord=14/14 (100.00%), Rival=0/10 (0.00%), Guardian=5/10 (50.00%), Archivist=8/8 (100.00%), Presenter=12/12 (100.00%)
+Six-player block-2 play view maximum: 0 bytes; result aggregate hash: C9EDA2887D20FED8
+
+5 players | Short | Talk + one Greedy
+Productivity % mean/min/p10/median/p90/max: 89.83 / 71.60 / 77.60 / 90.00 / 96.60 / 99.10
+Closure: 0.00%; EotM award: 55.00%; incidents created/exposed: 50/23 (46.00% exposed)
+Daily warnings/no-action: 24/16 of 40 (60.00% / 40.00%); firing/no-majority: 15/5 of 20 (75.00% / 25.00%) surviving-company final ballots (NoVotes included with no-majority)
+Early-submit triggers: 110; carried seconds: 1920.00 total, 96.00 per match; accepted actions/Busy: 3589/0
+Career component mean points/player: NotFired=85.00, CompanyTarget=75.00, SecretObjective=31.20, EmployeeOfMonth=4.40, ProvenSabotage=-11.50
+Output/task (mean points, instances): invoice_reconcile=66.00 (10), budget_split=82.00 (10), customer_spec=70.70 (10), report_review=94.00 (10), room_booking=85.00 (10), archive_visitor=82.00 (10), bonus_pool=72.50 (10), server_code=100.00 (10), phishing_check=100.00 (10), shift_cover=76.20 (10), vendor_pick=100.00 (10), supply_swap=96.00 (10)
+Objective completion by kind: Saver=2/11 (18.18%), Broker=1/12 (8.33%), Patron=0/13 (0.00%), TeamPlayer=9/10 (90.00%), CleanRecord=11/14 (78.57%), Rival=1/10 (10.00%), Guardian=8/10 (80.00%), Archivist=8/8 (100.00%), Presenter=12/12 (100.00%)
+Six-player block-2 play view maximum: 0 bytes; result aggregate hash: C0BC15058679A1BA
+
+5 players | Full | all Talk
+Productivity % mean/min/p10/median/p90/max: 98.01 / 90.20 / 95.10 / 98.50 / 100.00 / 100.00
+Closure: 0.00%; EotM award: 75.00%; incidents created/exposed: 9/6 (66.67% exposed)
+Daily warnings/no-action: 3/77 of 80 (3.75% / 96.25%); firing/no-majority: 4/16 of 20 (20.00% / 80.00%) surviving-company final ballots (NoVotes included with no-majority)
+Early-submit triggers: 184; carried seconds: 3030.00 total, 151.50 per match; accepted actions/Busy: 6082/0
+Career component mean points/player: NotFired=96.00, CompanyTarget=75.00, SecretObjective=34.80, EmployeeOfMonth=6.00, ProvenSabotage=-3.00
+Output/task (mean points, instances): invoice_reconcile=98.13 (16), budget_split=100.00 (17), customer_spec=92.59 (17), report_review=100.00 (16), room_booking=100.00 (16), archive_visitor=97.50 (18), bonus_pool=90.29 (17), server_code=100.00 (17), phishing_check=100.00 (16), shift_cover=83.00 (16), vendor_pick=100.00 (18), supply_swap=100.00 (16)
+Objective completion by kind: Saver=4/11 (36.36%), Broker=1/12 (8.33%), Patron=0/13 (0.00%), TeamPlayer=10/10 (100.00%), CleanRecord=13/14 (92.86%), Rival=0/10 (0.00%), Guardian=10/10 (100.00%), Archivist=8/8 (100.00%), Presenter=12/12 (100.00%)
+Six-player block-2 play view maximum: 0 bytes; result aggregate hash: 9C2D10D11BE4D85A
+
+5 players | Full | all NoComm
+Productivity % mean/min/p10/median/p90/max: 61.14 / 52.90 / 55.30 / 58.50 / 68.30 / 72.40
+Closure: 70.00%; EotM award: 30.00%; incidents created/exposed: 0/0 (0.00% exposed)
+Daily warnings/no-action: 0/80 of 80 (0.00% / 100.00%); firing/no-majority: 0/6 of 6 (0.00% / 100.00%) surviving-company final ballots (NoVotes included with no-majority)
+Early-submit triggers: 184; carried seconds: 3030.00 total, 151.50 per match; accepted actions/Busy: 2803/0
+Career component mean points/player: NotFired=30.00, CompanyTarget=22.50, SecretObjective=12.60, EmployeeOfMonth=2.40, ProvenSabotage=0.00
+Output/task (mean points, instances): invoice_reconcile=7.81 (16), budget_split=95.29 (17), customer_spec=26.24 (17), report_review=100.00 (16), room_booking=68.25 (16), archive_visitor=60.61 (18), bonus_pool=62.94 (17), server_code=20.00 (17), phishing_check=29.69 (16), shift_cover=78.75 (16), vendor_pick=71.61 (18), supply_swap=17.50 (16)
+Objective completion by kind: Saver=4/11 (36.36%), Broker=1/12 (8.33%), Patron=0/13 (0.00%), TeamPlayer=8/10 (80.00%), CleanRecord=14/14 (100.00%), Rival=0/10 (0.00%), Guardian=4/10 (40.00%), Archivist=8/8 (100.00%), Presenter=12/12 (100.00%)
+Six-player block-2 play view maximum: 0 bytes; result aggregate hash: C63847CBA5DA87D1
+
+5 players | Full | Talk + one Greedy
+Productivity % mean/min/p10/median/p90/max: 92.58 / 85.70 / 88.50 / 90.90 / 97.10 / 98.80
+Closure: 0.00%; EotM award: 80.00%; incidents created/exposed: 93/40 (43.01% exposed)
+Daily warnings/no-action: 30/50 of 80 (37.50% / 62.50%); firing/no-majority: 20/0 of 20 (100.00% / 0.00%) surviving-company final ballots (NoVotes included with no-majority)
+Early-submit triggers: 184; carried seconds: 3030.00 total, 151.50 per match; accepted actions/Busy: 5825/0
+Career component mean points/player: NotFired=80.00, CompanyTarget=75.00, SecretObjective=33.60, EmployeeOfMonth=6.40, ProvenSabotage=-20.00
+Output/task (mean points, instances): invoice_reconcile=66.75 (16), budget_split=92.94 (17), customer_spec=76.65 (17), report_review=94.00 (16), room_booking=88.38 (16), archive_visitor=87.67 (18), bonus_pool=72.65 (17), server_code=100.00 (17), phishing_check=100.00 (16), shift_cover=83.00 (16), vendor_pick=100.00 (18), supply_swap=98.75 (16)
+Objective completion by kind: Saver=5/11 (45.45%), Broker=1/12 (8.33%), Patron=0/13 (0.00%), TeamPlayer=10/10 (100.00%), CleanRecord=9/14 (64.29%), Rival=1/10 (10.00%), Guardian=10/10 (100.00%), Archivist=8/8 (100.00%), Presenter=12/12 (100.00%)
+Six-player block-2 play view maximum: 0 bytes; result aggregate hash: 22A5276E90601281
+
+6 players | Short | all Talk
+Productivity % mean/min/p10/median/p90/max: 98.03 / 87.60 / 94.30 / 99.30 / 100.00 / 100.00
+Closure: 0.00%; EotM award: 60.00%; incidents created/exposed: 9/8 (88.89% exposed)
+Daily warnings/no-action: 4/36 of 40 (10.00% / 90.00%); firing/no-majority: 4/16 of 20 (20.00% / 80.00%) surviving-company final ballots (NoVotes included with no-majority)
+Early-submit triggers: 110; carried seconds: 1960.00 total, 98.00 per match; accepted actions/Busy: 4805/0
+Career component mean points/player: NotFired=96.67, CompanyTarget=75.00, SecretObjective=34.00, EmployeeOfMonth=4.00, ProvenSabotage=-3.33
+Output/task (mean points, instances): invoice_reconcile=95.00 (10), budget_split=95.00 (10), customer_spec=96.60 (10), report_review=100.00 (10), room_booking=100.00 (10), archive_visitor=98.50 (10), bonus_pool=95.80 (10), server_code=100.00 (10), phishing_check=100.00 (10), shift_cover=79.60 (10), vendor_pick=100.00 (10), supply_swap=100.00 (10)
+Objective completion by kind: Saver=2/12 (16.67%), Broker=1/12 (8.33%), Patron=0/14 (0.00%), TeamPlayer=11/11 (100.00%), CleanRecord=16/17 (94.12%), Rival=1/15 (6.67%), Guardian=11/13 (84.62%), Archivist=10/10 (100.00%), Presenter=16/16 (100.00%)
+Six-player block-2 play view maximum: 3239 bytes; result aggregate hash: 55957C494589C9CE
+
+6 players | Short | all NoComm
+Productivity % mean/min/p10/median/p90/max: 62.43 / 44.80 / 45.80 / 59.50 / 75.50 / 81.60
+Closure: 60.00%; EotM award: 40.00%; incidents created/exposed: 0/0 (0.00% exposed)
+Daily warnings/no-action: 0/40 of 40 (0.00% / 100.00%); firing/no-majority: 0/8 of 8 (0.00% / 100.00%) surviving-company final ballots (NoVotes included with no-majority)
+Early-submit triggers: 110; carried seconds: 1960.00 total, 98.00 per match; accepted actions/Busy: 2090/0
+Career component mean points/player: NotFired=40.00, CompanyTarget=30.00, SecretObjective=12.50, EmployeeOfMonth=2.67, ProvenSabotage=0.00
+Output/task (mean points, instances): invoice_reconcile=12.90 (10), budget_split=69.50 (10), customer_spec=28.30 (10), report_review=100.00 (10), room_booking=76.00 (10), archive_visitor=77.50 (10), bonus_pool=81.00 (10), server_code=20.00 (10), phishing_check=32.50 (10), shift_cover=89.80 (10), vendor_pick=51.10 (10), supply_swap=12.80 (10)
+Objective completion by kind: Saver=1/12 (8.33%), Broker=1/12 (8.33%), Patron=0/14 (0.00%), TeamPlayer=3/11 (27.27%), CleanRecord=17/17 (100.00%), Rival=0/15 (0.00%), Guardian=4/13 (30.77%), Archivist=10/10 (100.00%), Presenter=16/16 (100.00%)
+Six-player block-2 play view maximum: 2945 bytes; result aggregate hash: A2D47A9E3FD477BC
+
+6 players | Short | Talk + one Greedy
+Productivity % mean/min/p10/median/p90/max: 93.17 / 82.00 / 84.80 / 93.50 / 99.30 / 100.00
+Closure: 0.00%; EotM award: 70.00%; incidents created/exposed: 53/26 (49.06% exposed)
+Daily warnings/no-action: 20/20 of 40 (50.00% / 50.00%); firing/no-majority: 15/5 of 20 (75.00% / 25.00%) surviving-company final ballots (NoVotes included with no-majority)
+Early-submit triggers: 110; carried seconds: 1960.00 total, 98.00 per match; accepted actions/Busy: 4608/0
+Career component mean points/player: NotFired=87.50, CompanyTarget=75.00, SecretObjective=33.00, EmployeeOfMonth=4.67, ProvenSabotage=-10.83
+Output/task (mean points, instances): invoice_reconcile=70.00 (10), budget_split=74.90 (10), customer_spec=79.60 (10), report_review=95.00 (10), room_booking=96.70 (10), archive_visitor=88.00 (10), bonus_pool=82.10 (10), server_code=100.00 (10), phishing_check=100.00 (10), shift_cover=83.00 (10), vendor_pick=100.00 (10), supply_swap=100.00 (10)
+Objective completion by kind: Saver=2/12 (16.67%), Broker=1/12 (8.33%), Patron=0/14 (0.00%), TeamPlayer=11/11 (100.00%), CleanRecord=13/17 (76.47%), Rival=2/15 (13.33%), Guardian=11/13 (84.62%), Archivist=10/10 (100.00%), Presenter=16/16 (100.00%)
+Six-player block-2 play view maximum: 3288 bytes; result aggregate hash: 5E1410141B196976
+
+6 players | Full | all Talk
+Productivity % mean/min/p10/median/p90/max: 98.26 / 95.90 / 96.90 / 97.60 / 100.00 / 100.00
+Closure: 0.00%; EotM award: 80.00%; incidents created/exposed: 11/8 (72.73% exposed)
+Daily warnings/no-action: 10/70 of 80 (12.50% / 87.50%); firing/no-majority: 6/14 of 20 (30.00% / 70.00%) surviving-company final ballots (NoVotes included with no-majority)
+Early-submit triggers: 184; carried seconds: 3170.00 total, 158.50 per match; accepted actions/Busy: 7831/0
+Career component mean points/player: NotFired=95.00, CompanyTarget=75.00, SecretObjective=35.50, EmployeeOfMonth=5.33, ProvenSabotage=-3.33
+Output/task (mean points, instances): invoice_reconcile=95.29 (17), budget_split=100.00 (17), customer_spec=93.63 (16), report_review=100.00 (16), room_booking=100.00 (16), archive_visitor=97.35 (17), bonus_pool=93.06 (18), server_code=100.00 (16), phishing_check=100.00 (16), shift_cover=82.00 (17), vendor_pick=100.00 (18), supply_swap=100.00 (16)
+Objective completion by kind: Saver=4/12 (33.33%), Broker=1/12 (8.33%), Patron=0/14 (0.00%), TeamPlayer=11/11 (100.00%), CleanRecord=16/17 (94.12%), Rival=0/15 (0.00%), Guardian=13/13 (100.00%), Archivist=10/10 (100.00%), Presenter=16/16 (100.00%)
+Six-player block-2 play view maximum: 3356 bytes; result aggregate hash: 0FFC014634EA583F
+
+6 players | Full | all NoComm
+Productivity % mean/min/p10/median/p90/max: 62.52 / 49.70 / 54.90 / 62.60 / 70.40 / 73.40
+Closure: 70.00%; EotM award: 30.00%; incidents created/exposed: 0/0 (0.00% exposed)
+Daily warnings/no-action: 0/80 of 80 (0.00% / 100.00%); firing/no-majority: 0/6 of 6 (0.00% / 100.00%) surviving-company final ballots (NoVotes included with no-majority)
+Early-submit triggers: 184; carried seconds: 3170.00 total, 158.50 per match; accepted actions/Busy: 3339/0
+Career component mean points/player: NotFired=30.00, CompanyTarget=22.50, SecretObjective=11.00, EmployeeOfMonth=2.00, ProvenSabotage=0.00
+Output/task (mean points, instances): invoice_reconcile=11.41 (17), budget_split=72.00 (17), customer_spec=29.06 (16), report_review=100.00 (16), room_booking=75.63 (16), archive_visitor=82.35 (17), bonus_pool=67.00 (18), server_code=20.00 (16), phishing_check=25.00 (16), shift_cover=88.00 (17), vendor_pick=62.94 (18), supply_swap=16.00 (16)
+Objective completion by kind: Saver=4/12 (33.33%), Broker=0/12 (0.00%), Patron=0/14 (0.00%), TeamPlayer=8/11 (72.73%), CleanRecord=17/17 (100.00%), Rival=0/15 (0.00%), Guardian=4/13 (30.77%), Archivist=10/10 (100.00%), Presenter=16/16 (100.00%)
+Six-player block-2 play view maximum: 2994 bytes; result aggregate hash: 973F29434E9344AF
+
+6 players | Full | Talk + one Greedy
+Productivity % mean/min/p10/median/p90/max: 93.11 / 87.40 / 87.80 / 93.90 / 97.60 / 98.90
+Closure: 0.00%; EotM award: 85.00%; incidents created/exposed: 94/46 (48.94% exposed)
+Daily warnings/no-action: 35/45 of 80 (43.75% / 56.25%); firing/no-majority: 20/0 of 20 (100.00% / 0.00%) surviving-company final ballots (NoVotes included with no-majority)
+Early-submit triggers: 184; carried seconds: 3170.00 total, 158.50 per match; accepted actions/Busy: 7470/0
+Career component mean points/player: NotFired=83.33, CompanyTarget=75.00, SecretObjective=35.00, EmployeeOfMonth=5.67, ProvenSabotage=-19.17
+Output/task (mean points, instances): invoice_reconcile=72.24 (17), budget_split=76.35 (17), customer_spec=76.75 (16), report_review=95.00 (16), room_booking=91.44 (16), archive_visitor=92.65 (17), bonus_pool=80.22 (18), server_code=100.00 (16), phishing_check=100.00 (16), shift_cover=86.00 (17), vendor_pick=100.00 (18), supply_swap=98.94 (16)
+Objective completion by kind: Saver=4/12 (33.33%), Broker=1/12 (8.33%), Patron=0/14 (0.00%), TeamPlayer=11/11 (100.00%), CleanRecord=14/17 (82.35%), Rival=2/15 (13.33%), Guardian=12/13 (92.31%), Archivist=10/10 (100.00%), Presenter=16/16 (100.00%)
+Six-player block-2 play view maximum: 3454 bytes; result aggregate hash: DBDFBB737D5E07EB
+Completed 480 matches. Aggregate deterministic hash: 057C28DACE6569CB
+1,000,000 idle ticks: 0 allocated bytes; 17.94 million ticks/s (local observation).
+Wall seconds: 79.79

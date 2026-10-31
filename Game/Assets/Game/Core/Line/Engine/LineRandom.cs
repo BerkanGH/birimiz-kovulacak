@@ -3,7 +3,7 @@ using System.Collections.Generic;
 
 namespace BirimizKovulacak.Core
 {
-    // Independent v3 SplitMix64 implementation: fixed overflow and rejection sampling on every runtime.
+    // Independent v4 SplitMix64 implementation: fixed overflow and rejection sampling on every runtime.
     internal sealed class LineRandom
     {
         private ulong state;
