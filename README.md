@@ -2,28 +2,31 @@
 
 *Ofisi birlikte kurtar. Sonra suçu arkadaşına at.*
 
-A 3–6 player online social-deception comedy for Windows (Turkish + English) with **built-in voice**. **v3 "Ofis
-Hattı":** every player sits alone in their own office, in first person. The only channel is the desk phone (private
-1:1 calls, which may be recorded). Each day brings two short office rounds with one-sentence rules (Bonus Pool, Odd
-Email, Lost Report, Complaint Box, Promotion List, Shared Password), played on your computer and decided on the phone.
-At the end of the day everyone meets around one table: the manager presents the day, **plays a real 7-second clip
-of somebody's phone call**, and the room votes a written warning (İhtar). Nobody is eliminated until the last day,
-when the shortlist defends and one person is fired. A hidden agenda, one dirty trick a week and four manager
-personalities keep every week different.
+A 3–6 player online social-deduction office comedy for Windows (Turkish + English) with **built-in voice**.
+**v4 "Hybrid Office"** (ruleset `v4.0-hybrid`): everyone sits alone in a first-person office and talks through the desk
+phone (private 1:1 calls) or by text (messages, email with replies, meeting chat, anonymous complaints). Each match is
+3 work blocks (Short, ≈ 20 min) or 5 (Full, ≈ 33 min); every block has two office **tasks** (12 in the pool: invoices,
+budgets, approvals, a visitor badge, a server code, a phishing check…) and a meeting. Everyone needs the **company** to
+reach 65 % productivity — or it closes and everyone is fired — but everyone also has a **secret objective**. Players
+negotiate, trade money, buy and present evidence, and may sabotage (provable only with records). Meetings play a real
+7-second phone-call recording; the final vote may fire one person — or nobody. Career points decide the ranking.
 
-v3: design `docs/V3_DESIGN.md` (§0 = v3.1 rules) · contract `docs/CONTRACTS_V3.md` · engine `docs/ENGINE_V3.md` ·
-voice `docs/VOICE.md` · status `docs/V3_STATUS.md`. v2 (open office, third person) lives on `main`, tag `v2.3-night`.
+Design `docs/GAMEPLAY_REDESIGN.md` · contract `docs/CONTRACTS_V4.md` · engine `docs/ENGINE_V4.md` · analytics
+`docs/ANALYTICS_ARCHITECTURE.md`, `docs/ANALYTICS_SETUP.md`, `docs/ANALYTICS_EVENT_CATALOG.md`, KPIs and the H1–H9
+playtest plan `docs/PLAYTEST_KPI_GUIDE.md` · music `docs/AUDIO_MUSIC.md` · status `docs/V4_EXECUTION_RECORD.md`,
+`docs/ANALYTICS_IMPLEMENTATION_REPORT.md`. v3 (rounds, shortlist firing) is history: tag `v3.1-day`.
 
 ## Play (testers)
 
-1. Unzip `BirimizKovulacak-Windows-Playtest.zip`, run `BirimizKovulacak.exe`, pick Türkçe or English.
+1. Unzip `BirimizKovulacak-Windows-Playtest.zip`, run `BirimizKovulacak.exe` (fullscreen on first launch), pick Türkçe or
+   English, answer the optional playtest-analytics question (default No; Settings → Privacy changes, deletes, exports).
 2. Settings → Microphone: pick your mic (push-to-talk **V**). Voice is in-game — no Discord. Headphones recommended.
-3. One player: **Lobi Kur / Host** (Short Week 3 days ≈ 30 min, Full Week 5 days ≈ 50 min; call recordings can be
-   switched off in the lobby). Others: host's IP + port 7777 → **Join** → **Ready**. 3–6 players; bots fill seats.
-4. In the office: mouse look, click the monitor (**E**) or the phone (**Tab**), **Y/N** answer/decline, **V** talk,
-   **Esc** back. In the meeting: **Tab** switches between looking around and the projector/ballot.
+3. One player: **Lobi Kur / Host** (Short / Full; call recordings can be switched off; optional playtest group code).
+   Others: host's IP + port 7777 → **Join** → **Ready**. 3–6 players; bots fill seats.
+4. In the office: mouse look, monitor (**E**) or phone (**Tab**), **Y/N** answer/decline, **V** talk, **Esc** back,
+   **F8** bookmark a moment (playtest only). Every task has a 5-step tutorial (the **?** button reopens it).
 
-Full Turkish guide (internet play via Tailscale/port forwarding, reconnects, troubleshooting): `docs/HOSTING.md`.
+Full Turkish guide (internet play via Tailscale/port forwarding, reconnects, analytics export): `docs/HOSTING.md`.
 
 ## Build from source
 
@@ -38,7 +41,7 @@ Requirements (as used for this prototype):
 | Python | 3.x with Pillow (only for tooling: package extraction, contact sheets, log verification) |
 
 ```powershell
-# Rules tests (pure C#, ~1 s)
+# Rules tests (pure C#, ~6 s)
 cd Tools\CoreTests\Tests ; dotnet test
 
 # Regenerate Unity content (materials, prefabs, Rooms scene) and build the Windows x64 player
@@ -51,8 +54,18 @@ powershell -ExecutionPolicy Bypass -File Tools\run_local4.ps1 -Bots -DurationSca
 Builds\BirimizKovulacak-Windows\BirimizKovulacak.exe -uimock "desk.*" -uimockout Builds\mock
 Builds\BirimizKovulacak-Windows\BirimizKovulacak.exe -scenetest -scenetestout Builds\scenetest
 
-# v3 balance simulator (bots that do not talk: social-round catch rates are a floor, not a forecast)
-dotnet run -c Release --project Tools\LineSim
+# v4 balance simulator (synthetic bots: Talk = perfect info sharing after contact, NoComm, Greedy)
+dotnet run -c Release --project Tools\LineSim\LineSim.csproj -- --matches 20 --players all --length both --mix all --seed 1927 --step 2 --session-matches 10 --output Tools\LineSim\v4-sim.txt
+
+# Telemetry / music tests (pure C#)
+dotnet test Tools\TelemetryTests ; dotnet test Tools\MusicTests
+
+# Playtest analysis (stdlib Python): JSONL from every machine (+ optional observer / feedback CSV) -> Reports
+python -I Tools\scripts\analyze_playtests.py <folders...> --observer obs.csv --feedback fb.csv --out Reports
+python -I -m unittest discover -s Tools\AnalysisTests
+
+# Soundtrack (development only; needs ELEVENLABS_API_KEY; skips existing cues) - see docs/AUDIO_MUSIC.md
+python -I Tools\music\generate_music.py ; python -I Tools\music\process_music.py
 
 # Same, sampling memory of every process (writes memory_summary.csv)
 powershell -ExecutionPolicy Bypass -File Tools\scripts\measure_memory.ps1 -Players 4 -DurationScale 0.35
@@ -70,26 +83,40 @@ powershell -ExecutionPolicy Bypass -File Tools\package.ps1
 Set `UNITY_EXE` / `BLENDER_EXE` if your editors are installed elsewhere. Open `Game/` in the Unity Hub to work in the
 editor; menu **Birimiz Kovulacak → Rebuild Assets + Scene** regenerates generated content.
 
-No external services, accounts or secrets are required. Unity Relay / Lobby were not used (they need a linked Unity
-Gaming Services project); remote play uses direct IP (port forwarding or a VPN such as Tailscale).
+Playing, building and analysing need no external services, accounts or secrets. Unity Relay / Lobby / Analytics are
+not linked (they need a Unity Gaming Services project; the optional cloud analytics sink compiles only when
+`com.unity.services.analytics` is installed — `docs/ANALYTICS_SETUP.md`). Remote play uses direct IP. Only regenerating
+the soundtrack calls ElevenLabs (development machine, key from the environment, never stored in the repo or build).
 
 ## Repository layout
 
 ```
-Birimiz_Kovulacak_Oyun_Akisi.pdf   design concept (source of truth for rules)
-docs/                              DECISIONS, CONTRACTS, ARCHITECTURE, ASSETS, HOSTING (TR), VERIFICATION, PLAYTEST, CODEX_*
+Birimiz_Kovulacak_Oyun_Akisi.pdf   original design concept (v1)
+docs/                              GAMEPLAY_REDESIGN (v4 rules), CONTRACTS_V4, ENGINE_V4, ANALYTICS_*, PLAYTEST_KPI_GUIDE,
+                                   AUDIO_MUSIC, HOSTING (TR), V4_EXECUTION_RECORD, codex/ (briefs), older v1-v3 docs
 Game/                              Unity project
-  Assets/Game/Core/Line            v3 rule contracts + authoritative engine, codec, bot (pure C#)
+  Assets/Game/Core/Line            v4 rule contracts + authoritative engine, codec, bots, schedule (pure C#)
+  Assets/Game/Core/Telemetry       analytics core: catalog, consent-gated service, JSONL sink, host observer (pure C#)
+  Assets/Game/Core/Audio           pure music cue planner
   Assets/Game/Tests/Line           NUnit rules tests (Unity EditMode + dotnet)
-  Assets/Game/Scripts              networking adapter, rooms (first person), desk/meeting UI, voice, audio
-  Assets/Game/Editor               ProjectBuilder (generates the Rooms scene/prefabs/materials, builds player)
-  Assets/StreamingAssets           line_config.json (rules), Localization/<lang>(.<area>).json
-Art/                               Blender generator scripts, .blend sources, FBX exports, palette, previews
-Tools/                             build/run/package scripts, .NET test harness, verification scripts
+  Assets/Game/Scripts              networking/host, rooms (first person), desk/meeting UI, voice, audio/music, telemetry glue
+  Assets/Game/Audio/Resources      generated soundtrack (OGG)
+  Assets/Game/Editor               ProjectBuilder (scene/prefabs/materials, player settings, build), music import settings
+  Assets/StreamingAssets           Config/line_config.json (rules), Config/telemetry_config.json, Localization/<lang>(.<area>).json
+Art/                               Blender scripts and exports, 2D UI kit (Art/UI, incl. v4 task/evidence cards), Audio/Music sources
+Tools/                             build/run/package scripts, CoreTests, TelemetryTests, MusicTests, AnalysisTests, LineSim,
+                                   music/ (ElevenLabs tooling), playtest/ (observer + feedback forms), scripts/ (analyzer, checks)
+Reports/                           analysis output (committed examples are SYNTHETIC)
 Builds/                            (ignored) player builds, logs, test runs, ZIP
 ```
 
 ## Development model
+
+v4 (one session, `docs/V4_EXECUTION_RECORD.md`): Claude Opus 5.5 (lead) wrote the design, contracts, host/net
+integration and docs and ran every build/run; Codex `gpt-6.1-sol` (max) implemented the v4 engine, codec, bots and
+simulator, produced the v4 card art with its image tool, and ran an independent integration review; Claude Sonnet 5.5
+sub-agents built telemetry, the playtest analyzer and tools, the desk and meeting/shell UI, the ElevenLabs soundtrack and
+music playback, and ran an audit and a rules-conformance review.
 
 v1: the rules engine and codec were delegated to Codex (`docs/CODEX_PACKAGE.md`, `docs/CODEX_NOTES.md`); Unity
 integration, art, UI, networking, bots and verification by Claude (`docs/VERIFICATION.md`).
