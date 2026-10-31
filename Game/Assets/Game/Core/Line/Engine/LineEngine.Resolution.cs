@@ -23,9 +23,10 @@ namespace BirimizKovulacak.Core
                     {
                         t.Reveal.Missed.Add(id); var delta=Blame(id,c.MissedTaskBlame,BlameReason.MissedTask,time,t.Kind); t.Reveal.Deltas.Add(delta);
                     }
-                    if(!s.Connected || (t.Fields[id]&TaskField.A)==0) t.A[id]=t.Kind==TaskKind.ArchiveVisitor&&id!=t.Role?-1:DefaultA(t.Kind);
-                    if(!s.Connected || (t.Fields[id]&TaskField.Target)==0) t.Target[id]=-1;
-                    if(!s.Connected || (t.Fields[id]&TaskField.B)==0) t.B[id]=0;
+                    // Absent players are censored to defaults only for fields they never submitted: a submission made before a disconnect stands.
+                    if((t.Fields[id]&TaskField.A)==0) t.A[id]=t.Kind==TaskKind.ArchiveVisitor&&id!=t.Role?-1:DefaultA(t.Kind);
+                    if((t.Fields[id]&TaskField.Target)==0) t.Target[id]=-1;
+                    if((t.Fields[id]&TaskField.B)==0) t.B[id]=0;
                 }
                 if(t.B[id]<0)t.B[id]=0;
             }
@@ -151,12 +152,15 @@ namespace BirimizKovulacak.Core
                 case TaskKind.ShiftCover:
                     var covered=new bool[(ids.Count+1)/2]; foreach(int id in ids)if(t.A[id]>=0&&t.A[id]<covered.Length&&(t.A[id]==t.D[id,0]||t.A[id]==t.D[id,1]))covered[t.A[id]]=true;
                     int coveredCount=0; foreach(bool yes in covered)if(yes)coveredCount++; output=100*coveredCount/covered.Length;
+                    var onShift=new int[covered.Length]; foreach(int id in ids)if(t.A[id]>=0&&t.A[id]<covered.Length&&(t.A[id]==t.D[id,0]||t.A[id]==t.D[id,1]))onShift[t.A[id]]++;
                     foreach(int id in ids)
                     {
                         bool volunteer=t.A[id]>=0&&t.A[id]<covered.Length&&(t.A[id]==t.D[id,0]||t.A[id]==t.D[id,1]);
+                        bool sole=volunteer&&onShift[t.A[id]]==1;
                         bool uncovered=!covered[t.D[id,0]]||(t.D[id,1]>=0&&!covered[t.D[id,1]]);
-                        t.Q[id]=volunteer?100:t.A[id]==9&&uncovered?0:60; t.Credit[id]=volunteer&&output==100;
-                        if(volunteer)Money(id,Math.Max(0,r.ShiftOvertime-t.D[id,2]),MoneyReason.TaskIncome,time); TaskVote(t,id,t.A[id]); AuditEntry(t,id,time);
+                        // Overtime is paid to the one volunteer who covers a shift; doubling up earns nothing (coordination needed).
+                        t.Q[id]=sole?100:volunteer?50:t.A[id]==9&&uncovered?0:60; t.Credit[id]=sole&&output==100;
+                        if(sole)Money(id,Math.Max(0,r.ShiftOvertime-t.D[id,2]),MoneyReason.TaskIncome,time); TaskVote(t,id,t.A[id]); AuditEntry(t,id,time);
                     }
                     t.Reveal.PublicFacts.Add(Fact("covered",coveredCount,covered.Length,scope:2)); break;
                 case TaskKind.VendorPick:

@@ -173,7 +173,8 @@ namespace BirimizKovulacak.Core
             if(!closed)foreach(int id in ids)
             {
                 var s=seats[id];if(id==meeting.Fired||ExposedCount(id)>0||s.TasksConnected*2<schedule.Count)continue;
-                int score=(int)(100L*s.Quality/s.TasksConnected)+(s.Opportunities==0?0:c.EotmCooperationWeight*s.Credits/s.Opportunities);
+                // Both terms in hundredths of a point: mean quality (0..100) + weight x cooperation ratio (lead review fix).
+                int score=(int)(100L*s.Quality/s.TasksConnected)+(s.Opportunities==0?0:(int)(100L*c.EotmCooperationWeight*s.Credits/s.Opportunities));
                 if(score>best){winner=id;best=score;ties=1;}else if(score==best)ties++;
             }
             if(ties!=1)winner=-1;

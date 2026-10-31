@@ -125,7 +125,9 @@ A task instance = `TaskKind` + `TaskVersion` + groups/roles + private facts + co
   can change until `RoundPlay` ends.
 - **Defaults**: a required control without a submission takes the task's default at resolution. A *connected* player
   who left a required control empty receives **+1 Blame** (`MissedTaskBlame`, reason `MissedTask`) unless their
-  computer was blocked by a dirty trick when play ended. Absent players are censored (no blame, default choice).
+  computer was blocked by a dirty trick when play ended, or the control was still waiting for another player (T4
+  decision on a report that never arrived → default approve). Absent players are censored (no blame); fields they
+  never submitted take the default, but a submission made before a disconnect stands.
 - **Resolution** (at `RoundReveal` start): realized output, per-player contribution quality q ∈ [0,100], cooperation
   opportunity/credit, income, records (§9), incidents (§8), public reveal lines.
 - **Money**: task income is *productive income* (block cap, §10); kickbacks/commissions/offers are *deal income*
@@ -241,8 +243,10 @@ Without-comm values are the expected output of the engine's no-communication bot
 - K = ⌈N/2⌉. Private: the 1–2 shifts you can cover, your private cost c ∈ {0,1,2} of volunteering.
 - Controls: `Choice` volunteer for a shift / not this weekend (required, default not).
 - A shift is covered when ≥ 1 available volunteer chose it. Output = 100 × covered / K.
-- Income: covering volunteer +3 − c (min 0). Public: the roster. q: volunteered for an available shift 100; declined
-  while one of your shifts stayed uncovered 0; otherwise 60. Credit: volunteered and output = 100.
+- Income: overtime +3 − c (min 0) is paid only to the **sole** volunteer of a shift — two volunteers on one shift both
+  earn nothing, so people must agree who takes what. The two available shifts are listed in random order. Public: the
+  roster. q: sole volunteer 100; doubled-up volunteer 50; declined while one of your shifts stayed uncovered 0;
+  otherwise 60. Credit: sole volunteer and output = 100.
 
 ### T11 `vendor_pick` — Tedarikçi Seçimi / Vendor Selection (A)
 - "Each of you tested one vendor. Vote for the best — the winner's quality is the company's result."
@@ -338,7 +342,7 @@ the same colleague half of the time). All are verified from modelled events only
 | `CleanRecord` | reputation | blame ≤ StartBlame and no warnings |
 | `Rival` (X) | reputation, conflicting | X received ≥ 1 warning |
 | `Guardian` (Y) | reputation, conflicting | Y received no warning and was not fired |
-| `Archivist` | information | holds ≥ 6 records involving ≥ 2 different colleagues |
+| `Archivist` | information | holds ≥ 4 records about ≥ 2 different colleagues obtained by purchase or partner visibility (own calls/transfers, public records and records seen only because someone presented them do not count) |
 | `Presenter` | information | presented ≥ 2 distinct records in meetings |
 
 No objective is "get X fired". An archive snoop (T6) reveals a colleague's objective *category*, never its target.
@@ -405,3 +409,6 @@ See `docs/ANALYTICS_ARCHITECTURE.md` and `docs/ANALYTICS_EVENT_CATALOG.md`.
 4. Sabotage exposure needs a purchase *and* a presentation; it may be rare. Watch exposed/created incident ratios before
    tuning prices.
 5. Remedial work could become a routine ritual between friends; caps bound it, analytics measure it (H6).
+6. Budget Split (T2) is solvable without talking when everyone asks exactly their need (Σneeds = B − 2); its tension
+   is only the temptation to over-ask. Customer Spec (T3) shares one customer across all pairs, so any player with
+   the complementary attribute can help, not only your partner. Both are known, accepted for v4.0 (review notes).

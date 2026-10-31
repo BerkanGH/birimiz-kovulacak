@@ -119,7 +119,7 @@ namespace BirimizKovulacak.Core
                     }
                     t.Opt=RoomOpt(t,0,0); break;
                 case TaskKind.ArchiveVisitor:
-                    t.Role=Role(t.Number); t.OtherRole=ids.Find(id=>id!=t.Role); int capacity=Math.Max(1,n-2);
+                    t.Role=Role(t.Number); var subjects=ids.FindAll(id=>id!=t.Role); t.OtherRole=subjects[rng.Index(subjects.Count)]; int capacity=Math.Max(1,n-2);
                     var titles=new List<int>(); for(int j=0;j<10;j++) titles.Add(j); rng.Shuffle(titles); t.Extra.AddRange(titles.GetRange(0,6));
                     var codes=new List<int>{0,1,2,3,4,5}; rng.Shuffle(codes); int pos=0;
                     foreach(int id in ids) if(id!=t.Role) { t.D[id,0]=codes[pos++]; t.Roles[id]=2; t.Facts[id].Add(Fact("need_doc",t.Extra[t.D[id,0]])); t.Group[id].Clear(); t.Group[id].Add(t.Role); }
@@ -159,7 +159,9 @@ namespace BirimizKovulacak.Core
                     for(int i=0;i<n;i++)
                     {
                         int id=order[i]; t.D[id,0]=i%shifts; t.D[id,1]=rng.Unit()<0.5?-1:(i+1)%shifts; t.D[id,2]=rng.Index(3);
-                        t.Facts[id].Add(Fact("available",t.D[id,0])); if(t.D[id,1]>=0) t.Facts[id].Add(Fact("available",t.D[id,1])); t.Facts[id].Add(Fact("cost",t.D[id,2]));
+                        // List the available shifts in random order: "everyone takes the first listed shift" must not cover all shifts by itself.
+                        bool swap=t.D[id,1]>=0&&rng.Unit()<0.5; int first=swap?t.D[id,1]:t.D[id,0], second=swap?t.D[id,0]:t.D[id,1];
+                        t.Facts[id].Add(Fact("available",first)); if(second>=0) t.Facts[id].Add(Fact("available",second)); t.Facts[id].Add(Fact("cost",t.D[id,2]));
                         var ctrl=Choice(t,id,"volunteer",TaskField.A,true); for(int k=0;k<shifts;k++) ctrl.Options.Add(Option("shift",k,k)); ctrl.Options.Add(Option("decline",9));
                     } break;
                 case TaskKind.VendorPick:
@@ -198,7 +200,13 @@ namespace BirimizKovulacak.Core
         private bool Complete(TaskState t,int id)
         {
             if(t.Kind==TaskKind.SupplySwap) return false;
-            foreach(var ctrl in t.Controls[id]) if(ctrl.Required && ctrl.Enabled && (t.Fields[id]&ctrl.Field)==0) return false;
+            foreach(var ctrl in t.Controls[id])
+            {
+                if(!ctrl.Required || !ctrl.Enabled || (t.Fields[id]&ctrl.Field)!=0) continue;
+                // T4: a decision still waiting for its preparer's report is not missing (default approve).
+                if(t.Kind==TaskKind.ReportReview && ctrl.Field==TaskField.B && (t.Fields[t.D[id,2]]&TaskField.A)==0) continue;
+                return false;
+            }
             return true;
         }
         private static int Bits(int value) { int count=0; while(value!=0) { value&=value-1; count++; } return count; }
