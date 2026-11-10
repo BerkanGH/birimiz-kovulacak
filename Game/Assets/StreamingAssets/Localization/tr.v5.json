@@ -200,6 +200,7 @@
   "v5.leak.playing": "şimdi dinletiliyor",
   "v5.leak.queued": "{0} sn sonra",
   "v5.leak.mine": "Kayıtların (sızdırabilirsin)",
+  "v5.leak.mine_closed": "Kayıtların",
   "v5.leak.none": "Kaydettiğin görüşme yok.",
   "v5.leak.recorded": "{0} ile görüşme · {1} önce",
   "v5.leak.leaked": "sızdırıldı",

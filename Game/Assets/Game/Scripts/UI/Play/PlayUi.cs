@@ -852,7 +852,7 @@ namespace BirimizKovulacak.Game
             // my recordings (leak buttons are in the focus card)
             if (v.Features.RecordingsEnabled && m.Recorded.Count > 0)
             {
-                Sub(p, T("leak.mine"));
+                Sub(p, T(v.Features.LeakOpen ? "leak.mine" : "leak.mine_closed"));
                 foreach (var r in m.Recorded)
                 {
                     string other = Name(r.Other), state = r.Leaked ? " · " + T("leak.leaked") : "";

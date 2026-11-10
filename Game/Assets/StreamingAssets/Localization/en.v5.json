@@ -200,6 +200,7 @@
   "v5.leak.playing": "playing now",
   "v5.leak.queued": "in {0} s",
   "v5.leak.mine": "Your recordings (you can leak them)",
+  "v5.leak.mine_closed": "Your recordings",
   "v5.leak.none": "You recorded no call.",
   "v5.leak.recorded": "Call with {0} · {1} ago",
   "v5.leak.leaked": "leaked",
