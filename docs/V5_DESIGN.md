@@ -103,7 +103,7 @@ Görev 2: İkili görev (ör. Küçük Kasa, yeni ortakla)
    ↓ mola (ihbar kararı, şantaj)
 TOPLANTI 1: iki görevin hesabı
    ↓
-Görev 3: Grup görevi (ör. Bütçe)
+Görev 3: Grup görevi (ör. Hafta Sonu Nöbeti)
    ↓
 TOPLANTI 2 (grup görevi başarısız değilse atlanır)
    ↓
@@ -280,14 +280,35 @@ verenler rakibi elemek ister ve bu kişiyi kovmak otomatik karar haline gelirdi.
 edilmemeli de. Savunmalar: bakiyeler gizli (§3) ve oylamaya sadece suçu en çok olanlar çıkar (§5). Liderin kim
 olduğu belirsiz kaldıkça bu, istediğimiz tartışmayı üretir: "Bence en zengin Ahmet." / "Hayır, Ayşe."
 
+**Hafta Sonu Nöbeti (grup, herkes)** [KARAR]: prototipin grup görevi.
+- Oyuncuların yarısı kadar nöbetçi lazım (4 kişide 2, 5 kişide 3, 6 kişide 3).
+- Herkes gizlice **"Nöbet tutarım"** ya da **"Tutmam"** seçer.
+- Nöbet tutmayan **+2 prim** alır (hafta sonu ek iş). Nöbet tutan bir şey almaz.
+- **Yeterli nöbetçi çıkmazsa** görev başarısız olur ve Toplantı 2'de suç oylaması yapılır. Yeterliyse Toplantı 2
+  atlanır.
+- **Nöbet listesi herkese açık.** İhanet açıkta yapılır.
+- Neden işe yarar:
+  - Ayartma net: tutmayan +2 kazanır, herkes başkasının tutmasını ister.
+  - Risk net: nöbetçi yetmezse oylamada ilk hedef, listede görünen tutmayanlardır.
+  - Pazarlık: "Kim tutacak?" Sözünü tutmayan herkesin önünde belli olur: "Bana söz vermiştin!"
+  - Satın alma: "Benim yerime nöbet tut, sana 2 prim veririm."
+  - Fazla nöbetçi çıkarsa tutanlar boşuna fedakârlık etmiş, diğerleri +2'yi almış olur.
+- Üç görev üç farklı bilgi durumu sunar: Müşteri Bonusu'nda sadece mağdur, Küçük Kasa'da sadece tanık, Nöbet'te
+  herkes bilir.
+
 ### 8.3 Aday görevler [AÇIK]
 
-İkili görevler için Müşteri Bonusu ve Küçük Kasa yeterli. **Grup görevi** için en az 2 görev seçilecek:
+İkili görevler için Müşteri Bonusu ve Küçük Kasa, grup görevi için Nöbet prototipe yeterli. Maçların birbirine
+benzememesi için ileride her türde 3–4 görev hedefleniyor (§4.1). Grup görevi adayları:
 
 | Görev | İhanet türü | Kim bilir? |
 |---|---|---|
 | **Bütçe Paylaşımı** (herkes): Ortak bütçeden iste. Toplam aşarsa herkes kesintiye uğrar | Anonim açgözlülük | Kimse. Sadece toplam görünür |
-| **Hafta Sonu Nöbeti** (herkes): Herkes nöbet tutacağına söz verir, sonra gizlice seçer. Boş nöbet suç üretir | Sözünü tutmamak | Herkes, nöbet listesi açık |
+
+> **Bütçe'nin teşvik sorunu (düzeltilmeli):** Sadeleştirilmiş hali (bütçe = 2N, herkes 0–5 ister, aşarsa herkes
+> 0 alır) çalışmıyor: bütçe tam adil paya eşit olduğu için tek bir fazla istek herkesi, isteyeni de, sıfırlar.
+> Fazla istemek ancak başkası az isterse işe yarar; yani gerçek bir ayartma yok. v4'te bunu gizli ihtiyaçlar ve 2
+> birimlik pay boşluğu çözüyordu. Tekrar denenecekse önce bu düzeltilmeli.
 | **Zam Listesi** (herkes): Oyuncuların yarısı zam (+3) alacak. Herkes gizlice kendisi hariç 2 kişiye oy verir | Koalisyon, oy ticareti | Sadece kimin zam aldığı ve oy sayıları. "Ben sana oy verdim!" kanıtlanamaz. Final oylamasının provası |
 | **Çekmece Araması** (herkes): Herkes ya birinin çekmecesine gizlice yasak eşya koyar ya da kendi çekmecesini kilitler. Kilitsiz çekmecede eşya çıkarsa sahibi suç alır; kilitliye koymaya çalışan yakalanır | Komplo kurmak | Mağdur yapmadığını bilir ama kimin koyduğunu bilmez. Masum suç almaz değil, ama bunu bir oyuncu yapar ve mağdur kilitleyerek korunabilirdi |
 | **Kayırmacı Şef** (rol): Şef 2 iyi projeyi (+3) dağıtır, diğerleri kötü projeyi alır. Herkes lobi yapar, rüşvet teklif eder | Torpil | Kimin iyi proje aldığı açık, şefin nedeni gizli |
@@ -329,7 +350,7 @@ Yeni görev fikirleri buraya eklenecek.
 3. Soruşturma maliyeti ve kullanım sayısı (§6).
 4. Kayıt cihazı kullanım sayısı (§7).
 5. Müşteri Bonusu ve Küçük Kasa ödeme tablosu ve suç üretimi (§8.2).
-6. Grup görevi seçimi: Bütçe, Nöbet, Masraf Onayı, İçeriden Bilgi (§8.3).
+6. Prototipten sonra ek görevler: §8.3'teki adaylar ve 3. bir ikili görev (yeni bir ihanet türü getirmeli).
 7. §9'daki konuşulmamış konular.
 
 ## 11. Doğrulama planı
