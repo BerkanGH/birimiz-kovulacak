@@ -181,9 +181,9 @@ namespace BirimizKovulacak.Core.Tests
             Assert.Throws<FormatException>(() => LineCodec.DecodeAction(action));
             action[4] = 1; action[13] = 255;
             Assert.Throws<FormatException>(() => LineCodec.DecodeAction(action));
-            byte[] malformedLength = { 0xB3, 4, 0, 4, 255, 255, 255, 255, 255 };
+            byte[] malformedLength = { 0xB3, 5, 0, 4, 255, 255, 255, 255, 255 };
             Assert.Throws<FormatException>(() => LineCodec.DecodeEvents(malformedLength));
-            byte[] overlongLength = { 0xB3, 4, 0, 4, 128, 0 };
+            byte[] overlongLength = { 0xB3, 5, 0, 4, 128, 0 };
             Assert.Throws<FormatException>(() => LineCodec.DecodeEvents(overlongLength));
             byte[] welcome = LineCodec.EncodeWelcome(new LineWelcome { ReconnectToken = "a" });
             welcome[10] = 0xFF;
@@ -197,7 +197,7 @@ namespace BirimizKovulacak.Core.Tests
             var events = new List<LineEvent>();
             for (int i = 0; i < 4097; i++) events.Add(null);
             Assert.Throws<FormatException>(() => LineCodec.EncodeEvents(events));
-            byte[] declaredHugeList = { 0xB3, 4, 0, 4, 255, 255, 127 };
+            byte[] declaredHugeList = { 0xB3, 5, 0, 4, 255, 255, 127 };
             Assert.Throws<FormatException>(() => LineCodec.DecodeEvents(declaredHugeList));
         }
 
@@ -205,7 +205,7 @@ namespace BirimizKovulacak.Core.Tests
         public void NumericWireOrderIsLittleEndianAndEnumsAreOneByte()
         {
             byte[] bytes = LineCodec.EncodeAction(new LineAction(0x01020304, 0xA1B2C3D4, LineVerb.SubmitTask, -1, 0x11223344, 7));
-            CollectionAssert.AreEqual(new byte[] {0xB3,4,0,2,1,4,3,2,1,0xD4,0xC3,0xB2,0xA1,5,255,255,255,255,0x44,0x33,0x22,0x11,7,0,0,0,255,255,255,255,1},bytes);
+            CollectionAssert.AreEqual(new byte[] {0xB3,5,0,2,1,4,3,2,1,0xD4,0xC3,0xB2,0xA1,5,255,255,255,255,0x44,0x33,0x22,0x11,7,0,0,0,255,255,255,255,1},bytes);
         }
 
         [Test]
@@ -218,13 +218,13 @@ namespace BirimizKovulacak.Core.Tests
         public void HashIgnoresHashFieldButCoversOutcomeAndDoesNotMutate()
         {
             var method = typeof(LineCodec).GetMethod("HashResult", SchemaMethods);
-            var result = new LineWeekResult { WeekId = 17, Fired = 2, ResultHash = 1234 };
+            var result = new LineWeekResult { WeekId = 17, Fired = new List<int> { 2 }, ResultHash = 1234 };
             ulong first = (ulong)method.Invoke(null, new object[] { result });
             Assert.AreEqual(1234UL, result.ResultHash);
             result.MatchId = "unrelated-host-id";
             result.ResultHash = 5678;
             Assert.AreEqual(first, (ulong)method.Invoke(null, new object[] { result }));
-            result.Fired = 1;
+            result.Fired[0] = 1;
             Assert.AreNotEqual(first, (ulong)method.Invoke(null, new object[] { result }));
         }
     }
