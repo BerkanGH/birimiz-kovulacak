@@ -153,7 +153,11 @@ bir toplantı. Sebepler:
 - **Masa açılışı:** "Ahmet'in çekmecesinden 23 prim çıktı!" Herkes doğru kişiyi kovup kovmadığını o an görür.
 - **Final açılışı:** Tüm bakiyeler, **tüm oylar** ve kim kimi soymuş bilgisi açıklanır. Örnek an: "Ahmet benden
   4 prim aldı ve yine de beni kovdu!"
-- [AÇIK] Oylamada beraberlik nasıl bozulur? Seçenekler: daha çok suçu olan kovulur ya da müdür karar verir.
+- **Beraberlik kuralları [KARAR, prototip]:**
+  - Adaylıkta: suçta son aday sırasını paylaşan herkes aday olur (ör. 4 kişide 3 aday).
+  - Final oylamasında: berabere kalanlar arasında 15 sn yeniden oylama → yine berabereyse suçu çok olan kovulur →
+    suçlar da eşitse primi çok olan kovulur ("Müdür en yüksek maaşı keser"). Şans yok, her zaman biri kovulur.
+  - Kazanmada: primi eşit olanlar birlikte kazanır.
 
 ## 6. Soruşturma Hakkı [ÖNERİ]
 
@@ -225,8 +229,7 @@ Güvenceyi oyuncular kendileri arar:
 - Sadece ortak, diğerinin ne seçtiğini görür. Herkese sadece "kaç kişinin hepsini aldığı" gösterilir.
 - Başarısızlık: biri "hepsini al" dediyse müşteri ilişkisi zarar görür ve suç oluşur.
 - Üçlüde biri alırsa **iki mağdur** olur; iki kişinin aynı kişiyi suçlaması daha ikna edicidir, yani üçlüde çalmak
-  daha riskli. [ÖNERİ] Örnek ödeme: kimse almazsa herkes 2, biri alırsa o 5 diğerleri 0.
-- [AÇIK] Ödeme tablosu ve kaç suç puanı üreteceği.
+  daha riskli. Ödemeler: §12.
 
 **Küçük Kasa (ikili)** [KARAR]: ihbar ve şantaj görevi.
 - İkiliye ortak bir küçük kasa emanet edilir. Gruptaki **herkes** gizlice kasadan **+3 prim** alabilir. Hak tek
@@ -258,7 +261,7 @@ Güvenceyi oyuncular kendileri arar:
 - [ÖNERİ] İhbar kararı prototipte görev sonundaki molada verilir. [İLERİDE] **İhbar kozu:** hak maç sonuna kadar
   elde durur, her tur şantaj yapılabilir, finalden hemen önce kullanılabilir. Suç bu durumda masum birinden gerçek
   suçluya aktarılır.
-- [AÇIK] Ödül miktarı ve suç puanı.
+- Ödül ve suç miktarları: §12.
 
 **Kriz: Günah Keçisi (herkes)** [KARAR]
 - **Maç başına bir kez**, son blokta, final toplantısından hemen önce gelir. Suç tahtası belliyken dengeleri
@@ -268,7 +271,8 @@ Güvenceyi oyuncular kendileri arar:
 - **Suçu kimin alacağına herkes gizli oyla karar verir.** Oylamadan önce 60–90 sn **özel telefon** pazarlığı
   olur: "Sen Ahmet'e oy ver, ben sana 3 prim vereyim."
 - Suçu alan kişi kimseden para **almaz**. Suç onu aday yapar ama zengin yapmaz. Kimin kime ne ödediği gizli kalır.
-- [AÇIK] Kriz oylamasında beraberlik kuralı.
+- Kriz suçunun tamamı en çok oyu alana yazılır. Beraberlikte suç berabere kalanlar arasında eşit paylaşılır
+  [KARAR, prototip].
 
 **Neden böyle? (reddedilen ilk sürüm)** İlk sürümde biri Kriz'i gönüllü üstleniyor, diğerleri ona açıkça prim
 ödüyordu. Sorun: herkes üstlenen kişinin hem aday hem zengin olduğunu biliyordu. Kazanan en zengin olduğu için oy
@@ -345,16 +349,60 @@ Yeni görev fikirleri buraya eklenecek.
 
 ## 10. Açık sorular listesi
 
-1. Kovulma sayısı ve aday sayısı tablosu (§5).
-2. Oylamada beraberlik kuralı: final (§5) ve Kriz (§8.2).
-3. Soruşturma maliyeti ve kullanım sayısı (§6).
-4. Kayıt cihazı kullanım sayısı (§7).
-5. Müşteri Bonusu ve Küçük Kasa ödeme tablosu ve suç üretimi (§8.2).
-6. Prototipten sonra ek görevler: §8.3'teki adaylar ve 3. bir ikili görev (yeni bir ihanet türü getirmeli).
-7. §9'daki konuşulmamış konular.
+Prototip için gereken eksikler (toplantıda suç dağıtımı, grup görevi, sayılar, beraberlik kuralları) 2026-11-10'da
+kapatıldı. Kalanlar:
+
+1. Kovulma sayısı ve aday sayısı tablosu (§5) hâlâ [ÖNERİ]; prototipte doğrulanacak.
+2. Prototipten sonra ek görevler: §8.3'teki adaylar ve 3. bir ikili görev (yeni bir ihanet türü getirmeli).
+3. §9'daki konuşulmamış konular.
 
 ## 11. Doğrulama planı
 
 Kodlamadan önce bu çekirdek, **4 arkadaşla Discord'da kâğıt prototip** olarak oynanacak: görevler DM ile
 dağıtılır, prim ve suç bir tabloda tutulur, "kayıt" Discord'un ses kaydıyla taklit edilir. Bakılacaklar:
 tartışma çıkıyor mu, oylar neye göre veriliyor, maç sonunda "bir daha" deniyor mu?
+
+## 12. Prototip sayıları (v0) [KARAR, test edilecek]
+
+Bunlar ilk test değerleridir; kâğıt prototip ve bot simülasyonuna göre değişecek. Kodda bir config dosyasında
+durmalı.
+
+### Prim
+
+| Kalem | Değer |
+|---|---|
+| Başlangıç primi | **6** |
+| Müşteri Bonusu (ikili) | İkisi paylaşırsa 2 / 2. Biri alırsa alan 5, diğeri 0. İkisi alırsa 1 / 1 |
+| Müşteri Bonusu (üçlü) | Kimse almazsa herkes 2. Biri alırsa o 5, diğerleri 0. İki ya da daha fazla kişi alırsa herkes 1 |
+| Küçük Kasa | Kasadan alan +3. İki kişi alırsa ikisi de yakalanır ve hiçbir şey kazanmaz |
+| Kasa ihbar ödülü | Tanığa +2 |
+| Hafta Sonu Nöbeti | Nöbet tutmayan +2 |
+| Soruşturma maliyeti | 4 |
+
+### Suç
+
+| Kalem | Değer |
+|---|---|
+| Toplantı oylaması | Başarısız görev başına herkesin 1 oyu, her oy 1 suç |
+| İhbar edilen kasa hırsızı | +3 suç, çaldığı 3 primi geri verir |
+| İki kişi birden kasadan alırsa | İkisine de +2 suç (oylama yapılmaz) |
+| Soruşturma haklı çıkarsa | Suçlanan +3 suç ve mağdura 3 prim öder |
+| Soruşturma haksız çıkarsa | Açan +3 suç, ödediği 4 prim de gider |
+| Kriz | 4 suç, gizli oyla en çok oyu alana; beraberlikte eşit paylaşılır |
+
+### Diğer
+
+| Kalem | Değer |
+|---|---|
+| Soruşturma hakkı | Maç başına 1 |
+| Kayıt cihazı | Maç başına 1 kullanım (4 kişide en fazla 4 sızıntı; az olduğu için her biri değerli) |
+
+### Sağlama (4 oyuncu, kaba)
+
+- Dürüst oyuncu: 6 + 2 (Bonus) + 0–2 (Nöbet) ≈ **8–10 prim**.
+- Açgözlü oyuncu: 6 + 5 + 3 + 2 ≈ **15–16 prim**.
+- Açgözlü oyuncu kovulursa ona oy veren 3 kişi kişi başı ≈ **5 prim** alır: dürüst bir oyuncunun toplamının
+  yarısı. Kovmak için güçlü bir sebep.
+- Maçta dağıtılan suç: 2–3 başarısız görev × 4 oy + Kriz 4 ≈ **12–16**. Lider ≈ 5–6 suçta; Kriz'in 4 suçu
+  sıralamayı gerçekten değiştirebilir.
+- Soruşturma (4) başlangıç primiyle karşılanabilir ama harcayanı belirgin şekilde fakirleştirir.
