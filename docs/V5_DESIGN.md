@@ -58,10 +58,31 @@ Vampir köylünün bir kopyası olmamalı: iyi/kötü takımı yok, rol kartı y
 ## 4. Suç puanı ve toplantılar [KARAR, detaylar ÖNERİ]
 
 - **Suç puanı** kovulma adaylarını belirler. Herkese açıktır ve suç tahtasında görünür.
-- Başarısız olan görevler suç puanı üretir. Her toplantı bir mahkemedir: **"Bu kimin suçu?"** Oylanır ve suç o
-  kişiye yazılır.
-- Kesinleşen bir soruşturma (§6) ve Kriz (§8.2) de suç puanı yazar.
-- [ÖNERİ] Toplu yüklenmeye karşı fren: bir oyuncu tek toplantıda en fazla X suç puanı alabilir.
+- Başarısız olan görevler suç üretir. Toplantı bir mahkemedir: **"Bu kimin suçu?"**
+- Kesinleşen bir soruşturma (§6), ihbar (§8.2) ve Kriz (§8.2) de suç puanı yazar.
+
+**Suç oylaması [KARAR]:**
+- **Sadece başarısız görev varsa oylama yapılır.** Herkes dürüst davrandıysa suç dağıtılmaz; bu işbirliğinin
+  ödülüdür. İhanet varsa suç mutlaka bir yere düşer, belki masum birine.
+- **Her başarısız görev için herkesin 1 oyu vardır.** İki görev başarısızsa herkesin 2 oyu olur; ikisini aynı
+  kişiye ya da farklı kişilere verebilir.
+- **Her oy, alan kişiye 1 suç puanı yazar.** Kendine oy verilemez.
+  - Toplu yüklenmeye karşı fren kendiliğinden oluşur: 4 kişide bir oyuncu, başarısız görev başına en fazla 3 suç
+    alabilir.
+  - Beraberlik sorunu yoktur, çünkü kazanan değil dağılım vardır.
+  - Hep ya da hiç değildir: 2 oy alan 2, 1 oy alan 1 suç alır.
+- **Çekimser kalmak yok.** Oy vermeyen kişi oyunu kendine vermiş sayılır. Yoksa arkadaşlar "kimse oy vermesin" diye
+  anlaşıp suç sistemini öldürebilir.
+- **Kesinleşmiş olaylar oylanmaz.** İhbar edilmiş bir kasa hırsızlığı ya da kazanılmış bir soruşturmanın suçu
+  doğrudan suçluya yazılır; o görev için oylama yapılmaz.
+- **Oylar gizlidir**, maç sonundaki final açılışında açıklanır.
+- Reddedilen alternatif: "kazanan hepsini alır" (en çok oyu alan görevin bütün suçunu alır). Daha dramatik ama
+  beraberlik kuralı gerektirir ve bir oyuncu tek toplantıda bitirilebilir.
+
+**Toplantı akışı (≈ 90 sn) [ÖNERİ]:**
+1. Dosya (≈ 15 sn): başarısız görevler, ihbarlar, soruşturmalar, sızdırılan kayıtlar.
+2. Tartışma (≈ 50 sn): herkes birbirini duyar.
+3. Oylama (≈ 20 sn): gizli oy, ardından suç tahtası güncellenir.
 - Suç puanı "kim aday olacak" sorusunu, prim ise "kime oy vereceğim" sorusunu belirler. Masum ama zengin biri
   ile suçlu ama fakir biri aday olunca oy verenler gerçek bir ikilemde kalır.
 
@@ -76,12 +97,27 @@ toplantı ve final süresi uzar.
   *rol* türü (ör. Masraf Onayı).
 
 ```
-Tur 1: İkili görev (ör. Müşteri Bonusu) → Toplantı (suç dağıtılır)
-Tur 2: İkili görev (ör. Küçük Kasa)     → Toplantı (suç dağıtılır)
-Tur 3: Grup görevi (ör. Bütçe)          → Toplantı (suç dağıtılır)
+Görev 1: İkili görev (ör. Müşteri Bonusu)
+   ↓ mola (telefonlar)
+Görev 2: İkili görev (ör. Küçük Kasa, yeni ortakla)
+   ↓ mola (ihbar kararı, şantaj)
+TOPLANTI 1: iki görevin hesabı
+   ↓
+Görev 3: Grup görevi (ör. Bütçe)
+   ↓
+TOPLANTI 2 (grup görevi başarısız değilse atlanır)
+   ↓
 KRİZ  → büyük suç gizli oyla birine yazılır, suç tahtası sarsılır
 FİNAL → en çok suçu olanlar oylamaya çıkar → kovulma
 ```
+
+**Toplantı sayısı [KARAR]:** Her görevden sonra değil, **iki ikili görevden sonra bir** ve grup görevinden sonra
+bir toplantı. Sebepler:
+- Her görevden sonra toplantı tekrara düşer ve tek görevden sonra konuşacak malzeme azdır.
+- Toplantı 1'de iki görevden ve iki farklı ortaktan gelen bilgiler aynı masaya gelir; çapraz kontrol tartışmanın
+  kendisi olur: "Ahmet beni Bonus'ta soydu." / "Ben de onunla kasadaydım, almadı."
+- Görevler arası mola entrika alanıdır: Bonus'ta soyulan biri, kasa turunda yeni ortağıyla ittifak kurar.
+- Toplantı 2'nin grup görevi başarısız olmadığında atlanması dürüstlüğü ödüllendirir ve maçı kısaltır.
 
 **Eşleşme [KARAR]:**
 - Rastgele ama tekrarsız: ikinci ikili görevde kimse ilk ortağıyla eşleşmez.
@@ -90,11 +126,11 @@ FİNAL → en çok suçu olanlar oylamaya çıkar → kovulma
 
 | Oyuncu | Normal görev | Kriz | Kovulan | Tahmini süre |
 |---|---|---|---|---|
-| 4 | 3 | 1 | 1 | ≈ 13–14 dk |
-| 5 | 3 | 1 | 2 | ≈ 15–16 dk |
-| 6 | 3 | 1 | 2 | ≈ 17–18 dk |
+| 4 | 3 | 1 | 1 | ≈ 11–12 dk |
+| 5 | 3 | 1 | 2 | ≈ 13–14 dk |
+| 6 | 3 | 1 | 2 | ≈ 15–16 dk |
 
-- Bir blok ≈ 3 dk: ≈ 90 sn görev ve telefon, ≈ 90 sn suç toplantısı.
+- Süreler kaba tahmindir: görev ≈ 60–90 sn, mola ≈ 30 sn, toplantı ≈ 90 sn, Kriz ≈ 2 dk, final ≈ 3–4 dk.
 - 4 oyuncuda herkes 3 kişiden 2'siyle eşleşir, 6 oyuncuda 5 kişiden 2'siyle. Kimse herkes hakkında birinci elden
   bilgi sahibi olmaz; bu dedikoduyu artırır ("Seni de soydu mu?").
 - Kriz her maçta sabittir. Maçlar birbirine benzemesin diye her türde en az 2 görev olmalı.
