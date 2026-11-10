@@ -14,7 +14,7 @@ namespace BirimizKovulacak.Game
     /// (and after the last step), then the next scenario runs; the process quits at the end.
     /// UI tracks register scenarios from their own files with [RuntimeInitializeOnLoadMethod].
     /// The builders below produce valid v5 views (docs/V5_ENGINE_SPEC.md §11); the "v5.*" scenarios at the end cover
-    /// the minimal play screen (task, reveal, meeting vote, final vote, results).
+    /// the play screen phase by phase, the how-to pages and two English samples.
     /// </summary>
     public static class LineMock
     {
@@ -145,64 +145,241 @@ namespace BirimizKovulacak.Game
         }
     }
 
-    /// <summary>v5 scenarios for the minimal play screen (Phase 2a): <c>-uimock "v5.*"</c>.</summary>
+    /// <summary>
+    /// v5 scenarios for the play screen: <c>-uimock "v5.*"</c>. Each covers one phase's focus card (task choice, whistle,
+    /// meeting actions, ballots with a leak playing, crisis, candidate with a sealed desk, defence, final vote, desk
+    /// reveal, results summary and its detail tabs), the how-to pages, and two English samples.
+    /// </summary>
     public static class LineMockV5Scenarios
     {
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.AfterAssembliesLoaded)]
         static void Register()
         {
-            LineMock.Register("v5.task", () => new LineMockScenario().Do(0f, () => Show(Task(false))).Do(0.3f, Messages, true));
-            LineMock.Register("v5.reveal", () => new LineMockScenario().Do(0f, () => Show(Task(true))));
+            LineMock.Register("v5.task", () => new LineMockScenario().Do(0f, () => Show(Task(TaskKind.ClientBonus, 0, 4, LinePhase.TaskPlay))).Do(0.3f, Messages, true));
+            LineMock.Register("v5.task_shift", () => new LineMockScenario().Do(0f, () =>
+            {
+                var v = Task(TaskKind.WeekendShift, 2, 6, LinePhase.TaskPlay);
+                v.Task.Submitted = true; v.Task.MyChoice = LineChoice.Volunteer;
+                v.Mine.Phone.Status = CallStatus.Connected; v.Mine.Phone.CallId = 9; v.Mine.Phone.Since = LineMock.Now - 23;
+                v.Players[3].Submitted = true; v.Players[4].Submitted = true;
+                Show(v);
+            }));
+            LineMock.Register("v5.reveal", () => new LineMockScenario().Do(0f, () =>
+            {
+                var v = Task(TaskKind.PettyCash, 1, 4, LinePhase.Break);
+                v.Features.WhistleOpen = true; v.Mine.WitnessOf.Add(1);
+                v.Mine.Phone.Status = CallStatus.Connected; v.Mine.Phone.CallId = 9; v.Mine.Phone.Since = LineMock.Now - 41;
+                Show(v);
+            }));
             LineMock.Register("v5.meeting", () => new LineMockScenario().Do(0f, () =>
+            {
+                var v = LineMock.BaseView(LinePhase.MeetingDiscussion, 5);
+                v.Meeting = LineMock.MeetingView(0, -1);
+                v.Mine.InvestigationTargets.Add(1);
+                v.Mine.Recorded.Add(new LineRecordedCallView { CallId = 3, Other = 1, Start = LineMock.Now - 200 });
+                Show(v);
+            }));
+            LineMock.Register("v5.meeting_vote", () => new LineMockScenario().Do(0f, () =>
             {
                 var v = LineMock.BaseView(LinePhase.MeetingVote, 5);
                 v.Meeting = LineMock.MeetingView(0, 2);
+                v.Meeting.Recordings[0].PlayAt = LineMock.Now - 2; // the leak is playing while the ballots are open
                 v.Mine.Ballots.Add(3); v.Mine.Ballots.Add(-1);
-                v.Mine.InvestigationTargets.Add(1);
-                v.Mine.Recorded.Add(new LineRecordedCallView { CallId = 3, Other = 1, Start = LineMock.Now - 200 });
-                v.Players[1].Voted = true;
+                v.Mine.InvestigationUsed = true;
+                v.Mine.Recorded.Add(new LineRecordedCallView { CallId = 3, Other = 1, Start = LineMock.Now - 200, Leaked = true });
+                v.Players[1].Voted = true; v.Players[3].Voted = true;
+                Show(v);
+            }));
+            LineMock.Register("v5.crisis_vote", () => new LineMockScenario().Do(0f, () =>
+            {
+                var v = LineMock.BaseView(LinePhase.CrisisVote, 6, 2);
+                v.Meeting = new LineMeetingView { Index = 2 };
+                v.Final = new LineFinalView { FiringsTotal = 2 };
+                v.Mine.Ballots.Add(-1);
+                v.Players[2].Voted = true;
+                Show(v);
+            }));
+            LineMock.Register("v5.crisis_verdict", () => new LineMockScenario().Do(0f, () =>
+            {
+                var v = LineMock.BaseView(LinePhase.CrisisVerdict, 4, 2);
+                v.Meeting = new LineMeetingView { Index = 2 };
+                v.Final = Final(new[] { 2, 1 }, 1);
+                v.Final.Crisis.Add(new LineBlameGainView { Player = 2, Amount = 4 });
+                Candidates(v);
+                Show(v);
+            }));
+            LineMock.Register("v5.sealed", () => new LineMockScenario().Do(0f, () =>
+            {
+                var v = LineMock.BaseView(LinePhase.FinalDiscussion, 4, 2);
+                foreach (var p in v.Players) p.Blame = p.Id == 0 ? 7 : p.Id == 2 ? 9 : 2;
+                v.Meeting = new LineMeetingView { Index = 2 };
+                v.Final = Final(new[] { 2, 0 }, 1);
+                v.Final.Crisis.Add(new LineBlameGainView { Player = 0, Amount = 4 });
+                Candidates(v);
+                v.Mine.Recorded.Add(new LineRecordedCallView { CallId = 11, Other = 3, Start = LineMock.Now - 95 });
+                v.Mine.Transfers.Add(new LineTransferView { From = 3, To = 0, Amount = 3, Time = LineMock.Now - 5, Phase = LinePhase.FinalDiscussion });
+                Show(v);
+            }));
+            LineMock.Register("v5.defense", () => new LineMockScenario().Do(0f, () =>
+            {
+                var v = LineMock.BaseView(LinePhase.FinalDefense, 5, 2);
+                v.Meeting = new LineMeetingView { Index = 2 };
+                v.Final = Final(new[] { 2, 1, 3 }, 2);
+                v.Final.Defender = 1; v.Final.DefenderEndTime = LineMock.Now + 9;
+                Candidates(v);
                 Show(v);
             }));
             LineMock.Register("v5.final", () => new LineMockScenario().Do(0f, () =>
             {
                 var v = LineMock.BaseView(LinePhase.FinalVote, 5, 2);
-                v.Final = LineMock.FinalView(5, 1, false);
-                v.Final.Firings.Add(new LineFiringView { Player = 2, Round = 0, Decision = FiringDecision.Plurality, Votes = 3, Desk = 11, Share = 3, Removed = 2 });
-                v.Final.Firings[0].Recipients.AddRange(new[] { 0, 3, 4 });
+                v.Meeting = new LineMeetingView { Index = 2 };
+                v.Final = Final(new[] { 2, 1, 3 }, 2);
+                v.Final.Round = 1;
+                v.Final.Firings.Add(Firing(2, 11, FiringDecision.Plurality, new[] { 0, 3, 4 }));
                 v.Final.Options.Remove(2);
-                v.Players[2].Fired = true; v.Players[1].Candidate = true; v.Players[2].Candidate = true; v.Players[3].Candidate = true;
-                v.Mine.Ballots.Add(1);
+                Candidates(v);
+                v.Mine.Ballots.Add(-1);
+                v.Players[3].Voted = true;
                 Show(v);
             }));
-            LineMock.Register("v5.results", () => new LineMockScenario().Do(0f, () =>
+            LineMock.Register("v5.verdict", () => new LineMockScenario().Do(0f, () =>
             {
-                var v = LineMock.BaseView(LinePhase.Results, 4, 2);
-                var r = new LineWeekResult { WeekId = 1, MatchId = "mock", PlayerCount = 4, ResultHash = 1234567 };
-                for (int i = 0; i < 4; i++)
-                    r.Players.Add(new LineWeekPlayerResult { Player = i, Prim = 12 - i * 3, Blame = i * 2, Fired = i == 2, Winner = i == 0, WasCandidate = i >= 1 && i <= 2, Recorded = i == 1 ? 1 : 0, Leaked = i == 1 ? 1 : 0 });
-                r.Winners.Add(0); r.Fired.Add(2);
-                r.Ballots.Add(new LineBallotView { Kind = BallotKind.Meeting, Round = 0, Voter = 0, Index = 0, Target = 1 });
-                r.Ballots.Add(new LineBallotView { Kind = BallotKind.Crisis, Voter = 1, Target = 1, SelfAssigned = true });
-                r.Ballots.Add(new LineBallotView { Kind = BallotKind.Final, Round = 0, Voter = 3, Target = 2 });
-                r.Transfers.Add(new LineTransferView { From = 1, To = 0, Amount = 2, Phase = LinePhase.Break });
-                r.Choices.Add(new LineChoiceView { TaskNumber = 0, Task = TaskKind.ClientBonus, Player = 1, Choice = 1, Payout = 5 });
-                r.Incidents.Add(new LineDossierEntry { Kind = DossierKind.Whistle, Player = 3, Other = 2, N1 = 3 });
-                v.Results = r;
+                var v = LineMock.BaseView(LinePhase.FinalVerdict, 6, 2);
+                v.Meeting = new LineMeetingView { Index = 2 };
+                v.Final = Final(new[] { 2, 1, 3 }, 2);
+                v.Final.Firings.Add(Firing(2, 11, FiringDecision.Plurality, new[] { 0, 3, 4 }));
+                Candidates(v);
                 Show(v);
             }));
+            LineMock.Register("v5.verdict_tie", () => new LineMockScenario().Do(0f, () =>
+            {
+                var v = LineMock.BaseView(LinePhase.FinalVerdict, 5, 2);
+                v.Meeting = new LineMeetingView { Index = 2 };
+                v.Final = Final(new[] { 2, 1, 3 }, 2);
+                v.Final.Round = 1;
+                v.Final.Firings.Add(Firing(2, 11, FiringDecision.Plurality, new[] { 0, 3, 4 }));
+                v.Final.Firings.Add(Firing(1, 7, FiringDecision.HigherBlame, new int[0]));
+                Candidates(v);
+                Show(v);
+            }));
+            LineMock.Register("v5.results", () => new LineMockScenario().Do(0f, () => Show(Results(4))));
+            LineMock.Register("v5.results_tabs", () => new LineMockScenario()
+                .Do(0f, () => Show(Results(6)))
+                .Do(0.2f, () => PlayUi.MockResultsTab = "choices", true)
+                .Do(0.4f, () => PlayUi.MockResultsTab = "transfers", true)
+                .Do(0.6f, () => PlayUi.MockResultsTab = "firings", true)
+                .Do(0.8f, () => PlayUi.MockResultsTab = "incidents", true));
+            LineMock.Register("v5.howto", () =>
+            {
+                var s = new LineMockScenario();
+                for (int i = 0; i < HowToPlayScreen.Pages; i++)
+                {
+                    int page = i;
+                    s.Do(0.1f * i, () => HowToPlayScreen.OpenAt(page), true);
+                }
+                return s;
+            });
+            LineMock.Register("v5.en_task", () => new LineMockScenario()
+                .Do(0f, () => English())
+                .Do(0.3f, () => { var v = Task(TaskKind.PettyCash, 1, 4, LinePhase.TaskPlay); LineMock.SetNames(v, true); Show(v); }));
+            LineMock.Register("v5.en_verdict", () => new LineMockScenario()
+                .Do(0f, () => English())
+                .Do(0.3f, () =>
+                {
+                    var v = LineMock.BaseView(LinePhase.FinalVerdict, 6, 2);
+                    LineMock.SetNames(v, true);
+                    v.Meeting = new LineMeetingView { Index = 2 };
+                    v.Final = Final(new[] { 2, 1, 3 }, 2);
+                    v.Final.Firings.Add(Firing(2, 11, FiringDecision.Revote, new[] { 0, 3, 4 }));
+                    Candidates(v);
+                    Show(v);
+                }));
         }
 
-        static LineView Task(bool revealed)
+        /// <summary>Player 0's view of a task phase: Client Bonus / Petty Cash with player 1, Weekend Shift with everyone.</summary>
+        static LineView Task(TaskKind kind, int number, int players, LinePhase phase)
         {
-            var v = LineMock.BaseView(revealed ? LinePhase.Break : LinePhase.TaskPlay, 4);
-            v.TaskNumber = 1;
-            v.Task = LineMock.TaskView(TaskKind.PettyCash, 1, 4, revealed, 0, !revealed);
+            bool revealed = phase != LinePhase.TaskPlay;
+            var v = LineMock.BaseView(phase, players);
+            v.TaskNumber = number;
+            v.Task = LineMock.TaskView(kind, number, players, revealed, 0, revealed);
             v.Players[1].Submitted = true;
-            if (revealed) { v.Features.WhistleOpen = true; v.Mine.WitnessOf.Add(1); }
-            v.Mine.Phone.Status = revealed ? CallStatus.Connected : CallStatus.Ringing;
-            v.Mine.Phone.Other = 2;
-            v.Mine.Phone.CallId = revealed ? 9 : -1;
-            v.Mine.Phone.RingUntil = LineMock.Now + 10;
+            if (!revealed)
+            {
+                v.Mine.Phone.Status = CallStatus.Ringing;
+                v.Mine.Phone.Other = 2;
+                v.Mine.Phone.RingUntil = LineMock.Now + 10;
+            }
+            else v.Mine.Phone.Other = 2;
+            return v;
+        }
+
+        static LineFinalView Final(int[] candidates, int firings)
+        {
+            var f = new LineFinalView { FiringsTotal = firings };
+            f.Candidates.AddRange(candidates);
+            f.DefenseOrder.AddRange(candidates);
+            f.Options.AddRange(candidates);
+            return f;
+        }
+
+        /// <summary>Marks the final's candidates and fired players on the board.</summary>
+        static void Candidates(LineView v)
+        {
+            foreach (var p in v.Players)
+            {
+                p.Candidate = v.Final.Candidates.Contains(p.Id);
+                p.Fired = v.Final.Firings.Exists(f => f.Player == p.Id);
+            }
+        }
+
+        static LineFiringView Firing(int player, int desk, FiringDecision decision, int[] voters)
+        {
+            var f = new LineFiringView { Player = player, Decision = decision, Votes = voters.Length, Desk = desk };
+            f.Recipients.AddRange(voters);
+            f.Share = voters.Length > 0 ? desk / voters.Length : 0;
+            f.Removed = desk - f.Share * voters.Length;
+            return f;
+        }
+
+        static LineView Results(int players)
+        {
+            var v = LineMock.BaseView(LinePhase.Results, players, 2);
+            var r = new LineWeekResult { WeekId = 1, MatchId = "mock", PlayerCount = players, ResultHash = 1234567 };
+            int[] prim = { 14, 9, 0, 11, 6, 0 };
+            int[] blame = { 3, 8, 11, 2, 7, 9 };
+            for (int i = 0; i < players; i++)
+            {
+                bool fired = i == 2 || (players >= 5 && i == 5);
+                r.Players.Add(new LineWeekPlayerResult { Player = i, Prim = prim[i], Blame = blame[i], Fired = fired, Winner = i == 0,
+                    WasCandidate = i == 1 || i == 2 || (players >= 5 && i == 5), Recorded = i == 1 ? 1 : 0, Leaked = i == 1 ? 1 : 0 });
+            }
+            r.Winners.Add(0); r.Fired.Add(2);
+            r.Firings.Add(Firing(2, 11, FiringDecision.Plurality, players >= 5 ? new[] { 0, 3, 4 } : new[] { 0, 3 }));
+            if (players >= 5) { r.Fired.Add(5); r.Firings.Add(Firing(5, 6, FiringDecision.Revote, new[] { 1, 3 })); }
+            for (int i = 0; i < players; i++)
+            {
+                r.Ballots.Add(new LineBallotView { Kind = BallotKind.Meeting, Round = 0, Voter = i, Index = 0, Target = (i + 2) % players });
+                r.Ballots.Add(new LineBallotView { Kind = BallotKind.Meeting, Round = 0, Voter = i, Index = 1, Target = i == 3 ? 3 : (i + 1) % players, SelfAssigned = i == 3 });
+            }
+            for (int i = 0; i < players; i++) r.Ballots.Add(new LineBallotView { Kind = BallotKind.Crisis, Voter = i, Target = i == 2 ? 1 : 2 });
+            for (int i = 0; i < players; i++)
+                if (i != 2) r.Ballots.Add(new LineBallotView { Kind = BallotKind.Final, Round = 0, Voter = i, Target = i == 1 ? -1 : 2 });
+            r.Transfers.Add(new LineTransferView { From = 1, To = 0, Amount = 2, Phase = LinePhase.Break });
+            r.Transfers.Add(new LineTransferView { From = 3, To = 2, Amount = 4, Phase = LinePhase.CrisisCalls });
+            for (int t = 0; t < 3; t++)
+            {
+                var kind = t == 0 ? TaskKind.ClientBonus : t == 1 ? TaskKind.PettyCash : TaskKind.WeekendShift;
+                for (int i = 0; i < players; i++)
+                {
+                    int choice = (i + t) % 3 == 0 ? 1 : 0;
+                    r.Choices.Add(new LineChoiceView { TaskNumber = t, Task = kind, Player = i, Choice = choice, Payout = kind == TaskKind.WeekendShift ? (choice == 1 ? 0 : 2) : choice == 1 ? 5 : 2 });
+                }
+            }
+            r.Incidents.Add(new LineDossierEntry { Kind = DossierKind.Whistle, Player = 3, Other = 2, N1 = 3 });
+            r.Incidents.Add(new LineDossierEntry { Kind = DossierKind.Investigation, Player = 1, Other = 0, N1 = 0 });
+            r.Incidents.Add(new LineDossierEntry { Kind = DossierKind.Leak, Player = 1, Other = 0, N1 = 2, N2 = 3 });
+            v.Results = r;
             return v;
         }
 
@@ -212,13 +389,20 @@ namespace BirimizKovulacak.Game
             LineClient.I.ApplyView(v);
         }
 
+        /// <summary>English UI for this scenario (not saved; the driver switches back before the next one).</summary>
+        static void English()
+        {
+            Loc.Load("en");
+            if (UIRoot.I != null) UIRoot.I.Rebuild();
+        }
+
         static void Messages()
         {
             var list = new List<LineMessage>
             {
-                LineMock.Msg(MessageKind.Text, 1, 0, "Kasaya dokunma, ben de dokunmam."),
+                LineMock.Msg(MessageKind.Text, 1, 0, "Paylaşalım, ben de paylaşacağım."),
                 LineMock.Msg(MessageKind.Text, 0, 1, "Anlaştık."),
-                LineMock.Msg(MessageKind.MeetingChat, 2, -1, "Bence Sarı aldı.", true),
+                LineMock.Msg(MessageKind.Text, 2, 0, "Sarı'ya güvenme.", ago: 10),
             };
             LineClient.I.ApplyMessages(1, list);
         }
@@ -258,7 +442,7 @@ namespace BirimizKovulacak.Game
     public sealed class LineMockDriver : MonoBehaviour
     {
         public static bool Active { get; private set; }
-        string _pattern = "", _outDir = "";
+        string _pattern = "", _outDir = "", _lang = "";
 
         void Awake()
         {
@@ -270,6 +454,7 @@ namespace BirimizKovulacak.Game
                 if (a[i] == "-uimockout") _outDir = a[i + 1];
             }
             if (string.IsNullOrEmpty(_outDir)) _outDir = Path.Combine(Application.persistentDataPath, "uimock");
+            _lang = Loc.Language;
             _outDir = Path.GetFullPath(_outDir);
             Directory.CreateDirectory(_outDir);
             double start = Time.realtimeSinceStartupAsDouble;
@@ -298,6 +483,14 @@ namespace BirimizKovulacak.Game
 
         IEnumerator Run(string name, LineMockScenario s)
         {
+            // every scenario starts from the same shell: no how-to overlay, the start language (English samples switch it)
+            HowToPlayScreen.Close();
+            if (Loc.Language != _lang)
+            {
+                Loc.Load(_lang);
+                if (UIRoot.I != null) UIRoot.I.Rebuild();
+                yield return null;
+            }
             var client = LineClient.I;
             client.ResetSession(); // also drops the previous scenario's messages
             client.ClearWeek();
