@@ -34,8 +34,8 @@ Requirements (as used for this prototype):
 
 | Tool | Version |
 |---|---|
-| Unity | 6000.6.3f1 (Windows Build Support (Mono) included) — see DECISIONS §1 about LTS |
-| Packages | URP 17.6.0, Netcode for GameObjects 2.13.2, Unity Transport 6.6.0 (built-in), Input System 1.20.0, uGUI/TextMeshPro 2.6.0, Newtonsoft Json 3.2.2, Test Framework 1.8.0 |
+| Unity | 6000.6.8f1 (Windows Build Support (Mono) included; upgraded from 6000.6.3f1 in 2026-11) — see DECISIONS §1 about LTS |
+| Packages | URP 17.6.0, Netcode for GameObjects 2.13.3, Unity Transport 6.6.0 (built-in), Input System 1.20.1, uGUI/TextMeshPro 2.6.0, Newtonsoft Json 3.2.2, Test Framework 1.8.0 |
 | Blender | 5.2.2 LTS (only to regenerate art) |
 | .NET SDK | 8.0+ (only for the fast rules test harness) |
 | Python | 3.x with Pillow (only for tooling: package extraction, contact sheets, log verification) |

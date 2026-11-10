@@ -8,7 +8,7 @@
 param(
     [switch]$NoPlayer,
     [switch]$Art,
-    [string]$Unity = $(if ($env:UNITY_EXE) { $env:UNITY_EXE } else { "C:\Program Files\Unity\Hub\Editor\6000.6.3f1\Editor\Unity.exe" }),
+    [string]$Unity = $(if ($env:UNITY_EXE) { $env:UNITY_EXE } else { "C:\Program Files\Unity\Hub\Editor\6000.6.8f1\Editor\Unity.exe" }),
     [string]$Blender = $(if ($env:BLENDER_EXE) { $env:BLENDER_EXE } else { "C:\Program Files\Blender Foundation\Blender 5.2\blender.exe" })
 )
 $ErrorActionPreference = "Stop"
@@ -33,8 +33,10 @@ if (-not (Test-Path (Join-Path $project "Assets\TextMesh Pro\Resources\TMP Setti
 
 $uargs = @("-batchmode", "-nographics", "-projectPath", $project, "-executeMethod", "BirimizKovulacak.EditorTools.ProjectBuilder.BuildAllCli", "-logFile", (Join-Path $logs "build.log"))
 if ($NoPlayer) { $uargs += "-noPlayer" }
+# Windows PowerShell does not quote array arguments: paths with spaces must be quoted here.
+$uargLine = ($uargs | ForEach-Object { if ($_ -match '\s') { '"' + $_ + '"' } else { $_ } }) -join " "
 for ($attempt = 1; $attempt -le 3; $attempt++) {
-    $p = Start-Process -FilePath $Unity -ArgumentList $uargs -Wait -PassThru -NoNewWindow
+    $p = Start-Process -FilePath $Unity -ArgumentList $uargLine -Wait -PassThru -NoNewWindow
     if ($p.ExitCode -ne 3) { break }
     Write-Host "Builder requested a rerun (first-time imports)."
 }
