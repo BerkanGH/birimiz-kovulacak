@@ -119,13 +119,33 @@ namespace BirimizKovulacak.Core.Tests
         public void TransfersCloseAfterTheFinalVote()
         {
             var m = new LineTest();
-            m.ToCrisis();
+            m.ToCrisis(id => LineChoice.Skip, id => id == 3 ? 0 : 3);
             m.Until(LinePhase.FinalVote);
-            m.Ok(0, LineVerb.Transfer, 1, 1);
+            int sender = m.Ids.First(id => !m.Player(id).Candidate);
+            int receiver = m.Ids.First(id => id != sender);
+            m.Ok(sender, LineVerb.Transfer, receiver, 1);
             m.Until(LinePhase.FinalVerdict);
-            m.Fail(LineFailure.WrongPhase, 0, LineVerb.Transfer, 1, 1);
+            m.Fail(LineFailure.WrongPhase, sender, LineVerb.Transfer, receiver, 1);
             m.Until(LinePhase.Results);
             Assert.AreEqual(1, m.View(3).Results.Transfers.Count, "every transfer is disclosed at Results");
+        }
+
+        [Test]
+        public void CandidateDesksAreSealedButCanReceive()
+        {
+            var m = new LineTest();
+            m.ToCrisis(id => LineChoice.Skip, id => id == 3 ? 0 : 3);
+            m.Ok(0, LineVerb.Transfer, 1, 1); // before candidates exist anyone may send
+            m.Until(LinePhase.CrisisVerdict);
+            int candidate = m.Ids.First(id => m.Player(id).Candidate);
+            int other = m.Ids.First(id => !m.Player(id).Candidate);
+            m.Advance(2);
+            m.Fail(LineFailure.DeskSealed, candidate, LineVerb.Transfer, other, 1);
+            int before = m.Prim(candidate);
+            m.Ok(other, LineVerb.Transfer, candidate, 1);
+            Assert.AreEqual(before + 1, m.Prim(candidate), "a candidate can still be paid (vote buying)");
+            m.Until(LinePhase.FinalVote);
+            m.Fail(LineFailure.DeskSealed, candidate, LineVerb.Transfer, other, 1);
         }
 
         // ---- messages

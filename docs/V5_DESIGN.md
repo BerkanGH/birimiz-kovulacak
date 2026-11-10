@@ -150,6 +150,7 @@ bir toplantı. Sebepler:
 
 - **Sıralı kovulma (5–6 oyuncu):** İlk kovulanın masası açılır ve primi dağıtılır. Bu açılış ikinci oylamayı
   etkiler.
+- **Masa mühürü [KARAR]:** Adaylar belli olduğu anda (Kriz sonucu) adayların masası mühürlenir: prim gönderemezler, ama prim alabilirler (oy satın alma mümkün kalır). Yoksa kovulacağını anlayan aday tüm primini bir arkadaşına aktarıp oy verenleri eli boş bırakabilirdi.
 - **Masa açılışı:** "Ahmet'in çekmecesinden 23 prim çıktı!" Herkes doğru kişiyi kovup kovmadığını o an görür.
 - **Final açılışı:** Tüm bakiyeler, **tüm oylar** ve kim kimi soymuş bilgisi açıklanır. Örnek an: "Ahmet benden
   4 prim aldı ve yine de beni kovdu!"

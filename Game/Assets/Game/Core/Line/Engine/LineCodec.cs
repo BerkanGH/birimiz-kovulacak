@@ -181,8 +181,8 @@ namespace BirimizKovulacak.Core
         private static void WriteCallEndReason(BinaryWriter w, CallEndReason v) { WriteEnum(w, (byte)v, 5, "CallEndReason"); }
         private static LineVerb ReadLineVerb(BinaryReader r) { return (LineVerb)ReadEnum(r, 14, "LineVerb"); }
         private static void WriteLineVerb(BinaryWriter w, LineVerb v) { WriteEnum(w, (byte)v, 14, "LineVerb"); }
-        private static LineFailure ReadLineFailure(BinaryReader r) { return (LineFailure)ReadEnum(r, 23, "LineFailure"); }
-        private static void WriteLineFailure(BinaryWriter w, LineFailure v) { WriteEnum(w, (byte)v, 23, "LineFailure"); }
+        private static LineFailure ReadLineFailure(BinaryReader r) { return (LineFailure)ReadEnum(r, 24, "LineFailure"); }
+        private static void WriteLineFailure(BinaryWriter w, LineFailure v) { WriteEnum(w, (byte)v, 24, "LineFailure"); }
         private static LineAudience ReadLineAudience(BinaryReader r) { return (LineAudience)ReadEnum(r, 2, "LineAudience"); }
         private static void WriteLineAudience(BinaryWriter w, LineAudience v) { WriteEnum(w, (byte)v, 2, "LineAudience"); }
         private static LineEventType ReadLineEventType(BinaryReader r) { return (LineEventType)ReadEnum(r, 18, "LineEventType"); }

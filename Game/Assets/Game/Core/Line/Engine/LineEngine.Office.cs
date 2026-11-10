@@ -217,6 +217,8 @@ namespace BirimizKovulacak.Core
         {
             if (!TransfersOpen) return LineFailure.WrongPhase;
             var s = seats[id];
+            // Sealed desk: once candidates are fixed a candidate cannot empty their desk to an ally before the verdict.
+            if (s.Candidate) return LineFailure.DeskSealed;
             var f = TargetFailure(id, a.Target);
             if (f != LineFailure.None) return f;
             if (a.A < 1 || a.A > c.TransferMax) return LineFailure.BadParam;

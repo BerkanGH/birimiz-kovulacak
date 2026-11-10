@@ -168,6 +168,8 @@ namespace BirimizKovulacak.Core
         AlreadyResolved = 22,
         /// <summary>Fired players take no further part in votes.</summary>
         Fired = 23,
+        /// <summary>Final candidates' desks are sealed: they may receive prim but not send it.</summary>
+        DeskSealed = 24,
     }
 
     public enum LineAudience : byte { All = 0, Player = 1, Host = 2 }

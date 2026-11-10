@@ -285,3 +285,9 @@ Interpretations chosen where this spec was silent or ambiguous. The code and tes
   `WeekLength` argument. Docs regenerated (`docs/analytics/event_catalog.json`, `docs/ANALYTICS_EVENT_CATALOG.md`).
 - **Known design weakness (rules as written).** Transfers stay open through `FinalVote`, so a candidate can empty the
   desk to an ally before the verdict and the voters get nothing. Not changed in Phase 1.
+
+## 18. Post-Phase-1 rule change: sealed desks (2026-11-11, approved by the user)
+
+Once candidates are fixed (`CrisisVerdict`), a candidate's outgoing transfers fail with `LineFailure.DeskSealed`.
+Candidates may still receive prim (vote buying stays possible). Reason: LineSim/review showed a candidate could empty
+their desk to an ally during `FinalVote`, so voters received nothing.
