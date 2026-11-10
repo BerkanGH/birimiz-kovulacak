@@ -7,117 +7,231 @@ using System.Linq;
 using System.Text;
 using BirimizKovulacak.Core;
 
+/// <summary>
+/// v5 bot simulation (docs/V5_ENGINE_SPEC.md §15): seeded bot matches per head count and policy mix, reporting prim
+/// by policy, suç distribution and who gets fired, to sanity-check docs/V5_DESIGN.md §12. Synthetic data: bots do
+/// not talk, call or record.
+/// </summary>
 internal static class Program
 {
     private sealed class Stats
     {
-        internal int Matches,Closed,Awards,Incidents,Exposed,Warnings,Ballots,NoAction,Fired,NoMajority,FinalBallots,Actions,Busy,CarryEvents,MaxBytes;
-        internal double CarrySeconds,SimulatedSeconds;
-        internal readonly List<int> Productivity=new List<int>();
-        internal readonly long[] TaskOutput=new long[13],TaskCount=new long[13],Career=new long[6],Objectives=new long[10],Completed=new long[10];
-        internal ulong Hash=14695981039346656037UL;
+        internal int Matches, Steps, MaxSteps;
+        internal double Seconds;
+        internal readonly Dictionary<LineBotPolicy, long> Prim = new Dictionary<LineBotPolicy, long>();
+        internal readonly Dictionary<LineBotPolicy, long> Blame = new Dictionary<LineBotPolicy, long>();
+        /// <summary>Prim before the desk reveal (firing losses and desk shares removed).</summary>
+        internal readonly Dictionary<LineBotPolicy, long> PreFire = new Dictionary<LineBotPolicy, long>();
+        internal readonly Dictionary<LineBotPolicy, long> SurvivorPrim = new Dictionary<LineBotPolicy, long>();
+        internal readonly Dictionary<LineBotPolicy, int> Survivors = new Dictionary<LineBotPolicy, int>();
+        internal readonly Dictionary<LineBotPolicy, int> Players = new Dictionary<LineBotPolicy, int>();
+        internal readonly Dictionary<LineBotPolicy, double> Wins = new Dictionary<LineBotPolicy, double>();
+        internal readonly Dictionary<LineBotPolicy, int> FiredBy = new Dictionary<LineBotPolicy, int>();
+        internal int Firings, MatchesWithGreedy, MatchesGreedyFired;
+        internal long LeaderBlame, TotalBlame;
+        internal readonly long[] BlameHistogram = new long[16];
+        internal int Meeting1Votes, Meeting2Held, Investigations, GuiltyInvestigations, Whistles, Caught, Revotes, TieBreaks;
+        internal long DeskTotal, DeskRemoved;
+        internal ulong Hash = 14695981039346656037UL;
+
+        internal void Add<T>(Dictionary<LineBotPolicy, T> d, LineBotPolicy p, Func<T, T> f) { d.TryGetValue(p, out T v); d[p] = f(v); }
     }
-    private static readonly CultureInfo Inv=CultureInfo.InvariantCulture;
-    private static double Pct(long n,long d){return d==0?0:100.0*n/d;}
-    private static string F(double n){return n.ToString("0.00",Inv);}
+
+    private static readonly CultureInfo Inv = CultureInfo.InvariantCulture;
+    private static string F(double n) { return n.ToString("0.00", Inv); }
+    private static double Pct(double n, double d) { return d == 0 ? 0 : 100.0 * n / d; }
+    private static readonly LineBotPolicy[] Policies = { LineBotPolicy.Honest, LineBotPolicy.Greedy, LineBotPolicy.Mixed };
+
     private static int Main(string[] args)
     {
         try
         {
-            int matches=20,seed=1927,players=0,session=10;double step=2;string lengths="both",mix="all",output="Tools/LineSim/v4-sim.txt";
-            for(int i=0;i<args.Length;i++)
+            int matches = 1000, seed = 5000, players = 0;
+            double think = 15;
+            string mix = "all", output = "Tools/LineSim/v5-sim.txt";
+            for (int i = 0; i < args.Length; i++)
             {
-                if(args[i]=="--help"){Console.WriteLine("LineSim --matches N --players all|3|4|5|6 --length both|short|full --mix all|talk|nocomm|mixed --seed N --step seconds --session-matches N --output path");return 0;}
-                string flag=args[i];if(++i>=args.Length)throw new ArgumentException("Missing value for "+flag);
-                switch(flag)
+                if (args[i] == "--help")
                 {
-                    case "--matches":matches=int.Parse(args[i],Inv);break;case "--seed":seed=int.Parse(args[i],Inv);break;
-                    case "--players":players=args[i]=="all"?0:int.Parse(args[i],Inv);break;case "--length":lengths=args[i];break;
-                    case "--mix":mix=args[i];break;case "--step":step=double.Parse(args[i],Inv);break;case "--session-matches":session=int.Parse(args[i],Inv);break;case "--output":output=args[i];break;
-                    default:throw new ArgumentException("Unknown flag "+flag);
+                    Console.WriteLine("LineSim --matches N --players all|3|4|5|6 --mix all|half|one-greedy|mixed --think seconds --seed N --output path");
+                    return 0;
+                }
+                string flag = args[i];
+                if (++i >= args.Length) throw new ArgumentException("Missing value for " + flag);
+                switch (flag)
+                {
+                    case "--matches": matches = int.Parse(args[i], Inv); break;
+                    case "--seed": seed = int.Parse(args[i], Inv); break;
+                    case "--players": players = args[i] == "all" ? 0 : int.Parse(args[i], Inv); break;
+                    case "--mix": mix = args[i]; break;
+                    case "--think": think = double.Parse(args[i], Inv); break;
+                    case "--output": output = args[i]; break;
+                    default: throw new ArgumentException("Unknown flag " + flag);
                 }
             }
-            if(matches<1||players!=0&&(players<3||players>6)||session<1||double.IsNaN(step)||double.IsInfinity(step)||step<=0||step>5||
-                !new[]{"both","short","full"}.Contains(lengths)||!new[]{"all","talk","nocomm","mixed"}.Contains(mix))throw new ArgumentException("Invalid arguments.");
-            var report=new StringBuilder();var watch=Stopwatch.StartNew();
-            report.AppendLine("v4.0-hybrid — SYNTHETIC BOT DATA");
-            report.AppendLine("Bots do not talk. Talk models perfect information sharing between communication partners (calls or placeholder texts), after contact in the current task. Greedy uses only its own facts. NoComm never calls or texts.");
-            report.AppendLine("Default, unscaled timings. Each cell has "+matches+" matches; seeds "+seed+".."+(seed+matches-1)+"; host step "+F(step)+" s; history resets every "+session+" matches.");
-            report.AppendLine("Command: dotnet run -c Release --project Tools/LineSim/LineSim.csproj -- "+string.Join(" ",args));
-            int total=0;var matrix=new List<Stats>();
-            for(int n=3;n<=6;n++)if(players==0||players==n)foreach(var length in new[]{WeekLength.Short,WeekLength.Full})
+            var mixes = new[] { "half", "one-greedy", "mixed" };
+            if (matches < 1 || players != 0 && (players < 3 || players > 6) || think < 0 || think > 50 || mix != "all" && !mixes.Contains(mix))
+                throw new ArgumentException("Invalid arguments.");
+            var report = new StringBuilder();
+            var watch = Stopwatch.StartNew();
+            report.AppendLine(LineProtocol.RulesetVersion + " — SYNTHETIC BOT DATA (LineSim)");
+            report.AppendLine("Bots never call, text or record (spec §13). Honest: share, leave, volunteer by a simple count (the cleanest Needed+1 by suç volunteer), whistle as a witness, vote for a known culprit else the highest suç.");
+            report.AppendLine("Greedy: take, take, skip, whistle as a witness, investigate a Client Bonus partner who took, same voting rule. Mixed: honest or greedy per decision (50/50, seeded).");
+            report.AppendLine("Mixes: half = each seat Honest or Greedy 50/50 (seeded per match); one-greedy = one seeded Greedy seat, the rest Honest; mixed = every seat Mixed.");
+            report.AppendLine("Default config and timings; bots act after a seeded 0.." + F(think) + " s think delay per phase. Match length = Intro start to Results start.");
+            report.AppendLine(matches + " matches per cell; seeds " + seed + ".." + (seed + matches - 1) + ".");
+            report.AppendLine("Command: dotnet run -c Release --project Tools/LineSim/LineSim.csproj -- " + string.Join(" ", args));
+            int total = 0;
+            for (int n = 3; n <= 6; n++)
             {
-                if(lengths!="both"&&length.ToString().ToLowerInvariant()!=lengths)continue;
-                foreach(string policyMix in new[]{"talk","nocomm","mixed"})
+                if (players != 0 && players != n) continue;
+                foreach (string m in mixes)
                 {
-                    if(mix!="all"&&mix!=policyMix)continue;var stats=new Stats();LineSessionHistory history=null;
-                    for(int i=0;i<matches;i++){if(i%session==0)history=null;history=Run(n,length,policyMix,seed+i,i,step,history,stats);}
-                    total+=matches;matrix.Add(stats);Write(report,n,length,policyMix,stats);Console.WriteLine(n+"p "+length+" "+policyMix+": "+matches+" matches, productivity "+F(stats.Productivity.Average()/10)+"%, closed "+F(Pct(stats.Closed,matches))+"%");
+                    if (mix != "all" && mix != m) continue;
+                    var stats = new Stats();
+                    for (int i = 0; i < matches; i++) Run(n, m, seed + i, think, stats);
+                    total += matches;
+                    Write(report, n, m, stats);
+                    if (m != "mixed") Console.WriteLine(n + "p " + m + ": honest " + F(Avg(stats.Prim, stats.Players, LineBotPolicy.Honest)) + " / greedy " +
+                                      F(Avg(stats.Prim, stats.Players, LineBotPolicy.Greedy)) + " prim; greedy fired in " +
+                                      F(Pct(stats.MatchesGreedyFired, stats.MatchesWithGreedy)) + "% of matches with a greedy bot");
                 }
             }
-            var measureSetup=Setup(6,WeekLength.Short,seed,0);var measure=LineEngineFactory.Create(measureSetup);for(int i=0;i<1000;i++)measure.Tick(0);
-            long before=GC.GetAllocatedBytesForCurrentThread();var idle=Stopwatch.StartNew();for(int i=0;i<1000000;i++)measure.Tick(0);idle.Stop();long bytes=GC.GetAllocatedBytesForCurrentThread()-before;
-            // Stopwatch allocates once above; measure the tick loop alone separately.
-            before=GC.GetAllocatedBytesForCurrentThread();for(int i=0;i<1000000;i++)measure.Tick(0);bytes=GC.GetAllocatedBytesForCurrentThread()-before;
-            report.AppendLine("Completed "+total+" matches. Aggregate deterministic hash: "+matrix.Aggregate(0UL,(h,s)=>h^s.Hash).ToString("X16",Inv));
-            report.AppendLine("1,000,000 idle ticks: "+bytes+" allocated bytes; "+F(1/idle.Elapsed.TotalSeconds)+" million ticks/s (local observation).");
-            report.AppendLine("Wall seconds: "+F(watch.Elapsed.TotalSeconds));
-            string directory=Path.GetDirectoryName(output);if(!string.IsNullOrEmpty(directory))Directory.CreateDirectory(directory);File.WriteAllText(output,report.ToString(),new UTF8Encoding(false));Console.WriteLine("Wrote "+output+"; "+total+" matches; "+bytes+" idle bytes.");return 0;
+            report.AppendLine();
+            report.AppendLine("Completed " + total + " matches without a stall. Wall seconds: " + F(watch.Elapsed.TotalSeconds));
+            string directory = Path.GetDirectoryName(output);
+            if (!string.IsNullOrEmpty(directory)) Directory.CreateDirectory(directory);
+            File.WriteAllText(output, report.ToString(), new UTF8Encoding(false));
+            Console.WriteLine("Wrote " + output + "; " + total + " matches.");
+            return 0;
         }
-        catch(Exception e){Console.Error.WriteLine(e.GetType().Name+": "+e.Message);return 1;}
-    }
-    private static LineSetup Setup(int n,WeekLength length,int seed,int match)
-    {
-        var setup=new LineSetup{WeekId=match+1,MatchId="sim-"+n+"-"+seed+"-"+match,Seed=seed,Length=length};
-        for(int i=0;i<n;i++)setup.Players.Add(new LinePlayerInfo{Id=i,Name="Bot "+i,IsBot=true});return setup;
-    }
-    private static LineSessionHistory Run(int n,WeekLength length,string mix,int seed,int match,double step,LineSessionHistory history,Stats stats)
-    {
-        var setup=Setup(n,length,seed,match);setup.History=history;var config=LineConfig.CreateDefault();var engine=LineEngineFactory.Create(setup,config);
-        var bots=new LineBot[n];for(int i=0;i<n;i++)bots[i]=new LineBot(i,seed+97*i,mix=="nocomm"?LineBotPolicy.NoComm:mix=="mixed"&&i==n-1?LineBotPolicy.Greedy:LineBotPolicy.Talk);
-        var talked=new bool[n,n];int task=-1;var kinds=new TaskKind[length==WeekLength.Short?6:10];double now=0;
-        for(int tick=0;tick<20000&&!engine.IsFinished;tick++,now+=step)
+        catch (Exception e)
         {
-            engine.Tick(now);var views=new LineView[n];for(int i=0;i<n;i++)views[i]=engine.BuildView(i,now);
-            int current=views[0].TaskNumber;if(current!=task){Array.Clear(talked,0,talked.Length);task=current;}
-            if(task>=0)kinds[task]=views[0].Task.Kind;
-            if(n==6&&views[0].Day==1&&views[0].Phase==LinePhase.RoundPlay)stats.MaxBytes=Math.Max(stats.MaxBytes,LineCodec.EncodeView(views[0]).Length);
-            for(int i=0;i<n;i++)
-            {
-                var shared=new List<LineView>();for(int peer=0;peer<n;peer++)if(talked[i,peer])shared.Add(engine.BuildView(peer,now));
-                var view=engine.BuildView(i,now);var action=bots[i].Next(view,config,now,shared);if(action==null)continue;var result=engine.Apply(i,action,now);
-                if(!result.Accepted){if(result.Failure!=LineFailure.Busy)throw new InvalidOperationException("Bot "+mix+" "+n+"p "+length+" seed="+seed+" "+view.Phase+"/"+view.Task?.Kind+" "+action+" "+result);stats.Busy++;}
-                else {stats.Actions++;if(action.Verb==LineVerb.SendText&&task>=0)talked[i,action.Target]=talked[action.Target,i]=true;}
-            }
-            if(engine.Phase==LinePhase.MeetingDossier)foreach(var pick in engine.RecordingPicks)if(!pick.Played&&pick.PlayAt<=now)engine.ReportRecording(pick.Index,pick.CandidateCallIds.Count==0?-1:pick.CandidateCallIds[0],now);
-            foreach(var e in engine.DrainEvents())
-            {
-                if(e.Type==LineEventType.CallConnected&&task>=0)talked[e.Actor,e.Target]=talked[e.Target,e.Actor]=true;
-                if(e.Type==LineEventType.TaskResolved){int kind=(int)kinds[e.A];stats.TaskOutput[kind]+=e.B;stats.TaskCount[kind]++;}
-                if(e.Type==LineEventType.HostEarlySubmit){stats.CarryEvents++;stats.CarrySeconds+=e.B/1000.0;}
-                if(e.Type==LineEventType.HostBallot)
-                {
-                    var outcome=(VoteOutcome)e.B;
-                    if(outcome==VoteOutcome.Fired||outcome==VoteOutcome.NoMajority||outcome==VoteOutcome.NoVotes&&engine.Day==config.DaysFor(length)-1){stats.FinalBallots++;if(outcome==VoteOutcome.Fired)stats.Fired++;else stats.NoMajority++;}
-                    else {stats.Ballots++;if(outcome==VoteOutcome.WarningGiven)stats.Warnings++;else stats.NoAction++;}
-                }
-            }
+            Console.Error.WriteLine(e.GetType().Name + ": " + e.Message);
+            return 1;
         }
-        if(!engine.IsFinished||engine.Result==null)throw new InvalidOperationException("Simulation did not finish.");var r=engine.Result;stats.Matches++;if(r.CompanyClosed)stats.Closed++;stats.Productivity.Add(r.FinalProductivityPermille);stats.Incidents+=r.IncidentsTotal;stats.Exposed+=r.Exposed.Count;
-        foreach(var p in r.Players){if(p.EmployeeOfMonth)stats.Awards++;stats.Objectives[(int)p.Objective]++;if(p.ObjectiveDone)stats.Completed[(int)p.Objective]++;foreach(var c in p.Career)stats.Career[(int)c.Item]+=c.Points;}
-        stats.Hash=unchecked((stats.Hash^r.ResultHash)*1099511628211UL);stats.SimulatedSeconds+=now;return engine.NextHistory();
     }
-    private static void Write(StringBuilder b,int n,WeekLength length,string mix,Stats s)
+
+    private static LineBotPolicy[] Assign(int n, string mix, int seed)
     {
-        var p=s.Productivity.OrderBy(x=>x).ToArray();int At(double q){return p[(int)((p.Length-1)*q)];}
-        b.AppendLine();b.AppendLine(n+" players | "+length+" | "+(mix=="mixed"?"Talk + one Greedy":mix=="talk"?"all Talk":"all NoComm"));
-        b.AppendLine("Productivity % mean/min/p10/median/p90/max: "+F(p.Average()/10)+" / "+F(p[0]/10.0)+" / "+F(At(.1)/10.0)+" / "+F(At(.5)/10.0)+" / "+F(At(.9)/10.0)+" / "+F(p[p.Length-1]/10.0));
-        b.AppendLine("Closure: "+F(Pct(s.Closed,s.Matches))+"%; EotM award: "+F(Pct(s.Awards,s.Matches))+"%; incidents created/exposed: "+s.Incidents+"/"+s.Exposed+" ("+F(Pct(s.Exposed,s.Incidents))+"% exposed)");
-        b.AppendLine("Daily warnings/no-action: "+s.Warnings+"/"+s.NoAction+" of "+s.Ballots+" ("+F(Pct(s.Warnings,s.Ballots))+"% / "+F(Pct(s.NoAction,s.Ballots))+"%); firing/no-majority: "+s.Fired+"/"+s.NoMajority+" of "+s.FinalBallots+" ("+F(Pct(s.Fired,s.FinalBallots))+"% / "+F(Pct(s.NoMajority,s.FinalBallots))+"%) surviving-company final ballots (NoVotes included with no-majority)");
-        b.AppendLine("Early-submit triggers: "+s.CarryEvents+"; carried seconds: "+F(s.CarrySeconds)+" total, "+F(s.CarrySeconds/s.Matches)+" per match; accepted actions/Busy: "+s.Actions+"/"+s.Busy);
-        b.AppendLine("Career component mean points/player: "+string.Join(", ",Enumerable.Range(1,5).Select(i=>((CareerItem)i)+"="+F((double)s.Career[i]/(s.Matches*n)))));
-        b.AppendLine("Output/task (mean points, instances): "+string.Join(", ",Enumerable.Range(1,12).Where(i=>s.TaskCount[i]>0).Select(i=>LineTasks.Id((TaskKind)i)+"="+F((double)s.TaskOutput[i]/s.TaskCount[i])+" ("+s.TaskCount[i]+")")));
-        b.AppendLine("Objective completion by kind: "+string.Join(", ",Enumerable.Range(1,9).Select(i=>((ObjectiveKind)i)+"="+s.Completed[i]+"/"+s.Objectives[i]+" ("+F(Pct(s.Completed[i],s.Objectives[i]))+"%)")));
-        b.AppendLine("Six-player block-2 play view maximum: "+s.MaxBytes+" bytes; result aggregate hash: "+s.Hash.ToString("X16",Inv));
+        var r = new Random(seed * 7919 + n);
+        var p = new LineBotPolicy[n];
+        if (mix == "mixed") { for (int i = 0; i < n; i++) p[i] = LineBotPolicy.Mixed; return p; }
+        if (mix == "one-greedy") { int g = r.Next(n); for (int i = 0; i < n; i++) p[i] = i == g ? LineBotPolicy.Greedy : LineBotPolicy.Honest; return p; }
+        for (int i = 0; i < n; i++) p[i] = r.Next(2) == 0 ? LineBotPolicy.Honest : LineBotPolicy.Greedy;
+        return p;
+    }
+
+    private static void Run(int n, string mix, int seed, double think, Stats stats)
+    {
+        var setup = new LineSetup { WeekId = 1, MatchId = "sim-" + n + "-" + mix + "-" + seed, Seed = seed };
+        for (int i = 0; i < n; i++) setup.Players.Add(new LinePlayerInfo { Id = i, Name = "Bot " + i, IsBot = true });
+        var config = LineConfig.CreateDefault();
+        var engine = LineEngineFactory.Create(setup, config);
+        var policy = Assign(n, mix, seed);
+        var bots = new LineBot[n];
+        for (int i = 0; i < n; i++) bots[i] = new LineBot(i, seed * 31 + i * 97, policy[i]) { ThinkSeconds = think };
+        double now = 0;
+        int steps = 0;
+        while (!engine.IsFinished)
+        {
+            if (++steps > 5000) throw new InvalidOperationException("Stall: " + n + "p " + mix + " seed " + seed + " at " + engine.Phase);
+            engine.Tick(now);
+            for (int round = 0; round < 8; round++)
+            {
+                bool acted = false;
+                for (int i = 0; i < n; i++)
+                {
+                    var view = engine.BuildView(i, now);
+                    var action = bots[i].Next(view, config, now);
+                    if (action == null) continue;
+                    var result = engine.Apply(i, action, now);
+                    if (!result.Accepted && result.Failure != LineFailure.AlreadyResolved)
+                        throw new InvalidOperationException("Bot " + i + " " + view.Phase + " " + action + " " + result);
+                    acted = true;
+                }
+                if (!acted) break;
+            }
+            foreach (var e in engine.DrainEvents())
+            {
+                if (e.Type == LineEventType.PhaseChanged && (LinePhase)e.A == LinePhase.MeetingVote) { if (engine.Day == 0) stats.Meeting1Votes++; }
+                if (e.Type == LineEventType.PhaseChanged && (LinePhase)e.A == LinePhase.MeetingDossier && engine.Day == 1) stats.Meeting2Held++;
+            }
+            if (engine.Phase == LinePhase.Results) { engine.HostContinue(now); break; }
+            double next = engine.PhaseEndTime;
+            foreach (var b in bots) if (b.WakeAt > now) next = Math.Min(next, b.WakeAt);
+            now = Math.Max(now, next);
+        }
+        var r = engine.Result ?? throw new InvalidOperationException("No result");
+        stats.Matches++;
+        stats.Steps += steps;
+        stats.MaxSteps = Math.Max(stats.MaxSteps, steps);
+        stats.Seconds += r.EndTime - r.StartTime;
+        int leader = 0;
+        foreach (var p in r.Players)
+        {
+            var pol = policy[p.Player];
+            stats.Add(stats.Prim, pol, v => v + p.Prim);
+            stats.Add(stats.Blame, pol, v => v + p.Blame);
+            int desk = r.PrimLog.Where(x => x.Player == p.Player && (x.Reason == PrimReason.Fired || x.Reason == PrimReason.DeskShare)).Sum(x => x.Delta);
+            stats.Add(stats.PreFire, pol, v => v + p.Prim - desk);
+            if (!p.Fired) { stats.Add(stats.SurvivorPrim, pol, v => v + p.Prim); stats.Add(stats.Survivors, pol, v => v + 1); }
+            stats.Add(stats.Players, pol, v => v + 1);
+            if (p.Winner) stats.Add(stats.Wins, pol, v => v + 1.0 / r.Winners.Count);
+            leader = Math.Max(leader, p.Blame);
+            stats.TotalBlame += p.Blame;
+            stats.BlameHistogram[Math.Min(p.Blame, stats.BlameHistogram.Length - 1)]++;
+        }
+        stats.LeaderBlame += leader;
+        bool hasGreedy = policy.Contains(LineBotPolicy.Greedy);
+        if (hasGreedy) stats.MatchesWithGreedy++;
+        if (r.Fired.Any(id => policy[id] == LineBotPolicy.Greedy)) stats.MatchesGreedyFired++;
+        foreach (var f in r.Firings)
+        {
+            stats.Firings++;
+            stats.Add(stats.FiredBy, policy[f.Player], v => v + 1);
+            stats.DeskTotal += f.Desk;
+            stats.DeskRemoved += f.Removed;
+            if (f.Decision == FiringDecision.Revote) stats.Revotes++;
+            if (f.Decision >= FiringDecision.HigherBlame) stats.TieBreaks++;
+        }
+        foreach (var d in r.Incidents)
+        {
+            if (d.Kind == DossierKind.Investigation) { stats.Investigations++; if (d.N1 == 1) stats.GuiltyInvestigations++; }
+            if (d.Kind == DossierKind.Whistle) stats.Whistles++;
+            if (d.Kind == DossierKind.CashCaught) stats.Caught++;
+        }
+        stats.Hash = unchecked((stats.Hash ^ r.ResultHash) * 1099511628211UL);
+    }
+
+    private static double Avg<T>(Dictionary<LineBotPolicy, T> sum, Dictionary<LineBotPolicy, int> count, LineBotPolicy p)
+    {
+        if (!count.TryGetValue(p, out int c) || c == 0) return double.NaN;
+        return Convert.ToDouble(sum.TryGetValue(p, out T s) ? s : default(T), Inv) / c;
+    }
+
+    private static void Write(StringBuilder b, int n, string mix, Stats s)
+    {
+        b.AppendLine();
+        b.AppendLine(n + " players | " + mix + " | " + s.Matches + " matches | candidates " + LineConfig.CreateDefault().CandidatesFor(n) + ", firings " + LineConfig.CreateDefault().FiringsFor(n));
+        b.AppendLine("Match length s (to Results): mean " + F(s.Seconds / s.Matches) + "; engine steps per match mean/max " + F((double)s.Steps / s.Matches) + "/" + s.MaxSteps);
+        foreach (var p in Policies)
+        {
+            if (!s.Players.TryGetValue(p, out int count) || count == 0) continue;
+            s.FiredBy.TryGetValue(p, out int fired);
+            s.Wins.TryGetValue(p, out double wins);
+            b.AppendLine("  " + p + ": players " + count + "; final prim mean " + F(Avg(s.Prim, s.Players, p)) + " (before the desk reveal " + F(Avg(s.PreFire, s.Players, p)) +
+                         ", surviving seats " + F(Avg(s.SurvivorPrim, s.Survivors, p)) + "); suç mean " + F(Avg(s.Blame, s.Players, p)) +
+                         "; fired " + fired + " (" + F(Pct(fired, count)) + "% of " + p + " seats); win share " + F(Pct(wins, count)) + "% per seat");
+        }
+        b.AppendLine("Greedy fired in " + F(Pct(s.MatchesGreedyFired, s.MatchesWithGreedy)) + "% of matches with a greedy bot (" + s.MatchesGreedyFired + "/" + s.MatchesWithGreedy + "); firings "
+                     + s.Firings + ", greedy share " + F(Pct(s.FiredBy.TryGetValue(LineBotPolicy.Greedy, out int gf) ? gf : 0, s.Firings)) + "%");
+        b.AppendLine("Suç: leader mean " + F((double)s.LeaderBlame / s.Matches) + "; total per match " + F((double)s.TotalBlame / s.Matches) +
+                     "; distribution per player 0.." + (s.BlameHistogram.Length - 1) + "+: " + string.Join(" ", s.BlameHistogram.Select((x, i) => i + ":" + F(Pct(x, s.Matches * n)) + "%").Where((x, i) => s.BlameHistogram[i] > 0)));
+        b.AppendLine("Meeting 1 vote held " + F(Pct(s.Meeting1Votes, s.Matches)) + "%; meeting 2 held " + F(Pct(s.Meeting2Held, s.Matches)) + "%; per match: investigations " +
+                     F((double)s.Investigations / s.Matches) + " (guilty " + F(Pct(s.GuiltyInvestigations, s.Investigations)) + "%), whistles " + F((double)s.Whistles / s.Matches) +
+                     ", caught takers " + F((double)s.Caught / s.Matches));
+        b.AppendLine("Firings decided by revote " + F(Pct(s.Revotes, s.Firings)) + "%, by tie-break " + F(Pct(s.TieBreaks, s.Firings)) + "%; desk mean " + F((double)s.DeskTotal / Math.Max(1, s.Firings)) +
+                     ", removed (remainder) mean " + F((double)s.DeskRemoved / Math.Max(1, s.Firings)) + "; result aggregate hash " + s.Hash.ToString("X16", Inv));
     }
 }
