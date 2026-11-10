@@ -65,6 +65,32 @@ Vampir köylünün bir kopyası olmamalı: iyi/kötü takımı yok, rol kartı y
 - Suç puanı "kim aday olacak" sorusunu, prim ise "kime oy vereceğim" sorusunu belirler. Masum ama zengin biri
   ile suçlu ama fakir biri aday olunca oy verenler gerçek bir ikilemde kalır.
 
+## 4.1 Maç yapısı [ÖNERİ]
+
+Oyuncu sayısı ne olursa olsun **3 normal görev + 1 Kriz**. Oyuncu sayısı arttıkça görev değil, toplantı ve final
+süresi uzar.
+
+```
+Görev 1 → Toplantı (suç dağıtılır)
+Görev 2 → Toplantı (suç dağıtılır)
+Görev 3 → Toplantı (suç dağıtılır)
+KRİZ   → büyük suç gizli oyla birine yazılır, suç tahtası sarsılır
+FİNAL  → en çok suçu olanlar oylamaya çıkar → kovulma
+```
+
+| Oyuncu | Normal görev | Kriz | Kovulan | Tahmini süre |
+|---|---|---|---|---|
+| 4 | 3 | 1 | 1 | ≈ 13–14 dk |
+| 5 | 3 | 1 | 2 | ≈ 15–16 dk |
+| 6 | 3 | 1 | 2 | ≈ 17–18 dk |
+
+- Bir blok ≈ 3 dk: ≈ 90 sn görev ve telefon, ≈ 90 sn suç toplantısı.
+- 4 oyuncuda 3 ikili tur ile herkes herkesle tam bir kez eşleşir. 6 oyuncuda herkes 5 kişiden 3'üyle eşleşir;
+  eksik birinci el bilgi dedikoduyu artırır.
+- 3 görev farklı türlerden seçilir: bir **ikili**, bir **herkesin katıldığı**, bir **rol** görevi. Görev havuzunda
+  en az 5–6 görev olmalı. Kriz her maçta sabittir.
+- İleride: 5 görev + Kriz'lik bir "Uzun mod".
+
 ## 5. Final ve kovulma [ÖNERİ]
 
 - **Maç ortasında eleme yok.** Erken elenen oyuncu 15 dakikalık bir parti oyununda boş boş izler. Maç blok
@@ -110,6 +136,33 @@ Vampir köylünün bir kopyası olmamalı: iyi/kötü takımı yok, rol kartı y
 - **Oy satın alma:** Oyuncular prim vererek başkasının oyunu isteyebilir. Oylama gizli olduğu için rüşveti
   alanın sözünü tutup tutmadığı ancak final açılışında ortaya çıkar.
 
+## 7.1 İletişim, sözler ve hat panosu
+
+**Sözler bağlayıcı değil [KARAR].** Sistem hiçbir anlaşmayı zorlamaz. "Oy veririm", "öderim" yalan olabilir.
+Güvenceyi oyuncular kendileri arar:
+- **Kim önce öder?** İki taraf da riskte, bu başlı başına bir pazarlık.
+- **Kayıt cihazı:** "Sözünü tutmazsan bu kaydı toplantıda çalarım."
+- **Final açılışı:** Tüm oylar ve transferler açıklanır. Yalan maç içinde işe yarayabilir ama maç sonunda ortaya
+  çıkar ve maçlar arası itibar oluşur.
+- [İLERİDE] **Emanet:** "Ahmet Kriz suçunu alırsa 3 primim Zeynep'e geçsin." Sistem sonucu kontrol eder, oyları
+  kontrol edemez. İlk prototipte yok.
+
+**Telefon [KARAR]:**
+- Sadece 1'e 1 görüşme. Aynı anda tek kişiyle konuşulur. Kimi arayacağını seçmek de bir stratejidir.
+- Meşgul hattı: bekle ya da başkasını ara.
+- Görüşme ekranında hızlı transfer: "Prim gönder: 1 / 2 / 3 / 5".
+
+**Hat panosu [KARAR, kapsam ÖNERİ]:**
+- Kimin kiminle konuştuğu ve ne kadar süredir konuştuğu herkese görünür, ne konuştukları görünmez. Örnek:
+  "Ayşe ↔ Mehmet, 40 sn".
+- [ÖNERİ] Sadece Kriz'de değil, **bütün ofis aşamalarında** açık. Kurallar tutarlı kalır ve görevlerde de şüphe
+  üretir.
+- [ÖNERİ] Toplantı dosyasında o bloğun görüşme özeti: "Ayşe → Mehmet: 3 görüşme".
+
+**Mesajlar [ÖNERİ]:** Gizli kalır, panoda görünmez. Bu bir ikilem yaratır:
+- Telefon: hızlı ve ikna edici, ama herkes konuştuğunu görür.
+- Mesaj: kimse görmez, ama yavaştır.
+
 ## 8. Görevler
 
 ### 8.1 Tasarım ilkeleri [KARAR]
@@ -132,11 +185,20 @@ Vampir köylünün bir kopyası olmamalı: iyi/kötü takımı yok, rol kartı y
   altüst etmek için tasarlandı.
 - Müdür: "Büyük müşteri şikâyet etti, biri bunu üstlenecek." İlk sıraları değiştirebilecek kadar **büyük bir suç
   puanı** ortaya çıkar.
-- 60–90 saniye boyunca **herkes birbirini duyar** ve açık pazarlık yapılır. Prim transferleri gizli kalır.
-- Biri "Ben üstleniyorum" der, diğerleri ona prim öder.
-- [ÖNERİ] **Kimse üstlenmezse suç, o anki suç liderine yazılır.** Lider birini satın almaya, diğerleri süreyi
-  oyalamaya çalışır. 3. ya da 4. sıradaki biri "10 prim isterim" diyerek pazarlık gücünü kullanır.
-- Sonrası: "Ama siz bana ödediniz!" tartışması finale taşınır.
+- **Suçu kimin alacağına herkes gizli oyla karar verir.** Oylamadan önce 60–90 sn **özel telefon** pazarlığı
+  olur: "Sen Ahmet'e oy ver, ben sana 3 prim vereyim."
+- Suçu alan kişi kimseden para **almaz**. Suç onu aday yapar ama zengin yapmaz. Kimin kime ne ödediği gizli kalır.
+- [AÇIK] Kriz oylamasında beraberlik kuralı.
+
+**Neden böyle? (reddedilen ilk sürüm)** İlk sürümde biri Kriz'i gönüllü üstleniyor, diğerleri ona açıkça prim
+ödüyordu. Sorun: herkes üstlenen kişinin hem aday hem zengin olduğunu biliyordu. Kazanan en zengin olduğu için oy
+verenler rakibi elemek ister ve bu kişiyi kovmak otomatik karar haline gelirdi. Yani kimse üstlenmezdi.
+"Tazminat" (alınan prim kovulunca da kalır) bunu çözmedi, çünkü sorun parayı almak değil rakibi elemek. Kural:
+**Kriz, gizli olması gereken zenginliği görünür yapmamalı.**
+
+**Lideri devirme:** Kazanan en zengin olduğu sürece oyuncular en büyük rakibi elemek ister. Bu yok edilemez ve
+edilmemeli de. Savunmalar: bakiyeler gizli (§3) ve oylamaya sadece suçu en çok olanlar çıkar (§5). Liderin kim
+olduğu belirsiz kaldıkça bu, istediğimiz tartışmayı üretir: "Bence en zengin Ahmet." / "Hayır, Ayşe."
 
 ### 8.3 Aday görevler [AÇIK]
 
@@ -169,7 +231,7 @@ Yeni görev fikirleri buraya eklenecek.
 ## 10. Açık sorular listesi
 
 1. Kovulma sayısı ve aday sayısı tablosu (§5).
-2. Oylamada beraberlik kuralı (§5).
+2. Oylamada beraberlik kuralı: final (§5) ve Kriz (§8.2).
 3. Soruşturma maliyeti ve kullanım sayısı (§6).
 4. Kayıt cihazı kullanım sayısı (§7).
 5. Müşteri Bonusu ödeme tablosu ve suç üretimi (§8.2).
