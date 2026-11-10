@@ -93,7 +93,7 @@ namespace BirimizKovulacak.EditorTools
         {
             PlayerSettings.companyName = "Leonidas Studio";
             PlayerSettings.productName = "Birimiz Kovulacak";
-            PlayerSettings.bundleVersion = "0.4.0"; // v4 hybrid ruleset (analytics game_version)
+            PlayerSettings.bundleVersion = "0.5.0"; // v5 "Her Şey Kayıtta" ruleset (analytics game_version)
             PlayerSettings.runInBackground = true;
             PlayerSettings.resizableWindow = true;
             PlayerSettings.visibleInBackground = true;
