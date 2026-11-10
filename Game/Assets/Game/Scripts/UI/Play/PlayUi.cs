@@ -639,9 +639,10 @@ namespace BirimizKovulacak.Game
         {
             Big(card, T("hint.MeetingVerdict"));
             var mt = v.Meeting;
-            if (mt == null || mt.BlameGained.Count == 0) { Line(card, T("focus.no_blame"), "pl-dim"); return; }
+            if (mt == null || !mt.BlameGained.Exists(g => g.Amount > 0)) { Line(card, T("focus.no_blame"), "pl-dim"); return; }
             var row = Wrap(card);
-            foreach (var g in mt.BlameGained) Bold(Name(g.Player) + " " + F("meeting.blame_plus", g.Amount), "pl-chip", "pl-chip-warn").AddTo(row);
+            foreach (var g in mt.BlameGained)
+                if (g.Amount > 0) Bold(Name(g.Player) + " " + F("meeting.blame_plus", g.Amount), "pl-chip", "pl-chip-warn").AddTo(row);
         }
 
         void FocusCrisisVerdict(VisualElement card, LineClient lc, LineView v)
@@ -833,10 +834,10 @@ namespace BirimizKovulacak.Game
                 Sub(p, T(mt.Index < 2 ? "meeting.dossier" : "meeting.final_dossier"));
                 foreach (var e in mt.Dossier) Line(p, "• " + PlayText.Dossier(e), e.Kind == DossierKind.Investigation || e.Kind == DossierKind.Leak ? "pl-warn" : null);
             }
-            if (mt.BlameGained.Count > 0 && v.Phase != LinePhase.MeetingVerdict)
+            if (mt.BlameGained.Exists(g => g.Amount > 0) && v.Phase != LinePhase.MeetingVerdict)
             {
                 Sub(p, T("meeting.blame_gained"));
-                foreach (var g in mt.BlameGained) Line(p, Name(g.Player) + ": " + F("meeting.blame_plus", g.Amount));
+                foreach (var g in mt.BlameGained) if (g.Amount > 0) Line(p, Name(g.Player) + ": " + F("meeting.blame_plus", g.Amount));
             }
             // leaked recordings, with a live countdown / state
             if (mt.Recordings.Count > 0)
