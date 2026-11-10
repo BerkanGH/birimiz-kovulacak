@@ -2,14 +2,14 @@ using System;
 
 namespace BirimizKovulacak.Core
 {
-    // v4 "Hybrid Office" contract (normative rules: docs/GAMEPLAY_REDESIGN.md, wire/engine details: docs/CONTRACTS_V4.md).
-    // Owned by the lead. Enum values are wire values: append, never renumber.
+    // v5 "Her Şey Kayıtta" contract (normative: docs/V5_ENGINE_SPEC.md, rationale: docs/V5_DESIGN.md).
+    // Enum values are wire values: from v5 on, append, never renumber.
 
     public static class LineProtocol
     {
-        public const int Version = 4;
+        public const int Version = 5;
         /// <summary>Ruleset identity for analytics and results; never pool data across different values.</summary>
-        public const string RulesetVersion = "v4.0-hybrid";
+        public const string RulesetVersion = "v5.0-kayit";
         public const int MinPlayers = 3;
         public const int MaxPlayers = 6;
     }
@@ -18,108 +18,80 @@ namespace BirimizKovulacak.Core
     public static class LineIds
     {
         public const int None = -1;
-        /// <summary>Ballot option "No action" (daily meeting) / "Fire nobody" (final); also "nobody was fired".</summary>
-        public const int Nobody = -2;
-        /// <summary>The manager (morning memo, mail sender).</summary>
-        public const int Manager = 101;
-        /// <summary>Company IT / HR system (system notices).</summary>
+        /// <summary>Company system notices (message sender).</summary>
         public const int System = 102;
-    }
-
-    public static class LineManagerIds
-    {
-        public const string Paragoz = "paragoz";
-        public const string Disiplinci = "disiplinci";
-        public const string Kayirmaci = "kayirmaci";
-        public const string Paranoyak = "paranoyak";
-        public static readonly string[] All = { Paragoz, Disiplinci, Kayirmaci, Paranoyak };
     }
 
     public enum LinePhase : byte
     {
         None = 0,
-        /// <summary>Block brief (code name "day" = work block).</summary>
-        Morning = 1,
-        /// <summary>Task card (code name "round" = task).</summary>
-        RoundIntro = 2,
-        RoundPlay = 3,
-        RoundReveal = 4,
+        Intro = 1,
+        TaskPlay = 2,
+        TaskReveal = 3,
+        Break = 4,
         MeetingDossier = 5,
         MeetingDiscussion = 6,
         MeetingVote = 7,
         MeetingVerdict = 8,
-        FinalDefense = 9,
-        FinalVote = 10,
-        FinalVerdict = 11,
-        WeekResults = 12,
-        Abandoned = 13,
-        /// <summary>v4: between the two tasks of a block (and after the last task of the match).</summary>
-        Break = 14,
+        CrisisCalls = 9,
+        CrisisVote = 10,
+        CrisisVerdict = 11,
+        FinalDiscussion = 12,
+        FinalDefense = 13,
+        /// <summary>Also used for the revote and for the second firing (see <see cref="LineFinalView"/>).</summary>
+        FinalVote = 14,
+        FinalVerdict = 15,
+        Results = 16,
+        Abandoned = 17,
     }
 
     /// <summary>Why the previous phase ended (PhaseChanged.B).</summary>
     public enum PhaseEndReason : byte
     {
         Timer = 0,
-        /// <summary>Timer that had been shortened because every connected player submitted.</summary>
+        /// <summary>TaskPlay ended early because every connected player had submitted.</summary>
         TimerShortened = 1,
         HostContinue = 2,
         Abandoned = 3,
         /// <summary>First phase of the match (no previous phase).</summary>
         Start = 4,
-        /// <summary>Final defense/vote skipped because the company closed.</summary>
+        /// <summary>The following phase(s) were skipped (meeting without vote-able failures).</summary>
         Skipped = 5,
     }
 
-    public enum WeekLength : byte { Short = 0, Full = 1 }
-
-    /// <summary>v4 task pool (docs/GAMEPLAY_REDESIGN.md §6). Localisation id: <see cref="LineTasks.Id"/>.</summary>
+    /// <summary>v5 tasks. Localisation id: <see cref="LineTasks.Id"/>.</summary>
     public enum TaskKind : byte
     {
         None = 0,
-        InvoiceReconcile = 1,
-        BudgetSplit = 2,
-        CustomerSpec = 3,
-        ReportReview = 4,
-        RoomBooking = 5,
-        ArchiveVisitor = 6,
-        BonusPool = 7,
-        ServerCode = 8,
-        PhishingCheck = 9,
-        ShiftCover = 10,
-        VendorPick = 11,
-        SupplySwap = 12,
+        /// <summary>Pair/trio: Share (0) or Take (1).</summary>
+        ClientBonus = 1,
+        /// <summary>Pair/trio: Leave (0) or Take (1); witnesses may whistle in the following break.</summary>
+        PettyCash = 2,
+        /// <summary>Everyone: Skip (0) or Volunteer (1); needs ceil(N/2) volunteers.</summary>
+        WeekendShift = 3,
     }
 
-    public enum TaskFamily : byte { None = 0, Pair = 1, All = 2, Role = 3 }
+    public enum TaskFamily : byte { None = 0, Pair = 1, All = 2 }
 
     public static class LineTasks
     {
-        public const int Count = 12;
-        static readonly string[] Ids =
-        {
-            "", "invoice_reconcile", "budget_split", "customer_spec", "report_review", "room_booking", "archive_visitor",
-            "bonus_pool", "server_code", "phishing_check", "shift_cover", "vendor_pick", "supply_swap",
-        };
-        static readonly TaskFamily[] Families =
-        {
-            TaskFamily.None, TaskFamily.Pair, TaskFamily.All, TaskFamily.Pair, TaskFamily.Role, TaskFamily.All, TaskFamily.Role,
-            TaskFamily.Pair, TaskFamily.All, TaskFamily.All, TaskFamily.All, TaskFamily.All, TaskFamily.All,
-        };
+        public const int Count = 3;
+        static readonly string[] Ids = { "", "client_bonus", "petty_cash", "weekend_shift" };
+        static readonly TaskFamily[] Families = { TaskFamily.None, TaskFamily.Pair, TaskFamily.Pair, TaskFamily.All };
         /// <summary>Stable string id (localisation keys task.&lt;id&gt;.*, analytics task_id).</summary>
         public static string Id(TaskKind k) { int i = (int)k; return i >= 0 && i < Ids.Length ? Ids[i] : ""; }
         public static TaskFamily Family(TaskKind k) { int i = (int)k; return i >= 0 && i < Families.Length ? Families[i] : TaskFamily.None; }
         public static TaskKind Parse(string id) { for (int i = 1; i < Ids.Length; i++) if (Ids[i] == id) return (TaskKind)i; return TaskKind.None; }
     }
 
-    public enum TrickType : byte
+    /// <summary>Task choice values (<see cref="LineVerb.SubmitTask"/> A). 0 is always the default.</summary>
+    public static class LineChoice
     {
-        None = 0,
-        SahteEposta = 1,
-        KahveDok = 2,
-        FisCek = 3,
-        InternetKes = 4,
-        HatDinle = 5,
+        public const int Share = 0;
+        public const int Leave = 0;
+        public const int Skip = 0;
+        public const int Take = 1;
+        public const int Volunteer = 1;
     }
 
     /// <summary>The local player's phone. Dialing = I am calling and it rings at the other end; Ringing = somebody calls me.</summary>
@@ -131,11 +103,9 @@ namespace BirimizKovulacak.Core
         HungUp = 1,
         Declined = 2,
         Missed = 3,
-        /// <summary>A Pull-the-Plug trick cut one side.</summary>
-        LineCut = 4,
-        /// <summary>A meeting ended every call.</summary>
-        PhaseEnd = 5,
-        Disconnected = 6,
+        /// <summary>The phase no longer allows calls.</summary>
+        PhaseEnd = 4,
+        Disconnected = 5,
     }
 
     public enum LineVerb : byte
@@ -146,41 +116,27 @@ namespace BirimizKovulacak.Core
         Answer = 2,
         Decline = 3,
         HangUp = 4,
-        /// <summary>Task controls: Target/A/B per control field; C = <see cref="TaskField"/> mask of the fields being set.</summary>
+        /// <summary>A = choice (<see cref="LineChoice"/>); changeable until TaskPlay ends.</summary>
         SubmitTask = 5,
-        /// <summary>Supply Swap: Target = receiver, A = index into my held items.</summary>
-        GiveItem = 6,
-        /// <summary>This match's dirty trick: Target = victim (fake mail: apparent sender), A = template or -1, Text = fake mail body.</summary>
-        UseTrick = 7,
-        /// <summary>Meeting / final ballot: Target = colleague, <see cref="LineIds.Nobody"/> (No action / Fire nobody) or -1 (withdraw/abstain).</summary>
-        Vote = 8,
+        /// <summary>Meeting: Target = colleague or -1 (clear), A = ballot index. Crisis/final: Target = colleague/candidate or -1.</summary>
+        Vote = 6,
         /// <summary>Private text: Target = recipient, Text.</summary>
-        SendText = 9,
-        /// <summary>Email: Target = recipient or -1 (everyone), Text, A = template or -1, B = mentioned player or -1, C = mail id replied to or -1.</summary>
-        SendEmail = 10,
-        /// <summary>Public meeting chat (meeting phases): Text.</summary>
-        SendMeetingChat = 11,
-        /// <summary>Anonymous complaint: Target = colleague, A = preset index or -1, Text (free text when A = -1).</summary>
-        FileComplaint = 12,
-        /// <summary>Money: Target = receiver, A = amount.</summary>
-        Transfer = 13,
-        /// <summary>Evidence purchase: A = offer id.</summary>
-        BuyEvidence = 14,
-        /// <summary>Meeting: A = record id from my accessible records.</summary>
-        PresentRecord = 15,
-        /// <summary>Remedial report: Target = co-signer, A = task number (match index).</summary>
-        StartRemedial = 16,
-        /// <summary>Co-signer answers: Target = requester, A = 1 accept / 0 decline.</summary>
-        RespondRemedial = 17,
-        /// <summary>Host only, WeekResults: end the match now.</summary>
-        HostContinue = 18,
-        /// <summary>The fired player, during WeekResults, picks next match's manager (A = index into LineManagerIds.All).</summary>
-        PickNextManager = 19,
+        SendText = 7,
+        /// <summary>Public chat (meeting, crisis vote/verdict and final phases): Text.</summary>
+        SendMeetingChat = 8,
+        /// <summary>Prim: Target = receiver, A = amount.</summary>
+        Transfer = 9,
+        /// <summary>Petty Cash break: Target = the sole taker of my group.</summary>
+        Whistle = 10,
+        /// <summary>Meeting 1: Target = a member of my Client Bonus group.</summary>
+        Investigate = 11,
+        /// <summary>Mark my current connected call as recorded.</summary>
+        Record = 12,
+        /// <summary>Meeting / final discussion: A = id of a call I recorded.</summary>
+        Leak = 13,
+        /// <summary>Host only, Results: end the match now.</summary>
+        HostContinue = 14,
     }
-
-    /// <summary><see cref="LineVerb.SubmitTask"/> field mask bits.</summary>
-    [Flags]
-    public enum TaskField : byte { None = 0, Target = 1, A = 2, B = 4 }
 
     public enum LineFailure : byte
     {
@@ -191,31 +147,27 @@ namespace BirimizKovulacak.Core
         InvalidTarget = 4,
         Self = 5,
         Busy = 6,
-        PhoneDead = 7,
-        ComputerBlocked = 8,
-        AlreadyUsed = 9,
-        NotAvailable = 10,
-        NoAttemptsLeft = 11,
-        NotUnlocked = 12,
-        AlreadyInCall = 13,
-        NotInCall = 14,
-        NotRinging = 15,
-        BadParam = 16,
-        Absent = 17,
-        HostOnly = 18,
-        LimitReached = 19,
-        RoundSolved = 20,
-        // v4
-        TooLong = 21,
-        EmptyText = 22,
-        RateLimited = 23,
-        InsufficientFunds = 24,
-        /// <summary>The record/offer/item is not mine (not accessible).</summary>
-        NotOwned = 25,
-        /// <summary>A locking control was already submitted.</summary>
-        Locked = 26,
-        /// <summary>The control depends on another player's submission that has not arrived.</summary>
-        Waiting = 27,
+        AlreadyUsed = 7,
+        NotAvailable = 8,
+        AlreadyInCall = 9,
+        NotInCall = 10,
+        NotRinging = 11,
+        BadParam = 12,
+        Absent = 13,
+        HostOnly = 14,
+        LimitReached = 15,
+        TooLong = 16,
+        EmptyText = 17,
+        RateLimited = 18,
+        InsufficientFunds = 19,
+        /// <summary>The call/record is not mine.</summary>
+        NotOwned = 20,
+        /// <summary>Whistle/investigation preconditions (witness, same group) not met.</summary>
+        NotEligible = 21,
+        /// <summary>The theft / taker / recording was already resolved, exposed or leaked.</summary>
+        AlreadyResolved = 22,
+        /// <summary>Fired players take no further part in votes.</summary>
+        Fired = 23,
     }
 
     public enum LineAudience : byte { All = 0, Player = 1, Host = 2 }
@@ -233,240 +185,106 @@ namespace BirimizKovulacak.Core
         CallEnded = 4,
         /// <summary>To the caller: Target = callee who is busy.</summary>
         CallBusy = 5,
+        /// <summary>To a busy player: Actor tried to call you.</summary>
+        MissedCall = 6,
         /// <summary>To the recipient: A = (int)MessageKind, B = message seq (pull text through ILineEngine.MessagesFor).</summary>
-        MessageReceived = 6,
-        /// <summary>Public: Actor submitted (or changed) task controls.</summary>
-        TaskSubmitted = 7,
-        /// <summary>To giver and receiver: Actor = giver, Target = receiver, A = item type.</summary>
-        ItemGiven = 8,
-        /// <summary>To the victim: A = (int)TrickType.</summary>
-        TrickHit = 9,
-        /// <summary>Public: the office internet went down (no actor).</summary>
-        InternetDown = 10,
-        /// <summary>To the actor: A = (int)TrickType, Target = victim.</summary>
-        TrickUsed = 11,
-        /// <summary>To sender and receiver: Actor = sender, Target = receiver, A = amount.</summary>
-        TransferMade = 12,
-        /// <summary>Public: Actor has voted (not for whom).</summary>
-        VoteCast = 13,
-        /// <summary>Public: Target receives a warning.</summary>
-        WarningGiven = 14,
-        /// <summary>Public: Target is fired, or LineIds.Nobody.</summary>
-        Fired = 15,
-        /// <summary>Public: Target's blame changed by A (B = (int)BlameReason).</summary>
-        BlameChanged = 16,
-        /// <summary>Public: Kayırmacı's favourite of the block is Target.</summary>
-        FavouriteNamed = 17,
-        /// <summary>Public: recording A (pick index) starts now.</summary>
-        RecordingStarted = 18,
+        MessageReceived = 7,
         /// <summary>Public: Target (re)connected (A = 1) or dropped (A = 0).</summary>
-        Presence = 19,
-        /// <summary>Public: task number A resolved with output B (of its max).</summary>
-        TaskResolved = 20,
-        /// <summary>To the tapper: wiretap on Target started (A = 1) or ended (A = 0).</summary>
-        Wiretap = 21,
-        /// <summary>To a busy (or dead-line) player: Actor tried to call you.</summary>
-        MissedCall = 22,
-        /// <summary>Public: Actor (the fired player) picked next match's manager; A = index into LineManagerIds.All.</summary>
-        NextManagerPicked = 23,
-        /// <summary>To the player: access to record A was granted.</summary>
-        RecordGranted = 24,
-        /// <summary>Public: Actor presented record A in the meeting.</summary>
-        EvidencePresented = 25,
-        /// <summary>Public: an incident (A = id, B = (int)IncidentKind) was proven by presented evidence; Target = its actor.</summary>
-        IncidentExposed = 26,
-        /// <summary>To the co-signer: Actor = requester, A = task number.</summary>
-        RemedialRequested = 27,
-        /// <summary>To both: Actor = requester, Target = co-signer, A = 1 accepted / 0 declined or expired, B = task number, C = output points added.</summary>
-        RemedialResolved = 28,
-        /// <summary>Public: A = provisional productivity per mille (-1 measuring), B = change in per mille.</summary>
-        ProductivityChanged = 29,
-        /// <summary>Public: the company closed; A = final productivity per mille.</summary>
-        CompanyClosed = 30,
-        /// <summary>To the buyer: A = offer id, B = price paid.</summary>
-        PurchaseMade = 31,
-        /// <summary>To the player: A = signed money change, B = (int)MoneyReason.</summary>
-        MoneyChanged = 32,
-
-        // ---- host-only semantic events (Audience = Host): never sent to clients; consumed by LineTelemetryObserver.
-        /// <summary>Actor set task fields: Target = (int)TaskField mask, A = choice category code (docs/CONTRACTS_V4.md §8), B = task number, C = 1 when it changed an earlier submission.</summary>
-        HostChoice = 40,
-        /// <summary>Actor credited A money (after the block filter), B = (int)MoneyReason, C = raw amount before the filter.</summary>
-        HostIncome = 41,
-        /// <summary>Actor created incident B of kind A; Target = victim or -1; C = task number or -1.</summary>
-        HostIncident = 42,
-        /// <summary>Every connected player submitted task C: A = seconds saved (ms), B = seconds carried into the break (ms).</summary>
-        HostEarlySubmit = 43,
-        /// <summary>Actor's objective (A = (int)ObjectiveKind) evaluated at match end: B = 1 completed / 0 not; Target = objective target or -1.</summary>
-        HostObjective = 44,
-        /// <summary>Daily/final ballot resolved: Target = top nominee or -1, A = top votes, B = (int)VoteOutcome, C = No action / Fire nobody votes.</summary>
-        HostBallot = 45,
-        /// <summary>Recording pick A scheduled with B candidates; C = (int)RecordingSelection.</summary>
-        HostRecordingPick = 46,
-        /// <summary>Actor sent a message: Target = recipient (-1 everyone), A = (int)MessageKind, B = length bucket (0: 1-20, 1: 21-80, 2: 81+), C = flags (1 reply, 2 template, 4 preset, 8 spoofed).</summary>
-        HostMessage = 47,
-        /// <summary>Actor's submission was blocked or defaulted at resolution: A = task number, B = 1 missed (blame) / 2 blocked by a trick / 3 absent.</summary>
-        HostMissedTask = 48,
-        /// <summary>Per participant at task resolution: Actor, A = contribution quality 0..100, B = task income credited, C = flags (1 cooperation opportunity, 2 cooperation credit, 4 connected at resolution); Target = task number.</summary>
-        HostOutcome = 49,
-        /// <summary>Per task at resolution: A = task number, B = output lost to sabotage options (points), C = groups × 10 + groups at full output.</summary>
-        HostTaskOutcome = 50,
+        Presence = 8,
+        /// <summary>Public: Actor has voted or changed a ballot (never for whom).</summary>
+        VoteCast = 9,
+        /// <summary>Public: Actor submitted or changed a task choice (never which).</summary>
+        TaskSubmitted = 10,
+        /// <summary>To the recipient: Actor = sender, A = amount.</summary>
+        TransferReceived = 11,
+        /// <summary>To whistler and thief: Actor = whistler, Target = thief, A = prim taken back.</summary>
+        Whistled = 12,
+        /// <summary>Public: Actor investigated Target; A = 1 Target had taken / 0 Target had shared.</summary>
+        Investigated = 13,
+        /// <summary>Public: Actor leaked call C between A (caller) and B (callee); Target = pick index.</summary>
+        Leaked = 14,
+        /// <summary>Public: Target's suç rose by A (B = (int)BlameReason).</summary>
+        BlameAdded = 15,
+        /// <summary>Public: crisis resolved; Target = sole receiver or -1 on a tie, A = suç per receiver, B = receivers.</summary>
+        CrisisResolved = 16,
+        /// <summary>Public: Target fired; A = desk prim, B = recipients, C = share per recipient.</summary>
+        Fired = 17,
+        /// <summary>Public: recording pick A played (B = 1) or had no speech (B = 0).</summary>
+        RecordingPlayed = 18,
     }
 
     public enum BlameReason : byte
     {
         None = 0,
-        Warning = 1,
-        MissedTask = 2,
-        ExposedSabotage = 3,
-        Remedial = 4,
+        /// <summary>Meeting blame vote ballot.</summary>
+        Vote = 1,
+        /// <summary>Two or more Petty Cash takers in one group.</summary>
+        CashCaught = 2,
+        /// <summary>Whistled Petty Cash thief.</summary>
+        Whistled = 3,
+        InvestigationGuilty = 4,
+        InvestigationFalse = 5,
+        Crisis = 6,
     }
 
-    public enum MoneyReason : byte
+    public enum PrimReason : byte
     {
         None = 0,
-        /// <summary>Productive task income (block-filtered).</summary>
-        TaskIncome = 1,
-        /// <summary>Kickbacks, commissions, offers, collector bonus (bounded per task, not block-filtered).</summary>
-        DealIncome = 2,
-        TransferIn = 3,
-        TransferOut = 4,
-        Purchase = 5,
-        /// <summary>Remedial work (productive, block-filtered).</summary>
-        Remedial = 6,
-        /// <summary>Kayırmacı's favourite bonus (productive, block-filtered).</summary>
-        Favourite = 7,
+        Task = 1,
+        /// <summary>Whistled thief loses the stolen prim.</summary>
+        Whistled = 2,
+        WhistleReward = 3,
+        InvestigationCost = 4,
+        /// <summary>Guilty target pays the investigator (negative for the target, positive for the investigator).</summary>
+        InvestigationRefund = 5,
+        TransferIn = 6,
+        TransferOut = 7,
+        /// <summary>Share of a fired player's desk.</summary>
+        DeskShare = 8,
+        /// <summary>The fired player's desk is emptied.</summary>
+        Fired = 9,
     }
 
     public enum MessageKind : byte
     {
         None = 0,
         Text = 1,
-        Email = 2,
-        MeetingChat = 3,
-        /// <summary>Complaints are not delivered as messages; this kind exists for telemetry (HostMessage.A).</summary>
-        Complaint = 4,
-        /// <summary>IT/HR notice (trick hit): TemplateId = (int)TrickType.</summary>
-        System = 5,
-        /// <summary>Manager memo: TemplateId 0 = morning memo.</summary>
-        Manager = 6,
+        MeetingChat = 2,
+        System = 3,
     }
 
-    public enum RecordSource : byte { None = 0, PhoneLog = 1, Bank = 2, TaskSystem = 3, ITLog = 4, BadgeLog = 5, HR = 6 }
-
-    /// <summary>Authenticated game facts. Field meaning per kind: docs/CONTRACTS_V4.md §6.</summary>
-    public enum RecordKind : byte
-    {
-        None = 0,
-        /// <summary>PhoneLog: Actor called Subject; N1 = connected seconds.</summary>
-        Call = 1,
-        /// <summary>Bank: Actor paid Subject N1.</summary>
-        Transfer = 2,
-        /// <summary>TaskSystem: Actor's submission in a task; N1/N2/N3 = Target/A/B as entered (-1 none).</summary>
-        TaskEntry = 3,
-        /// <summary>TaskSystem: public outcome; N1 = output, N2 = max.</summary>
-        TaskOutcome = 4,
-        /// <summary>Bank: Actor received deal money N1 (kickback/offer/commission); N2 = (int)IncidentKind or 0 for a commission.</summary>
-        DealPayment = 5,
-        /// <summary>ITLog: Actor used trick N1 (TrickType) on Subject (-1 for everyone).</summary>
-        TrickLog = 6,
-        /// <summary>ITLog: Actor sent a mail that appeared to come from Subject; N1 = mail id.</summary>
-        SpoofedMail = 7,
-        /// <summary>BadgeLog: Actor fetched/copied archive document N1; N2 = 1 copy of the HR file.</summary>
-        BadgeAccess = 8,
-        /// <summary>HR: Actor's remedial report co-signed by Subject; N1 = task number; N2 = output added.</summary>
-        Remedial = 9,
-        /// <summary>HR: Subject received a warning (Actor = -1).</summary>
-        Warning = 10,
-        /// <summary>TaskSystem (report review): the audit figure N1 of Subject's department, held by Actor.</summary>
-        AuditFigure = 11,
-        /// <summary>TaskSystem (report review): draft history — Actor submitted version N1 (0 accurate, 1 polished), true N2, shown N3.</summary>
-        ReportDraft = 12,
-        /// <summary>BadgeLog (archive snoop result): Subject's objective category N1 (ObjectiveKind), visible to the copier only.</summary>
-        HrFile = 13,
-        /// <summary>TaskSystem (supply swap): Actor gave item type N1 to Subject.</summary>
-        ItemTransfer = 14,
-        /// <summary>Bank: Actor accepted an offer (N1 = (int)IncidentKind) in task number TaskNumber.</summary>
-        OfferAcceptance = 15,
-        /// <summary>ITLog: observable trick effect on Subject (no actor): N1 = (int)TrickType.</summary>
-        TrickEffect = 16,
-    }
-
-    public enum OfferKind : byte { None = 0, BankLedger = 1, TaskAudit = 2, ITLog = 3, BadgeLog = 4 }
-
-    public enum IncidentKind : byte
-    {
-        None = 0,
-        InvoicePadding = 1,
-        CookedReport = 2,
-        ArchiveSnoop = 3,
-        AcceptedCompetitorOffer = 4,
-        AcceptedKickback = 5,
-        VendorKickback = 6,
-        TrickCoffee = 7,
-        TrickPhoneCut = 8,
-        TrickInternet = 9,
-        TrickFakeEmail = 10,
-        TrickWiretap = 11,
-    }
-
-    public enum ObjectiveKind : byte
-    {
-        None = 0,
-        Saver = 1,
-        Broker = 2,
-        Patron = 3,
-        TeamPlayer = 4,
-        CleanRecord = 5,
-        Rival = 6,
-        Guardian = 7,
-        Archivist = 8,
-        Presenter = 9,
-    }
-
-    public enum CareerItem : byte { None = 0, NotFired = 1, CompanyTarget = 2, SecretObjective = 3, EmployeeOfMonth = 4, ProvenSabotage = 5 }
-
-    public enum ControlKind : byte { None = 0, Number = 1, Choice = 2, Player = 3, Multi = 4, Items = 5 }
-
+    /// <summary>Typed dossier/record lines. Field meaning per kind is documented on each value.</summary>
     public enum DossierKind : byte
     {
         None = 0,
-        /// <summary>TaskKind/TaskNumber; N1 = output, N2 = max.</summary>
-        TaskOutcome = 1,
-        /// <summary>Observable trick effect: Trick, Victim (-1 everyone), Time.</summary>
-        IncidentEffect = 2,
-        /// <summary>Anonymous complaints are in LineMeetingView.Complaints; this line only counts them (N1).</summary>
-        Complaints = 3,
-        /// <summary>Arg = recording pick index.</summary>
-        Recording = 4,
-        /// <summary>Player = the favourite of the block.</summary>
-        Favourite = 5,
-        /// <summary>N1 = provisional per mille, N2 = target percent.</summary>
-        Productivity = 6,
-        /// <summary>Player missed a required task input (TaskNumber).</summary>
-        MissedTask = 7,
-        /// <summary>Player's remedial report co-signed by Victim (TaskNumber, N1 = output added).</summary>
-        Remedial = 8,
+        /// <summary>Task (TaskKind) failed; N1 = task number.</summary>
+        TaskFailed = 1,
+        /// <summary>Client Bonus: N1 = number of takers in the match.</summary>
+        BonusTakers = 2,
+        /// <summary>Petty Cash: Player was caught (two or more takers in one group); N1 = suç added.</summary>
+        CashCaught = 3,
+        /// <summary>Petty Cash: Player whistled on Other; N1 = suç added to Other.</summary>
+        Whistle = 4,
+        /// <summary>Petty Cash: N1 = prim missing from unresolved thefts, N2 = number of unresolved thefts.</summary>
+        CashMissing = 5,
+        /// <summary>Weekend Shift: N1 = volunteers, N2 = needed (roster in <see cref="LineMeetingView.Roster"/>).</summary>
+        ShiftRoster = 6,
+        /// <summary>Player investigated Other; N1 = 1 guilty (Other took) / 0 innocent.</summary>
+        Investigation = 7,
+        /// <summary>Player leaked a call between N1 (caller) and N2 (callee); Other = recording pick index.</summary>
+        Leak = 8,
     }
 
-    public enum RecordingSelection : byte { Legacy = 0, Context = 1 }
+    public enum BallotKind : byte { None = 0, Meeting = 1, Crisis = 2, Final = 3 }
 
-    public enum EarlySubmitPolicy : byte { Shorten = 0, CarryToBreak = 1 }
-
-    public enum VoteOutcome : byte
+    /// <summary>How a firing was decided.</summary>
+    public enum FiringDecision : byte
     {
         None = 0,
-        WarningGiven = 1,
-        /// <summary>Top nominee already at MaxWarningsPerPlayer.</summary>
-        Capped = 2,
-        Tie = 3,
-        BelowMinimum = 4,
-        NoActionWon = 5,
-        Fired = 6,
-        NoMajority = 7,
-        CompanyClosed = 8,
-        NoVotes = 9,
+        Plurality = 1,
+        Revote = 2,
+        HigherBlame = 3,
+        HigherPrim = 4,
+        Random = 5,
     }
-
-    public enum CompanyChange : byte { None = 0, TaskResolved = 1, Remedial = 2 }
 }

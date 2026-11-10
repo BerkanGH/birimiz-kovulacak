@@ -3,216 +3,265 @@ using System.Collections.Generic;
 
 namespace BirimizKovulacak.Core
 {
+    /// <summary>Meetings 1 and 2 (spec §7), investigations (§8), leaks and recording picks (§10).</summary>
     internal sealed partial class LineEngine
     {
-        private readonly List<LineRecordingPick> picks=new List<LineRecordingPick>();
-        private readonly List<int[]> playedCalls=new List<int[]>();
+        private sealed class MeetingState
+        {
+            internal int Index;
+            internal int Voteable = -1;
+            internal readonly List<TaskKind> Failed = new List<TaskKind>();
+            internal readonly List<LineDossierEntry> Dossier = new List<LineDossierEntry>();
+            internal readonly List<int> Roster = new List<int>();
+            internal readonly List<LineBlameGainView> BlameGained = new List<LineBlameGainView>();
+        }
+
+        private MeetingState meeting;
+        private readonly List<LineRecordingPick> picks = new List<LineRecordingPick>();
+
         public IReadOnlyList<LineRecordingPick> RecordingPicks
         {
-            get { var list=new List<LineRecordingPick>();if(Phase==LinePhase.MeetingDossier)foreach(var p in picks)list.Add(CopyPick(p,true));return list; }
-        }
-        private static LineRecordingPick CopyPick(LineRecordingPick p,bool host)
-        { return new LineRecordingPick{Index=p.Index,CandidateCallIds=host?new List<int>(p.CandidateCallIds):new List<int>(),PlayAt=p.PlayAt,Seconds=p.Seconds,ChosenCallId=p.ChosenCallId,Caller=p.Caller,Callee=p.Callee,CallStart=p.CallStart,Context=p.Context,Played=p.Played}; }
-        private void StartDossier(double time)
-        {
-            EndAllCalls(time,CallEndReason.PhaseEnd);EndRemedials(time);meeting=new LineMeetingView{IsFinal=Day==days-1};
-            foreach(int id in ids){seats[id].Vote=-1;seats[id].Presentations=seats[id].Chats=0;}
-            if(meeting.IsFinal){FreezeCompany();meeting.CompanyClosed=closed;if(closed)Emit(LineEventType.CompanyClosed,time,a:finalProductivity);}
-            meeting.Dossier.Add(new LineDossierEntry{Kind=DossierKind.Productivity,N1=Provisional(),N2=c.CompanyTargetPercent,Time=time});
-            foreach(var t in tasks)if(t.Number/2==Day&&t.Resolved)
+            get
             {
-                meeting.Dossier.Add(new LineDossierEntry{Kind=DossierKind.TaskOutcome,Task=t.Kind,TaskNumber=t.Number,N1=t.Output,N2=t.Max,Time=time});
-                if(profile.ListMissedTasks)foreach(int id in t.Reveal.Missed)meeting.Dossier.Add(new LineDossierEntry{Kind=DossierKind.MissedTask,Player=id,Task=t.Kind,TaskNumber=t.Number,Time=time});
+                var copy = new List<LineRecordingPick>();
+                foreach (var p in picks) copy.Add(CopyPick(p));
+                return copy;
             }
-            foreach(var inc in incidents)if(inc.View.Day==Day&&(inc.Trick==TrickType.KahveDok||inc.Trick==TrickType.FisCek||inc.Trick==TrickType.InternetKes))
-                meeting.Dossier.Add(new LineDossierEntry{Kind=DossierKind.IncidentEffect,Trick=inc.Trick,Victim=inc.Victim,Time=inc.View.Time});
-            foreach(var record in records)if(record.View.Day==Day&&record.View.Kind==RecordKind.Remedial)
-            {var v=record.View;meeting.Dossier.Add(new LineDossierEntry{Kind=DossierKind.Remedial,Player=v.Actor,Victim=v.Subject,Task=v.Task,TaskNumber=v.TaskNumber,N1=v.N2,Time=v.Time});}
-            if(favourite>=0)meeting.Dossier.Add(new LineDossierEntry{Kind=DossierKind.Favourite,Player=favourite,Time=time});
-            meeting.Complaints.AddRange(complaints);if(complaints.Count>0)meeting.Dossier.Add(new LineDossierEntry{Kind=DossierKind.Complaints,N1=complaints.Count,Time=time});
-            SelectRecordings(time);
-            foreach(var p in picks)meeting.Dossier.Add(new LineDossierEntry{Kind=DossierKind.Recording,Arg=p.Index,Time=p.PlayAt});
-            Enter(LinePhase.MeetingDossier,time,c.Durations.Dossier+c.Durations.DossierPerRecording*picks.Count);
         }
-        private bool GroupRelated(Call call,TaskState t) { return t.Number/2==call.Day&&t.Group[call.Caller].Contains(call.Callee); }
-        private TaskKind RecordingContext(Call call)
+
+        private static LineRecordingPick CopyPick(LineRecordingPick p)
         {
-            foreach(var t in tasks)if(t.Number/2==call.Day)foreach(var d in t.Decisions)
-                if((d.Player==call.Caller||d.Player==call.Callee)&&d.Time>=call.Start&&d.Time<=call.End+c.RecordingDecisionWindow)return t.Kind;
-            foreach(var t in tasks)if(GroupRelated(call,t))return t.Kind;return TaskKind.None;
+            return new LineRecordingPick
+            {
+                Index = p.Index, CandidateCallIds = new List<int>(p.CandidateCallIds), PlayAt = p.PlayAt, Seconds = p.Seconds,
+                ChosenCallId = p.ChosenCallId, Caller = p.Caller, Callee = p.Callee, CallStart = p.CallStart, Leaker = p.Leaker,
+                Played = p.Played, Empty = p.Empty,
+            };
         }
-        private double RecordingWeight(Call call)
+
+        private LineDossierEntry Line(DossierKind kind, double time, int player = -1, int other = -1, int n1 = -1, int n2 = -1, TaskKind task = TaskKind.None)
         {
-            double weight=call.End-call.Start;bool group=false,decision=false,transfer=false;
-            foreach(var t in tasks)if(t.Number/2==call.Day)
+            var entry = new LineDossierEntry { Kind = kind, Task = task, Player = player, Other = other, N1 = n1, N2 = n2, Time = time };
+            meeting.Dossier.Add(entry);
+            Changed();
+            return entry;
+        }
+
+        /// <summary>A dossier line that also belongs to the full-disclosure incident list.</summary>
+        private void Incident(DossierKind kind, double time, int player, int other = -1, int n1 = -1, int n2 = -1)
+        {
+            var entry = Line(kind, time, player, other, n1, n2);
+            incidents.Add(new LineDossierEntry { Kind = entry.Kind, Player = player, Other = other, N1 = n1, N2 = n2, Time = time });
+        }
+
+        private void StartMeeting(int index, double time)
+        {
+            SetDay(index);
+            meeting = new MeetingState { Index = index };
+            picks.Clear();
+            if (index == 0)
             {
-                if(GroupRelated(call,t))group=true;
-                foreach(var d in t.Decisions)if((d.Player==call.Caller||d.Player==call.Callee)&&d.Time>=call.Start&&d.Time<=call.End+c.RecordingDecisionWindow)decision=true;
-            }
-            if(c.RecordingSelection==RecordingSelection.Legacy)
-            {
-                bool focus=false;
-                foreach(var t in tasks)if(t.Number/2==call.Day)
+                for (int i = 0; i < 2; i++)
                 {
-                    if((LineTasks.Family(t.Kind)==TaskFamily.Pair||t.Kind==TaskKind.ReportReview)&&GroupRelated(call,t))focus=true;
-                    if(t.Role==call.Caller||t.Role==call.Callee||t.Kind==TaskKind.PhishingCheck&&(t.OtherRole==call.Caller||t.OtherRole==call.Callee))focus=true;
+                    var t = tasks[i];
+                    if (t.Kind == TaskKind.ClientBonus) OpenClientBonus(t, time);
+                    else if (t.Kind == TaskKind.PettyCash) OpenPettyCash(t, time);
                 }
-                return weight*(focus?c.RecordingFocusWeight:1);
             }
-            foreach(var tr in transfers)if((tr.A==call.Caller&&tr.B==call.Callee||tr.A==call.Callee&&tr.B==call.Caller)&&tr.Time>=call.Start-c.RecordingTransferWindow&&tr.Time<=call.End+c.RecordingTransferWindow)transfer=true;
-            int exposure=0;foreach(var pair in playedCalls)if(pair[0]==call.Caller||pair[1]==call.Caller||pair[0]==call.Callee||pair[1]==call.Callee)exposure++;
-            return weight*(1+(group?c.RecordingGroupBonus:0))*(1+(decision?c.RecordingDecisionBonus:0))*(1+(transfer?c.RecordingTransferBonus:0))*Math.Pow(c.RecordingExposureDecay,exposure);
-        }
-        private void SelectRecordings(double time)
-        {
-            picks.Clear();if(!setup.RecordingsEnabled||!c.RecordingsEnabled)return;
-            var pool=calls.FindAll(x=>x.Connected&&x.End>=x.Start+c.RecordingMinCallSeconds);
-            for(int i=0;i<profile.Recordings&&pool.Count>0&&c.RecordingCandidates>0;i++)
-            {
-                var pick=new LineRecordingPick{Index=i,PlayAt=time+c.Durations.Dossier+i*c.Durations.DossierPerRecording,Seconds=c.RecordingSnippetSeconds};
-                for(int k=0;k<c.RecordingCandidates&&pool.Count>0;k++)
-                {
-                    double total=0;foreach(var call in pool)total+=RecordingWeight(call);int selected=0;
-                    if(total>0){double draw=rng.Unit()*total;for(int j=0;j<pool.Count;j++){draw-=RecordingWeight(pool[j]);if(draw<0){selected=j;break;}}}
-                    else selected=rng.Index(pool.Count);
-                    pick.CandidateCallIds.Add(pool[selected].Id);pool.RemoveAt(selected);
-                }
-                picks.Add(pick);Emit(LineEventType.HostRecordingPick,time,a:i,b:pick.CandidateCallIds.Count,extra:(int)c.RecordingSelection,host:true);
-            }
-        }
-        public void ReportRecording(int pickIndex,int chosenCallId,double time)
-        {
-            Tick(time);if(Phase!=LinePhase.MeetingDossier||pickIndex<0||pickIndex>=picks.Count)return;var p=picks[pickIndex];
-            if(p.Played||time<p.PlayAt||chosenCallId!= -1&&!p.CandidateCallIds.Contains(chosenCallId))return;
-            if(chosenCallId>=0)
-            {
-                var call=FindCall(chosenCallId);if(call==null)return;p.ChosenCallId=call.Id;p.Caller=call.Caller;p.Callee=call.Callee;p.CallStart=call.Start;p.Context=RecordingContext(call);
-                playedCalls.Add(new[]{call.Caller,call.Callee});
-            }
-            p.Played=true;Emit(LineEventType.RecordingStarted,time,a:pickIndex);Changed();
-        }
-        private void DailyVerdict(double time)
-        {
-            int top= -1,max=0,ties=0,noAction=0,total=0;
-            foreach(int id in ids)
-            {int count=0;foreach(int voter in ids)if(seats[voter].Vote==id)count++;if(count>max){max=count;top=id;ties=1;}else if(count==max&&count>0)ties++;}
-            foreach(int id in ids){if(seats[id].Vote==LineIds.Nobody)noAction++;if(seats[id].Vote!= -1)total++;meeting.Votes.Add(new LineVoteView{Voter=id,Target=seats[id].Vote});}
-            VoteOutcome outcome=total==0?VoteOutcome.NoVotes:noAction>max?VoteOutcome.NoActionWon:noAction==max||ties>1?VoteOutcome.Tie:max<c.WarningMinVotes?VoteOutcome.BelowMinimum:seats[top].Warnings>=c.MaxWarningsPerPlayer?VoteOutcome.Capped:VoteOutcome.WarningGiven;
-            meeting.Outcome=outcome;
-            if(outcome==VoteOutcome.WarningGiven)
-            {
-                meeting.WarningTo=top;seats[top].Warnings++;Blame(top,profile.WarningBlame,BlameReason.Warning,time);
-                AddRecord(RecordKind.Warning,RecordSource.HR,time,subject:top,publicRecord:true);Emit(LineEventType.WarningGiven,time,target:top);
-            }
-            Emit(LineEventType.HostBallot,time,target:top,a:max,b:(int)outcome,extra:noAction,host:true);
-        }
-        private void StartDefense(double time)
-        {
-            var order=ids.FindAll(id=>seats[id].Connected);rng.Shuffle(order);
-            // Stable insertion preserves the seeded order within equal blame/warnings.
-            for(int i=1;i<order.Count;i++){int id=order[i],j=i-1;while(j>=0&&(seats[order[j]].Blame<seats[id].Blame||seats[order[j]].Blame==seats[id].Blame&&seats[order[j]].Warnings<seats[id].Warnings)){order[j+1]=order[j];j--;}order[j+1]=id;}
-            meeting.DefenseOrder=order;defenderIndex=0;Enter(LinePhase.FinalDefense,time,c.Durations.DefensePerPlayer*order.Count);
-        }
-        public bool MaySpeak(int player)
-        { return HasSeat(player)&&seats[player].Connected&&(Phase!=LinePhase.FinalDefense||defenderIndex<meeting.DefenseOrder.Count&&meeting.DefenseOrder[defenderIndex]==player); }
-        private void StartFinalVote(double time)
-        {
-            foreach(int id in ids){seats[id].Vote=-1;if(seats[id].Connected)meeting.Roster.Add(id);}
-            meeting.MajorityNeeded=meeting.Roster.Count/2+1;Enter(LinePhase.FinalVote,time,c.Durations.FinalVote);
-        }
-        private void FinalVerdict(double time)
-        {
-            int top=-1,max=0,nobody=0,total=0;
-            if(closed){meeting.Outcome=VoteOutcome.CompanyClosed;meeting.Fired=-1;}
             else
             {
-                foreach(int id in ids){int count=0;foreach(int voter in meeting.Roster)if(seats[voter].Vote==id)count++;if(count>max){top=id;max=count;}}
-                foreach(int id in meeting.Roster){if(seats[id].Vote==LineIds.Nobody)nobody++;if(seats[id].Vote!= -1)total++;meeting.Votes.Add(new LineVoteView{Voter=id,Target=seats[id].Vote});}
-                meeting.Fired=max>=meeting.MajorityNeeded?top:LineIds.Nobody;
-                meeting.Outcome=meeting.Fired>=0?VoteOutcome.Fired:total==0?VoteOutcome.NoVotes:VoteOutcome.NoMajority;
-                Emit(LineEventType.HostBallot,time,target:top,a:max,b:(int)meeting.Outcome,extra:nobody,host:true);
-                Emit(LineEventType.Fired,time,target:meeting.Fired);
-            }
-            foreach(int id in ids){seats[id].ObjectiveDone=ObjectiveDone(id);Emit(LineEventType.HostObjective,time,id,seats[id].ObjectiveTarget,(int)seats[id].Objective,seats[id].ObjectiveDone?1:0,host:true);}
-        }
-        private int ExposedCount(int id) { int n=0;foreach(var inc in incidents)if(inc.Exposed&&inc.View.Actor==id)n++;return n; }
-        private int ObjectiveProgress(int id)
-        {
-            var s=seats[id];switch(s.Objective)
-            {
-                case ObjectiveKind.Saver:return s.Money;
-                case ObjectiveKind.Broker:return s.Received;
-                case ObjectiveKind.Patron:int paid=0;foreach(int p in ids)if(p!=id&&s.Paid[p]>=c.PatronEach)paid++;return paid;
-                case ObjectiveKind.TeamPlayer:int tasksGood=0;foreach(var t in tasks)if(t.Resolved&&t.Participated[id]&&t.GroupScore[id]>=c.TeamPlayerOutput)tasksGood++;return tasksGood;
-                case ObjectiveKind.Rival:case ObjectiveKind.Guardian:return seats[s.ObjectiveTarget].Warnings;
-                case ObjectiveKind.Archivist:return s.ArchiveAccess.Count;
-                case ObjectiveKind.Presenter:return s.Presented.Count;
-                default:return -1;
-            }
-        }
-        private int ObjectiveThreshold(ObjectiveKind kind)
-        {
-            switch(kind){case ObjectiveKind.Saver:return c.StartMoney+c.SaverMargin;case ObjectiveKind.Broker:return c.BrokerReceived;case ObjectiveKind.Patron:return c.PatronColleagues;case ObjectiveKind.TeamPlayer:return c.TeamPlayerTasks;case ObjectiveKind.Rival:return 1;case ObjectiveKind.Guardian:return 0;case ObjectiveKind.Archivist:return c.ArchivistRecords;case ObjectiveKind.Presenter:return c.PresenterRecords;default:return c.StartBlame;}
-        }
-        private bool ObjectiveDone(int id)
-        {
-            var s=seats[id];if(s.Objective==ObjectiveKind.CleanRecord)return s.Blame<=c.StartBlame&&s.Warnings==0;
-            if(s.Objective==ObjectiveKind.Guardian)return seats[s.ObjectiveTarget].Warnings==0&&meeting.Fired!=s.ObjectiveTarget&&!closed;
-            if(s.Objective==ObjectiveKind.Archivist)
-            {
-                var colleagues=new HashSet<int>();foreach(var r in records)if(s.ArchiveAccess.Contains(r.View.Id)){if(HasSeat(r.View.Actor)&&r.View.Actor!=id)colleagues.Add(r.View.Actor);if(HasSeat(r.View.Subject)&&r.View.Subject!=id)colleagues.Add(r.View.Subject);}
-                return ObjectiveProgress(id)>=c.ArchivistRecords&&colleagues.Count>=c.ArchivistColleagues;
-            }
-            return ObjectiveProgress(id)>=ObjectiveThreshold(s.Objective);
-        }
-        private void FinishResult(double time)
-        {
-            result=new LineWeekResult{WeekId=setup.WeekId,MatchId=setup.MatchId,ManagerProfileId=profile.Id,Days=days,Fired=meeting.Fired,FinalOutcome=meeting.Outcome,CompanyClosed=closed,FinalProductivityPermille=finalProductivity,TargetPercent=c.CompanyTargetPercent,IncidentsTotal=incidents.Count};
-            foreach(var inc in incidents)if(inc.Exposed)result.Exposed.Add(inc.View);
-            int winner=-1,best=int.MinValue,ties=0;
-            if(!closed)foreach(int id in ids)
-            {
-                var s=seats[id];if(id==meeting.Fired||ExposedCount(id)>0||s.TasksConnected*2<schedule.Count)continue;
-                // Both terms in hundredths of a point: mean quality (0..100) + weight x cooperation ratio (lead review fix).
-                int score=(int)(100L*s.Quality/s.TasksConnected)+(s.Opportunities==0?0:(int)(100L*c.EotmCooperationWeight*s.Credits/s.Opportunities));
-                if(score>best){winner=id;best=score;ties=1;}else if(score==best)ties++;
-            }
-            if(ties!=1)winner=-1;
-            foreach(int id in ids)
-            {
-                var s=seats[id];var p=new LineWeekPlayerResult{Player=id,Blame=s.Blame,Warnings=s.Warnings,Fired=closed||id==meeting.Fired,Objective=s.Objective,ObjectiveTarget=s.ObjectiveTarget,ObjectiveDone=s.ObjectiveDone,EmployeeOfMonth=id==winner,Money=s.Money,ContributionQuality=s.TasksConnected==0?-1:s.Quality/s.TasksConnected,TasksConnected=s.TasksConnected,ExposedIncidents=ExposedCount(id)};
-                if(!closed)
+                var t = tasks[2];
+                if (t.Failed)
                 {
-                    if(!p.Fired)Career(p,CareerItem.NotFired,c.CareerNotFired);
-                    if(finalProductivity>=c.CareerTargetPercent*10)Career(p,CareerItem.CompanyTarget,c.CareerCompanyTarget);
-                    if(p.ObjectiveDone)Career(p,CareerItem.SecretObjective,c.CareerObjective);
-                    if(p.EmployeeOfMonth)Career(p,CareerItem.EmployeeOfMonth,c.CareerEmployeeOfMonth);
+                    meeting.Failed.Add(t.Kind);
+                    Line(DossierKind.TaskFailed, time, n1: t.Number, task: t.Kind);
                 }
-                if(p.ExposedIncidents>0)Career(p,CareerItem.ProvenSabotage,-c.CareerSabotagePenalty,p.ExposedIncidents);
-                p.SessionPoints=PriorPoints(id)+p.CareerTotal;result.Players.Add(p);
+                meeting.Roster.AddRange(t.Roster);
+                Line(DossierKind.ShiftRoster, time, n1: t.Roster.Count, n2: t.Needed, task: t.Kind);
             }
-            if(!closed)foreach(var p in result.Players){p.Rank=1;foreach(var other in result.Players)if(other.CareerTotal>p.CareerTotal)p.Rank++;}
-            result.ResultHash=LineCodec.HashResult(result);Changed();
+            Enter(LinePhase.MeetingDossier, time, c.Durations.MeetingDossier);
         }
-        private static void Career(LineWeekPlayerResult p,CareerItem item,int points,int count=1)
-        {p.Career.Add(new LineCareerLine{Item=item,Points=points*count,Count=count});p.CareerTotal+=points*count;}
-        private LineFailure PickNextManager(int id,LineAction a,double time)
+
+        private void OpenClientBonus(TaskState t, double time)
         {
-            if(Phase!=LinePhase.WeekResults)return LineFailure.WrongPhase;if(result.Fired!=id||closed)return LineFailure.NotAvailable;
-            if(!string.IsNullOrEmpty(result.NextManagerPick))return LineFailure.AlreadyUsed;
-            if(a.A<0||a.A>=LineManagerIds.All.Length||LineManagerIds.All[a.A]==profile.Id||!c.Profiles.Exists(p=>p.Id==LineManagerIds.All[a.A]))return LineFailure.BadParam;
-            result.NextManagerPick=LineManagerIds.All[a.A];result.ResultHash=LineCodec.HashResult(result);Emit(LineEventType.NextManagerPicked,time,id,a:a.A);return LineFailure.None;
+            if (t.Failed)
+            {
+                meeting.Failed.Add(t.Kind);
+                Line(DossierKind.TaskFailed, time, n1: t.Number, task: t.Kind);
+            }
+            Line(DossierKind.BonusTakers, time, n1: t.Takers, task: t.Kind);
         }
-        public LineSessionHistory NextHistory()
+
+        private void OpenPettyCash(TaskState t, double time)
         {
-            if(!IsFinished)throw new InvalidOperationException("Match is still running.");
-            var h=setup.History==null?new LineSessionHistory():LineCodec.Clone(setup.History);
-            while(h.SessionPoints.Count<6)h.SessionPoints.Add(0);while(h.TimesFired.Count<6)h.TimesFired.Add(0);while(h.RoleUses.Count<6)h.RoleUses.Add(0);while(h.TaskUses.Count<=LineTasks.Count)h.TaskUses.Add(0);
-            h.WeeksPlayed++;h.PastManagers.Add(profile.Id);h.SeenTasks=new List<TaskKind>(seen);h.NextManager=result==null?"":result.NextManagerPick;
-            foreach(var t in tasks)h.TaskUses[(int)t.Kind]++;
-            foreach(int id in ids)h.RoleUses[id]+=seats[id].RoleUses;
-            if(result!=null)foreach(var p in result.Players){h.SessionPoints[p.Player]=p.SessionPoints;if(p.Fired)h.TimesFired[p.Player]++;}
-            return h;
+            int missing = 0, open = 0;
+            foreach (var theft in t.Thefts) if (!theft.Resolved) { open++; missing += c.CashTake; }
+            if (open > 0)
+            {
+                meeting.Failed.Add(t.Kind);
+                Line(DossierKind.TaskFailed, time, n1: t.Number, task: t.Kind);
+            }
+            foreach (int id in t.Caught)
+            {
+                AddBlame(id, c.CashCaughtBlame, BlameReason.CashCaught, time);
+                Incident(DossierKind.CashCaught, time, id, n1: c.CashCaughtBlame);
+            }
+            foreach (var theft in t.Thefts)
+            {
+                if (!theft.Resolved) continue;
+                AddBlame(theft.Thief, c.CashWhistleBlame, BlameReason.Whistled, time);
+                Incident(DossierKind.Whistle, theft.WhistleTime, theft.Whistler, theft.Thief, c.CashWhistleBlame);
+            }
+            if (open > 0) Line(DossierKind.CashMissing, time, n1: missing, n2: open, task: t.Kind);
+        }
+
+        /// <summary>Counted when the vote would start (after investigations).</summary>
+        private int CountVoteable()
+        {
+            int count = 0;
+            if (meeting.Index == 0)
+            {
+                for (int i = 0; i < 2; i++)
+                {
+                    var t = tasks[i];
+                    if (t.Kind == TaskKind.ClientBonus)
+                    {
+                        foreach (int id in ids)
+                            if (t.Choice[id] == LineChoice.Take && !exposed.Contains(id)) { count++; break; }
+                    }
+                    else if (t.Kind == TaskKind.PettyCash && t.Thefts.Exists(x => !x.Resolved)) count++;
+                }
+            }
+            else if (tasks[2].Failed) count++;
+            return count;
+        }
+
+        private void StartMeetingVote(double time)
+        {
+            NewBallots(meeting.Voteable, false);
+            Enter(LinePhase.MeetingVote, time, c.Durations.MeetingVote);
+        }
+
+        private void TallyMeetingVote(double time)
+        {
+            var gained = new int[LineProtocol.MaxPlayers];
+            foreach (int id in ids)
+            {
+                var s = seats[id];
+                for (int i = 0; i < s.Ballots.Length; i++)
+                {
+                    int target = s.Ballots[i];
+                    bool self = target < 0;
+                    if (self)
+                    {
+                        if (!s.Connected) continue; // disconnected players' empty ballots are dropped
+                        target = id;
+                    }
+                    gained[target] += c.BlamePerVote;
+                    ballotLog.Add(new LineBallotView { Kind = BallotKind.Meeting, Round = meeting.Index, Voter = id, Index = i, Target = target, SelfAssigned = self });
+                }
+            }
+            foreach (int id in ids)
+            {
+                meeting.BlameGained.Add(new LineBlameGainView { Player = id, Amount = gained[id] });
+                AddBlame(id, gained[id], BlameReason.Vote, time);
+            }
+            ClearBallots();
+        }
+
+        // ---- investigation (meeting 1 dossier/discussion)
+
+        private bool InvestigationOpen
+        {
+            get
+            {
+                return meeting != null && meeting.Index == 0 &&
+                       (Phase == LinePhase.MeetingDossier || Phase == LinePhase.MeetingDiscussion) && TaskOf(TaskKind.ClientBonus) != null;
+            }
+        }
+
+        private LineFailure Investigate(int id, LineAction a, double time)
+        {
+            if (!InvestigationOpen) return LineFailure.WrongPhase;
+            var s = seats[id];
+            if (s.InvestigationUsed || c.InvestigationsPerPlayer <= 0) return LineFailure.AlreadyUsed;
+            var f = TargetFailure(id, a.Target);
+            if (f != LineFailure.None) return f;
+            var t = TaskOf(TaskKind.ClientBonus);
+            if (t.GroupOf[id] != t.GroupOf[a.Target]) return LineFailure.NotEligible;
+            if (investigated.Contains(a.Target)) return LineFailure.AlreadyResolved;
+            if (s.Prim < c.InvestigationCost) return LineFailure.InsufficientFunds;
+            s.InvestigationUsed = true;
+            investigated.Add(a.Target);
+            AddPrim(id, -c.InvestigationCost, PrimReason.InvestigationCost, time);
+            bool guilty = t.Choice[a.Target] == LineChoice.Take;
+            if (guilty)
+            {
+                exposed.Add(a.Target);
+                AddBlame(a.Target, c.InvestigationGuiltyBlame, BlameReason.InvestigationGuilty, time);
+                int paid = -AddPrim(a.Target, -c.InvestigationRefund, PrimReason.InvestigationRefund, time, id);
+                AddPrim(id, paid, PrimReason.InvestigationRefund, time, a.Target);
+            }
+            else AddBlame(id, c.InvestigationFalseBlame, BlameReason.InvestigationFalse, time);
+            Incident(DossierKind.Investigation, time, id, a.Target, guilty ? 1 : 0);
+            Emit(LineEventType.Investigated, time, id, a.Target, guilty ? 1 : 0);
+            return LineFailure.None;
+        }
+
+        private List<int> InvestigationTargets(int id)
+        {
+            var list = new List<int>();
+            if (!InvestigationOpen || seats[id].InvestigationUsed || c.InvestigationsPerPlayer <= 0) return list;
+            var t = TaskOf(TaskKind.ClientBonus);
+            foreach (int other in t.GroupFor(id)) if (other != id && !investigated.Contains(other)) list.Add(other);
+            return list;
+        }
+
+        // ---- leaks
+
+        private bool LeakOpen
+        {
+            get { return Phase == LinePhase.MeetingDossier || Phase == LinePhase.MeetingDiscussion || Phase == LinePhase.FinalDiscussion; }
+        }
+
+        private LineFailure Leak(int id, LineAction a, double time)
+        {
+            if (!RecordingsOn) return LineFailure.NotAvailable;
+            if (!LeakOpen) return LineFailure.WrongPhase;
+            var call = FindCall(a.A);
+            if (call == null || !call.RecordedBy.Contains(id)) return LineFailure.NotOwned;
+            if (call.Leaked) return LineFailure.AlreadyResolved;
+            call.Leaked = true;
+            seats[id].Leaked++;
+            double playAt = time + c.LeakDelay;
+            if (picks.Count > 0)
+            {
+                var last = picks[picks.Count - 1];
+                playAt = Math.Max(playAt, last.PlayAt + last.Seconds);
+            }
+            var pick = new LineRecordingPick
+            {
+                Index = picks.Count, PlayAt = playAt, Seconds = c.LeakSeconds,
+                Caller = call.Caller, Callee = call.Callee, CallStart = call.Start, Leaker = id,
+            };
+            pick.CandidateCallIds.Add(call.Id);
+            picks.Add(pick);
+            Incident(DossierKind.Leak, time, id, pick.Index, call.Caller, call.Callee);
+            Emit(LineEventType.Leaked, time, id, pick.Index, call.Caller, call.Callee, extra: call.Id);
+            return LineFailure.None;
+        }
+
+        public void ReportRecording(int pickIndex, int chosenCallId, double time)
+        {
+            Tick(time);
+            if (pickIndex < 0 || pickIndex >= picks.Count) return;
+            var pick = picks[pickIndex];
+            if (pick.Played || pick.Empty) return;
+            if (chosenCallId < 0) pick.Empty = true;
+            else if (pick.CandidateCallIds.Contains(chosenCallId)) { pick.Played = true; pick.ChosenCallId = chosenCallId; }
+            else return;
+            Emit(LineEventType.RecordingPlayed, time, a: pickIndex, b: pick.Played ? 1 : 0);
+            Changed();
         }
     }
 }

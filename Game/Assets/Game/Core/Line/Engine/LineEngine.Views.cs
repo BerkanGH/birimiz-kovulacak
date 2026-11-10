@@ -3,59 +3,113 @@ using System.Collections.Generic;
 
 namespace BirimizKovulacak.Core
 {
+    /// <summary>Per-player views (spec §11). Allow-list: only what the rules reveal to this player right now.</summary>
     internal sealed partial class LineEngine
     {
-        public LineView BuildView(int player,double time)
+        private bool TaskVisible
         {
-            Tick(time);if(!HasSeat(player))throw new ArgumentException("Unknown recipient.");var s=seats[player];
-            var v=new LineView{WeekId=setup.WeekId,MatchId=setup.MatchId,StateVersion=StateVersion,Me=player,Now=time,Phase=Phase,PhaseStartTime=phaseStart,PhaseEndTime=PhaseEndTime,Day=Day,DayCount=days,Length=setup.Length,FirstWeek=firstWeek,
-                RoundIndex=InTask?roundIndex:-1,TaskNumber=InTask?task.Number:-1,ManagerProfileId=profile.Id,Favourite=favourite};
-            v.TodayTasks.Add(schedule[Day*2]);v.TodayTasks.Add(schedule[Day*2+1]);
-            v.Features=new LineFeaturesView{TricksUnlocked=Unlocked,RecordingsEnabled=c.RecordingsEnabled&&setup.RecordingsEnabled,IsLastDay=Day==days-1,FirstTimeTask=InTask&&firstTimeTask,OnboardingDay=firstWeek&&Day==0,
-                CarriedSeconds=Phase==LinePhase.Break?carried:0,CallsOpen=Office,TransfersOpen=TransfersOpen,EvidenceOpen=EvidenceOpen,PresentationOpen=PresentOpen,RemedialOpen=RemedialOpen,ComplaintsOpen=Office,MeetingChatOpen=IsMeeting};
-            foreach(int id in ids)v.Players.Add(new LinePlayerView{Id=id,Name=seats[id].Info.Name,ColorIndex=seats[id].Info.ColorIndex,IsBot=seats[id].Info.IsBot,Connected=seats[id].Connected,Blame=seats[id].Blame,Warnings=seats[id].Warnings,
-                Submitted=InTask&&Phase!=LinePhase.RoundIntro&&Complete(task,id),Voted=seats[id].Vote!= -1,SessionPoints=PriorPoints(id)});
-            int resolved=0;foreach(var t in tasks)if(t.Resolved)resolved++;
-            v.Company=new LineCompanyView{ProvisionalPermille=Provisional(),FinalPermille=finalProductivity,TargetPercent=c.CompanyTargetPercent,ResolvedOutput=ResolvedOutput(),ResolvedMax=ResolvedMax(),ScheduledMax=ScheduledMax(),TasksResolved=resolved,TasksScheduled=schedule.Count,
-                LastChange=lastChange,LastTask=lastTask,LastDelta=lastDelta,Closed=closed};
-            var mine=new LineMeView{Money=s.Money,BlockIncome=Filter(s.RawIncome),Objective=new LineObjectiveView{Kind=s.Objective,Target=s.ObjectiveTarget,Threshold=ObjectiveThreshold(s.Objective),Progress=ObjectiveProgress(player),Completed=Phase==LinePhase.WeekResults&&s.ObjectiveDone},
-                Trick=s.Trick,TrickUsedToday=s.TrickUsed,TricksLeftThisWeek=Math.Max(0,TrickAllowance-s.TricksUsed),ComputerBlockedUntil=Math.Max(s.CoffeeUntil,s.OfflineUntil),ComputerBlockedBy=s.CoffeeUntil<=0&&s.OfflineUntil<=0?TrickType.None:s.CoffeeUntil>=s.OfflineUntil?TrickType.KahveDok:TrickType.InternetKes,
-                PhoneDeadUntil=s.DeadUntil,WiretapTarget=s.TapTarget,WiretapUntil=s.TapUntil,Phone=s.Phone,CallLog=s.Log,Offers=Offers(player),PurchasesLeftThisBlock=Math.Max(0,c.PurchasesPerBlock-s.BlockPurchases),PurchasesLeftThisMatch=Math.Max(0,c.PurchasesPerMatch-s.Purchases),
-                PresentationsLeft=Math.Max(0,c.PresentationsPerMeeting-s.Presentations),RemedialsLeftThisBlock=Math.Max(0,c.RemedialsPerBlock-s.BlockRemedials),RemedialsLeftThisMatch=Math.Max(0,c.RemedialsPerMatch-s.Remedials),RemedialOptions=RemedialOptions(player),
-                IncomingRemedial=remedials.Find(r=>r.Cosigner==player),OutgoingRemedial=remedials.Find(r=>r.Requester==player),MessageSeq=s.MessageSeq,TextsLeftThisBlock=Math.Max(0,c.TextsPerBlock-s.Texts),EmailsLeftThisBlock=Math.Max(0,c.EmailsPerBlock-s.Emails),ComplaintsLeftThisBlock=Math.Max(0,c.ComplaintsPerBlock-s.Complaints),
-                MeetingChatLeft=Math.Max(0,c.MeetingChatPerMeeting-s.Chats),NextMessageAt=s.NextMessage,NextTransferAt=s.NextTransfer};
-            foreach(var record in records)if(s.Access.Contains(record.View.Id))mine.Records.Add(record.View);v.Mine=mine;
-            if(InTask)v.Task=TaskView(player);
-            foreach(var t in tasks)if(t.Resolved&&t.Number/2==Day)v.TodayReveals.Add(t.Reveal);
-            if(IsMeeting)
+            get { return Current != null && (Phase == LinePhase.TaskPlay || Phase == LinePhase.TaskReveal || Phase == LinePhase.Break); }
+        }
+
+        private bool MeetingVisible
+        {
+            get { return meeting != null && (Phase >= LinePhase.MeetingDossier && Phase <= LinePhase.FinalVerdict); }
+        }
+
+        public LineView BuildView(int player, double time)
+        {
+            Tick(time);
+            if (!HasSeat(player)) throw new ArgumentException("Unknown recipient.");
+            var s = seats[player];
+            var v = new LineView
             {
-                var m=new LineMeetingView{IsFinal=meeting.IsFinal,Dossier=meeting.Dossier,Complaints=meeting.Complaints,Presentations=meeting.Presentations,MyVote=s.Vote,WarningTo=meeting.WarningTo,Outcome=meeting.Outcome,Roster=meeting.Roster,MajorityNeeded=meeting.MajorityNeeded,DefenseOrder=meeting.DefenseOrder,CompanyClosed=meeting.CompanyClosed,
-                    Fired=Phase==LinePhase.FinalVerdict?meeting.Fired:-1};
-                if(Phase==LinePhase.MeetingVerdict||Phase==LinePhase.FinalVerdict)m.Votes=meeting.Votes;
-                if(Phase==LinePhase.FinalDefense&&defenderIndex<meeting.DefenseOrder.Count){m.Defender=meeting.DefenseOrder[defenderIndex];m.DefenderEndTime=phaseStart+(defenderIndex+1)*c.Durations.DefensePerPlayer;}
-                foreach(var p in picks)m.Recordings.Add(CopyPick(p,false));v.Meeting=m;
-            }
-            if(Phase==LinePhase.WeekResults)
+                WeekId = setup.WeekId, MatchId = setup.MatchId, StateVersion = StateVersion, Me = player, Now = time,
+                Phase = Phase, PhaseStartTime = phaseStart, PhaseEndTime = PhaseEndTime, Day = Day,
+                TaskNumber = TaskVisible ? Current.Number : -1,
+            };
+            v.Features = new LineFeaturesView
             {
-                v.Result=LineCodec.Clone(result);
-                // Strict privacy continues on results. Career components and objective completion are public;
-                // another player's balance, objective category and target are never a client entitlement.
-                foreach(var p in v.Result.Players)if(p.Player!=player){p.Money=-1;p.Objective=ObjectiveKind.None;p.ObjectiveTarget=-1;}
+                RecordingsEnabled = RecordingsOn, CallsOpen = CallsOpen && !IsFinished, OpenVoice = !CallsOpen,
+                TransfersOpen = TransfersOpen, TextsOpen = TextsOpen, MeetingChatOpen = ChatOpen,
+                WhistleOpen = WhistleWindow, InvestigationOpen = InvestigationOpen, LeakOpen = LeakOpen && RecordingsOn,
+                VoteOpen = (Phase == LinePhase.MeetingVote || Phase == LinePhase.CrisisVote || Phase == LinePhase.FinalVote) && !s.Fired,
+            };
+            foreach (int id in ids)
+            {
+                var o = seats[id];
+                v.Players.Add(new LinePlayerView
+                {
+                    Id = id, Name = o.Info.Name, ColorIndex = o.Info.ColorIndex, IsBot = o.Info.IsBot, Connected = o.Connected,
+                    Blame = o.Blame, Submitted = Phase == LinePhase.TaskPlay && Current.Submitted[id],
+                    Voted = o.Ballots.Length > 0 && Array.IndexOf(o.Ballots, -1) < 0,
+                    Candidate = o.Candidate, Fired = o.Fired,
+                });
             }
+            v.LineBoard = LineBoard();
+            v.Mine = MineView(player, s);
+            if (TaskVisible) v.Task = TaskView(player);
+            if (MeetingVisible) v.Meeting = MeetingView();
+            if (Phase >= LinePhase.CrisisVote && Phase <= LinePhase.Results) v.Final = FinalView();
+            if (Phase == LinePhase.Results && result != null) v.Results = result;
             return LineCodec.Clone(v);
         }
-        private LineTaskView TaskView(int id)
+
+        private LineMeView MineView(int player, Seat s)
         {
-            var t=task;var v=new LineTaskView{Kind=t.Kind,Version=c.Task(t.Kind).Version,Family=LineTasks.Family(t.Kind),Index=roundIndex,Number=t.Number,PlayEndTime=t.PlayEnd,Role=t.Roles[id],Group=t.Group[id],
-                Facts=new List<LineFact>(t.Facts[id]),PublicFacts=new List<LineFact>(t.Public),Items=t.Items[id],Submitted=Complete(t,id),MyA=t.A[id],MyB=t.B[id],MyTarget=t.Target[id],SubmittedFields=t.Fields[id],Reveal=t.Resolved?t.Reveal:null};
-            if(t.Kind==TaskKind.ReportReview)
-            {int p=t.D[id,2];v.Facts.Add(Fact("review_figure",(t.Fields[p]&TaskField.A)==0?-1:t.D[p,t.A[p]==0?0:1],p:p));}
-            foreach(var ctrl in t.Controls[id])
+            var m = new LineMeView
             {
-                var x=new LineControlView{Kind=ctrl.Kind,Field=ctrl.Field,Key=ctrl.Key,Options=ctrl.Options,Min=ctrl.Min,Max=ctrl.Max,Digits=ctrl.Digits,MaxPicks=ctrl.MaxPicks,AllowSelf=ctrl.AllowSelf,AllowNone=ctrl.AllowNone,Required=ctrl.Required,Locks=ctrl.Locks,Sabotage=ctrl.Sabotage};
-                if(t.Kind==TaskKind.ReportReview&&ctrl.Field==TaskField.B&&(t.Fields[t.D[id,2]]&TaskField.A)==0)x.WaitingFor=t.D[id,2];
-                x.Enabled=Phase==LinePhase.RoundPlay&&Math.Max(seats[id].CoffeeUntil,seats[id].OfflineUntil)<=now&&x.WaitingFor<0&&(!ctrl.Locks||(t.Fields[id]&ctrl.Field)==0);v.Controls.Add(x);
+                Prim = s.Prim, Phone = s.Phone, CallLog = s.Log, Transfers = s.Transfers, RecorderUsesLeft = RecordingsOn ? s.RecorderUses : 0,
+                Recorded = RecordedBy(player), InvestigationUsed = s.InvestigationUsed, Ballots = new List<int>(s.Ballots),
+                WitnessOf = WitnessOf(player), InvestigationTargets = InvestigationTargets(player), MessageSeq = s.MessageSeq,
+                TextsLeft = Math.Max(0, c.TextsPerSegment - s.Texts), MeetingChatLeft = Math.Max(0, c.MeetingChatPerSegment - s.Chats),
+                NextMessageAt = s.NextMessage, NextTransferAt = s.NextTransfer,
+            };
+            if (TaskVisible) m.Group = new List<int>(Current.GroupFor(player));
+            return m;
+        }
+
+        private LineTaskView TaskView(int player)
+        {
+            var t = Current;
+            var v = new LineTaskView
+            {
+                Kind = t.Kind, Number = t.Number, Family = LineTasks.Family(t.Kind), PlayEndTime = t.PlayEnd,
+                Group = new List<int>(t.GroupFor(player)), Needed = t.Needed, Submitted = t.Submitted[player],
+                MyChoice = t.Choice[player], Revealed = t.Resolved,
+            };
+            if (!t.Resolved) return v;
+            foreach (int id in t.GroupFor(player))
+                v.Choices.Add(new LineChoiceView { TaskNumber = t.Number, Task = t.Kind, Player = id, Choice = t.Choice[id], Payout = id == player ? t.Payout[id] : -1 });
+            v.MyPayout = t.Payout[player];
+            if (t.Kind == TaskKind.ClientBonus) v.Takers = t.Takers;
+            v.Roster.AddRange(t.Roster);
+            return v;
+        }
+
+        private LineMeetingView MeetingView()
+        {
+            var v = new LineMeetingView { Index = meeting.Index, VoteableCount = meeting.Voteable };
+            v.FailedTasks.AddRange(meeting.Failed);
+            v.Dossier.AddRange(meeting.Dossier);
+            v.Roster.AddRange(meeting.Roster);
+            foreach (var p in picks) v.Recordings.Add(CopyPick(p));
+            v.BlameGained.AddRange(meeting.BlameGained);
+            return v;
+        }
+
+        private LineFinalView FinalView()
+        {
+            var v = new LineFinalView { Round = final.Round, Revote = final.Revote, FiringsTotal = final.FiringsTotal };
+            if (Phase != LinePhase.CrisisVote) v.Crisis.AddRange(final.Crisis);
+            v.Candidates.AddRange(final.Candidates);
+            v.DefenseOrder.AddRange(final.DefenseOrder);
+            if (Phase == LinePhase.FinalDefense && defenderIndex < final.DefenseOrder.Count)
+            {
+                v.Defender = final.DefenseOrder[defenderIndex];
+                v.DefenderEndTime = DefenderEnd(defenderIndex);
             }
+            if (Phase == LinePhase.FinalVote) v.Options.AddRange(final.Options);
+            v.Firings.AddRange(final.Firings);
             return v;
         }
     }

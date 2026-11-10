@@ -127,7 +127,7 @@ namespace BirimizKovulacak.Telemetry
             return this;
         }
 
-        /// <summary>Slot-or-enum parameter from a ballot value: colleague slot, <see cref="LineIds.Nobody"/> (no_action / fire_nobody), or -1 (abstain).</summary>
+        /// <summary>Slot-or-enum parameter from a ballot value: colleague slot or a negative value (abstain). v5 has no "nobody" ballot.</summary>
         public TelemetryEventBuilder Ballot(string name, int target)
         {
             if (IsNull) return this;
@@ -135,12 +135,6 @@ namespace BirimizKovulacak.Telemetry
             if (p == null) return this;
             if (p.Type != ParamType.SlotOrEnum) { Fail("param " + name + " is not slot-or-enum"); return this; }
             if (target >= 0) return Slot(name, target);
-            if (target == LineIds.Nobody)
-            {
-                foreach (var v in p.EnumValues) if (v == "no_action" || v == "fire_nobody") return Enum(name, v);
-                Fail("no nobody value for " + name);
-                return this;
-            }
             return Enum(name, "abstain");
         }
 

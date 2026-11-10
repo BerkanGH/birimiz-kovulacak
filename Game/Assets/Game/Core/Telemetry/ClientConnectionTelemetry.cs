@@ -152,7 +152,7 @@ namespace BirimizKovulacak.Telemetry
             _pendingError = null;
             string reason = _rejectReason ?? error;
             bool wasJoined = _joined;
-            bool graceful = _phase == LinePhase.WeekResults || _phase == LinePhase.Abandoned;
+            bool graceful = _phase == LinePhase.Results || _phase == LinePhase.Abandoned;
             if (_chain)
             {
                 _t.Begin("reconnect_failed").Int("attempt", Math.Max(1, _attempts)).Float("seconds", Math.Max(0, now - _chainStart)).Emit();

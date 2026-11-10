@@ -3,78 +3,60 @@ using System.Collections.Generic;
 
 namespace BirimizKovulacak.Core
 {
-    /// <summary>
-    /// Everything one player may know, rebuilt by the host per recipient (docs/CONTRACTS_V4.md §5 privacy).
-    /// Hidden truths (other players' facts, choices before they are public, objectives, money, trick types and use,
-    /// incident actors before exposure, complaint authors, call partners, records the player has no access to) only
-    /// appear where listed. Free text travels separately (<see cref="LineMessage"/>), except anonymous complaints in the
-    /// meeting view.
-    /// </summary>
+    // Per-player views (docs/V5_ENGINE_SPEC.md §11). Privacy is an allow-list: a view never contains another player's
+    // prim, task choices, transfers, recorder marks or ballots before the rule that reveals them.
+
+    /// <summary>Everything one player may know right now.</summary>
     [Serializable]
     public sealed class LineView
     {
         public int WeekId;
-        /// <summary>Host-generated random match id (analytics correlation; no meaning to rules).</summary>
+        /// <summary>Host-generated match id (analytics correlation).</summary>
         public string MatchId = "";
         public string RulesetVersion = LineProtocol.RulesetVersion;
+        public int ProtocolVersion = LineProtocol.Version;
         public long StateVersion;
         public int Me = LineIds.None;
-        /// <summary>Host time when the view was built.</summary>
+        /// <summary>Host time the view was built.</summary>
         public double Now;
         public LinePhase Phase;
         public double PhaseStartTime;
         public double PhaseEndTime;
-        /// <summary>0-based work block.</summary>
+        /// <summary>Meeting index (0, 1, 2 = final segment).</summary>
         public int Day;
-        public int DayCount;
-        public WeekLength Length;
-        /// <summary>First match of the session (onboarding rules apply).</summary>
-        public bool FirstWeek;
-        /// <summary>Task index inside the block during RoundIntro/Play/Reveal, else -1.</summary>
-        public int RoundIndex = -1;
-        /// <summary>Task number inside the match (0-based) during RoundIntro/Play/Reveal, else -1.</summary>
+        /// <summary>Task number 0..2 of the current/last task while a task phase or its break is running, else -1.</summary>
         public int TaskNumber = -1;
-        public List<TaskKind> TodayTasks = new List<TaskKind>();
-        public string ManagerProfileId = "";
-        /// <summary>Kayırmacı's favourite of the block, else -1.</summary>
-        public int Favourite = LineIds.None;
         public LineFeaturesView Features = new LineFeaturesView();
         public List<LinePlayerView> Players = new List<LinePlayerView>();
-        public LineCompanyView Company = new LineCompanyView();
-        /// <summary>Private state of <see cref="Me"/>.</summary>
+        /// <summary>Public line board: active calls (never their content), while calls are allowed.</summary>
+        public List<LineBoardCall> LineBoard = new List<LineBoardCall>();
         public LineMeView Mine = new LineMeView();
-        /// <summary>Current task (RoundIntro..RoundReveal), else null.</summary>
+        /// <summary>Current task (TaskPlay) or last task (TaskReveal, Break), else null.</summary>
         public LineTaskView Task;
-        /// <summary>Public outcomes of this block's resolved tasks.</summary>
-        public List<LineTaskReveal> TodayReveals = new List<LineTaskReveal>();
-        /// <summary>Meeting phases (daily and final), else null.</summary>
+        /// <summary>Current meeting (meeting 1/2 phases and the crisis/final segment), else null.</summary>
         public LineMeetingView Meeting;
-        /// <summary>WeekResults only.</summary>
-        public LineWeekResult Result;
+        /// <summary>Crisis and final state (CrisisVote onwards), else null.</summary>
+        public LineFinalView Final;
+        /// <summary>Full disclosure, only in Results.</summary>
+        public LineWeekResult Results;
     }
 
     [Serializable]
     public sealed class LineFeaturesView
     {
-        public bool TricksUnlocked;
         public bool RecordingsEnabled;
-        public bool IsLastDay;
-        /// <summary>The current task appears for the first time in this session (auto-open the tutorial).</summary>
-        public bool FirstTimeTask;
-        /// <summary>First block of the session (step-by-step onboarding).</summary>
-        public bool OnboardingDay;
-        /// <summary>Seconds of early-submit time carried into the current break.</summary>
-        public float CarriedSeconds;
         public bool CallsOpen;
+        /// <summary>Everyone hears everyone (false = calls phase, 1:1 voice only).</summary>
+        public bool OpenVoice;
         public bool TransfersOpen;
-        public bool EvidenceOpen;
-        public bool PresentationOpen;
-        public bool RemedialOpen;
-        public bool ComplaintsOpen;
+        public bool TextsOpen;
         public bool MeetingChatOpen;
+        public bool WhistleOpen;
+        public bool InvestigationOpen;
+        public bool LeakOpen;
+        public bool VoteOpen;
     }
 
-    /// <summary>Public facts about a colleague (money, objective and choices are private).</summary>
     [Serializable]
     public sealed class LinePlayerView
     {
@@ -83,106 +65,65 @@ namespace BirimizKovulacak.Core
         public int ColorIndex;
         public bool Connected;
         public bool IsBot;
+        /// <summary>suç (public).</summary>
         public int Blame;
-        public int Warnings;
-        /// <summary>Has submitted every required control of the current task (RoundPlay/Reveal).</summary>
+        /// <summary>Submitted a choice in the current task (never which).</summary>
         public bool Submitted;
-        /// <summary>Has voted in the current ballot.</summary>
+        /// <summary>Finished voting in the current vote (never for whom).</summary>
         public bool Voted;
-        /// <summary>Session career points before this match.</summary>
-        public int SessionPoints;
+        public bool Candidate;
+        public bool Fired;
     }
 
-    /// <summary>Public company productivity (docs/GAMEPLAY_REDESIGN.md §3).</summary>
     [Serializable]
-    public sealed class LineCompanyView
+    public sealed class LineBoardCall
     {
-        /// <summary>Σ realized / Σ max over resolved tasks, per mille; -1 = measuring (nothing resolved yet).</summary>
-        public int ProvisionalPermille = -1;
-        /// <summary>Σ realized / Σ max over all scheduled tasks, per mille; -1 until frozen at the final meeting.</summary>
-        public int FinalPermille = -1;
-        public int TargetPercent;
-        public int ResolvedOutput;
-        public int ResolvedMax;
-        public int ScheduledMax;
-        public int TasksResolved;
-        public int TasksScheduled;
-        public CompanyChange LastChange;
-        public TaskKind LastTask;
-        /// <summary>Output points added by the last change.</summary>
-        public int LastDelta;
-        public bool Closed;
+        public int CallId;
+        public int Caller;
+        public int Callee;
+        /// <summary>Ringing or Connected.</summary>
+        public CallStatus Status;
+        public double Start;
     }
 
     [Serializable]
     public sealed class LineMeView
     {
-        public int Money;
-        /// <summary>Productive income credited this block (before the block filter shows its effect).</summary>
-        public int BlockIncome;
-        public LineObjectiveView Objective = new LineObjectiveView();
-        public TrickType Trick;
-        public bool TrickUsedToday;
-        public int TricksLeftThisWeek;
-        /// <summary>Computer unusable until this host time (coffee or internet).</summary>
-        public double ComputerBlockedUntil;
-        public TrickType ComputerBlockedBy;
-        public double PhoneDeadUntil;
-        /// <summary>Colleague you are tapping, or -1.</summary>
-        public int WiretapTarget = LineIds.None;
-        public double WiretapUntil;
+        /// <summary>My prim (private until Results).</summary>
+        public int Prim;
         public LinePhoneView Phone = new LinePhoneView();
-        /// <summary>Your own calls (newest last).</summary>
+        /// <summary>My calls (connected or not), oldest first.</summary>
         public List<LineCallRecordView> CallLog = new List<LineCallRecordView>();
-        /// <summary>Every record you can present (own, partner-visible, public, purchased), newest last.</summary>
-        public List<LineRecordView> Records = new List<LineRecordView>();
-        public List<LineOfferView> Offers = new List<LineOfferView>();
-        public int PurchasesLeftThisBlock;
-        public int PurchasesLeftThisMatch;
-        /// <summary>Presentations left in the current meeting.</summary>
-        public int PresentationsLeft;
-        public int RemedialsLeftThisBlock;
-        public int RemedialsLeftThisMatch;
-        /// <summary>Task numbers you may open a remedial report for now.</summary>
-        public List<int> RemedialOptions = new List<int>();
-        /// <summary>A colleague asks you to co-sign, else null.</summary>
-        public LineRemedialView IncomingRemedial;
-        /// <summary>Your pending request, else null.</summary>
-        public LineRemedialView OutgoingRemedial;
-        /// <summary>Latest message sequence number for you (pull with ILineEngine.MessagesFor).</summary>
+        /// <summary>Transfers I sent or received.</summary>
+        public List<LineTransferView> Transfers = new List<LineTransferView>();
+        public int RecorderUsesLeft;
+        public List<LineRecordedCallView> Recorded = new List<LineRecordedCallView>();
+        public bool InvestigationUsed;
+        /// <summary>My ballots in the current vote (-1 = empty). Meeting: one per vote-able failure; crisis/final: one.</summary>
+        public List<int> Ballots = new List<int>();
+        /// <summary>My group in the current/last task (me included).</summary>
+        public List<int> Group = new List<int>();
+        /// <summary>Petty Cash break: thieves I can whistle on.</summary>
+        public List<int> WitnessOf = new List<int>();
+        /// <summary>Meeting 1: group-mates I may investigate.</summary>
+        public List<int> InvestigationTargets = new List<int>();
         public long MessageSeq;
-        public int TextsLeftThisBlock;
-        public int EmailsLeftThisBlock;
-        public int ComplaintsLeftThisBlock;
+        public int TextsLeft;
         public int MeetingChatLeft;
-        /// <summary>Host time from which the next message / transfer is accepted (rate limits).</summary>
         public double NextMessageAt;
         public double NextTransferAt;
-    }
-
-    [Serializable]
-    public sealed class LineObjectiveView
-    {
-        public ObjectiveKind Kind;
-        /// <summary>Rival / Guardian colleague, else -1.</summary>
-        public int Target = LineIds.None;
-        public int Threshold;
-        /// <summary>Current progress toward Threshold (-1 = only known at the end).</summary>
-        public int Progress = -1;
-        /// <summary>Set at WeekResults.</summary>
-        public bool Completed;
     }
 
     [Serializable]
     public sealed class LinePhoneView
     {
         public CallStatus Status;
-        /// <summary>The other side (caller when Ringing, callee when Dialing, partner when Connected), else -1.</summary>
+        /// <summary>The other party (Dialing/Ringing/Connected), else -1.</summary>
         public int Other = LineIds.None;
-        /// <summary>Connected call id, else -1.</summary>
+        /// <summary>Call id once connected, else -1.</summary>
         public int CallId = LineIds.None;
         public double Since;
-        /// <summary>Dialing/Ringing: host time the ring times out.</summary>
+        /// <summary>Dialing/Ringing: when the call counts as missed.</summary>
         public double RingUntil;
     }
 
@@ -194,174 +135,157 @@ namespace BirimizKovulacak.Core
         public bool Outgoing;
         public bool Connected;
         public double Start;
-        /// <summary>-1 while ongoing.</summary>
+        /// <summary>-1 while the call is active.</summary>
         public double End = -1;
         public CallEndReason EndReason;
     }
 
-    /// <summary>The current task as seen by one player.</summary>
+    [Serializable]
+    public sealed class LineTransferView
+    {
+        public int From;
+        public int To;
+        public int Amount;
+        public double Time;
+        public LinePhase Phase;
+    }
+
+    [Serializable]
+    public sealed class LineRecordedCallView
+    {
+        public int CallId;
+        public int Other;
+        public double Start;
+        public bool Leaked;
+    }
+
     [Serializable]
     public sealed class LineTaskView
     {
         public TaskKind Kind;
-        public int Version;
+        /// <summary>0..2.</summary>
+        public int Number;
         public TaskFamily Family;
-        /// <summary>Index inside the block.</summary>
-        public int Index;
-        /// <summary>Index inside the match.</summary>
-        public int Number;
         public double PlayEndTime;
-        /// <summary>Task-specific role code (localisation task.&lt;id&gt;.role.&lt;n&gt;), 0 = none.</summary>
-        public int Role;
-        /// <summary>Colleagues in my group (pair/trio/role partners), excluding me.</summary>
+        /// <summary>My group (me included); everyone for Weekend Shift.</summary>
         public List<int> Group = new List<int>();
-        /// <summary>My private facts and partner-visible facts.</summary>
-        public List<LineFact> Facts = new List<LineFact>();
-        /// <summary>Facts everyone sees (e.g. who holds the visitor badge, digit positions).</summary>
-        public List<LineFact> PublicFacts = new List<LineFact>();
-        public List<LineControlView> Controls = new List<LineControlView>();
-        /// <summary>Supply Swap: item types I hold.</summary>
-        public List<int> Items = new List<int>();
-        /// <summary>Every required control has a value.</summary>
+        /// <summary>Weekend Shift: volunteers needed (public); else -1.</summary>
+        public int Needed = -1;
         public bool Submitted;
-        public int MyTarget = LineIds.None;
-        public int MyA = -1;
-        public int MyB = -1;
-        /// <summary>Fields that were submitted (TaskField mask).</summary>
-        public TaskField SubmittedFields;
-        /// <summary>Filled from RoundReveal on.</summary>
-        public LineTaskReveal Reveal;
-    }
-
-    /// <summary>A typed line of task information; the UI renders task.&lt;id&gt;.fact.&lt;Key&gt; with {p} {n1} {n2} {n3}.</summary>
-    [Serializable]
-    public sealed class LineFact
-    {
-        public string Key = "";
-        /// <summary>0 private, 1 partner-visible, 2 public.</summary>
-        public int Scope;
-        public int P = LineIds.None;
-        public int N1 = -1;
-        public int N2 = -1;
-        public int N3 = -1;
+        /// <summary>My choice so far (the default 0 when not submitted).</summary>
+        public int MyChoice;
+        public bool Revealed;
+        /// <summary>After reveal: every group member's choice (Payout -1 for others).</summary>
+        public List<LineChoiceView> Choices = new List<LineChoiceView>();
+        /// <summary>After reveal: my prim from this task, else -1.</summary>
+        public int MyPayout = -1;
+        /// <summary>Client Bonus, after reveal: takers in the whole match (public), else -1.</summary>
+        public int Takers = -1;
+        /// <summary>Weekend Shift, after reveal: the public volunteer roster.</summary>
+        public List<int> Roster = new List<int>();
     }
 
     [Serializable]
-    public sealed class LineControlView
+    public sealed class LineChoiceView
     {
-        public ControlKind Kind;
-        public TaskField Field;
-        /// <summary>Label: task.&lt;id&gt;.control.&lt;Key&gt;.</summary>
-        public string Key = "";
-        public List<LineOption> Options = new List<LineOption>();
-        public int Min;
-        public int Max;
-        /// <summary>Number: exact digit count (0 = any).</summary>
-        public int Digits;
-        /// <summary>Multi: maximum picks.</summary>
-        public int MaxPicks;
-        public bool AllowSelf;
-        public bool AllowNone;
-        public bool Required;
-        public bool Locks;
-        /// <summary>The whole control is a sabotage option (UI warns: it creates an incident that evidence can expose).</summary>
-        public bool Sabotage;
-        /// <summary>Waiting for this colleague's submission (-1 = not waiting).</summary>
-        public int WaitingFor = LineIds.None;
-        public bool Enabled = true;
+        public int TaskNumber;
+        public TaskKind Task;
+        public int Player;
+        public int Choice;
+        /// <summary>Prim from the task (-1 when not visible).</summary>
+        public int Payout = -1;
     }
 
     [Serializable]
-    public sealed class LineOption
+    public sealed class LineMeetingView
     {
-        /// <summary>Label: task.&lt;id&gt;.opt.&lt;Key&gt; with {p} {n1} {n2}.</summary>
-        public string Key = "";
-        public int Value;
-        public int P = LineIds.None;
-        public int N1 = -1;
-        public int N2 = -1;
-        public bool Sabotage;
-        public bool Enabled = true;
-    }
-
-    /// <summary>Public outcome of one resolved task.</summary>
-    [Serializable]
-    public sealed class LineTaskReveal
-    {
-        public TaskKind Kind;
+        /// <summary>0 = meeting 1, 1 = meeting 2, 2 = crisis/final segment.</summary>
         public int Index;
-        public int Number;
-        public int Output;
-        public int MaxOutput;
-        public List<LineFact> PublicFacts = new List<LineFact>();
-        /// <summary>Public ballots of the task (budget requests, vendor votes, flags, bookings), with authors.</summary>
-        public List<LineVoteView> Votes = new List<LineVoteView>();
-        /// <summary>Players who missed a required input (public).</summary>
-        public List<int> Missed = new List<int>();
-        public List<LineBlameDelta> Deltas = new List<LineBlameDelta>();
+        public List<TaskKind> FailedTasks = new List<TaskKind>();
+        /// <summary>Ballots per player in the blame vote (-1 until counted when the vote starts).</summary>
+        public int VoteableCount = -1;
+        /// <summary>Typed public lines, in order.</summary>
+        public List<LineDossierEntry> Dossier = new List<LineDossierEntry>();
+        /// <summary>Weekend Shift roster (meeting 2).</summary>
+        public List<int> Roster = new List<int>();
+        public List<LineRecordingPick> Recordings = new List<LineRecordingPick>();
+        /// <summary>MeetingVerdict onwards: suç received per player from this meeting's vote.</summary>
+        public List<LineBlameGainView> BlameGained = new List<LineBlameGainView>();
     }
 
     [Serializable]
-    public sealed class LineVoteView
+    public sealed class LineDossierEntry
     {
-        public int Voter;
-        /// <summary>Colleague, LineIds.Nobody (No action / Fire nobody), -1 abstained; task ballots: the value chosen.</summary>
-        public int Target;
+        public DossierKind Kind;
+        public TaskKind Task;
+        public int Player = LineIds.None;
+        public int Other = LineIds.None;
+        public int N1 = -1;
+        public int N2 = -1;
+        public double Time;
     }
 
     [Serializable]
-    public sealed class LineBlameDelta
+    public sealed class LineBlameGainView
     {
         public int Player;
-        public int Delta;
-        public BlameReason Reason;
-        public TaskKind Task;
-        public int Day;
+        public int Amount;
+    }
+
+    /// <summary>A leaked call recording to play. The voice system reports whether it had speech.</summary>
+    [Serializable]
+    public sealed class LineRecordingPick
+    {
+        public int Index;
+        /// <summary>v5: exactly the leaked call.</summary>
+        public List<int> CandidateCallIds = new List<int>();
+        public double PlayAt;
+        public float Seconds;
+        /// <summary>Reported by the voice system (-1 until played or when empty).</summary>
+        public int ChosenCallId = LineIds.None;
+        public int Caller = LineIds.None;
+        public int Callee = LineIds.None;
+        public double CallStart = -1;
+        public int Leaker = LineIds.None;
+        public bool Played;
+        /// <summary>Reported with no speech found ("kayıt boş").</summary>
+        public bool Empty;
     }
 
     [Serializable]
-    public sealed class LineRecordView
+    public sealed class LineFinalView
     {
-        public int Id;
-        public RecordKind Kind;
-        public RecordSource Source;
-        public double Time;
-        public int Day;
-        /// <summary>Task number inside the match, or -1.</summary>
-        public int TaskNumber = -1;
-        public TaskKind Task;
-        public int Actor = LineIds.None;
-        public int Subject = LineIds.None;
-        public int N1 = -1;
-        public int N2 = -1;
-        public int N3 = -1;
-        /// <summary>Incident this record proves, else -1 (visible to anyone who holds the record).</summary>
-        public int ProofOf = LineIds.None;
-        /// <summary>Already presented in a meeting (public).</summary>
-        public bool Presented;
+        /// <summary>CrisisVerdict onwards: suç each receiver got from the crisis.</summary>
+        public List<LineBlameGainView> Crisis = new List<LineBlameGainView>();
+        /// <summary>Fixed at CrisisVerdict.</summary>
+        public List<int> Candidates = new List<int>();
+        /// <summary>suç desc, then seat id.</summary>
+        public List<int> DefenseOrder = new List<int>();
+        public int Defender = LineIds.None;
+        public double DefenderEndTime;
+        /// <summary>0 = first firing, 1 = second firing (5-6 players).</summary>
+        public int Round;
+        public bool Revote;
+        /// <summary>Candidates the current final vote may name.</summary>
+        public List<int> Options = new List<int>();
+        public int FiringsTotal;
+        public List<LineFiringView> Firings = new List<LineFiringView>();
     }
 
     [Serializable]
-    public sealed class LineOfferView
+    public sealed class LineFiringView
     {
-        public int Id;
-        public OfferKind Kind;
-        public int Day;
-        public int TaskNumber = -1;
-        public TaskKind Task;
-        public int Price;
-        public bool Purchased;
-        public bool Available;
-    }
-
-    [Serializable]
-    public sealed class LineRemedialView
-    {
-        public int Requester = LineIds.None;
-        public int Cosigner = LineIds.None;
-        public int TaskNumber = -1;
-        public TaskKind Task;
-        public double ExpiresAt;
+        public int Player;
+        public int Round;
+        public FiringDecision Decision;
+        /// <summary>Votes received in the deciding vote.</summary>
+        public int Votes;
+        /// <summary>Prim found on the desk (public).</summary>
+        public int Desk;
+        public List<int> Recipients = new List<int>();
+        public int Share;
+        /// <summary>Prim removed from the game (remainder or no recipients).</summary>
+        public int Removed;
     }
 
     /// <summary>Free-text and system messages, delivered per recipient outside the view (ILineEngine.MessagesFor).</summary>
@@ -373,150 +297,40 @@ namespace BirimizKovulacak.Core
         /// <summary>Global message id (shared by every copy of a broadcast).</summary>
         public int Id;
         public MessageKind Kind;
-        /// <summary>Thread root id (email replies keep the root), else Id.</summary>
-        public int ThreadId;
-        /// <summary>Email replied to, else -1.</summary>
-        public int ReplyTo = LineIds.None;
-        /// <summary>Sender (spoofed mail shows the apparent sender), LineIds.Manager or LineIds.System.</summary>
+        /// <summary>Sender, or LineIds.System.</summary>
         public int From = LineIds.None;
         /// <summary>Recipient, or -1 when sent to everyone.</summary>
         public int To = LineIds.None;
         public bool ToAll;
         /// <summary>Player-authored text (sanitised by the engine). Never logged, never sent to telemetry.</summary>
         public string Text = "";
-        public int TemplateId = -1;
-        public int About = LineIds.None;
-        public double Time;
-        public int Day;
-    }
-
-    [Serializable]
-    public sealed class LineMeetingView
-    {
-        public bool IsFinal;
-        public List<LineDossierEntry> Dossier = new List<LineDossierEntry>();
-        public List<LineRecordingPick> Recordings = new List<LineRecordingPick>();
-        /// <summary>Anonymous complaints filed since the previous meeting (author never included).</summary>
-        public List<LineComplaintView> Complaints = new List<LineComplaintView>();
-        /// <summary>Records presented in this meeting, in order.</summary>
-        public List<LinePresentationView> Presentations = new List<LinePresentationView>();
-        /// <summary>My ballot in the current vote (-1 none, LineIds.Nobody = No action / Fire nobody).</summary>
-        public int MyVote = LineIds.None;
-        /// <summary>Daily verdict: warning receiver, else -1.</summary>
-        public int WarningTo = LineIds.None;
-        public VoteOutcome Outcome;
-        /// <summary>Revealed at MeetingVerdict / FinalVerdict.</summary>
-        public List<LineVoteView> Votes = new List<LineVoteView>();
-        // final
-        /// <summary>Final vote roster (players connected when FinalVote began).</summary>
-        public List<int> Roster = new List<int>();
-        public int MajorityNeeded;
-        public List<int> DefenseOrder = new List<int>();
-        public int Defender = LineIds.None;
-        public double DefenderEndTime;
-        /// <summary>FinalVerdict: fired player, LineIds.Nobody, or -1 before the verdict.</summary>
-        public int Fired = LineIds.None;
-        public bool CompanyClosed;
-    }
-
-    [Serializable]
-    public sealed class LineDossierEntry
-    {
-        public DossierKind Kind;
-        public TaskKind Task;
-        public int TaskNumber = -1;
-        public TrickType Trick;
-        public int Player = LineIds.None;
-        public int Victim = LineIds.None;
-        public int Arg = -1;
-        public int N1 = -1;
-        public int N2 = -1;
         public double Time;
     }
 
-    [Serializable]
-    public sealed class LineComplaintView
-    {
-        public int Target;
-        /// <summary>Preset index (complaint.preset.&lt;i&gt;), or -1 for free text.</summary>
-        public int Preset = -1;
-        public string Text = "";
-    }
-
-    [Serializable]
-    public sealed class LinePresentationView
-    {
-        public int Presenter;
-        public LineRecordView Record = new LineRecordView();
-        public double Time;
-        /// <summary>Incident newly proven by this presentation, else -1.</summary>
-        public int ExposedIncident = LineIds.None;
-        public IncidentKind ExposedKind;
-        /// <summary>The same record had already been presented (no new consequence).</summary>
-        public bool Repeat;
-    }
-
-    /// <summary>
-    /// A call recording to play in the meeting. The engine schedules it; the host's voice system chooses which
-    /// candidate actually has speech and reports it back (Caller/Callee/CallStart are -1 until then).
-    /// </summary>
-    [Serializable]
-    public sealed class LineRecordingPick
-    {
-        public int Index;
-        public List<int> CandidateCallIds = new List<int>();
-        public double PlayAt;
-        public float Seconds;
-        public int ChosenCallId = LineIds.None;
-        public int Caller = LineIds.None;
-        public int Callee = LineIds.None;
-        public double CallStart = -1;
-        /// <summary>Task kind the chosen call was most related to (group/decision), else None.</summary>
-        public TaskKind Context;
-        public bool Played;
-    }
-
-    [Serializable]
-    public sealed class LineIncidentView
-    {
-        public int Id;
-        public IncidentKind Kind;
-        /// <summary>Only exposed incidents appear in public results.</summary>
-        public int Actor = LineIds.None;
-        public int Day;
-        public int TaskNumber = -1;
-        public int ExposedBy = LineIds.None;
-        public double Time;
-    }
-
-    [Serializable]
-    public sealed class LineCareerLine
-    {
-        public CareerItem Item;
-        public int Points;
-        public int Count = 1;
-    }
-
+    /// <summary>Full disclosure at Results.</summary>
     [Serializable]
     public sealed class LineWeekResult
     {
         public int WeekId;
         public string MatchId = "";
         public string RulesetVersion = LineProtocol.RulesetVersion;
-        public string ManagerProfileId = "";
-        public int Days;
-        /// <summary>Fired player, LineIds.Nobody when the final vote fired nobody, -1 when the company closed.</summary>
-        public int Fired = LineIds.None;
-        public VoteOutcome FinalOutcome;
-        public bool CompanyClosed;
-        public int FinalProductivityPermille;
-        public int TargetPercent;
-        /// <summary>The fired player's pick for next match's manager ("" until picked).</summary>
-        public string NextManagerPick = "";
-        public int IncidentsTotal;
-        /// <summary>Exposed incidents only (unexposed ones are never attributed).</summary>
-        public List<LineIncidentView> Exposed = new List<LineIncidentView>();
+        public int PlayerCount;
+        public double StartTime;
+        /// <summary>When Results began.</summary>
+        public double EndTime;
         public List<LineWeekPlayerResult> Players = new List<LineWeekPlayerResult>();
+        /// <summary>Fired players in firing order.</summary>
+        public List<int> Fired = new List<int>();
+        /// <summary>Highest prim among the non-fired (several on equal prim).</summary>
+        public List<int> Winners = new List<int>();
+        public List<LineFiringView> Firings = new List<LineFiringView>();
+        public List<LineBallotView> Ballots = new List<LineBallotView>();
+        public List<LineTransferView> Transfers = new List<LineTransferView>();
+        public List<LineChoiceView> Choices = new List<LineChoiceView>();
+        /// <summary>Whistles, investigations, catches and leaks.</summary>
+        public List<LineDossierEntry> Incidents = new List<LineDossierEntry>();
+        public List<LinePrimChange> PrimLog = new List<LinePrimChange>();
+        public List<LineBlameChange> BlameLog = new List<LineBlameChange>();
         /// <summary>Deterministic hash of the outcome (all clients must agree; used by automated runs).</summary>
         public ulong ResultHash;
     }
@@ -525,23 +339,49 @@ namespace BirimizKovulacak.Core
     public sealed class LineWeekPlayerResult
     {
         public int Player;
+        public int Prim;
         public int Blame;
-        public int Warnings;
         public bool Fired;
-        public ObjectiveKind Objective;
-        public int ObjectiveTarget = LineIds.None;
-        public bool ObjectiveDone;
-        public bool EmployeeOfMonth;
-        public List<LineCareerLine> Career = new List<LineCareerLine>();
-        public int CareerTotal;
-        /// <summary>Competition rank (1, 1, 3); 0 when the company closed (no ranking).</summary>
-        public int Rank;
-        public int Money;
-        /// <summary>Mean contribution quality 0..100 over tasks the player was connected for (-1 none).</summary>
-        public int ContributionQuality = -1;
-        public int TasksConnected;
-        public int ExposedIncidents;
-        /// <summary>Session total including this match.</summary>
-        public int SessionPoints;
+        public bool Winner;
+        public bool WasCandidate;
+        /// <summary>Recordings made / leaked.</summary>
+        public int Recorded;
+        public int Leaked;
+    }
+
+    [Serializable]
+    public sealed class LineBallotView
+    {
+        public BallotKind Kind;
+        /// <summary>Meeting index (meeting ballots) or final round (final ballots).</summary>
+        public int Round;
+        public bool Revote;
+        public int Voter;
+        /// <summary>Ballot index (meeting) else 0.</summary>
+        public int Index;
+        /// <summary>-1 = abstained (final only).</summary>
+        public int Target = LineIds.None;
+        /// <summary>An empty ballot assigned to the voter themselves.</summary>
+        public bool SelfAssigned;
+    }
+
+    [Serializable]
+    public sealed class LinePrimChange
+    {
+        public int Player;
+        public int Delta;
+        public PrimReason Reason;
+        /// <summary>Counterparty (transfer, refund, desk), else -1.</summary>
+        public int Other = LineIds.None;
+        public double Time;
+    }
+
+    [Serializable]
+    public sealed class LineBlameChange
+    {
+        public int Player;
+        public int Delta;
+        public BlameReason Reason;
+        public double Time;
     }
 }

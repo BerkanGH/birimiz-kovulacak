@@ -22,9 +22,10 @@ namespace BirimizKovulacak.Core
         public bool HasView;
         public LinePhase Phase;
         public int WeekId;
-        /// <summary>Seconds left in the current phase (only meaningful in RoundPlay), and the phase length.</summary>
+        /// <summary>Seconds left in the current phase (only meaningful in TaskPlay), and the phase length.</summary>
         public double PhaseRemaining;
         public double PhaseLength;
+        /// <summary>v5 has no company closure; kept so a future "bad ending" can pick the collapse cue (always false today).</summary>
         public bool CompanyClosed;
         /// <summary>Meeting tape reveal is playing (VoiceSystem.RecordingActive).</summary>
         public bool RecordingActive;
@@ -73,12 +74,12 @@ namespace BirimizKovulacak.Core
             {
                 case LinePhase.Abandoned:
                     p.FadeIn = 0.6f; return p; // stop
-                case LinePhase.Morning:
-                case LinePhase.RoundIntro:
-                case LinePhase.RoundReveal:
+                case LinePhase.Intro:
+                case LinePhase.TaskReveal:
                 case LinePhase.Break:
+                case LinePhase.CrisisCalls:
                     p.Cue = MusicCues.OfficeWork; break;
-                case LinePhase.RoundPlay:
+                case LinePhase.TaskPlay:
                     p.Cue = IsDeadline(s.PhaseRemaining, s.PhaseLength) ? MusicCues.Deadline : MusicCues.OfficeWork;
                     p.FadeIn = p.Cue == MusicCues.Deadline ? 2.5f : 1.5f; break;
                 case LinePhase.MeetingDossier:
@@ -86,12 +87,15 @@ namespace BirimizKovulacak.Core
                 case LinePhase.MeetingDiscussion:
                 case LinePhase.MeetingVote:
                 case LinePhase.MeetingVerdict:
+                case LinePhase.CrisisVote:
+                case LinePhase.CrisisVerdict:
+                case LinePhase.FinalDiscussion:
                     p.Cue = MusicCues.MeetingDiscussion; p.FadeIn = 2.5f; break;
                 case LinePhase.FinalDefense:
                 case LinePhase.FinalVote:
                 case LinePhase.FinalVerdict:
                     p.Cue = MusicCues.FinalVote; p.FadeIn = 2.5f; break;
-                case LinePhase.WeekResults:
+                case LinePhase.Results:
                     p.Cue = s.CompanyClosed ? MusicCues.ResultsCollapse : MusicCues.ResultsSuccess; p.Loop = false; p.FadeIn = 0.4f; break;
                 default:
                     return p;
@@ -102,8 +106,8 @@ namespace BirimizKovulacak.Core
         static MusicPlan Finish(MusicPlan p, MusicState s)
         {
             float d = 1f;
-            bool speechDucks = s.Phase == LinePhase.MeetingDiscussion || s.Phase == LinePhase.MeetingVote || s.Phase == LinePhase.MeetingVerdict
-                || s.Phase == LinePhase.FinalDefense || s.Phase == LinePhase.FinalVote || s.Phase == LinePhase.FinalVerdict;
+            bool speechDucks = s.Phase >= LinePhase.MeetingDiscussion && s.Phase <= LinePhase.MeetingVerdict
+                || s.Phase >= LinePhase.CrisisVote && s.Phase <= LinePhase.FinalVerdict;
             if (s.HasView && s.Phase == LinePhase.FinalDefense) d = Math.Min(d, DuckFinalDefense);
             if (s.HasView && speechDucks && s.AnySpeaking) d = Math.Min(d, DuckMeetingSpeech);
             if (s.HasView && s.PhoneConnected) d = Math.Min(d, DuckPhone);

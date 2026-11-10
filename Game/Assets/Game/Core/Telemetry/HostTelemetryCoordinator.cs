@@ -4,9 +4,21 @@ using BirimizKovulacak.Core;
 
 namespace BirimizKovulacak.Telemetry
 {
+    /// <summary>What the host voice system reports about one played (or failed) recording pick.</summary>
+    public struct TelemetryRecordingInfo
+    {
+        public int Candidates;
+        /// <summary>0-based rank of the played candidate in the engine's list, -1 when none played.</summary>
+        public int ChosenRank;
+        public int SpeechMs, SnippetMs, CallLengthMs;
+        /// <summary>none, no_candidates, no_speech, disabled, voice_unavailable.</summary>
+        public string Failure;
+    }
+
     /// <summary>
     /// Host lobby/match lifecycle telemetry (pure C#, testable). HostTelemetryBridge (Unity) forwards its calls here.
-    /// Owns the <see cref="LineTelemetryObserver"/> of the running match. Never throws.
+    /// Never throws. v5 Phase 1: the v4 gameplay observer was removed; the per-match engine hooks below are kept as no-ops
+    /// until the v5 observer exists, so the Unity bridge keeps its call sites.
     /// </summary>
     public sealed class HostTelemetryCoordinator
     {
@@ -16,8 +28,7 @@ namespace BirimizKovulacak.Telemetry
         readonly double[] _joinedAt = new double[LineProtocol.MaxPlayers];
         readonly bool[] _joined = new bool[LineProtocol.MaxPlayers];
         double _lobbyCreatedAt = -1, _lastJoinAt = -1, _lastReadyAt = -1;
-        LineTelemetryObserver _observer;
-        WeekLength _length;
+        bool _matchRunning;
         bool _recordings;
 
         public HostTelemetryCoordinator(IGameTelemetry telemetry, Func<double> clock = null, Func<ulong> random64 = null)
@@ -28,21 +39,20 @@ namespace BirimizKovulacak.Telemetry
             _random = random64 ?? (() => { var b = new byte[8]; new Random().NextBytes(b); return BitConverter.ToUInt64(b, 0); });
         }
 
-        public LineTelemetryObserver Observer { get { return _observer; } }
-        public bool MatchRunning { get { return _observer != null && !_observer.IsEnded; } }
+        public bool MatchRunning { get { return _matchRunning; } }
 
-        public void LobbyCreated(string sessionId, string groupId, WeekLength length, bool recordings)
+        public void LobbyCreated(string sessionId, string groupId, bool recordings)
         {
             try
             {
                 _t.HostMode = true;
-                _length = length; _recordings = recordings;
+                _recordings = recordings;
                 _lobbyCreatedAt = _clock();
                 _lastJoinAt = _lastReadyAt = -1;
                 Array.Clear(_joined, 0, _joined.Length);
                 string group = TelemetryNames.IsValidGroupId(groupId) ? groupId : (TelemetryNames.IsValidGroupId(_t.Context.GroupId) ? _t.Context.GroupId : "g-" + _random().ToString("x16"));
                 _t.Context.AdoptSession(sessionId, group);
-                _t.Begin("lobby_created").Enum("length", length == WeekLength.Full ? "full" : "short").Bool("recordings_enabled", recordings).Key("lobby|" + _t.Context.SessionId).Emit();
+                _t.Begin("lobby_created").Bool("recordings_enabled", recordings).Key("lobby|" + _t.Context.SessionId).Emit();
             }
             catch (Exception) { }
         }
@@ -102,11 +112,8 @@ namespace BirimizKovulacak.Telemetry
             try
             {
                 _t.HostMode = true;
-                if (_observer != null && !_observer.IsEnded) _observer.MatchEnded("host_closed", now);
                 _t.Context.RulesetVersion = LineProtocol.RulesetVersion;
-                var obs = new LineTelemetryObserver(_t, engine, experiments);
-                obs.Start(now);
-                _observer = obs;
+                _matchRunning = true;
                 int humans = 0, bots = 0;
                 foreach (var p in setup.Players) { if (p.IsBot) bots++; else humans++; }
                 foreach (var p in setup.Players)
@@ -117,15 +124,8 @@ namespace BirimizKovulacak.Telemetry
                     if (!p.IsBot && id.Length > 0) b.Id("anonymous_player_id", id);
                     b.Emit();
                 }
-                string manager = setup.ManagerProfileId;
-                if (Array.IndexOf(LineManagerIds.All, manager) < 0)
-                {
-                    manager = "";
-                    try { manager = engine.BuildView(setup.Players[0].Id, now).ManagerProfileId; } catch (Exception) { }
-                }
                 var ms = _t.Begin("match_started").At(now).Key("start").Int("humans", humans).Int("bots", bots)
-                    .Enum("length", setup.Length == WeekLength.Full ? "full" : "short").Bool("recordings_enabled", setup.RecordingsEnabled);
-                if (Array.IndexOf(LineManagerIds.All, manager) >= 0) ms.Enum("manager", manager);
+                    .Bool("recordings_enabled", setup.RecordingsEnabled);
                 if (_lobbyCreatedAt >= 0 && _lastJoinAt >= _lobbyCreatedAt) ms.Float("lobby_fill_seconds", _lastJoinAt - _lobbyCreatedAt);
                 if (_lastReadyAt >= 0) ms.Float("ready_seconds", Math.Max(0, _clock() - _lastReadyAt));
                 ms.Emit();
@@ -133,43 +133,18 @@ namespace BirimizKovulacak.Telemetry
             catch (Exception) { }
         }
 
-        public void EngineEvents(ILineEngine engine, List<LineEvent> events, double now)
-        {
-            var o = _observer;
-            if (o != null) o.OnEvents(events, now);
-        }
-
-        public void EngineTick(ILineEngine engine, double now)
-        {
-            var o = _observer;
-            if (o != null) o.Tick(now);
-        }
-
-        public void RecordingStarted(ILineEngine engine, LineRecordingPick pick, int chosenCallId, TelemetryRecordingInfo info, double now)
-        {
-            var o = _observer;
-            if (o != null) o.RecordingStarted(pick, chosenCallId, info, now);
-        }
-
-        public void RecordingFinished(int callId, double actualSeconds, bool stoppedEarly, double now)
-        {
-            var o = _observer;
-            if (o != null) o.RecordingFinished(callId, actualSeconds, stoppedEarly, now);
-        }
-
-        public void PlayerConnection(int slot, bool connected, double now)
-        {
-            var o = _observer;
-            if (o != null && !o.IsEnded) o.PlayerConnection(slot, connected, now);
-        }
+        // ---- per-match engine hooks: no-ops until the v5 gameplay observer exists.
+        public void EngineEvents(ILineEngine engine, List<LineEvent> events, double now) { }
+        public void EngineTick(ILineEngine engine, double now) { }
+        public void RecordingStarted(ILineEngine engine, LineRecordingPick pick, int chosenCallId, TelemetryRecordingInfo info, double now) { }
+        public void RecordingFinished(int callId, double actualSeconds, bool stoppedEarly, double now) { }
+        public void PlayerConnection(int slot, bool connected, double now) { }
 
         public void MatchEnded(ILineEngine engine, string reason, double now)
         {
             try
             {
-                var o = _observer;
-                if (o != null) o.MatchEnded(reason, now);
-                _observer = null;
+                _matchRunning = false;
                 _t.Context.EndMatch();
             }
             catch (Exception) { }
