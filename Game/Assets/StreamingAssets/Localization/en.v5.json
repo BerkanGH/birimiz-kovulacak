@@ -210,7 +210,7 @@
   "v5.investigate.rules": "Investigate your Client Bonus group-mate: costs {0} prim. If they took it all, they get +{1} blame and pay you {2} prim; if they shared, you get +{3} blame. The result is public.",
   "v5.investigate.btn": "Investigate {0} ({1} prim)",
   "v5.investigate.poor": "Not enough prim for an investigation ({0}).",
-  "v5.crisis.candidates_rule": "After the crisis, the {0} players with the most blame become firing candidates.",
+  "v5.crisis.candidates_rule": "After the crisis, the {0} players with the most blame become firing candidates (everyone tied for the last place too).",
   "v5.crisis.result": "Crisis result",
   "v5.crisis.none": "Nobody took crisis blame (no ballots).",
   "v5.final.candidates": "Candidates (to be fired: {0})",

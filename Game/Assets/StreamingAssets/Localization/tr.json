@@ -597,7 +597,7 @@
   "howto.8.title": "Prim transferi ve sözler",
   "howto.8.text": "• İstediğin an birine prim gönderebilirsin (tek seferde en fazla {0}).\n• Transferi sadece gönderen ve alan görür; maç sonunda hepsi açıklanır.\n• Sözler bağlayıcı değildir: \"Oy veririm\", \"öderim\" yalan olabilir.\n• Kim önce öder? Kayıt cihazı burada işe yarar.",
   "howto.9.title": "Kriz ve adaylar",
-  "howto.9.text": "• Kriz'de {0} suç gizli oyla tek kişiye yazılır; beraberlikte paylaşılır.\n• Oylamadan önce sadece telefon açıktır: pazarlık edin. Boş oy sana yazılır.\n• Sonra en çok suçu olanlar kovulma adayı olur (3–4 kişide {1}, 5–6 kişide {2}).\n• Adayların masası mühürlenir: prim gönderemezler ama alabilirler.",
+  "howto.9.text": "• Kriz'de {0} suç gizli oyla tek kişiye yazılır; beraberlikte paylaşılır.\n• Oylamadan önce sadece telefon açıktır: pazarlık edin. Boş oy sana yazılır.\n• Sonra en çok suçu olanlar kovulma adayı olur (3–4 kişide {1}, 5–6 kişide {2}); son sırada eşit suçlu olanların hepsi aday olur.\n• Adayların masası mühürlenir: prim gönderemezler ama alabilirler.",
   "howto.10.title": "Final ve kovulma",
   "howto.10.text": "• Adaylar sırayla savunma yapar, sonra herkes gizlice bir adaya oy verir.\n• En çok oyu alan kovulur (3–4 kişide {0}, 5–6 kişide {1} kişi). Beraberlikte bir kez daha oylanır.\n• Kovulanın masası açılır: primi ona oy verenler arasında eşit bölünür, artan yanar.\n• Çekimser kalabilirsin ama masadan pay alamazsın.\n• Maç sonunda bütün oylar, transferler ve seçimler açıklanır.",
   "lobby.pool_too_small": "Bu oyuncu sayısı için yeterli görev yok (görev havuzu çok küçük).",

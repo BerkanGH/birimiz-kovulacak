@@ -210,7 +210,7 @@
   "v5.investigate.rules": "Müşteri Bonusu'ndaki grup arkadaşını soruştur: {0} prim. Hepsini almışsa o +{1} suç alır ve sana {2} prim öder; paylaşmışsa sen +{3} suç alırsın. Sonuç herkese açıklanır.",
   "v5.investigate.btn": "Soruştur: {0} ({1} prim)",
   "v5.investigate.poor": "Soruşturma için primin yetmiyor ({0}).",
-  "v5.crisis.candidates_rule": "Krizden sonra en çok suçu olan {0} kişi kovulma adayı olur.",
+  "v5.crisis.candidates_rule": "Krizden sonra en çok suçu olan {0} kişi kovulma adayı olur (son sırada eşit suçlu olanların hepsi aday olur).",
   "v5.crisis.result": "Kriz sonucu",
   "v5.crisis.none": "Kimse kriz suçu almadı (oy kullanılmadı).",
   "v5.final.candidates": "Adaylar (kovulacak kişi sayısı: {0})",
