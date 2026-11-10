@@ -252,6 +252,19 @@ olduğu belirsiz kaldıkça bu, istediğimiz tartışmayı üretir: "Bence en ze
 |---|---|---|
 | **Bütçe Paylaşımı** (herkes): Ortak bütçeden iste. Toplam aşarsa herkes kesintiye uğrar | Anonim açgözlülük | Kimse. Sadece toplam görünür |
 | **Hafta Sonu Nöbeti** (herkes): Herkes nöbet tutacağına söz verir, sonra gizlice seçer. Boş nöbet suç üretir | Sözünü tutmamak | Herkes, nöbet listesi açık |
+| **Zam Listesi** (herkes): Oyuncuların yarısı zam (+3) alacak. Herkes gizlice kendisi hariç 2 kişiye oy verir | Koalisyon, oy ticareti | Sadece kimin zam aldığı ve oy sayıları. "Ben sana oy verdim!" kanıtlanamaz. Final oylamasının provası |
+| **Çekmece Araması** (herkes): Herkes ya birinin çekmecesine gizlice yasak eşya koyar ya da kendi çekmecesini kilitler. Kilitsiz çekmecede eşya çıkarsa sahibi suç alır; kilitliye koymaya çalışan yakalanır | Komplo kurmak | Mağdur yapmadığını bilir ama kimin koyduğunu bilmez. Masum suç almaz değil, ama bunu bir oyuncu yapar ve mağdur kilitleyerek korunabilirdi |
+| **Kayırmacı Şef** (rol): Şef 2 iyi projeyi (+3) dağıtır, diğerleri kötü projeyi alır. Herkes lobi yapar, rüşvet teklif eder | Torpil | Kimin iyi proje aldığı açık, şefin nedeni gizli |
+| **Müfettiş** (rol): Müfettiş bir kişinin önceki görevdeki seçimini gizlice görür; toplantıda doğruyu ya da yalanı söyler veya bilgiyi satar | Söylenti gücü | Sadece müfettiş. Yalanı çürütmenin tek yolu soruşturma hakkı |
+
+İkili görev için ek aday:
+
+| Görev | İhanet türü | Not |
+|---|---|---|
+| **Ortak Sunum** (ikili): Müdür ikiliye ayrı ayrı "Bu işi kim yaptı?" diye sorar. İkisi "ikimiz" derse 2/2, biri "ben" derse 4/0, ikisi "ben" derse ikisi de suç alır | Emek hırsızlığı | Yapısı Müşteri Bonusu'na çok benziyor; eklenecekse farklılaştırılmalı |
+
+Yukarıdaki son dört grup görevi ve Ortak Sunum 2026-11-10 tartışmasında yeni öneri olarak eklendi, henüz
+değerlendirilmedi.
 | **Masraf Onayı** (onaylayıcı): Herkes masraf beyan eder ve şişirebilir. Onaylayıcı hepsini görür | Bilgi gücü, şantaj | Sadece onaylayıcı |
 | **İçeriden Bilgi** (bilgi sahibi): En iyi tedarikçiyi biri bilir. Rakip firma ona yalan söylemesi için rüşvet verir | Yalan söyleyerek yanıltma | Ona soranlar, sonuç gelince |
 
