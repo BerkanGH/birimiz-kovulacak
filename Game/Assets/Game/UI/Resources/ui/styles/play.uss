@@ -1,0 +1,110 @@
+/* v5 minimal play UI (Phase 2a, PlayUi.cs). Logical size 1920x1080 (PanelSettings scales it). */
+.pl-screen { background-color: rgba(16, 20, 32, 0.88); padding: 14px 18px; color: rgb(236, 238, 245); font-size: 20px; flex-direction: column; }
+.pl-header { flex-direction: row; align-items: center; flex-wrap: wrap; padding: 6px 12px; background-color: rgba(255, 255, 255, 0.07); border-radius: 10px; margin-bottom: 10px; }
+.pl-phase { font-size: 32px; color: rgb(255, 224, 102); margin-right: 18px; }
+.pl-timer { font-size: 32px; color: rgb(255, 255, 255); margin-right: 18px; min-width: 90px; }
+.pl-hint { font-size: 19px; color: rgb(190, 198, 220); flex-grow: 1; flex-shrink: 1; min-width: 300px; }
+.pl-me { font-size: 21px; color: rgb(255, 255, 255); margin-left: 12px; }
+.pl-voice { font-size: 18px; color: rgb(80, 205, 196); margin-left: 12px; }
+.pl-toast { font-size: 20px; color: rgb(255, 140, 120); width: 100%; }
+.pl-body { flex-direction: row; flex-grow: 1; flex-shrink: 1; }
+.pl-col { background-color: rgba(255, 255, 255, 0.045); border-radius: 10px; margin: 0 5px; padding: 6px 8px; }
+.pl-col-left { width: 25%; }
+.pl-col-center { width: 45%; flex-grow: 1; flex-shrink: 1; }
+.pl-col-right { width: 30%; }
+.pl-section { margin-bottom: 10px; }
+.pl-title { font-size: 25px; color: rgb(255, 224, 102); margin: 4px 0 6px 0; }
+.pl-sub { font-size: 21px; color: rgb(236, 238, 245); margin: 8px 0 3px 0; }
+.pl-text { font-size: 19px; color: rgb(220, 224, 236); margin: 1px 6px 1px 0; }
+.pl-dim { color: rgb(150, 158, 182); }
+.pl-good { color: rgb(120, 222, 150); }
+.pl-bad { color: rgb(255, 132, 112); }
+.pl-warn { color: rgb(255, 200, 90); }
+.pl-private { color: rgb(196, 176, 255); }
+.pl-row { flex-direction: row; align-items: center; flex-wrap: wrap; }
+.pl-wrap { flex-direction: row; flex-wrap: wrap; }
+.pl-player { border-left-width: 7px; padding: 4px 8px; margin-bottom: 6px; background-color: rgba(255, 255, 255, 0.06); border-radius: 6px; }
+.pl-pname { font-size: 22px; color: rgb(255, 255, 255); margin-right: 8px; }
+.pl-blame { font-size: 19px; color: rgb(255, 200, 90); margin-right: 10px; }
+.pl-amount { font-size: 22px; color: rgb(255, 255, 255); margin: 0 10px; }
+.pl-tag { font-size: 15px; padding: 1px 6px; border-radius: 6px; background-color: rgba(255, 255, 255, 0.16); margin-right: 4px; color: rgb(255, 255, 255); }
+.pl-tag-me { background-color: rgb(242, 194, 48); color: rgb(31, 42, 68); }
+.pl-tag-bad { background-color: rgb(190, 50, 42); }
+.pl-tag-warn { background-color: rgb(220, 120, 40); }
+.pl-btn { font-size: 18px; padding: 4px 10px; margin: 3px 5px 3px 0; border-radius: 6px; border-width: 1px; border-color: rgba(255, 255, 255, 0.35); background-color: rgb(52, 62, 92); color: rgb(255, 255, 255); min-height: 34px; -unity-text-align: middle-center; }
+.pl-btn:hover { background-color: rgb(74, 88, 130); }
+.pl-btn:active { background-color: rgb(38, 46, 68); }
+.pl-btn:disabled { opacity: 0.45; }
+.pl-on { background-color: rgb(47, 120, 84); border-color: rgb(150, 236, 180); border-width: 2px; }
+.pl-primary { background-color: rgb(40, 110, 76); }
+.pl-danger { background-color: rgb(150, 42, 36); }
+.pl-dimbtn { opacity: 0.7; }
+.pl-big { font-size: 21px; padding: 7px 16px; min-height: 44px; }
+.pl-field { flex-grow: 1; margin: 2px 6px 2px 0; }
+.pl-field .unity-base-text-field__input { font-size: 19px; background-color: rgb(245, 245, 250); color: rgb(20, 24, 36); padding: 5px 8px; border-radius: 6px; }
+.pl-compose { border-top-width: 1px; border-color: rgba(255, 255, 255, 0.15); padding-top: 6px; }
+.pl-tape { background-color: rgb(244, 239, 227); border-radius: 10px; padding: 8px; margin-bottom: 8px; align-items: center; }
+
+/* ---- cassette deck (TapeDeck.cs), from the v4 meeting stylesheet */
+.tape { flex-grow: 1; align-items: center; justify-content: center; }
+.tape-row { flex-direction: row; align-items: center; }
+.tape-person { width: 230px; align-items: center; transition-property: opacity; transition-duration: 0.15s; }
+.tape-person-quiet { opacity: 0.5; }
+.tape-person > .pbadge { transition-property: scale, border-color; transition-duration: 0.1s; }
+.tape-talking { scale: 1.12 1.12; border-color: rgb(59, 185, 176); border-width: 8px; }
+.tape-person-name { font-size: 34px; color: rgb(31, 42, 68); margin-top: 6px; }
+.tape-person-role { font-size: 18px; color: rgb(107, 111, 128); }
+.tape-center { align-items: center; margin: 0 24px; }
+.tape-label { background-color: rgb(250, 240, 204); border-width: 2px; border-color: rgba(31, 42, 68, 0.25); border-radius: 4px; padding: 6px 26px 8px 26px; rotate: -1.5deg; margin-bottom: 4px; align-items: center; }
+.tape-label-row { flex-direction: row; align-items: center; }
+.tape-label-text { font-size: 42px; color: rgb(31, 42, 68); }
+.tape-label-arrow { font-size: 36px; color: rgb(210, 56, 47); margin: 0 14px; }
+.tape-label-clock { font-size: 22px; color: rgb(107, 111, 128); }
+.tape-deck { width: 720px; height: 360px; -unity-background-scale-mode: stretch-to-fill; }
+.tape-deck-fallback { background-color: rgb(232, 226, 210); border-width: 4px; border-color: rgb(31, 42, 68); border-radius: 26px; padding: 34px 40px; height: 300px; }
+.tape-cassette { flex-grow: 1; background-color: rgb(232, 201, 138); border-width: 3px; border-color: rgb(31, 42, 68); border-radius: 14px; justify-content: center; }
+.tape-window { flex-direction: row; align-items: center; justify-content: space-around; background-color: rgb(31, 42, 68); border-radius: 12px; margin: 30px 60px; height: 140px; }
+.tape-reel-slot { width: 120px; height: 120px; align-items: center; justify-content: center; }
+.tape-pack { position: absolute; border-radius: 999px; background-color: rgb(92, 62, 42); }
+.tape-ribbon { height: 6px; flex-grow: 1; background-color: rgb(92, 62, 42); margin: 0 -10px; }
+.tape-reel { width: 92px; height: 92px; border-radius: 46px; background-color: rgb(244, 239, 227); border-width: 4px; border-color: rgb(31, 42, 68); align-items: center; justify-content: center; }
+.tape-reel-art { background-color: rgba(0, 0, 0, 0); border-width: 0; border-radius: 0; -unity-background-scale-mode: scale-to-fit; }
+.tape-reel-abs { position: absolute; }
+.tape-hub { width: 28px; height: 28px; border-radius: 14px; background-color: rgb(31, 42, 68); }
+.tape-spoke { position: absolute; width: 8px; height: 76px; left: 38px; top: 4px; background-color: rgb(31, 42, 68); border-radius: 4px; }
+.tape-rec { position: absolute; right: 40px; top: 18px; width: 18px; height: 18px; border-radius: 9px; background-color: rgb(120, 30, 25); }
+.tape-rec-art { right: auto; left: 81.2%; top: 69%; width: 3.6%; height: 7.2%; background-color: rgba(255, 90, 60, 0); border-width: 0; border-radius: 999px; }
+.tape-rec-on { background-color: rgb(255, 70, 50); }
+.tape-rec-art.tape-rec-on { background-color: rgba(255, 110, 80, 0.9); }
+.tape-led { position: absolute; background-color: rgb(196, 210, 190); border-radius: 2px; }
+.tape-led-on { background-color: rgb(110, 220, 130); }
+.tape-led-peak.tape-led-on { background-color: rgb(250, 186, 70); }
+.tape-wave-row { margin-top: 10px; }
+.tape-wave { width: 1160px; height: 104px; flex-direction: row; align-items: center; justify-content: space-between; padding: 16px 24px; background-image: resource("ui/meeting_v3/waveform_bar"); -unity-slice-left: 30; -unity-slice-top: 30; -unity-slice-right: 30; -unity-slice-bottom: 30; -unity-slice-scale: 0.5; }
+.tape-bar { width: 11px; height: 6%; border-radius: 4px; background-color: rgba(31, 42, 68, 0.2); }
+.tape-bar-on { background-color: rgb(31, 42, 68); }
+.tape-playhead { position: absolute; top: 10px; bottom: 10px; width: 4px; margin-left: 22px; border-radius: 2px; background-color: rgb(210, 56, 47); opacity: 0; }
+.tape-playhead-on { opacity: 1; }
+.tape-status { font-size: 24px; color: rgb(31, 42, 68); margin-top: 10px; }
+.tape-status-live { color: rgb(210, 56, 47); }
+.tape-stamp { position: absolute; right: -70px; top: -64px; width: 300px; height: 100px; -unity-background-scale-mode: scale-to-fit; rotate: -9deg; }
+.tape-stamp .stamp-text-label { font-size: 46px; }
+.tape-context { font-size: 14px; color: rgb(107, 111, 128); }
+
+/* ---- cassette deck, compact inside the centre column */
+.pl-tape .tape-person { width: 120px; }
+.pl-tape .tape-person-name { font-size: 22px; }
+.pl-tape .tape-person-role { font-size: 15px; }
+.pl-tape .tape-center { margin: 0 10px; }
+.pl-tape .tape-label-text { font-size: 24px; }
+.pl-tape .tape-label-arrow { font-size: 22px; margin: 0 8px; }
+.pl-tape .tape-label-clock { font-size: 16px; }
+.pl-tape .tape-deck { width: 360px; height: 180px; }
+.pl-tape .tape-deck-fallback { height: 160px; padding: 12px 16px; }
+.pl-tape .tape-window { margin: 12px 24px; height: 80px; }
+.pl-tape .tape-reel-slot { width: 64px; height: 64px; }
+.pl-tape .tape-wave { width: 600px; height: 60px; padding: 8px 14px; }
+.pl-tape .tape-bar { width: 6px; }
+.pl-tape .tape-status { font-size: 19px; margin-top: 4px; }
+.pl-tape .tape-stamp { right: -30px; top: -30px; width: 160px; height: 54px; }
+.pl-tape .tape-stamp .stamp-text-label { font-size: 26px; }

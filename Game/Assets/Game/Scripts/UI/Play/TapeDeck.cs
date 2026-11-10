@@ -159,7 +159,7 @@ namespace BirimizKovulacak.Game
             _status = Bold("", "tape-status").NoPick().AddTo(Root);
 
             _stamp = Box("tape-stamp").NoPick().AddTo(_deck);
-            if (!MeetingText.ApplyStamp(_stamp, "stamps_v3/stamp_kayitta", "stamps_v3/stamp_on_record"))
+            if (!UiArt.ApplyStamp(_stamp, "stamps_v3/stamp_kayitta", "stamps_v3/stamp_on_record"))
             {
                 _stamp.AddToClassList("stamp-text");
                 StampText(Loc.T("rec.stamp"), "stamp-text-label").NoPick().AddTo(_stamp);
@@ -202,17 +202,15 @@ namespace BirimizKovulacak.Game
             _shownIndex = idx; _shownCall = call; _shownCaller = who;
             int caller = pick != null ? pick.Caller : LineIds.None, callee = pick != null ? pick.Callee : LineIds.None;
             bool known = caller >= 0 && callee >= 0;
-            SetBadge(_callerBadge, caller, known ? MeetingText.Name(caller) : "?");
-            SetBadge(_calleeBadge, callee, known ? MeetingText.Name(callee) : "?");
-            _callerName.text = known ? MeetingText.Name(caller) : "?";
-            _calleeName.text = known ? MeetingText.Name(callee) : "?";
-            _labelCaller.text = known ? MeetingText.Name(caller) : Loc.T("rec.unknown");
-            _labelCallee.text = known ? MeetingText.Name(callee) : "";
+            SetBadge(_callerBadge, caller, known ? PlayText.Name(caller) : "?");
+            SetBadge(_calleeBadge, callee, known ? PlayText.Name(callee) : "?");
+            _callerName.text = known ? PlayText.Name(caller) : "?";
+            _calleeName.text = known ? PlayText.Name(callee) : "?";
+            _labelCaller.text = known ? PlayText.Name(caller) : Loc.T("rec.unknown");
+            _labelCallee.text = known ? PlayText.Name(callee) : "";
             _calleeArrow.Show(known);
-            _clock.text = known && pick.CallStart >= 0 ? Loc.F("rec.label_time", MeetingText.Day(v != null ? v.Day : 0), MeetingText.OfficeClock(pick.CallStart, v)) : Loc.T("rec.label_blank");
-            bool ctx = known && pick.Context != TaskKind.None;
-            _context.Show(ctx);
-            if (ctx) _context.text = Loc.F("rec.context", MeetingText.Task(pick.Context));
+            _clock.text = known && pick.Leaker >= 0 ? PlayText.F("tape.leaked_by", PlayText.Name(pick.Leaker)) : Loc.T("rec.label_blank");
+            _context.Show(false); // v5 leaks carry no task context
             if (newPick)
             {
                 _stamped = false;
@@ -243,13 +241,13 @@ namespace BirimizKovulacak.Game
                     level = Mathf.Clamp01(src.Level);
                     speaker = src.Speaker;
                 }
-                else if (t >= 0 && t < secs && pick.Caller >= 0)
+                else if (t >= 0 && t < secs && pick.Caller >= 0 && !pick.Empty)
                 {
                     playing = true;
                     progress = (float)(t / secs);
                     FakeVoice(pick, (float)t, out level, out speaker);
                 }
-                else if (t >= secs || (pick.Played && pick.Caller < 0 && t >= 0)) { done = true; progress = 1f; }
+                else if (t >= secs || (pick.Empty && t >= 0)) { done = true; progress = 1f; }
             }
 
             // reels + tape packs
@@ -280,7 +278,7 @@ namespace BirimizKovulacak.Game
                 }
                 else if (level > _levels[bar]) { _levels[bar] = level; SetBar(bar, level, true); }
             }
-            else if (done && _lastBar < Bars - 1 && pick != null && pick.Caller >= 0)
+            else if (done && _lastBar < Bars - 1 && pick != null && pick.Caller >= 0 && !pick.Empty)
             {
                 // Late join / fast forward: fill the rest with the fake shape so the finished tape looks complete.
                 for (int i = _lastBar + 1; i < Bars; i++) { _levels[i] = FakeShape(pick, i); SetBar(i, _levels[i], true); }
@@ -301,14 +299,14 @@ namespace BirimizKovulacak.Game
             }
 
             // ON RECORD stamp slams when the tape starts
-            if ((playing || done) && pick != null && pick.Caller >= 0 && !_stamped)
+            if ((playing || done) && pick != null && pick.Caller >= 0 && !pick.Empty && !_stamped)
             {
                 _stamped = true;
                 UiMotion.Stamp(_stamp, -9f, 0.24f, 0.15f, () => Sfx.Play("place", 0.6f));
             }
 
             // status line
-            int state = pick == null ? 0 : playing ? 1 : done ? (pick.Caller >= 0 ? 2 : 3) : 4;
+            int state = pick == null ? 0 : playing ? 1 : done ? (pick.Empty ? 3 : 2) : 4;
             int sec = state == 1 ? Mathf.FloorToInt(progress * (pick.Seconds > 0.1f ? pick.Seconds : 7f)) : state == 4 ? Mathf.CeilToInt((float)(pick.PlayAt - now)) : 0;
             if (state != _statusState || sec != _lastStatusSec)
             {

@@ -1,9 +1,11 @@
-"""TR/EN key parity and key-usage check for the meeting / results / shell UI track.
+"""TR/EN key parity and key-usage check for the shell UI (menu, lobby, settings, overlays) and the privacy area.
+
+v5: the v4 meeting UI and tr/en.meeting.json are gone; the v5 play UI is checked by loc_check.py.
 
     python -I Tools/scripts/loc_parity_meeting.py
 
 Checks (exit code 1 on any failure):
-  1. tr.meeting.json / en.meeting.json and tr.privacy.json / en.privacy.json have identical key sets.
+  1. tr.privacy.json / en.privacy.json have identical key sets.
   2. tr.json / en.json: keys under the prefixes this track owns have identical key sets
      (legacy v1 keys in tr.json that en.json never had are reported once as "legacy gap", not failures).
   3. Every Loc.T/F/TOr key literal used by the track's C# files exists in both languages (merged like Loc.Load does),
@@ -20,28 +22,14 @@ import sys
 ROOT = os.path.abspath(os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", ".."))
 LOC = os.path.join(ROOT, "Game", "Assets", "StreamingAssets", "Localization")
 SCRIPTS = os.path.join(ROOT, "Game", "Assets", "Game", "Scripts", "UI")
-CODE = glob.glob(os.path.join(SCRIPTS, "Meeting", "*.cs")) + [os.path.join(SCRIPTS, n) for n in
-        ("MenuScreens.cs", "SettingsScreen.cs", "ShellOverlays.cs", "Modals.cs", "UIRoot.cs")]
+CODE = [os.path.join(SCRIPTS, n) for n in ("MenuScreens.cs", "SettingsScreen.cs", "ShellOverlays.cs", "Modals.cs", "UIRoot.cs")]  # UI/Play: loc_check.py
 OWNED_PREFIXES = ("howto.", "lobby.", "settings.", "menu.")
 DYNAMIC = {  # prefix -> expected key suffixes (None = just require parity + non-empty)
-    "dossier.task.": ["invoice_reconcile", "budget_split", "customer_spec", "report_review", "room_booking", "archive_visitor",
-                      "bonus_pool", "server_code", "phishing_check", "shift_cover", "vendor_pick", "supply_swap"],
-    "dossier.trick.": ["None", "SahteEposta", "KahveDok", "FisCek", "InternetKes", "HatDinle"],
-    "incident.kind.": [str(i) for i in range(12)],
-    "record.source.": [str(i) for i in range(7)],
-    "career.item.": [str(i) for i in range(1, 6)],
-    "objective.v4.": None,
-    "meeting.phase.": None,
-    "effect.": ["KahveDok", "FisCek", "SahteEposta", "HatDinle", "InternetKes", "unknown"],
     "howto.": None,
     "intro.": None,
     "moment.cat.": ["funny", "betrayal", "accusation", "surprise", "reveal", "other"],
-    "final.letter.closing.": ["0", "1", "2"],
-    "results.pick.pitch.": ["paragoz", "disiplinci", "kayirmaci", "paranoyak"],
-    "chat.fail.": None,
-    "present.fail.": None,
 }
-IGNORE_EMPTY = {"meeting.phase.None"}
+IGNORE_EMPTY = set()
 # string literals that look like keys but are PlayerPrefs / art paths / ids, not localisation keys
 NOT_KEYS = re.compile(r"^(player\.name|join\.(address|port|recent)|playtest\.group_code|intro\.v4\.done|display\.fullscreen|settings\.(volume|ambience_volume|sfx_volume|language|music_volume|music_mute)_?[a-z]*)$")
 
@@ -64,7 +52,7 @@ def placeholders(s):
 
 def main():
     fail = 0
-    for area in ("meeting", "privacy"):
+    for area in ("privacy",):
         tr, en = load("tr.%s.json" % area), load("en.%s.json" % area)
         a, b = sorted(set(tr) - set(en)), sorted(set(en) - set(tr))
         print("%-8s tr=%d en=%d" % (area, len(tr), len(en)))

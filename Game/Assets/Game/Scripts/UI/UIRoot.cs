@@ -33,8 +33,7 @@ namespace BirimizKovulacak.Game
         ConsentScreen _consent;
         IntroScreen _intro;
         MomentMarker _moment;
-        DeskUi _desk;
-        MeetingUi _meeting;
+        PlayUi _play;
         bool _built, _rebuildPending;
         readonly System.Collections.Generic.List<VisualElement> _screenElements = new System.Collections.Generic.List<VisualElement>();
 
@@ -105,8 +104,7 @@ namespace BirimizKovulacak.Game
             // Layers, bottom to top.
             _lobby = new LobbyScreen(_root);
             _menu = new MainMenuScreen(_root);
-            _desk = new DeskUi(_root);
-            _meeting = new MeetingUi(_root);
+            _play = new PlayUi(_root);
             _pause = new PauseMenu(_root);
             _howTo = new HowToPlayScreen(_root);
             _settings = new SettingsScreen(_root);
@@ -128,8 +126,7 @@ namespace BirimizKovulacak.Game
             if (lineView != null) { UpdateWeek(lineView); return; }
 
             // ---- no week running: main menu or lobby
-            _desk.SetVisible(false);
-            _meeting.SetVisible(false);
+            _play.SetVisible(false);
             bool online = conn != null && (conn.Current == ConnectionManager.State.Hosting || conn.Current == ConnectionManager.State.Connected || conn.Current == ConnectionManager.State.Reconnecting || conn.Current == ConnectionManager.State.Connecting);
             online |= LineClient.I != null && LineClient.I.Lobby != null; // lobby (also the UI mock)
 
@@ -159,7 +156,7 @@ namespace BirimizKovulacak.Game
             PointerOverUI = modal;
         }
 
-        /// <summary>Week running: office (desk) / meeting screens over the first-person rooms.</summary>
+        /// <summary>Match running: the play screen over the first-person rooms.</summary>
         void UpdateWeek(LineView v)
         {
             if (GameInput.Pause != null && GameInput.Pause.WasPressedThisFrame())
@@ -171,19 +168,16 @@ namespace BirimizKovulacak.Game
                 else _pause.Toggle();
             }
             bool overlay = _pause.Visible || _settings.Visible || _howTo.Visible || Modal.AnyOpen || _intro.Visible;
-            bool office = LineClient.IsOfficePhase(v.Phase);
-            bool meeting = LineClient.IsMeetingPhase(v.Phase) || v.Phase == LinePhase.WeekResults || v.Phase == LinePhase.Abandoned;
-
             _menu.SetVisible(false); _lobby.SetVisible(false);
-            _desk.SetVisible(office);
-            _meeting.SetVisible(meeting);
+            // v5 Phase 2a: one minimal play screen for every phase (the 3D room shows through it).
+            _play.SetVisible(true);
 
-            _desk.Tick(); _meeting.Tick();
+            _play.Tick();
             _pause.Tick(); _settings.Tick(); _howTo.Tick(); _confirm.Tick(); _status.Tick(); _intro.Tick(); _moment.Tick();
 
             var rooms = Rooms.Presenter;
             bool lookMode = rooms != null && (rooms.Mode == PovMode.Office || rooms.Mode == PovMode.Meeting);
-            bool wantsCursor = overlay || (office && _desk.WantsCursor) || (meeting && _meeting.WantsCursor) || !lookMode;
+            bool wantsCursor = overlay || _play.WantsCursor || !lookMode;
             BlocksGameplay = wantsCursor;
             bool wantLock = !wantsCursor && Application.isFocused && !LaunchArgs.Current.Bot && !LineMockDriver.Active;
             UnityEngine.Cursor.lockState = wantLock ? CursorLockMode.Locked : CursorLockMode.None;
