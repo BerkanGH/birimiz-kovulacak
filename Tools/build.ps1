@@ -31,7 +31,9 @@ if (-not (Test-Path (Join-Path $project "Assets\TextMesh Pro\Resources\TMP Setti
     else { Write-Host "Package cache not ready yet; the first Unity run will populate it." }
 }
 
-$uargs = @("-batchmode", "-nographics", "-projectPath", $project, "-executeMethod", "BirimizKovulacak.EditorTools.ProjectBuilder.BuildAllCli", "-logFile", (Join-Path $logs "build.log"))
+# No -nographics: with 6000.6.8f1 + URP 17.6 the editor crashes in EndPlayerBuilding when it renders the realtime
+# reflection probes on the null graphics device ("EndRenderPass: Not inside a Renderpass"). Batchmode still opens no window.
+$uargs = @("-batchmode", "-projectPath", $project, "-executeMethod", "BirimizKovulacak.EditorTools.ProjectBuilder.BuildAllCli", "-logFile", (Join-Path $logs "build.log"))
 if ($NoPlayer) { $uargs += "-noPlayer" }
 # Windows PowerShell does not quote array arguments: paths with spaces must be quoted here.
 $uargLine = ($uargs | ForEach-Object { if ($_ -match '\s') { '"' + $_ + '"' } else { $_ } }) -join " "
