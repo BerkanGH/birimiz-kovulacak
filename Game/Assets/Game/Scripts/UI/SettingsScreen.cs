@@ -298,22 +298,60 @@ UiSettings.SetFloat(Rooms.PrefSensitivity, v), v => v.ToString("0.00") + "×");
         }
     }
 
-    /// <summary>"Nasıl Oynanır" v4: seven illustrated pages, one short paragraph each (goal, tasks, phone and text, company and career, blame and the final vote, evidence, recordings and privacy).</summary>
+    /// <summary>
+    /// "Nasıl Oynanır" (v5): eleven illustrated pages, a few short lines each — goal, match flow, the three tasks,
+    /// blame votes, investigation, phone/recorder/leaks, transfers and promises, crisis and candidates (sealed desks),
+    /// final and the desk split. Numbers come from the host's LineConfig during a match, else from the local config
+    /// file (GameConfig.Line), so the pages never drift from the rules. The play screen opens the page for its phase.
+    /// </summary>
     public sealed class HowToPlayScreen : UiKit.Screen
     {
         static HowToPlayScreen _i;
-        public const int Pages = 7;
+        public const int PageGoal = 0, PageFlow = 1, PageBonus = 2, PageCash = 3, PageShift = 4, PageBlame = 5, PageInvestigation = 6,
+            PageRecorder = 7, PageTransfers = 8, PageCrisis = 9, PageFinal = 10;
+        public const int Pages = 11;
+        /// <summary>Illustration per page; null = the icon tile below.</summary>
         static readonly string[] PageArt =
         {
-            "onboarding/ob_1_rooms", "onboarding/ob_3_rounds", "onboarding/ob_2_phone", "onboarding/ob_7_friday",
-            "onboarding/ob_4_blame", "onboarding/ob_5_tricks", "onboarding/ob_6_recording",
+            "onboarding/ob_1_rooms", "onboarding_v4/intro_3_meeting", "onboarding/ob_3_rounds", null, null, "onboarding/ob_4_blame", null,
+            "onboarding/ob_6_recording", "onboarding/ob_2_phone", null, "onboarding/ob_7_friday",
         };
         /// <summary>Fallback when an illustration is missing: one big icon on a paper tile.</summary>
         static readonly string[] PageIcon =
         {
-            "icons_v3/meeting", "icons_v3/task_app", "icons_v3/manager_line", "icons_v3/agenda_target",
-            "icons_v3/blame", "icons_v3/trick_app", "icons_v3/recording",
+            "icons_v3/meeting", "icons_v3/agenda_app", "icons_v3/share", "icons_v3/take_all", "icons_v3/sticky_todo", "icons_v3/blame",
+            "icons_v3/agenda_target", "icons_v3/recording", "icons_v3/manager_line", "icons_v3/warning_letter", "icons_v3/defense",
         };
+
+        /// <summary>The rules in force: the host's config in a match, else the local one.</summary>
+        static LineConfig Config
+        {
+            get
+            {
+                var lc = LineClient.I;
+                return lc != null && lc.HostConfig != null ? lc.HostConfig : GameConfig.Line;
+            }
+        }
+
+        /// <summary>Placeholder values of page <paramref name="page"/>'s text (keep in step with tr/en.json howto.N.text).</summary>
+        static object[] Args(int page)
+        {
+            var c = Config;
+            switch (page)
+            {
+                case PageGoal: return new object[] { c.StartPrim };
+                case PageBonus: return new object[] { c.BonusPairShare, c.BonusPairTaker, c.BonusPairSharer, c.BonusPairBothTake };
+                case PageCash: return new object[] { c.CashTake, c.CashCaughtBlame, c.CashWhistleBlame, c.CashWhistleReward };
+                case PageShift: return new object[] { c.ShiftSkipPay };
+                case PageBlame: return new object[] { c.BlamePerVote };
+                case PageInvestigation: return new object[] { c.InvestigationCost, c.InvestigationGuiltyBlame, c.InvestigationRefund, c.InvestigationFalseBlame };
+                case PageRecorder: return new object[] { c.RecorderUses, Mathf.RoundToInt(c.LeakSeconds) };
+                case PageTransfers: return new object[] { c.TransferMax };
+                case PageCrisis: return new object[] { c.CrisisBlame, c.CandidatesFor(4), c.CandidatesFor(6) };
+                case PageFinal: return new object[] { c.FiringsFor(4), c.FiringsFor(6) };
+                default: return new object[0];
+            }
+        }
 
         readonly VisualElement _card, _pic, _text, _dots;
         readonly Label _title, _body, _pageLabel, _kicker;
@@ -371,7 +409,7 @@ UiSettings.SetFloat(Rooms.PrefSensitivity, v), v => v.ToString("0.00") + "×");
         {
             _pic.style.backgroundImage = StyleKeyword.Null; // drop references, then unload the 1280x720 pictures
             _pic.Clear();
-            for (int i = 0; i < PageArt.Length; i++) UiArt.Release(PageArt[i]);
+            for (int i = 0; i < PageArt.Length; i++) if (PageArt[i] != null) UiArt.Release(PageArt[i]);
         }
 
         void Show(int page)
@@ -380,11 +418,11 @@ UiSettings.SetFloat(Rooms.PrefSensitivity, v), v => v.ToString("0.00") + "×");
             _page = Mathf.Clamp(page, 0, Pages - 1);
             _kicker.text = Loc.F("howto.kicker", _page + 1, Pages);
             _title.text = Loc.T("howto." + _page + ".title");
-            _body.text = Loc.T("howto." + _page + ".text");
+            _body.text = Loc.F("howto." + _page + ".text", Args(_page));
             _pageLabel.text = (_page + 1) + " / " + Pages;
             _pic.Clear();
             _pic.style.backgroundImage = StyleKeyword.Null;
-            bool art = UiArt.Apply(_pic, PageArt[_page]);
+            bool art = PageArt[_page] != null && UiArt.Apply(_pic, PageArt[_page]);
             _pic.EnableInClassList("howto-pic-fallback", !art);
             if (!art)
             {

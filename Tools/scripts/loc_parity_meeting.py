@@ -11,7 +11,7 @@ Checks (exit code 1 on any failure):
   3. Every Loc.T/F/TOr key literal used by the track's C# files exists in both languages (merged like Loc.Load does),
      and every dynamic key family (prefix + enum value) has the same non-empty key set in both languages.
   4. No value is empty (except the intentional meeting.phase.None) and every {n} placeholder of the TR text also
-     appears in the EN text.
+     appears in the EN text (privacy area and the howto.* pages).
 """
 import glob
 import json
@@ -76,6 +76,11 @@ def main():
     if gap or extra:
         print("  legacy gap (in tr.json only, not used by this track unless listed below):", len(gap), gap[:12])
         print("  only in en.json:", extra[:12])
+    # v5 how-to pages are formatted with LineConfig numbers (HowToPlayScreen.Args): same placeholders in both languages
+    for k in sorted(owned_tr & owned_en):
+        if k.startswith("howto.") and placeholders(tr[k]) != placeholders(en[k]):
+            fail += 1
+            print("  FAIL placeholders differ:", k, placeholders(tr[k]), placeholders(en[k]))
     mt, me = merged("tr"), merged("en")
     used, dyn = {}, set()
     for f in CODE:
