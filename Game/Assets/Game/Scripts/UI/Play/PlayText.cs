@@ -86,18 +86,35 @@ namespace BirimizKovulacak.Game
             return where + ": " + Name(b.Voter) + " → " + target + (b.SelfAssigned ? " " + T("results.self_assigned") : "");
         }
 
+        /// <summary>The current meeting's leak with this index (null when the view no longer has it).</summary>
+        static LineRecordingPick Pick(int index)
+        {
+            var v = LineClient.I != null ? LineClient.I.View : null;
+            if (v == null || v.Meeting == null) return null;
+            foreach (var p in v.Meeting.Recordings) if (p.Index == index) return p;
+            return null;
+        }
+
         public static string Event(LineEvent e, int me)
         {
             switch (e.Type)
             {
                 case LineEventType.TransferReceived: return F("event.transfer", Name(e.Actor), e.A);
-                case LineEventType.Whistled: return e.Target == me ? F("event.whistled_me", Name(e.Actor), e.A) : F("event.whistled", Name(e.Target));
+                case LineEventType.Whistled:
+                    return e.Target == me ? F("event.whistled_me", Name(e.Actor), e.A)
+                        : F("event.whistled", Name(e.Target), LineClient.I != null ? LineClient.I.Config.CashWhistleReward : LineConfig.CreateDefault().CashWhistleReward);
                 case LineEventType.Investigated: return F(e.A == 1 ? "event.investigated_guilty" : "event.investigated_innocent", Name(e.Actor), Name(e.Target));
                 case LineEventType.Leaked: return F("event.leaked", Name(e.Actor), Name(e.A), Name(e.B));
                 case LineEventType.BlameAdded: return F("event.blame", Name(e.Target), e.A, T("blame." + (BlameReason)e.B));
                 case LineEventType.CrisisResolved: return e.Target >= 0 ? F("event.crisis_one", Name(e.Target), e.A) : F("event.crisis_tie", e.B, e.A);
                 case LineEventType.Fired: return F("event.fired", Name(e.Target), e.A);
-                case LineEventType.RecordingPlayed: return T(e.B == 1 ? "event.recording_played" : "event.recording_empty");
+                case LineEventType.RecordingPlayed:
+                {
+                    // "played" in Turkish ("çalındı") also reads "was stolen": name the call and the leaker instead
+                    var pick = Pick(e.A);
+                    if (pick == null || pick.Caller < 0) return T(e.B == 1 ? "event.recording_played" : "event.recording_empty");
+                    return F(e.B == 1 ? "event.recording_played_who" : "event.recording_empty_who", Name(pick.Caller), Name(pick.Callee), Name(pick.Leaker));
+                }
                 case LineEventType.MissedCall: return F("event.missed_call", Name(e.Actor));
                 case LineEventType.CallBusy: return F("event.busy", Name(e.Target));
                 case LineEventType.Presence: return F(e.A == 1 ? "event.online" : "event.offline", Name(e.Target));
