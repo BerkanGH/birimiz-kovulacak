@@ -3,6 +3,14 @@
 Birimiz Kovulacak is a host-authoritative listen-server game: one player's process (the host) runs the only copy of
 the rules; every process — including the host's own UI — renders a per-player filtered view of that state.
 
+> **v5 (current).** The host-authoritative model below still holds, but the names and modules are v1/v2 history. Today:
+> rules live in `Game/Assets/Game/Core/Line` (`ILineEngine`, `LineEngine*.cs`, contracts in `Core/Line/Contracts`,
+> normative spec `docs/V5_ENGINE_SPEC.md`); `Scripts/Net/HostLineController.cs` ticks the engine and sends each player
+> its `LineView`, events and messages; `Scripts/Net/LineClient.cs` stores them and sends requests; the whole match UI is
+> `Scripts/UI/Play/PlayUi.cs` (see `docs/UI.md`). A match is 3 tasks → meeting 1 → task 3 → (meeting 2) → crisis →
+> final → results for 3–6 players; numbers come from `StreamingAssets/Config/line_config.json` (`LineConfig`). There is
+> no walkable office, `MatchEngine`, `ClientState` or `Affordances` any more, and 3 players can start a match.
+
 ```
  ┌──────────── every process ────────────┐                 ┌──────────────── host only ────────────────┐
  │ LocalPlayerController / BotBrain      │  ActionRequest  │ NetSession (NGO RPC)                       │

@@ -1,4 +1,84 @@
-# UI / UX v2 — "kurumsal hiciv"
+# UI
+
+## v5 play UI (current, `feature/v5-integration`)
+
+Rules: `docs/V5_ENGINE_SPEC.md` (normative) and `docs/V5_DESIGN.md` (Turkish, rationale). Everything below the
+"History" line describes the v2–v4 UI, which no longer exists in code.
+
+During a match the whole game is **one UI Toolkit screen built in code** over the first-person rooms. Shell screens
+(menu, lobby, settings, how-to, first-launch flow) are the older shell code, updated for v5 where needed.
+
+| File (under `Game/Assets/Game/`) | What |
+|---|---|
+| `Scripts/UI/Play/PlayUi.cs` | The match screen: header, players column, focus card, phase details, phone, transfers, events, messages. |
+| `Scripts/UI/Play/PlayText.cs` | Typed data → sentences (`v5.*` keys): phases, tasks, dossier lines, events. |
+| `Scripts/UI/Play/TapeDeck.cs` | Cassette deck shown while a leaked recording plays (compact inside the centre column). |
+| `UI/Resources/ui/styles/play.uss` | Styles of the match screen (logical 1920×1080, scaled; same layout at 1600×900). |
+| `StreamingAssets/Localization/tr.v5.json`, `en.v5.json` | Match strings (`v5.*`, `rec.*`). Turkish first; English mirrors it. |
+| `Scripts/UI/SettingsScreen.cs` → `HowToPlayScreen` | "Nasıl oynanır": 11 v5 pages (`howto.N.*` in `tr.json`/`en.json`), numbers formatted from the host's `LineConfig` (else `GameConfig.Line`). `PageGoal`…`PageFinal` constants. |
+| `Scripts/UI/ShellOverlays.cs` | First-launch flow (language, consent, 3 intro cards in `*.privacy.json`), moment marker. |
+| `Scripts/UI/MenuScreens.cs`, `UIRoot.cs` | Menu, lobby, pause (how-to button in all three); layers, Esc routing, cursor. |
+| `Scripts/UI/Dev/LineMock.cs` | UI mocks: hand-made `LineView`s pushed into `LineClient` (`-uimock "v5.*"`). |
+
+**Data flow.** `LineClient.View` (the player's `LineView`, docs/V5_ENGINE_SPEC.md §11), `LineClient.Config` (the host's
+`LineConfig`; every number on screen comes from it), `LineClient.Messages`, and `EventReceived` (→ `PlayText.Event` →
+event feed). Every action is `LineClient.Send(verb, …)`; the host validates it and a rejection shows as a toast.
+
+**Layout.** Header: phase (task/meeting/firing round), timer, *Primin*, recorder/investigation, voice mode. Left: players
+with suç, tags (SEN, BOT, ADAY, MÜHÜRLÜ, KOVULDU, TELEFONDA), "seçti/oy verdi" marks and shortcuts (Ara, İhbar et,
+Soruştur, Prim gönder, Mesaj). Centre, top to bottom: **focus card** ("Şimdi ne yapıyorsun?"), the tape deck while a leak
+plays, then secondary details (task rules, dossier, leaks, candidates, earlier firings, results details). Right: phone
+and line board, transfer panel (sealed for candidates), events, private texts / meeting chat.
+
+**Focus card per phase** (`PlayUi.BuildFocus`): one instruction sentence plus the phase's main action; orange border =
+something still to do (no choice / empty ballot / witness / your defence turn), green = done. A *Kurallar* button opens
+the how-to page for the phase.
+
+| Phase | Card |
+|---|---|
+| Intro | goal and start prim |
+| TaskPlay | task-specific instruction, group, the two choice buttons, current choice / default |
+| TaskReveal, Break | group's choices as chips, my payout; Break after Petty Cash: whistle button (witness) or warning (sole taker) |
+| MeetingDossier/Discussion | what to discuss, failed tasks, optional investigate / leak buttons |
+| MeetingVote, CrisisVote, FinalVote | the ballots (one row per ballot), clear/abstain, "not voted yet" warning, live progress |
+| MeetingVerdict, CrisisVerdict | blame handed out; candidates and the sealed-desk note |
+| CrisisCalls, FinalDiscussion | what to bargain about; candidates; leak buttons |
+| FinalDefense | defence order with a live countdown for the speaker |
+| FinalVerdict | desk reveal: "X kovuldu", desk prim, decision (plurality / revote / tie-breaks), each voter's share, burned remainder |
+| Results | winner, ranking table (prim, suç, tags), my place; details below in tabs (ballots grouped per vote, firings, choices, transfers, incidents) |
+
+**Two rules that keep buttons clickable.** (1) A `Section` rebuilds its subtree on any change but swaps it in only when
+the rendered content (types, classes, texts, enabled state) differs. (2) Time-driven or fast-changing texts (call
+duration, ringing time, leak "N sn sonra", defence countdown, "oy verdi", vote progress, TELEFONDA) are **live labels**
+(`PlayUi.Live`): refreshed in place at 2 Hz and counted in the diff only by their key. Put everything a live label's
+closure depends on into its key, or let it read the current `LineClient.View`.
+
+**Text rules.** Rich text is off (player names are plain). Turkish sentences avoid suffixes on names ("Soruşturma: X
+açtı → Y almış", "X ile görüşme"). Avoid "çalındı/çalıyor" for recordings (also reads "stolen"): use "dinletildi".
+Terms: prim, suç, ihbar, soruşturma, sızdır/sızıntı, aday, mühürlü, kovuldu.
+
+**Mocks and checks.**
+
+```
+Builds\BirimizKovulacak-Windows\BirimizKovulacak.exe -uimock "v5.*" -uimockout Builds\mock\1600 -screen-fullscreen 0 -screen-width 1600 -screen-height 900
+python -I Tools/scripts/loc_check.py           # v5 keys: parity, placeholders, enum families, keys used by UI/Play
+python -I Tools/scripts/loc_parity_meeting.py  # shell + privacy areas, how-to placeholders
+python -I Tools/scripts/compile_check.py --rsp
+```
+
+Scenarios: `v5.task`, `v5.task_shift`, `v5.reveal` (witness), `v5.meeting`, `v5.meeting_vote` (leak playing over the
+ballots), `v5.crisis_vote`, `v5.crisis_verdict`, `v5.sealed` (I am a candidate), `v5.defense`, `v5.final` (second
+firing vote), `v5.verdict`, `v5.verdict_tie`, `v5.results`, `v5.results_tabs`, `v5.howto` (all pages), `v5.en_task`,
+`v5.en_verdict`. Automated matches (`Tools/run_local4.ps1 -Bots`) also save one screenshot per phase per slot under
+`<run>/shots`.
+
+---
+
+# History: UI / UX v2 — "kurumsal hiciv"
+
+> v2–v4 UI. The files below (Hud, PrivateScreens, MeetingScreens, ResultsScreen, UI/Desk, UI/Meeting, …) were deleted
+> in v5; kept for the art direction and the record.
+
 
 Owner: Claude sub-agent `ui` (branch `v2/ui`). Plan: `docs/V2_PLAN.md` §5 U4. Rules: `docs/CONTRACTS_V2.md`.
 Everything is UI Toolkit built in code (no UXML), styled by `Game/UI/Game.uss`, all strings in
@@ -177,7 +257,7 @@ how-to, modals, meeting, results and the undismissed briefing — **not** for th
 9. Esc / Tab routing; `TextInputFocused` true only while a menu field is focused (fields blur when the menu hides).
 
 
-## v4 meeting / results / shell track (hybrid office)
+## v4 meeting / results / shell track (hybrid office) — history
 
 Owner: meeting + shell UI. Rules: `docs/GAMEPLAY_REDESIGN.md`; contract: `docs/CONTRACTS_V4.md`.
 
