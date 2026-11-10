@@ -100,14 +100,34 @@ namespace BirimizKovulacak.Game
             var lc = LineClient.I;
             if (_bound || lc == null) return;
             _bound = true;
-            lc.ViewChanged += (o, n) => _dirty = true;
-            lc.MessagesReceived += m => _dirty = true;
+            lc.ViewChanged += OnView;
+            lc.MessagesReceived += OnMessages;
             lc.EventReceived += OnEvent;
             lc.ResultReceived += OnResult;
         }
 
+        /// <summary>UIRoot.Rebuild (language switch) drops this screen and builds a new one: stop listening then.</summary>
+        bool Detached()
+        {
+            if (Root.panel != null) return false;
+            var lc = LineClient.I;
+            if (_bound && lc != null)
+            {
+                lc.ViewChanged -= OnView;
+                lc.MessagesReceived -= OnMessages;
+                lc.EventReceived -= OnEvent;
+                lc.ResultReceived -= OnResult;
+            }
+            _bound = false;
+            return true;
+        }
+
+        void OnView(LineView o, LineView n) { if (!Detached()) _dirty = true; }
+        void OnMessages(IReadOnlyList<LineMessage> m) { if (!Detached()) _dirty = true; }
+
         void OnEvent(LineEvent e)
         {
+            if (Detached()) return;
             var lc = LineClient.I;
             string line = PlayText.Event(e, lc != null ? lc.MySlot : -1);
             if (line == null) return;
@@ -119,7 +139,7 @@ namespace BirimizKovulacak.Game
 
         void OnResult(LineActionResult r, LineAction req)
         {
-            if (r == null || r.Accepted) return;
+            if (Detached() || r == null || r.Accepted) return;
             if (r.Failure == LineFailure.Duplicate) return;
             _toast.SetText(F("toast.rejected", req != null ? T("verb." + req.Verb) : "?", PlayText.Failure(r.Failure)));
             _toastUntil = Time.unscaledTime + 5f;
@@ -335,10 +355,11 @@ namespace BirimizKovulacak.Game
                     Btn(T("results.leave"), () => ConnectionManager.I?.Leave(), "pl-big").AddTo(p);
                     return;
             }
+            // An open ballot comes first: it is the one thing to do in a vote phase.
+            if (v.Features.VoteOpen) BuildVote(p, lc, v);
             if (v.Phase == LinePhase.CrisisCalls) BuildCrisisCalls(p, lc, v);
             if (v.Final != null) BuildFinal(p, lc, v);
             if (v.Meeting != null && (LineClient.IsMeetingPhase(v.Phase) || v.Phase == LinePhase.CrisisCalls)) BuildMeeting(p, lc, v, now);
-            if (v.Features.VoteOpen) BuildVote(p, lc, v);
         }
 
         void BuildIntro(VisualElement p, LineClient lc, LineView v)

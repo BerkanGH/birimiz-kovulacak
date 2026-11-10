@@ -1,7 +1,7 @@
 {
   "v5.phase.None": "—",
   "v5.phase.Intro": "Intro",
-  "v5.phase.TaskPlay": "Task",
+  "v5.phase.TaskPlay": "Choose",
   "v5.phase.TaskReveal": "Reveal",
   "v5.phase.Break": "Break",
   "v5.phase.MeetingDossier": "Meeting: dossier",
