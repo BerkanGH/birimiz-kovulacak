@@ -4,12 +4,27 @@
 
 A 3–6 player online social-deduction office comedy for Windows (Turkish + English) with **built-in voice**.
 
-> **v5 integration (branch `feature/v5-integration`).** The game now runs the v5 ruleset "Her Şey Kayıtta"
-> (`v5.0-kayit`): 3 tasks (Client Bonus, Petty Cash, Weekend Shift), 1–2 meetings with blame votes, investigations
-> and leaked call recordings, a crisis vote and a final firing vote whose desk goes to the voters. Rules:
-> `docs/V5_ENGINE_SPEC.md` (design `docs/V5_DESIGN.md`, plan `docs/V5_IMPLEMENTATION_PLAN.md`). The in-match UI is a
-> deliberately minimal debug-style screen (`Game/Assets/Game/Scripts/UI/Play`, Phase 2a); the v4 text below and the
-> tester steps about the desk/monitor, Short/Full weeks and task tutorials describe v4 and are history.
+## Geliştiriciler
+
+**Lucestdra** ve **BerkanGH** tarafından birlikte geliştiriliyor.
+
+v5 "Her Şey Kayıtta" yeniden tasarımı (BerkanGH):
+
+- **Oyun tasarımı** (`docs/V5_DESIGN.md`): puan olarak gizli prim bakiyeleri, herkese açık suç tahtası, soruşturma,
+  gizli kriz oylaması, adayların mühürlü masaları ve kovulan oyuncunun masasının ona oy verenler arasında paylaşılması.
+- **Kural motoru**: saf C# ile yazılmış, deterministik yeni kural motoru; 198 birim testi ve denge simülatörü
+  (`Tools/LineSim`).
+- **Unity entegrasyonu**: Unity 6000.6.8f1'e yükseltme dahil.
+- **Arayüz ve araçlar**: yeni oyun arayüzü, v5 "Nasıl oynanır" sayfaları ve çok pencereli bot test araçları.
+
+Geliştirmede yapay zekâ desteği kullanıldı (Claude Code; önceki sürümlerde OpenAI Codex de kullanıldı).
+
+> **v5 is the current version.** The game runs the v5 ruleset "Her Şey Kayıtta" (`v5.0-kayit`): 3 tasks (Client
+> Bonus, Petty Cash, Weekend Shift), 1–2 meetings with blame votes, investigations and leaked call recordings, a crisis
+> vote and a final firing vote whose desk goes to the voters. Rules: `docs/V5_ENGINE_SPEC.md` (design
+> `docs/V5_DESIGN.md`, plan `docs/V5_IMPLEMENTATION_PLAN.md`); play UI: `Game/Assets/Game/Scripts/UI/Play`. The v4 text
+> below and the tester steps about the desk/monitor, Short/Full weeks and task tutorials describe v4 and are history
+> (tag `v4.0-hybrid`).
 
 **v4 "Hybrid Office"** (ruleset `v4.0-hybrid`): everyone sits alone in a first-person office and talks through the desk
 phone (private 1:1 calls) or by text (messages, email with replies, meeting chat, anonymous complaints). Each match is
