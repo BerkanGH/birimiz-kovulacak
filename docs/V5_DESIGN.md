@@ -67,16 +67,26 @@ Vampir köylünün bir kopyası olmamalı: iyi/kötü takımı yok, rol kartı y
 
 ## 4.1 Maç yapısı [ÖNERİ]
 
-Oyuncu sayısı ne olursa olsun **3 normal görev + 1 Kriz**. Oyuncu sayısı arttıkça görev değil, toplantı ve final
-süresi uzar.
+Oyuncu sayısı ne olursa olsun **2 ikili görev + 1 grup görevi + Kriz**. Oyuncu sayısı arttıkça görev değil,
+toplantı ve final süresi uzar.
+
+- **İkili görev:** oyuncular ikişer eşleşir (Müşteri Bonusu, Küçük Kasa). "Sadece mağdur/tanık bilir" mantığı en
+  iyi burada işlediği için maçta iki tane var.
+- **Grup görevi:** bütün oyuncular birlikte oynar. *Herkes* türü (ör. Bütçe) ya da bir oyuncunun özel rolü olan
+  *rol* türü (ör. Masraf Onayı).
 
 ```
-Görev 1 → Toplantı (suç dağıtılır)
-Görev 2 → Toplantı (suç dağıtılır)
-Görev 3 → Toplantı (suç dağıtılır)
-KRİZ   → büyük suç gizli oyla birine yazılır, suç tahtası sarsılır
-FİNAL  → en çok suçu olanlar oylamaya çıkar → kovulma
+Tur 1: İkili görev (ör. Müşteri Bonusu) → Toplantı (suç dağıtılır)
+Tur 2: İkili görev (ör. Küçük Kasa)     → Toplantı (suç dağıtılır)
+Tur 3: Grup görevi (ör. Bütçe)          → Toplantı (suç dağıtılır)
+KRİZ  → büyük suç gizli oyla birine yazılır, suç tahtası sarsılır
+FİNAL → en çok suçu olanlar oylamaya çıkar → kovulma
 ```
+
+**Eşleşme [KARAR]:**
+- Rastgele ama tekrarsız: ikinci ikili görevde kimse ilk ortağıyla eşleşmez.
+- Tek sayıda oyuncuda bir grup **üçlü** olur (5 kişi: bir ikili + bir üçlü; 3 kişi: tek üçlü). Üçlü her turda
+  farklı kişilerden oluşur. Dışarıda kalan ya da bot ortak yok: biri boş kalır, bottan çalmak da drama üretmez.
 
 | Oyuncu | Normal görev | Kriz | Kovulan | Tahmini süre |
 |---|---|---|---|---|
@@ -85,10 +95,9 @@ FİNAL  → en çok suçu olanlar oylamaya çıkar → kovulma
 | 6 | 3 | 1 | 2 | ≈ 17–18 dk |
 
 - Bir blok ≈ 3 dk: ≈ 90 sn görev ve telefon, ≈ 90 sn suç toplantısı.
-- 4 oyuncuda 3 ikili tur ile herkes herkesle tam bir kez eşleşir. 6 oyuncuda herkes 5 kişiden 3'üyle eşleşir;
-  eksik birinci el bilgi dedikoduyu artırır.
-- 3 görev farklı türlerden seçilir: bir **ikili**, bir **herkesin katıldığı**, bir **rol** görevi. Görev havuzunda
-  en az 5–6 görev olmalı. Kriz her maçta sabittir.
+- 4 oyuncuda herkes 3 kişiden 2'siyle eşleşir, 6 oyuncuda 5 kişiden 2'siyle. Kimse herkes hakkında birinci elden
+  bilgi sahibi olmaz; bu dedikoduyu artırır ("Seni de soydu mu?").
+- Kriz her maçta sabittir. Maçlar birbirine benzemesin diye her türde en az 2 görev olmalı.
 - İleride: 5 görev + Kriz'lik bir "Uzun mod".
 
 ## 5. Final ve kovulma [ÖNERİ]
@@ -178,7 +187,42 @@ Güvenceyi oyuncular kendileri arar:
 **Müşteri Bonusu (ikili)** [KARAR]: v4'teki `bonus_pool` görevinin yeni hali.
 - Her ikili gizlice **Paylaş** ya da **Hepsini al** seçer.
 - Sadece ortak, diğerinin ne seçtiğini görür. Herkese sadece "kaç kişinin hepsini aldığı" gösterilir.
+- Başarısızlık: biri "hepsini al" dediyse müşteri ilişkisi zarar görür ve suç oluşur.
+- Üçlüde biri alırsa **iki mağdur** olur; iki kişinin aynı kişiyi suçlaması daha ikna edicidir, yani üçlüde çalmak
+  daha riskli. [ÖNERİ] Örnek ödeme: kimse almazsa herkes 2, biri alırsa o 5 diğerleri 0.
 - [AÇIK] Ödeme tablosu ve kaç suç puanı üreteceği.
+
+**Küçük Kasa (ikili)** [KARAR]: ihbar ve şantaj görevi.
+- İkiliye ortak bir küçük kasa emanet edilir. Gruptaki **herkes** gizlice kasadan **+3 prim** alabilir. Hak tek
+  kişiye verilmez: verilirse diğeri sadece bekler ve hak sahibi baştan şüpheli olur.
+- Görev sonunda grup içinde açılış olur: herkes ortağının alıp almadığını görür. Ortak, mağdur değil **tanıktır**,
+  çünkü çalınan şirketin parasıdır.
+- **İki ya da daha fazla kişi birden alırsa** kasa tamamen boşalır, müdür hemen fark eder ve hepsine suç yazılır.
+  Bu kural olmasa herkes çalar ve birbirini ihbar edemez. Kuralın sonuçları:
+  - Konuşmak zorunlu olur: "Sen mi alacaksın, ben mi?"
+  - Ortaklık doğar: "Ben alayım, sana 1 prim veririm, sen de sus."
+  - Ortaklık ihanete açıktır: parayı alıp yine de ihbar etmek ya da anlaşmaya rağmen gizlice çalmak.
+- Tanığın 3 seçeneği:
+
+| Seçenek | Kazanç | Bedel |
+|---|---|---|
+| **Sus** | Suçlu sana borçlu kalır | Hiçbir şey kazanmazsın |
+| **İhbar et** | Açık ödül primi | Herkes ihbar ettiğini ve ödül aldığını görür: hedef olursun, düşman kazanırsın |
+| **Şantaj yap** | Telefonda gizli prim | Söz bağlayıcı değil; suçlu seni kaydedip "bana şantaj yaptı" diye çalabilir |
+
+- **İhbar kesin kanıttır.** Sistem gerçeği bilir: suçlu çaldığı primi geri verir, suç ona yazılır, tanık ödül alır.
+- İhbarın görünür olması Kriz'deki "görünür zenginlik" sorunu değildir: Kriz'de bedel herkese zorla geliyordu,
+  burada tanık bu bedeli kendisi seçer. Gizli kalmak isteyen susar ya da şantaj yapar.
+- Toplantıda müdür sadece toplamı açıklar: "Kasalardan 3 prim eksik çıktı." İhbar yoksa suç oylanır ve çalan,
+  suçu masum birine atmaya çalışabilir.
+- Üçlüde tek bir kişi alabilir (iki kişi alırsa yakalanırlar). Diğer ikisi hem tanık hem de pay isteyen konumdadır.
+  İhbar ödülünü önce ihbar eden alır.
+- Akış: görev (≈ 60 sn, seçim) → grup içi açılış → mola (≈ 30 sn, ihbar/sus kararı ve şantaj telefonları) →
+  toplantı.
+- [ÖNERİ] İhbar kararı prototipte görev sonundaki molada verilir. [İLERİDE] **İhbar kozu:** hak maç sonuna kadar
+  elde durur, her tur şantaj yapılabilir, finalden hemen önce kullanılabilir. Suç bu durumda masum birinden gerçek
+  suçluya aktarılır.
+- [AÇIK] Ödül miktarı ve suç puanı.
 
 **Kriz: Günah Keçisi (herkes)** [KARAR]
 - **Maç başına bir kez**, son blokta, final toplantısından hemen önce gelir. Suç tahtası belliyken dengeleri
@@ -202,11 +246,12 @@ olduğu belirsiz kaldıkça bu, istediğimiz tartışmayı üretir: "Bence en ze
 
 ### 8.3 Aday görevler [AÇIK]
 
-En az 3–4 farklı görev gerekiyor, aksi halde maç tekrara düşer.
+İkili görevler için Müşteri Bonusu ve Küçük Kasa yeterli. **Grup görevi** için en az 2 görev seçilecek:
 
 | Görev | İhanet türü | Kim bilir? |
 |---|---|---|
 | **Bütçe Paylaşımı** (herkes): Ortak bütçeden iste. Toplam aşarsa herkes kesintiye uğrar | Anonim açgözlülük | Kimse. Sadece toplam görünür |
+| **Hafta Sonu Nöbeti** (herkes): Herkes nöbet tutacağına söz verir, sonra gizlice seçer. Boş nöbet suç üretir | Sözünü tutmamak | Herkes, nöbet listesi açık |
 | **Masraf Onayı** (onaylayıcı): Herkes masraf beyan eder ve şişirebilir. Onaylayıcı hepsini görür | Bilgi gücü, şantaj | Sadece onaylayıcı |
 | **İçeriden Bilgi** (bilgi sahibi): En iyi tedarikçiyi biri bilir. Rakip firma ona yalan söylemesi için rüşvet verir | Yalan söyleyerek yanıltma | Ona soranlar, sonuç gelince |
 
@@ -234,8 +279,8 @@ Yeni görev fikirleri buraya eklenecek.
 2. Oylamada beraberlik kuralı: final (§5) ve Kriz (§8.2).
 3. Soruşturma maliyeti ve kullanım sayısı (§6).
 4. Kayıt cihazı kullanım sayısı (§7).
-5. Müşteri Bonusu ödeme tablosu ve suç üretimi (§8.2).
-6. 2–3 yeni görev (§8.3).
+5. Müşteri Bonusu ve Küçük Kasa ödeme tablosu ve suç üretimi (§8.2).
+6. Grup görevi seçimi: Bütçe, Nöbet, Masraf Onayı, İçeriden Bilgi (§8.3).
 7. §9'daki konuşulmamış konular.
 
 ## 11. Doğrulama planı
