@@ -240,3 +240,48 @@ project uncompilable. **Inside Core**, `Core/Telemetry` and `Core/Audio` must st
 disable/remove the v4 `LineTelemetryObserver*` and any v4-enum dependencies (keep consent, privacy, sinks, catalog
 infrastructure), and remap `MusicCuePlanner` to v5 phases. `Tools/TelemetryTests` and `Tools/stubs` may be adapted
 or left failing with a note.
+
+## 17. Implementation notes (Phase 1)
+
+Interpretations chosen where this spec was silent or ambiguous. The code and tests follow these; change them here first.
+
+- **Day / segments.** `Day` 0 = tasks 1–2 and meeting 1, 1 = task 3 and meeting 2, 2 = crisis and final (also when
+  meeting 2 is skipped). The meeting view's `Index` uses the same numbers; the crisis/final segment is "meeting 2"
+  for recording picks (cleared when it starts and again at `FinalDiscussion`).
+- **Public suç timing.** Petty Cash catches (+2) and whistles (+3) change suç when meeting 1 opens (with their dossier
+  lines), not at the reveal/break, so the public suç board does not announce them early. The whistle's prim effects
+  (thief −3 removed, whistler +2) apply immediately and privately; thief and whistler get a `Whistled` event.
+- **Defaults.** A choice submitted before a disconnect stands; only players who never submitted take the default.
+- **Investigation.** A target can be investigated once (a trio-mate investigating the same target gets
+  `AlreadyResolved`), so a taker is never punished twice. Failure order: `WrongPhase`, `AlreadyUsed`,
+  `InvalidTarget`/`Self`, `NotEligible` (other group), `AlreadyResolved`, `InsufficientFunds`. Meeting 1 lists Client
+  Bonus as failed whenever someone took; it is vote-able only while an unexposed taker remains.
+- **Ballots.** Meeting: `A` = ballot index, `Target = -1` clears a ballot. Crisis/final: `A` must be −1 or 0. Ballots
+  already cast by a player who later disconnects still count; only empty ballots of disconnected players are dropped
+  (meeting, crisis). Final: empty = abstain for everyone.
+- **Fired players** have no ballot in the second firing (`LineFailure.Fired`); they may still chat and text.
+- **Crisis.** No ballots at all ⇒ no crisis suç. A tie whose floor share is 0 (5+ tied) adds nothing.
+- **Firings.** `FiringsTotal = min(FiringsFor(N), candidates)`. The desk goes to the voters for the fired player in the
+  deciding vote (the revote when there was one, also when the tie chain decided), in seat order; the remainder is
+  removed. With one remaining candidate the second vote still runs and that candidate is fired.
+- **Leaks.** `PlayAt = max(now + LeakDelay (0.5 s), previous pick's PlayAt + Seconds)`. If both parties recorded a call,
+  the first leak wins (`AlreadyResolved` for the second); each recorder still spent a use.
+- **Messages.** v4's per-block limits became per segment (reset when `Day` changes): 60 texts, 30 public chat lines,
+  1.5 s between messages of either kind. Texts are open Intro…FinalVerdict.
+- **Grouping.** Shuffle score = 100 × repeated pairs + overlap with the previous trio; stop at score 0. Five players
+  always repeat at least one pair (a trio plus a pair cannot avoid all four task-1 pairs), three players always repeat
+  the trio. `ForceTasks` slots must be (pair, pair, everyone) and distinct; the whistle window is the break after
+  whichever slot is Petty Cash.
+- **Early finish** needs at least one connected player and uses `PhaseEndReason.TimerShortened`. The abandon timer is
+  `LineConfig.AbandonSeconds` (60). An abandoned match has no `Result`; `NextHistory()` then returns the input history.
+- **Names.** `LinePhase.Results` replaces `WeekResults`; `LineWeekResult`/`WeekId` keep their v4 names. Removed:
+  `WeekLength`, `LineManagerIds`, `LineIds.Manager/Nobody`, `LineSchedule`.
+- **Bots.** Honest bots also whistle as witnesses (otherwise nobody ever whistles on a greedy thief); Honest volunteers
+  are the cleanest `Needed + 1` connected players by suç (ties by seat). All bots vote for a culprit they saw take,
+  else the highest suç (seeded tie-break). `LineBot.ThinkSeconds`/`WakeAt` let simulations add a per-phase delay.
+- **Telemetry.** The v4 observer is gone; its catalog rows stay as `pending_integration` with frozen v4 value lists
+  (no v4 enum dependency) so the analyzer and service tests keep working; `lobby_created`/`match_started` lost the
+  `length`/`manager` params; `HostTelemetryCoordinator` per-match hooks are no-ops and `LobbyCreated` lost its
+  `WeekLength` argument. Docs regenerated (`docs/analytics/event_catalog.json`, `docs/ANALYTICS_EVENT_CATALOG.md`).
+- **Known design weakness (rules as written).** Transfers stay open through `FinalVote`, so a candidate can empty the
+  desk to an ally before the verdict and the voters get nothing. Not changed in Phase 1.
