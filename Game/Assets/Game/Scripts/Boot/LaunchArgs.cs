@@ -27,9 +27,9 @@ namespace BirimizKovulacak.Game
         public float SimulateDropAt;
         public bool DropRejoin = true;
         public float DropDowntime = 5f;
-        public bool WeekMode;
         public int ExpectPlayers = 4;
-        public string ManagerProfile;
+        /// <summary>Policy of host-side bot seats and of this process's -bot driver (honest, greedy, mixed; default mixed).</summary>
+        public BirimizKovulacak.Core.LineBotPolicy BotPolicy = BirimizKovulacak.Core.LineBotPolicy.Mixed;
         public string VoiceTest;
         /// <summary>Playtest facilitator's friend-group code (analytics grouping), e.g. G07.</summary>
         public string PlaytestGroup;
@@ -63,9 +63,8 @@ namespace BirimizKovulacak.Game
                     case "-simulatedrop": a.SimulateDropAt = float.Parse(next, CultureInfo.InvariantCulture); i++; break;
                     case "-droprejoin": a.DropRejoin = next != "0"; i++; break;
                     case "-dropdowntime": a.DropDowntime = float.Parse(next, CultureInfo.InvariantCulture); i++; break;
-                    case "-week": a.WeekMode = true; break;
                     case "-expectplayers": a.ExpectPlayers = int.Parse(next, CultureInfo.InvariantCulture); i++; break;
-                    case "-manager": a.ManagerProfile = next; i++; break;
+                    case "-botpolicy": a.BotPolicy = ParsePolicy(next); i++; break;
                     case "-playtestgroup": a.PlaytestGroup = next; i++; break;
                     case "-voicetest":
                         if (next != null && !next.StartsWith("-")) { a.VoiceTest = next; i++; }
@@ -74,6 +73,16 @@ namespace BirimizKovulacak.Game
                 }
             }
             return a;
+        }
+
+        static BirimizKovulacak.Core.LineBotPolicy ParsePolicy(string s)
+        {
+            switch ((s ?? "").ToLowerInvariant())
+            {
+                case "honest": return BirimizKovulacak.Core.LineBotPolicy.Honest;
+                case "greedy": return BirimizKovulacak.Core.LineBotPolicy.Greedy;
+                default: return BirimizKovulacak.Core.LineBotPolicy.Mixed;
+            }
         }
 
         public static void Initialize()

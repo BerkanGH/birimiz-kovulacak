@@ -6,7 +6,7 @@ using UnityEngine;
 namespace BirimizKovulacak.Game
 {
     /// <summary>
-    /// v3: the local player's side of the session — latest filtered <see cref="LineView"/>, lobby, events and the
+    /// v5: the local player's side of the session — latest filtered <see cref="LineView"/>, lobby, events and the
     /// request plumbing. The host's own UI reads from here too, so it obeys the same information limits as every
     /// client. UI code only reads this and calls <see cref="Send"/>; the network adapter (or the UI mock) feeds it.
     /// </summary>
@@ -139,14 +139,15 @@ namespace BirimizKovulacak.Game
                 _nextRemember = Time.unscaledTime + 5f;
                 ConnectionManager.RememberSession(ReconnectToken, cm.Address, cm.Port);
             }
-            if (v.Phase == LinePhase.WeekResults && v.Result != null && (old == null || old.Phase != LinePhase.WeekResults))
-                MatchLog.Write("results week=" + v.WeekId + " hash=" + v.Result.ResultHash + " fired=" + v.Result.Fired + " manager=" + v.Result.ManagerProfileId + " days=" + v.Result.Days
-                    + " closed=" + v.Result.CompanyClosed + " productivity=" + v.Result.FinalProductivityPermille);
+            if (v.Phase == LinePhase.Results && v.Results != null && (old == null || old.Phase != LinePhase.Results))
+                MatchLog.Write(ResultLine(v.Results));
             ViewChanged?.Invoke(old, v);
-            LinePhase oldPhase = old == null || old.WeekId != v.WeekId ? LinePhase.None : old.Phase;
-            if (oldPhase != v.Phase || (old != null && (old.Day != v.Day || old.RoundIndex != v.RoundIndex) && v.Phase == LinePhase.RoundIntro))
+            bool sameWeek = old != null && old.WeekId == v.WeekId;
+            LinePhase oldPhase = sameWeek ? old.Phase : LinePhase.None;
+            // A phase can follow itself (final revote: FinalVote -> FinalVote): a new start time is a new phase too.
+            if (oldPhase != v.Phase || (sameWeek && old.PhaseStartTime != v.PhaseStartTime))
             {
-                MatchLog.Write("phase " + oldPhase + " -> " + v.Phase + " day=" + v.Day + " round=" + v.RoundIndex + " week=" + v.WeekId);
+                MatchLog.Write("phase " + oldPhase + " -> " + v.Phase + " day=" + v.Day + " task=" + v.TaskNumber + " week=" + v.WeekId);
                 PhaseChanged?.Invoke(oldPhase, v.Phase);
             }
         }
@@ -226,11 +227,20 @@ namespace BirimizKovulacak.Game
             return null;
         }
 
-        /// <summary>Display name for any participant id (colleagues, manager, system).</summary>
+        /// <summary>
+        /// The results line parsed by Tools/scripts/verify_logs.py (every process must log the same hash):
+        /// "results week=W hash=H fired=a,b winners=c players=N".
+        /// </summary>
+        public static string ResultLine(LineWeekResult r)
+        {
+            return "results week=" + r.WeekId + " hash=" + r.ResultHash + " fired=" + string.Join(",", r.Fired) + " winners=" + string.Join(",", r.Winners)
+                + " players=" + r.PlayerCount;
+        }
+
+        /// <summary>Display name for any participant id (colleagues, system).</summary>
         public string NameOf(int id)
         {
-            if (id == LineIds.None || id == LineIds.Nobody) return Loc.T("common.nobody");
-            if (id == LineIds.Manager) return Loc.ManagerName(View != null ? View.ManagerProfileId : "");
+            if (id == LineIds.None) return Loc.T("common.nobody");
             if (id == LineIds.System) return Loc.T("line.system.name");
             var p = Player(id);
             return p != null ? p.Name : Loc.T("player.default." + id);
@@ -242,14 +252,16 @@ namespace BirimizKovulacak.Game
             return p != null ? p.ColorIndex : id;
         }
 
-        public static bool IsOfficePhase(LinePhase p)
+        /// <summary>v5 calls phases: 1:1 phone calls only, the player sits at the office desk.</summary>
+        public static bool IsCallsPhase(LinePhase p)
         {
-            return p == LinePhase.Morning || p == LinePhase.RoundIntro || p == LinePhase.RoundPlay || p == LinePhase.RoundReveal || p == LinePhase.Break;
+            return p == LinePhase.Intro || p == LinePhase.TaskPlay || p == LinePhase.TaskReveal || p == LinePhase.Break || p == LinePhase.CrisisCalls;
         }
 
+        /// <summary>Meeting room phases (everyone hears everyone): meetings, crisis vote/verdict and the final.</summary>
         public static bool IsMeetingPhase(LinePhase p)
         {
-            return p >= LinePhase.MeetingDossier && p <= LinePhase.FinalVerdict;
+            return p >= LinePhase.MeetingDossier && p <= LinePhase.FinalVerdict && p != LinePhase.CrisisCalls;
         }
     }
 }

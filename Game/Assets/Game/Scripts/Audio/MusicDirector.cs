@@ -62,7 +62,7 @@ namespace BirimizKovulacak.Game
                 st.WeekId = view.WeekId;
                 st.PhaseLength = view.PhaseEndTime - view.PhaseStartTime;
                 st.PhaseRemaining = lc.PhaseRemaining;
-                st.CompanyClosed = view.Result != null && view.Result.CompanyClosed;
+                st.CompanyClosed = false; // v5 has no company closure
                 st.PhoneConnected = view.Mine != null && view.Mine.Phone != null && view.Mine.Phone.Status == CallStatus.Connected;
                 var vs = VoiceSystem.Instance;
                 if (vs != null)

@@ -389,7 +389,7 @@ UiSettings.SetFloat(Rooms.PrefSensitivity, v), v => v.ToString("0.00") + "×");
             if (!art)
             {
                 var icon = Box("icon", "icon-xxl").AddTo(_pic);
-                MeetingText.ApplyIcon(icon, PageIcon[_page]);
+                UiArt.ApplyIcon(icon, PageIcon[_page]);
             }
             for (int i = 0; i < _dots.childCount; i++) _dots[i].EnableInClassList("dot-on", i == _page);
             _prev.SetEnabled(_page > 0);

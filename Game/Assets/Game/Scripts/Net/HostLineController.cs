@@ -7,8 +7,8 @@ using UnityEngine;
 namespace BirimizKovulacak.Game
 {
     /// <summary>
-    /// v4 host session authority: lobby seats (humans + host-side bots), connection approval and reconnect tokens,
-    /// the <see cref="ILineEngine"/> match, per-recipient view/event/message routing, recordings hand-off to voice,
+    /// v5 host session authority: lobby seats (humans + host-side bots), connection approval and reconnect tokens,
+    /// the <see cref="ILineEngine"/> match, per-recipient view/event/message routing, leaked recordings hand-off to voice,
     /// analytics consent per seat (HostTelemetryBridge) and the session history between matches. Lives for one hosting
     /// session. The lobby UI calls only the public lobby API.
     /// </summary>
@@ -71,14 +71,17 @@ namespace BirimizKovulacak.Game
         string _lastMatchId = "";
         int _matchSeed;
         readonly List<string> _experiments = new List<string>();
-        int _recordingsPhaseKey = -1;
+        int _recordingsSegment = -1;
+        long _picksVersion = -1;
         LinePhase _lastPhase = LinePhase.None;
         IReadOnlyList<LineRecordingPick> _picks;
+
+        /// <summary>Seconds a bot waits (at most, seeded) after a phase starts before acting, so humans see the phase first.</summary>
+        public static double BotThinkSeconds => 4.0 * Mathf.Clamp(LaunchArgs.Current.DurationScale, 0.2f, 1f);
 
         public ILineEngine Engine => _engine;
         public bool WeekRunning => _engine != null;
         public Slot[] Slots => _slots;
-        public WeekLength Length { get; private set; } = WeekLength.Short;
         public bool RecordingsEnabled { get; private set; } = true;
         public int WeeksPlayed => _history != null ? _history.WeeksPlayed : 0;
         public string ConfigJson { get; private set; }
@@ -105,7 +108,6 @@ namespace BirimizKovulacak.Game
         {
             for (int i = 0; i < SlotCount; i++) _slots[i] = new Slot { Index = i };
             ConfigJson = GameConfig.ToJson(GameConfig.Line);
-            if (LaunchArgs.Current.WeekMode) Length = WeekLength.Full;
             SessionId = "s-" + RandomHex(8);
             GroupId = ValidGroupCode(LaunchArgs.Current.PlaytestGroup) ? LaunchArgs.Current.PlaytestGroup : "g-" + RandomHex(6);
             Current = this;
@@ -118,7 +120,7 @@ namespace BirimizKovulacak.Game
             foreach (var s in _slots)
                 if (s.Occupied && !s.Virtual && s.Connected)
                     _session.SendLineWelcome(s.ClientId, new LineWelcome { Slot = s.Index, ReconnectToken = s.Token, WeekId = _weekId }, ConfigJson);
-            HostTelemetryBridge.LobbyCreated(SessionId, GroupId, Length, RecordingsEnabled);
+            HostTelemetryBridge.LobbyCreated(SessionId, GroupId, RecordingsEnabled);
             if (LaunchArgs.Current.FillBots > 0)
                 for (int k = 0; k < LaunchArgs.Current.FillBots; k++) AddBot();
             BroadcastLobby();
@@ -149,17 +151,16 @@ namespace BirimizKovulacak.Game
             string next = ValidGroupCode(code) ? code : "g-" + RandomHex(6);
             if (next == GroupId) return;
             GroupId = next;
-            HostTelemetryBridge.LobbyCreated(SessionId, GroupId, Length, RecordingsEnabled);
+            HostTelemetryBridge.LobbyCreated(SessionId, GroupId, RecordingsEnabled);
             BroadcastLobby();
         }
 
-        /// <summary>Session history is kept per seat; a new occupant starts clean (points, firings, roles).</summary>
+        /// <summary>Session history is kept per seat; a new occupant starts clean (wins, firings).</summary>
         void ResetSeatHistory(int slot)
         {
             if (_history == null) return;
-            if (slot < _history.SessionPoints.Count) _history.SessionPoints[slot] = 0;
+            if (slot < _history.Wins.Count) _history.Wins[slot] = 0;
             if (slot < _history.TimesFired.Count) _history.TimesFired[slot] = 0;
-            if (slot < _history.RoleUses.Count) _history.RoleUses[slot] = 0;
         }
 
         static bool ValidAnonymousId(string id)
@@ -379,13 +380,6 @@ namespace BirimizKovulacak.Game
             BroadcastLobby();
         }
 
-        public void SetLength(WeekLength length)
-        {
-            if (WeekRunning || Length == length) return;
-            Length = length;
-            BroadcastLobby();
-        }
-
         public void SetRecordings(bool on)
         {
             if (WeekRunning || RecordingsEnabled == on) return;
@@ -408,11 +402,6 @@ namespace BirimizKovulacak.Game
             int need = LaunchArgs.Current.AutoStart ? Mathf.Clamp(LaunchArgs.Current.ExpectPlayers, LineProtocol.MinPlayers, SlotCount) : LineProtocol.MinPlayers;
             if (occupied < need) { reasonKey = "lobby.need_players"; return false; }
             if (ready < occupied) { reasonKey = "lobby.need_ready"; return false; }
-            string poolKey;
-            bool poolOk;
-            try { poolOk = LineSchedule.Validate(GameConfig.Line, occupied, Length, LaunchArgs.Current.ManagerProfile ?? "", out poolKey); }
-            catch (Exception e) { Debug.LogException(e); poolOk = false; poolKey = "lobby.pool_too_small"; }
-            if (!poolOk) { reasonKey = string.IsNullOrEmpty(poolKey) ? "lobby.pool_too_small" : poolKey; return false; }
             reasonKey = "lobby.ready_to_start";
             return true;
         }
@@ -423,15 +412,15 @@ namespace BirimizKovulacak.Game
             CanStart(out reason);
             var lv = new LineLobbyView
             {
-                BuildId = GameConfig.BuildId, WeekRunning = WeekRunning, WeekId = _weekId, Length = Length,
+                BuildId = GameConfig.BuildId, WeekRunning = WeekRunning, WeekId = _weekId,
                 RecordingsEnabled = RecordingsEnabled, WeeksPlayed = WeeksPlayed, StatusKey = reason,
                 SessionId = SessionId, GroupId = GroupId,
             };
             lv.Experiments.AddRange(CurrentExperiments());
             foreach (var s in _slots)
             {
-                int pts = _history != null && s.Index < _history.SessionPoints.Count ? _history.SessionPoints[s.Index] : 0;
-                lv.Slots.Add(new LineLobbySlot { Slot = s.Index, Occupied = s.Occupied, Connected = s.Connected, Ready = s.Ready, IsHost = s.IsHost, IsBot = s.Virtual, Name = s.Name, SessionPoints = pts, WantsRematch = s.WantsRematch });
+                int wins = _history != null && s.Index < _history.Wins.Count ? _history.Wins[s.Index] : 0;
+                lv.Slots.Add(new LineLobbySlot { Slot = s.Index, Occupied = s.Occupied, Connected = s.Connected, Ready = s.Ready, IsHost = s.IsHost, IsBot = s.Virtual, Name = s.Name, Wins = wins, WantsRematch = s.WantsRematch });
             }
             return lv;
         }
@@ -439,10 +428,7 @@ namespace BirimizKovulacak.Game
         /// <summary>Declared experiment assignments of the next/current match ("id=variant").</summary>
         List<string> CurrentExperiments()
         {
-            var cfg = GameConfig.Line;
             _experiments.Clear();
-            _experiments.Add("rec_select=" + (cfg.RecordingSelection == RecordingSelection.Context ? "context" : "legacy"));
-            _experiments.Add("early_submit=" + (cfg.EarlySubmit == EarlySubmitPolicy.CarryToBreak ? "carry" : "shorten"));
             _experiments.Add("recording_awareness=" + (RecordingsEnabled ? "on" : "off"));
             return _experiments;
         }
@@ -479,8 +465,6 @@ namespace BirimizKovulacak.Game
                 MatchId = "m-" + RandomHex(8),
                 Seed = args.Seed != 0 ? args.Seed + _weekId - 1 : _rng.Next(1, int.MaxValue),
                 StartTime = Now, // the engine clock starts here; anything earlier would be time going backwards
-                Length = Length,
-                ManagerProfileId = args.ManagerProfile ?? "",
                 RecordingsEnabled = RecordingsEnabled,
                 History = _history,
             };
@@ -517,7 +501,7 @@ namespace BirimizKovulacak.Game
                 s.MessagesSent = 0;
                 s.MessagesDirty = false;
                 if (!s.Occupied) continue;
-                if (s.Virtual) { s.Bot = new LineBot(i, setup.Seed * 31 + i, LineBotPolicy.Talk); s.BotView = null; }
+                if (s.Virtual) { s.Bot = new LineBot(i, setup.Seed * 31 + i, LaunchArgs.Current.BotPolicy) { ThinkSeconds = BotThinkSeconds }; s.BotView = null; }
                 else if (s.Connected && _session != null)
                     _session.SendLineWelcome(s.ClientId, new LineWelcome { Slot = i, ReconnectToken = s.Token, WeekId = _weekId }, ConfigJson);
                 if (!s.Connected) _engine.SetConnected(i, false, Now);
@@ -528,29 +512,29 @@ namespace BirimizKovulacak.Game
             ResetRecordings();
             // The seed reproduces every secret of the match: it is logged only once results are public (LogResult).
             _matchSeed = setup.Seed;
-            MatchLog.Write("host: week " + _weekId + " started players=" + setup.Players.Count + " length=" + Length
+            MatchLog.Write("host: week " + _weekId + " started players=" + setup.Players.Count + " ruleset=" + LineProtocol.RulesetVersion
                 + " recordings=" + RecordingsEnabled + " weeksPlayed=" + WeeksPlayed);
             BroadcastLobby();
             SendViewsToAll();
             return true;
         }
 
-        /// <summary>WeekResults: end the week now (the session continues in the lobby).</summary>
+        /// <summary>Results: end the match now (the session continues in the lobby).</summary>
         public void ContinueAfterResults()
         {
             if (_engine == null) return;
-            if (_engine.Phase == LinePhase.WeekResults && !_engine.IsFinished) _engine.HostContinue(Now);
+            if (_engine.Phase == LinePhase.Results && !_engine.IsFinished) _engine.HostContinue(Now);
             FinishWeek();
         }
 
-        /// <summary>Stops the current week and returns everyone to the lobby.</summary>
+        /// <summary>Stops the current match and returns everyone to the lobby.</summary>
         public void ReturnToLobby()
         {
             if (_engine != null)
-                ReportMatchEnd(_engine.Phase == LinePhase.Abandoned ? "abandoned" : _engine.IsFinished || _engine.Phase == LinePhase.WeekResults ? "results" : "host_closed");
-            if (_engine != null && _engine.Phase == LinePhase.WeekResults && !_engine.IsFinished)
+                ReportMatchEnd(_engine.Phase == LinePhase.Abandoned ? "abandoned" : _engine.IsFinished || _engine.Phase == LinePhase.Results ? "results" : "host_closed");
+            if (_engine != null && _engine.Phase == LinePhase.Results && !_engine.IsFinished)
             {
-                try { _engine.HostContinue(Now); } // results are final: keep the session points / next manager
+                try { _engine.HostContinue(Now); } // results are final: keep the session wins / firings
                 catch (Exception e) { Debug.LogException(e); }
             }
             if (_engine != null && _engine.IsFinished) CaptureHistory();
@@ -597,9 +581,9 @@ namespace BirimizKovulacak.Game
             _resultLogged = true;
             _weeksCompleted++;
             var r = _engine.Result;
-            if (r != null) MatchLog.Write("host: results week=" + r.WeekId + " hash=" + r.ResultHash + " fired=" + r.Fired + " manager=" + r.ManagerProfileId + " seed=" + _matchSeed);
+            if (r != null) MatchLog.Write("host: " + LineClient.ResultLine(r) + " seed=" + _matchSeed);
             // Results are public now: telemetry may flush the private-until-match-end buffer.
-            if (_engine.Phase == LinePhase.WeekResults || _engine.IsFinished) ReportMatchEnd("results");
+            if (_engine.Phase == LinePhase.Results || _engine.IsFinished) ReportMatchEnd("results");
         }
 
         public void Abort()
@@ -632,8 +616,9 @@ namespace BirimizKovulacak.Game
             HostTelemetryBridge.EngineTick(_engine, now);
             if (_engine.Phase != _lastPhase)
             {
-                // Recordings live for one day only: drop them when the next day (or the results) begins.
-                if (_engine.Phase == LinePhase.Morning || _engine.Phase == LinePhase.WeekResults) VoiceSystem.Instance?.ClearRecordings();
+                // v5: a call recorded in task 1 may be leaked as late as the final discussion: keep all call audio
+                // until the match ends.
+                if (_engine.Phase == LinePhase.Results || _engine.Phase == LinePhase.Abandoned) VoiceSystem.Instance?.ClearRecordings();
                 _lastPhase = _engine.Phase;
             }
 
@@ -653,7 +638,7 @@ namespace BirimizKovulacak.Game
             bool changed = _engine.StateVersion != _lastSentVersion;
             if ((changed && now - _lastViewSend >= ViewInterval) || now - _lastHeartbeat >= HeartbeatInterval) SendViewsToAll();
 
-            if (_engine.Phase == LinePhase.WeekResults && !_resultLogged && _engine.Result != null) LogResult();
+            if (_engine.Phase == LinePhase.Results && !_resultLogged && _engine.Result != null) LogResult();
             if (_engine.IsFinished)
             {
                 if (_engine.Phase == LinePhase.Abandoned)
@@ -681,27 +666,47 @@ namespace BirimizKovulacak.Game
             }
         }
 
-        /// <summary>Drops the day's audio, stops a running tape and forgets the scheduled picks (week start, lobby).</summary>
+        /// <summary>Drops the match's call audio, stops a running tape and forgets the scheduled picks (match start, lobby).</summary>
         void ResetRecordings()
         {
             var vs = VoiceSystem.Instance;
             if (vs != null) { vs.StopRecording(); vs.ClearRecordings(); }
             _recordingsTriggered.Clear();
-            _recordingsPhaseKey = -1;
+            _recordingsSegment = -1;
+            _picksVersion = -1;
             _picks = null;
             _lastPhase = LinePhase.None;
         }
 
-        /// <summary>At each pick's PlayAt: hand it to voice (one tape at a time), report back which call was played.</summary>
+        /// <summary>
+        /// Leak segment of a phase, or -1: meeting 1 / meeting 2 (dossier .. verdict) and the final (discussion .. verdict).
+        /// The engine clears its picks when a segment starts, so pick indices restart there.
+        /// </summary>
+        static int LeakSegment(LinePhase phase, int day)
+        {
+            if (phase >= LinePhase.MeetingDossier && phase <= LinePhase.MeetingVerdict) return day * 2;
+            if (phase >= LinePhase.FinalDiscussion && phase <= LinePhase.FinalVerdict) return day * 2 + 1;
+            return -1;
+        }
+
+        /// <summary>
+        /// v5 leaks: at each pick's PlayAt hand it to voice (one tape at a time) and report back whether it played. Leaks
+        /// are queued during MeetingDossier/MeetingDiscussion/FinalDiscussion and may play on into the vote.
+        /// </summary>
         void TriggerRecordings(double now)
         {
-            if (_engine.Phase != LinePhase.MeetingDossier) { _recordingsPhaseKey = -1; _picks = null; return; }
-            int key = _engine.Day;
-            if (key != _recordingsPhaseKey)
+            int segment = LeakSegment(_engine.Phase, _engine.Day);
+            if (segment < 0) { _recordingsSegment = -1; _picks = null; _picksVersion = -1; return; }
+            if (segment != _recordingsSegment)
             {
-                // RecordingPicks returns a detached copy: read it once per dossier, not every frame.
-                _recordingsPhaseKey = key;
+                _recordingsSegment = segment;
                 _recordingsTriggered.Clear();
+                _picksVersion = -1;
+            }
+            if (_engine.StateVersion != _picksVersion)
+            {
+                // RecordingPicks returns a detached copy: re-read it only when the state changed (a leak bumps it).
+                _picksVersion = _engine.StateVersion;
                 _picks = _engine.RecordingPicks;
             }
             var picks = _picks;
@@ -723,7 +728,7 @@ namespace BirimizKovulacak.Game
                 catch (Exception e) { Debug.LogException(e); HostTelemetryBridge.TechnicalFailure("voice_exception", e); }
                 MatchLog.Write("host: recording pick=" + p.Index + " candidates=" + p.CandidateCallIds.Count + " played=" + (chosen >= 0 ? "yes" : "no") + " failure=" + info.Failure);
                 _engine.ReportRecording(p.Index, chosen, now);
-                // The cached pick predates the report: hand analytics the reported copy (caller, callee, task context).
+                // The cached pick predates the report: hand analytics the reported copy (caller, callee, leaker).
                 var reported = p;
                 try { foreach (var x in _engine.RecordingPicks) if (x.Index == p.Index) { reported = x; break; } }
                 catch (Exception e) { Debug.LogException(e); }

@@ -141,7 +141,7 @@ namespace BirimizKovulacak.Game
             try
             {
                 if (newPhase != LinePhase.None) _lastPhase = newPhase;
-                if (newPhase == LinePhase.WeekResults) _resultsAt = Time.realtimeSinceStartup;
+                if (newPhase == LinePhase.Results) _resultsAt = Time.realtimeSinceStartup;
                 if (_t.HostMode || _client == null) return; // on the host the observer owns match id and position
                 var v = _client.View;
                 if (v == null) return; // the match id stays until the next match so rematch events can cite their results
@@ -152,7 +152,8 @@ namespace BirimizKovulacak.Game
                     _t.Context.BeginMatch(v.MatchId, v.WeekId, v.Players.Count, bots, _client.Lobby != null ? _client.Lobby.Experiments : null);
                 }
                 TaskKind k = v.Task != null ? v.Task.Kind : TaskKind.None;
-                _t.Context.SetPosition(TelemetryNames.Of(v.Phase), v.Day, v.RoundIndex, v.TaskNumber, k == TaskKind.None ? "" : LineTasks.Id(k), v.Task != null ? v.Task.Version : -1);
+                // v5 has no task versions or rounds: the task number stands in for the round index.
+                _t.Context.SetPosition(TelemetryNames.Of(v.Phase), v.Day, v.TaskNumber, v.TaskNumber, k == TaskKind.None ? "" : LineTasks.Id(k), -1);
             }
             catch (Exception) { }
         }
@@ -168,9 +169,7 @@ namespace BirimizKovulacak.Game
                 switch (request.Verb)
                 {
                     case LineVerb.SendText: channel = "text"; break;
-                    case LineVerb.SendEmail: channel = "email"; break;
                     case LineVerb.SendMeetingChat: channel = "meeting_chat"; break;
-                    case LineVerb.FileComplaint: channel = "complaint"; break;
                 }
                 if (channel != null)
                 {
@@ -217,7 +216,7 @@ namespace BirimizKovulacak.Game
 
         public void MessageThreadOpened(MessageKind channel, int unread)
         {
-            string c = channel == MessageKind.Text ? "text" : channel == MessageKind.Email ? "email" : channel == MessageKind.MeetingChat ? "meeting_chat" : channel == MessageKind.Complaint ? "complaint" : null;
+            string c = channel == MessageKind.Text ? "text" : channel == MessageKind.MeetingChat ? "meeting_chat" : null;
             if (c == null) return;
             _t.Begin("message_thread_opened").Enum("channel", c).Int("unread", Math.Max(0, unread)).Emit();
         }

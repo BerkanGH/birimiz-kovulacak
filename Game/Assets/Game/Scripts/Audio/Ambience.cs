@@ -4,7 +4,7 @@ using UnityEngine;
 namespace BirimizKovulacak.Game
 {
     /// <summary>
-    /// Office bed: air-conditioning / mains hum + distant keyboards (two 2D loops). State-driven from the week phase
+    /// Office bed: air-conditioning / mains hum + distant keyboards (two 2D loops). State-driven from the match phase
     /// (<see cref="LineClient"/>): full in the office, ducked in the meeting room and at the week results, quietest
     /// in the menu / lobby. Two AudioSources, no allocations.
     /// </summary>
@@ -51,7 +51,7 @@ namespace BirimizKovulacak.Game
             float duck;
             if (phase == LinePhase.None) duck = MenuDuck;
             else if (LineClient.IsMeetingPhase(phase)) duck = MeetingDuck;
-            else if (phase == LinePhase.WeekResults || phase == LinePhase.Abandoned) duck = ResultsDuck;
+            else if (phase == LinePhase.Results || phase == LinePhase.Abandoned) duck = ResultsDuck;
             else duck = 1f;
 
             float dt = Time.unscaledDeltaTime;

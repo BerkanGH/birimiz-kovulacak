@@ -29,7 +29,7 @@ namespace BirimizKovulacak.Game
             MatchLog.Initialize(name);
             Loc.Load(Loc.Language);
             GameInput.Initialize();
-            // v3: the host binds voice through HostLineVoiceBridge (calls-only day, all-hear meetings, defense floor).
+            // The host binds voice through HostLineVoiceBridge (calls-only office phases, all-hear meetings, defense floor).
             VoiceSystem.ExternalHostProviders = true;
             VoiceSystem.HostSessionActive = () => HostLineController.Current != null;
             if (GetComponent<VoiceSystem>() == null) gameObject.AddComponent<VoiceSystem>();
@@ -84,7 +84,7 @@ namespace BirimizKovulacak.Game
         void OnLinePhase(LinePhase from, LinePhase to)
         {
             var v = LineClient.I.View;
-            if (to == LinePhase.WeekResults && v != null && v.WeekId != _lastResultsWeek)
+            if (to == LinePhase.Results && v != null && v.WeekId != _lastResultsWeek)
             {
                 _lastResultsWeek = v.WeekId;
                 _matchesFinished++;
@@ -112,7 +112,7 @@ namespace BirimizKovulacak.Game
         {
             var a = LaunchArgs.Current;
             var view = LineClient.I != null ? LineClient.I.View : null;
-            if (!_dropped && a.SimulateDropAt > 0 && view != null && view.Phase == LinePhase.RoundPlay && view.Day >= 1 &&
+            if (!_dropped && a.SimulateDropAt > 0 && view != null && view.Phase == LinePhase.TaskPlay && view.Day >= 1 &&
                 LineClient.I.Now - view.PhaseStartTime > a.SimulateDropAt)
             {
                 _dropped = true;

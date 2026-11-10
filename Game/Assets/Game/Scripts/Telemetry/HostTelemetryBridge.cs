@@ -37,7 +37,7 @@ namespace BirimizKovulacak.Game
         }
 
         /// <summary>A hosting session began (lobby open).</summary>
-        public static void LobbyCreated(string sessionId, string groupId, WeekLength length, bool recordings) { Run(h => h.LobbyCreated(sessionId, groupId, length, recordings)); }
+        public static void LobbyCreated(string sessionId, string groupId, bool recordings) { Run(h => h.LobbyCreated(sessionId, groupId, recordings)); }
         /// <summary>A seat's analytics consent/id became known or changed (approval, update RPC, bot seat).</summary>
         public static void PlayerConsent(int slot, int consent, string anonymousId, bool isBot) { Run(h => h.PlayerConsent(slot, consent, anonymousId, isBot)); }
         public static void PlayerReadyChanged(int slot, bool ready) { Run(h => h.PlayerReadyChanged(slot, ready)); }

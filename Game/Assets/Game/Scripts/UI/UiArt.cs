@@ -55,6 +55,22 @@ namespace BirimizKovulacak.Game
             return Apply(e, a) || Apply(e, b) || (c != null && Apply(e, c));
         }
 
+        /// <summary>Stamp art for the current language (full art paths, e.g. "stamps/stamp_onaylandi" / "stamps_v3/stamp_approved").</summary>
+        public static bool ApplyStamp(VisualElement e, string trPath, string enPath)
+        {
+            return Apply(e, Loc.Language == "en" ? enPath : trPath);
+        }
+
+        /// <summary>Applies an icon art path (e.g. "icons_v3/meeting" or "icons/info"); falls back to the classic kit icon, then a glyph tile.</summary>
+        public static void ApplyIcon(VisualElement e, string path)
+        {
+            if (Apply(e, path)) { e.RemoveFromClassList("icon-fallback"); return; }
+            string id = path ?? "";
+            int slash = id.LastIndexOf('/');
+            if (slash >= 0) id = id.Substring(slash + 1);
+            UiKit.SetIcon(e, path != null && path.StartsWith("icons/") ? id : "info");
+        }
+
         public static void Slice(VisualElement e, int left, int top, int right, int bottom, float scale = 0.5f)
         {
             e.style.unitySliceLeft = left;

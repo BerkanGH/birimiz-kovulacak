@@ -7,7 +7,7 @@ using UnityEngine;
 namespace BirimizKovulacak.Game
 {
     /// <summary>
-    /// Build id and the editable v3 rules file (StreamingAssets/Config/line_config.json). Only the host's config matters
+    /// Build id and the editable v5 rules file (StreamingAssets/Config/line_config.json). Only the host's config matters
     /// for a week (it is authoritative and sends it to every client in the welcome message).
     /// </summary>
     public static class GameConfig
@@ -38,7 +38,7 @@ namespace BirimizKovulacak.Game
         public const string LineConfigRelativePath = "Config/line_config.json";
         static LineConfig _line;
 
-        /// <summary>v3 rules config: StreamingAssets/Config/line_config.json when it matches the protocol version, else defaults; -durationscale applied.</summary>
+        /// <summary>v5 rules config: StreamingAssets/Config/line_config.json when it matches the protocol version, else defaults; -durationscale applied.</summary>
         public static LineConfig Line
         {
             get
@@ -58,12 +58,12 @@ namespace BirimizKovulacak.Game
                 {
                     var loaded = JsonConvert.DeserializeObject<LineConfig>(File.ReadAllText(path), JsonSettings);
                     if (loaded != null && loaded.ConfigVersion == LineProtocol.Version) { cfg = loaded; Debug.Log("[Config] Loaded " + path); }
-                    else Debug.LogWarning("[Config] " + path + " is for another version - using built-in v3 defaults.");
+                    else Debug.LogWarning("[Config] " + path + " is for another version - using built-in v5 defaults.");
                 }
             }
             catch (Exception e)
             {
-                Debug.LogError("[Config] Failed to read " + path + ": " + e.Message + " — using v3 defaults.");
+                Debug.LogError("[Config] Failed to read " + path + ": " + e.Message + " - using v5 defaults.");
                 cfg = LineConfig.CreateDefault();
             }
             float scale = LaunchArgs.Current.DurationScale;

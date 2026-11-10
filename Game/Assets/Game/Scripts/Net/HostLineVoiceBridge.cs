@@ -6,8 +6,9 @@ using UnityEngine;
 namespace BirimizKovulacak.Game
 {
     /// <summary>
-    /// v4 host-side voice providers from <see cref="HostLineController"/> and its engine (docs/VOICE.md "Integration"):
-    /// office phases = calls only (+ wiretaps), meetings = everyone hears everyone, final defense = only the defender.
+    /// v5 host-side voice providers from <see cref="HostLineController"/> and its engine (docs/VOICE.md "Integration"):
+    /// calls phases (intro, tasks, breaks, crisis calls) = 1:1 calls only, every other phase = everyone hears everyone,
+    /// final defense = only the defender. Every connected call is recorded in host memory; leaks pick what plays.
     /// Every member is called per voice frame: no allocations.
     /// </summary>
     public sealed class HostLineVoiceBridge : IVoicePositions, IVoiceCallState, IVoiceModeProvider, IVoiceClientMap
@@ -28,6 +29,8 @@ namespace BirimizKovulacak.Game
             var b = new HostLineVoiceBridge(host);
             vs.SetHostProviders(b, b, b, null, b);
             vs.RecordingEnabled = host.RecordingsEnabled;
+            // v5 keeps every call of the match (a task-1 call can be leaked in the final): ~6 call-minutes per pair.
+            vs.Recorder.MaxBytes = 16L * 1024 * 1024;
             HostLineController.PlayRecording = PlayPick;
             if (_boundVoice != null) _boundVoice.OnHostRecordingFinished -= OnTapeFinished;
             _boundVoice = vs;
@@ -107,7 +110,7 @@ namespace BirimizKovulacak.Game
             {
                 var e = _host.Engine;
                 if (e == null) return VoiceMode.AllHear; // lobby
-                return LineClient.IsOfficePhase(e.Phase) ? VoiceMode.Calls : VoiceMode.AllHear;
+                return LineClient.IsCallsPhase(e.Phase) ? VoiceMode.Calls : VoiceMode.AllHear;
             }
         }
 

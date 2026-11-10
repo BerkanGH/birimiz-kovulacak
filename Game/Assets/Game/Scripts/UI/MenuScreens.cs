@@ -112,7 +112,7 @@ namespace BirimizKovulacak.Game
         {
             var card = Panel("panel", "picker-card").AddTo(layer);
             var icon = Box("icon", "icon-xl").AddTo(card);
-            MeetingText.ApplyIcon(icon, "icons_v3/language");
+            UiArt.ApplyIcon(icon, "icons_v3/language");
             Title("Dil seç  ·  Choose a language", "picker-title").AddTo(card);
             var row = Box("picker-row").AddTo(card);
             PickerOption(row, "tr", "Türkçe", "Oyunu Türkçe oyna");
@@ -287,16 +287,16 @@ namespace BirimizKovulacak.Game
     }
 
     /// <summary>
-    /// v3 lobby (<see cref="LineClient.Lobby"/>): 3–6 seats pinned on the cork board (badge, name, tags, ready stamp,
-    /// session points); below, the host desk: week length, call recordings with the consent line, add bot, start;
+    /// v5 lobby (<see cref="LineClient.Lobby"/>): 3–6 seats pinned on the cork board (badge, name, tags, ready stamp,
+    /// session wins); below, the host desk: call recordings with the consent line, add bot, start;
     /// clients get "Ready". How-to and leave in the corner; the host's addresses at the bottom.
     /// </summary>
     public sealed class LobbyScreen : UiKit.Screen
     {
-        readonly VisualElement _board, _grid, _desk, _lengthHost, _recHost, _week, _ticket, _groupRow;
-        readonly Label _count, _status, _addresses, _lengthClient, _consent, _session, _experiments, _rules;
+        readonly VisualElement _board, _grid, _desk, _recHost, _week, _ticket, _groupRow;
+        readonly Label _count, _status, _addresses, _consent, _session, _experiments, _rules;
         readonly TextField _group;
-        readonly Button _ready, _start, _addBot, _short, _full;
+        readonly Button _ready, _start, _addBot;
         readonly Toggle _rec;
         readonly List<SlotCard> _cards = new List<SlotCard>();
         int _lastHash = int.MinValue;
@@ -323,13 +323,7 @@ namespace BirimizKovulacak.Game
             _desk = Panel("panel", "lobby-desk").AddTo(Root);
             var cols = Box("lobby-desk-cols").AddTo(_desk);
             _week = Box("lobby-week").AddTo(cols);
-            Bold(Loc.T("lobby.week_length"), "lobby-label").AddTo(_week);
-            _lengthHost = Box("seg-switch").AddTo(_week);
-            _short = SegButton(_lengthHost, Loc.T("lobby.short_week"), Loc.T("lobby.short_week_sub"), () => HostLineController.Current?.SetLength(WeekLength.Short));
-            _full = SegButton(_lengthHost, Loc.T("lobby.full_week"), Loc.T("lobby.full_week_sub"), () => HostLineController.Current?.SetLength(WeekLength.Full));
-            _lengthClient = Title("", "lobby-length-client").AddTo(_week);
-            var cfg = LineClient.I != null ? LineClient.I.Config : LineConfig.CreateDefault();
-            _rules = Text(Loc.F("lobby.rules_note", cfg.CompanyTargetPercent), "lobby-note").AddTo(_week);
+            _rules = Text(Loc.T("v5.lobby.rules_note"), "lobby-note").AddTo(_week);
             _experiments = Text("", "lobby-note", "lobby-experiments").AddTo(_week);
             Bold(Loc.T("lobby.recordings"), "lobby-label", "mt-m").AddTo(_week);
             _recHost = Box("row").AddTo(_week);
@@ -368,14 +362,6 @@ namespace BirimizKovulacak.Game
             string code = (_group.value ?? "").Trim();
             PlayerPrefs.SetString(GroupPref, code);
             if (HostLineController.Current != null) GroupCodeSetter?.Invoke(code);
-        }
-
-        static Button SegButton(VisualElement parent, string title, string sub, Action onClick)
-        {
-            var b = Btn("", onClick, "btn-secondary", "seg-btn").AddTo(parent);
-            Title(title, "seg-title").NoPick().AddTo(b);
-            Text(sub, "seg-sub").NoPick().AddTo(b);
-            return b;
         }
 
         static void ConfirmLeave()
@@ -421,10 +407,10 @@ namespace BirimizKovulacak.Game
             }
             int hash = 17;
             foreach (var s in lobby.Slots)
-                hash = hash * 31 + (s.Occupied ? 1 : 0) + (s.Ready ? 2 : 0) + (s.Connected ? 4 : 0) + (s.IsBot ? 8 : 0) + (s.IsHost ? 16 : 0) + s.SessionPoints * 64 + (s.Name ?? "").GetHashCode();
+                hash = hash * 31 + (s.Occupied ? 1 : 0) + (s.Ready ? 2 : 0) + (s.Connected ? 4 : 0) + (s.IsBot ? 8 : 0) + (s.IsHost ? 16 : 0) + s.Wins * 64 + (s.Name ?? "").GetHashCode();
             foreach (var s in lobby.Slots) hash = hash * 31 + (s.WantsRematch ? 1 : 0);
             hash = hash * 31 + (lobby.StatusKey ?? "").GetHashCode() + (lobby.Experiments != null ? lobby.Experiments.Count : 0) * 5;
-            hash = hash * 31 + (int)lobby.Length * 7 + (lobby.RecordingsEnabled ? 3 : 0) + lobby.WeeksPlayed * 131 + c.MySlot * 17 + (isHost ? 1 : 0) + (lobby.WeekRunning ? 5 : 0);
+            hash = hash * 31 + (lobby.RecordingsEnabled ? 3 : 0) + lobby.WeeksPlayed * 131 + c.MySlot * 17 + (isHost ? 1 : 0) + (lobby.WeekRunning ? 5 : 0);
             if (hash != _lastHash)
             {
                 _lastHash = hash;
@@ -468,11 +454,6 @@ namespace BirimizKovulacak.Game
             }
             _count.text = Loc.F("lobby.count", occupied, LineProtocol.MaxPlayers);
             _session.text = lobby.WeeksPlayed > 0 ? Loc.F("lobby.session_weeks", lobby.WeeksPlayed) : Loc.T("lobby.session_new");
-            _lengthHost.Show(isHost);
-            _lengthClient.Show(!isHost);
-            _lengthClient.text = Loc.T(lobby.Length == WeekLength.Full ? "lobby.full_week" : "lobby.short_week") + " · " + Loc.T(lobby.Length == WeekLength.Full ? "lobby.full_week_sub" : "lobby.short_week_sub");
-            _short.EnableInClassList("seg-on", lobby.Length == WeekLength.Short);
-            _full.EnableInClassList("seg-on", lobby.Length == WeekLength.Full);
             _recHost.Show(isHost);
             _groupRow.Show(isHost && !lobby.WeekRunning);
             _experiments.text = lobby.Experiments != null && lobby.Experiments.Count > 0 ? Loc.F("lobby.experiments", string.Join(", ", lobby.Experiments)) : "";
@@ -547,7 +528,7 @@ namespace BirimizKovulacak.Game
                 _stamp.Clear();
                 _stamp.RemoveFromClassList("stamp-text");
                 _stamp.style.backgroundImage = StyleKeyword.Null;
-                _pts.text = occ && lobby.WeeksPlayed > 0 ? Loc.F("lobby.points", s.SessionPoints) : "";
+                _pts.text = occ && lobby.WeeksPlayed > 0 ? Loc.F("v5.lobby.wins", s.Wins) : "";
                 if (!occ)
                 {
                     if (isHost && !lobby.WeekRunning)
@@ -561,7 +542,7 @@ namespace BirimizKovulacak.Game
                 if (s.WantsRematch) Tag(Loc.T("lobby.wants_rematch"), "tag-green").AddTo(_tags);
                 if (s.Ready || s.IsHost)
                 {
-                    if (!MeetingText.ApplyStamp(_stamp, "stamps/stamp_onaylandi", "stamps_v3/stamp_approved"))
+                    if (!UiArt.ApplyStamp(_stamp, "stamps/stamp_onaylandi", "stamps_v3/stamp_approved"))
                     {
                         _stamp.AddToClassList("stamp-text");
                         StampText(Loc.T("lobby.is_ready"), "stamp-text-label").NoPick().AddTo(_stamp);

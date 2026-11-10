@@ -133,7 +133,7 @@ namespace BirimizKovulacak.Game
         {
             _i = this;
             _card = Panel("panel", "consent-card", "col").AddTo(Root);
-            MeetingText.ApplyIcon(Box("icon", "icon-xl").NoPick().AddTo(_card), "icons/info");
+            UiArt.ApplyIcon(Box("icon", "icon-xl").NoPick().AddTo(_card), "icons/info");
             Title(Loc.T("consent.title"), "h1").AddTo(_card);
             PrivacyUi.Explainer(_card, true);
             Text(Loc.T("consent.question"), "privacy-question").AddTo(_card);

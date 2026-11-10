@@ -58,7 +58,7 @@ namespace BirimizKovulacak.Game
             var lc = LineClient.I;
             var view = lc != null ? lc.View : null;
             bool isHost = svc.HostMode && ConnectionManager.I != null && ConnectionManager.I.LineHost != null;
-            bool matchRunning = view != null && view.Phase != LinePhase.WeekResults && view.Phase != LinePhase.Abandoned && view.Phase != LinePhase.None;
+            bool matchRunning = view != null && view.Phase != LinePhase.Results && view.Phase != LinePhase.Abandoned && view.Phase != LinePhase.None;
             sb.Append("enabled=").Append(svc.IsEnabled).Append(" consent=").Append(svc.LocalConsent).Append(" env=").Append(ctx.Environment)
               .Append(" local=").Append(cfg.Local).Append(" cloud=").Append(cfg.Cloud).Append(isHost ? " HOST" : " client").Append('\n');
             sb.Append("session=").Append(Short(ctx.SessionId)).Append(" match=").Append(Short(ctx.MatchId)).Append(" group=").Append(string.IsNullOrEmpty(ctx.GroupId) ? "-" : ctx.GroupId).Append('\n');
