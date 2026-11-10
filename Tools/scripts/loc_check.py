@@ -8,7 +8,8 @@ Checks (Game/Assets/StreamingAssets/Localization):
   * every key literal used by UI/Play (PlayText.T/F prefix "v5.", Loc.T/F literals) resolves in both languages
     (merged like Loc.Load: <lang>.json + every <lang>.<area>.json);
   * enum-derived families exist for every enum value: phase./hint. (LinePhase), fail. (LineFailure), verb. (LineVerb),
-    decision. (FiringDecision), blame. (BlameReason), phone.log_missed. (CallEndReason), task.<id>.name/choice.0/choice.1.
+    decision./fire.decision. (FiringDecision), blame. (BlameReason), phone.log_missed. (CallEndReason),
+    task.<id>.name/choice.0/choice.1, vote.todo.<vote phase>.
 """
 import glob
 import json
@@ -23,7 +24,8 @@ ENUMS = os.path.join(ROOT, "Game", "Assets", "Game", "Core", "Line", "Contracts"
 EMPTY_OK = {"v5.hint.None"}
 TASK_IDS = ["client_bonus", "petty_cash", "weekend_shift"]
 FAMILIES = {"phase.": "LinePhase", "hint.": "LinePhase", "fail.": "LineFailure", "verb.": "LineVerb",
-            "decision.": "FiringDecision", "blame.": "BlameReason", "phone.log_missed.": "CallEndReason"}
+            "decision.": "FiringDecision", "fire.decision.": "FiringDecision", "blame.": "BlameReason",
+            "phone.log_missed.": "CallEndReason"}
 # Loc keys of the shared tables (not "v5.") that the play UI uses on purpose
 SHARED = {"common.nobody", "line.system.name"}
 
@@ -83,6 +85,10 @@ def main():
             k = "v5." + prefix + v
             if k not in tr or k not in en:
                 problems.append("missing enum key: " + k)
+    for ph in ("MeetingVote", "CrisisVote", "FinalVote"):
+        k = "v5.vote.todo." + ph
+        if k not in tr or k not in en:
+            problems.append("missing vote key: " + k)
     for t in TASK_IDS:
         for suffix in ("name", "choice.0", "choice.1"):
             k = "v5.task.%s.%s" % (t, suffix)

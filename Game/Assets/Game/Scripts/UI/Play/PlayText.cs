@@ -70,22 +70,6 @@ namespace BirimizKovulacak.Game
             }
         }
 
-        public static string Firing(LineFiringView f)
-        {
-            string to = f.Recipients.Count > 0 ? F("final.desk_split", Names(f.Recipients), f.Share) : T("final.desk_nobody");
-            return F("final.firing", Name(f.Player), f.Votes, T("decision." + f.Decision), f.Desk) + " " + to
-                + (f.Removed > 0 ? " " + F("final.desk_removed", f.Removed) : "");
-        }
-
-        public static string Ballot(LineBallotView b)
-        {
-            string target = b.Target >= 0 ? Name(b.Target) : T("results.abstain");
-            string where = b.Kind == BallotKind.Meeting ? F("results.ballot_meeting", b.Round + 1, b.Index + 1)
-                : b.Kind == BallotKind.Crisis ? T("results.ballot_crisis")
-                : F(b.Revote ? "results.ballot_final_revote" : "results.ballot_final", b.Round + 1);
-            return where + ": " + Name(b.Voter) + " → " + target + (b.SelfAssigned ? " " + T("results.self_assigned") : "");
-        }
-
         /// <summary>The current meeting's leak with this index (null when the view no longer has it).</summary>
         static LineRecordingPick Pick(int index)
         {

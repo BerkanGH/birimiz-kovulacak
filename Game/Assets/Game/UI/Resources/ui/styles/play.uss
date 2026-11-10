@@ -1,9 +1,10 @@
-/* v5 minimal play UI (Phase 2a, PlayUi.cs). Logical size 1920x1080 (PanelSettings scales it). */
+/* v5 play UI (PlayUi.cs). Logical size 1920x1080 (PanelSettings scales it). */
 .pl-screen { background-color: rgba(14, 18, 28, 0.94); padding: 14px 18px; color: rgb(236, 238, 245); font-size: 20px; flex-direction: column; }
 .pl-header { flex-direction: row; align-items: center; flex-wrap: wrap; padding: 6px 12px; background-color: rgba(255, 255, 255, 0.07); border-radius: 10px; margin-bottom: 10px; }
 .pl-phase { font-size: 32px; color: rgb(255, 224, 102); margin-right: 18px; }
 .pl-timer { font-size: 32px; color: rgb(255, 255, 255); margin-right: 18px; min-width: 90px; }
-.pl-hint { font-size: 19px; color: rgb(190, 198, 220); flex-grow: 1; flex-shrink: 1; min-width: 300px; }
+.pl-spacer { flex-grow: 1; }
+.pl-prim { font-size: 30px; color: rgb(255, 224, 102); margin-left: 12px; }
 .pl-me { font-size: 21px; color: rgb(255, 255, 255); margin-left: 12px; }
 .pl-voice { font-size: 18px; color: rgb(80, 205, 196); margin-left: 12px; }
 .pl-toast { font-size: 20px; color: rgb(255, 140, 120); width: 100%; }
@@ -40,6 +41,42 @@
 .pl-danger { background-color: rgb(150, 42, 36); }
 .pl-dimbtn { opacity: 0.7; }
 .pl-big { font-size: 21px; padding: 7px 16px; min-height: 44px; }
+.pl-small { font-size: 15px; padding: 1px 8px; min-height: 26px; margin: 0; }
+.pl-choice { font-size: 24px; padding: 8px 22px; min-height: 52px; min-width: 140px; margin: 4px 8px 4px 0; }
+.pl-tag-good { background-color: rgb(40, 130, 80); }
+
+/* ---- focus card: "what do you do now?" (top of the centre column) */
+.pl-focus { background-color: rgba(255, 224, 102, 0.09); border-width: 2px; border-color: rgba(255, 224, 102, 0.5); border-radius: 10px; padding: 6px 12px 10px 12px; }
+.pl-focus-todo { border-width: 3px; border-color: rgb(255, 160, 60); background-color: rgba(255, 150, 50, 0.15); }
+.pl-focus-done { border-color: rgba(120, 222, 150, 0.75); }
+.pl-focus-kicker { font-size: 16px; color: rgb(255, 224, 102); letter-spacing: 1px; }
+.pl-focus-text { font-size: 23px; color: rgb(255, 255, 255); margin: 2px 0 6px 0; }
+.pl-focus .pl-sub { margin-top: 4px; }
+.pl-focus .pl-wrap { align-items: center; }
+.pl-chip { font-size: 19px; padding: 3px 10px; margin: 3px 6px 3px 0; border-radius: 8px; background-color: rgba(255, 255, 255, 0.12); color: rgb(236, 238, 245); }
+.pl-chip-bad { background-color: rgba(190, 50, 42, 0.45); }
+.pl-chip-warn { background-color: rgba(220, 120, 40, 0.4); }
+.pl-chip-me { background-color: rgba(120, 222, 150, 0.35); border-width: 1px; border-color: rgb(150, 236, 180); }
+
+/* ---- desk reveal (FinalVerdict, results) */
+.pl-fire { background-color: rgba(190, 50, 42, 0.16); border-width: 2px; border-color: rgb(210, 56, 47); border-radius: 10px; padding: 6px 12px 8px 12px; margin: 6px 0; }
+.pl-fire-title { font-size: 36px; color: rgb(255, 140, 120); }
+.pl-fire-desk { font-size: 27px; color: rgb(255, 224, 102); margin: 0 0 4px 0; }
+.pl-fire-small { border-width: 1px; padding: 4px 10px; }
+.pl-fire-small .pl-fire-title { font-size: 25px; }
+.pl-fire-small .pl-fire-desk { font-size: 21px; }
+
+/* ---- results summary: ranking table and detail tabs */
+.pl-win { font-size: 32px; color: rgb(120, 222, 150); margin: 6px 0 4px 0; }
+.pl-rank { flex-direction: row; align-items: center; padding: 3px 8px; margin-bottom: 3px; border-radius: 6px; background-color: rgba(255, 255, 255, 0.06); }
+.pl-rank-win { background-color: rgba(120, 222, 150, 0.18); }
+.pl-rank-fired { background-color: rgba(190, 50, 42, 0.2); }
+.pl-rank-n { width: 44px; font-size: 21px; color: rgb(190, 198, 220); }
+.pl-rank-name { flex-grow: 1; flex-shrink: 1; font-size: 22px; color: rgb(255, 255, 255); }
+.pl-rank-prim { width: 110px; font-size: 22px; color: rgb(255, 224, 102); -unity-text-align: middle-right; margin-right: 14px; }
+.pl-rank-blame { width: 96px; font-size: 19px; color: rgb(255, 200, 90); }
+.pl-rank-tags { flex-direction: row; flex-wrap: wrap; width: 250px; }
+.pl-tabbody { margin-top: 4px; padding: 4px 8px; border-radius: 8px; background-color: rgba(255, 255, 255, 0.04); }
 .pl-field { flex-grow: 1; margin: 2px 6px 2px 0; }
 .pl-field .unity-base-text-field__input { font-size: 19px; background-color: rgb(245, 245, 250); color: rgb(20, 24, 36); padding: 5px 8px; border-radius: 6px; }
 .pl-compose { border-top-width: 1px; border-color: rgba(255, 255, 255, 0.15); padding-top: 6px; }
@@ -91,20 +128,28 @@
 .tape-stamp .stamp-text-label { font-size: 46px; }
 .tape-context { font-size: 14px; color: rgb(107, 111, 128); }
 
-/* ---- cassette deck, compact inside the centre column */
-.pl-tape .tape-person { width: 120px; }
-.pl-tape .tape-person-name { font-size: 22px; }
-.pl-tape .tape-person-role { font-size: 15px; }
-.pl-tape .tape-center { margin: 0 10px; }
-.pl-tape .tape-label-text { font-size: 24px; }
-.pl-tape .tape-label-arrow { font-size: 22px; margin: 0 8px; }
-.pl-tape .tape-label-clock { font-size: 16px; }
-.pl-tape .tape-deck { width: 360px; height: 180px; }
-.pl-tape .tape-deck-fallback { height: 160px; padding: 12px 16px; }
-.pl-tape .tape-window { margin: 12px 24px; height: 80px; }
-.pl-tape .tape-reel-slot { width: 64px; height: 64px; }
-.pl-tape .tape-wave { width: 600px; height: 60px; padding: 8px 14px; }
-.pl-tape .tape-bar { width: 6px; }
-.pl-tape .tape-status { font-size: 19px; margin-top: 4px; }
-.pl-tape .tape-stamp { right: -30px; top: -30px; width: 160px; height: 54px; }
-.pl-tape .tape-stamp .stamp-text-label { font-size: 26px; }
+/* ---- cassette deck, compact inside the centre column (must not push the focus card's ballots off screen) */
+.pl-tape { padding: 4px 8px; margin: 6px 0; }
+.pl-tape .tape-person { width: 100px; }
+.pl-tape .badge-xl { width: 58px; height: 58px; border-width: 3px; }
+.pl-tape .badge-xl .pbadge-initial { font-size: 26px; }
+.pl-tape .tape-talking { border-width: 5px; }
+.pl-tape .tape-person-name { font-size: 19px; margin-top: 2px; }
+.pl-tape .tape-person-role { font-size: 13px; }
+.pl-tape .tape-center { margin: 0 8px; }
+.pl-tape .tape-label { padding: 2px 14px 3px 14px; margin-bottom: 2px; }
+.pl-tape .tape-label-text { font-size: 20px; }
+.pl-tape .tape-label-arrow { font-size: 18px; margin: 0 6px; }
+.pl-tape .tape-label-clock { font-size: 13px; }
+.pl-tape .tape-deck { width: 220px; height: 110px; }
+.pl-tape .tape-deck-fallback { height: 96px; padding: 8px 10px; border-radius: 14px; }
+.pl-tape .tape-window { margin: 8px 16px; height: 46px; }
+.pl-tape .tape-reel-slot { width: 40px; height: 40px; }
+.pl-tape .tape-reel { width: 36px; height: 36px; }
+.pl-tape .tape-wave-row { margin-top: 4px; }
+.pl-tape .tape-wave { width: 520px; height: 40px; padding: 6px 12px; }
+.pl-tape .tape-bar { width: 5px; }
+.pl-tape .tape-playhead { top: 4px; bottom: 4px; }
+.pl-tape .tape-status { font-size: 17px; margin-top: 2px; }
+.pl-tape .tape-stamp { right: -26px; top: -18px; width: 120px; height: 40px; }
+.pl-tape .tape-stamp .stamp-text-label { font-size: 20px; }
