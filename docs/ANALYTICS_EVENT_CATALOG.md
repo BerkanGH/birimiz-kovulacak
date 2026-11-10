@@ -2,7 +2,7 @@
 
 Generated from `Game/Assets/Game/Core/Telemetry/TelemetryCatalog.cs` by the `CatalogExport` test in `Tools/TelemetryTests` (`TELEMETRY_EXPORT_DOCS=1 dotnet test Tools/TelemetryTests/TelemetryTests.csproj --filter CatalogExport`). Do not edit by hand. Machine-readable twin: `docs/analytics/event_catalog.json`. Contract: `docs/ANALYTICS_ARCHITECTURE.md`.
 
-**95 events**: 93 implemented, 1 pending_integration, 0 unsupported, 1 not_applicable.
+**95 events**: 35 implemented, 59 pending_integration, 0 unsupported, 1 not_applicable.
 
 Status meaning: `implemented` = emitting code exists in this repository, fed from sources that exist today (contract events/views, connection state), covered by tests; host events still need the `HostTelemetryBridge` call sites in `HostLineController` (see `docs/ANALYTICS_SETUP.md`) and the v4 engine emitting the contract events. `pending_integration` = a source is missing (named in the entry); the event is **not** emitted. `not_applicable` / `unsupported` = never emitted.
 
@@ -24,66 +24,66 @@ Envelope fields (every event, omitted when not applicable): schema_version, even
 | [`match_start_attempted`](#match_start_attempted) | host | public | host_aggregate | local | implemented |
 | [`match_started`](#match_started) | host | public | host_aggregate | local+cloud | implemented |
 | [`match_start_failed`](#match_start_failed) | host | public | host_aggregate | local | implemented |
-| [`match_abandoned`](#match_abandoned) | host | public | host_aggregate | local | implemented |
+| [`match_abandoned`](#match_abandoned) | host | public | host_aggregate | local | pending_integration |
 | [`rematch_requested`](#rematch_requested) | client | public | self | local | implemented |
 | [`rematch_started`](#rematch_started) | host | public | host_aggregate | local+cloud | implemented |
-| [`week_started`](#week_started) | host | public | host_aggregate | local | implemented |
-| [`day_started`](#day_started) | host | public | host_aggregate | local | implemented |
-| [`phase_entered`](#phase_entered) | host | public | host_aggregate | local | implemented |
-| [`phase_exited`](#phase_exited) | host | public | host_aggregate | local+cloud | implemented |
-| [`round_started`](#round_started) | host | public | host_aggregate | local | implemented |
-| [`round_finished`](#round_finished) | host | public | host_aggregate | local+cloud | implemented |
-| [`day_finished`](#day_finished) | host | public | host_aggregate | local | implemented |
-| [`week_finished`](#week_finished) | host | public | host_aggregate | local | implemented |
-| [`week_completed`](#week_completed) | host | public | host_aggregate | local+cloud | implemented |
-| [`phone_call_requested`](#phone_call_requested) | host | private until match end | all_participants | local | implemented |
-| [`phone_call_connected`](#phone_call_connected) | host | private until match end | all_participants | local | implemented |
-| [`phone_call_rejected`](#phone_call_rejected) | host | private until match end | all_participants | local | implemented |
-| [`phone_call_missed`](#phone_call_missed) | host | private until match end | all_participants | local | implemented |
-| [`phone_call_failed`](#phone_call_failed) | host | private until match end | all_participants | local | implemented |
-| [`phone_call_finished`](#phone_call_finished) | host | private until match end | all_participants | local | implemented |
-| [`phone_round_summary`](#phone_round_summary) | host | private until match end | host_aggregate | local | implemented |
-| [`secret_info_presented`](#secret_info_presented) | host | private until match end | self | local | implemented |
+| [`week_started`](#week_started) | host | public | host_aggregate | local | pending_integration |
+| [`day_started`](#day_started) | host | public | host_aggregate | local | pending_integration |
+| [`phase_entered`](#phase_entered) | host | public | host_aggregate | local | pending_integration |
+| [`phase_exited`](#phase_exited) | host | public | host_aggregate | local+cloud | pending_integration |
+| [`round_started`](#round_started) | host | public | host_aggregate | local | pending_integration |
+| [`round_finished`](#round_finished) | host | public | host_aggregate | local+cloud | pending_integration |
+| [`day_finished`](#day_finished) | host | public | host_aggregate | local | pending_integration |
+| [`week_finished`](#week_finished) | host | public | host_aggregate | local | pending_integration |
+| [`week_completed`](#week_completed) | host | public | host_aggregate | local+cloud | pending_integration |
+| [`phone_call_requested`](#phone_call_requested) | host | private until match end | all_participants | local | pending_integration |
+| [`phone_call_connected`](#phone_call_connected) | host | private until match end | all_participants | local | pending_integration |
+| [`phone_call_rejected`](#phone_call_rejected) | host | private until match end | all_participants | local | pending_integration |
+| [`phone_call_missed`](#phone_call_missed) | host | private until match end | all_participants | local | pending_integration |
+| [`phone_call_failed`](#phone_call_failed) | host | private until match end | all_participants | local | pending_integration |
+| [`phone_call_finished`](#phone_call_finished) | host | private until match end | all_participants | local | pending_integration |
+| [`phone_round_summary`](#phone_round_summary) | host | private until match end | host_aggregate | local | pending_integration |
+| [`secret_info_presented`](#secret_info_presented) | host | private until match end | self | local | pending_integration |
 | [`choice_ui_opened`](#choice_ui_opened) | client | public | self | local | implemented |
-| [`choice_submitted`](#choice_submitted) | host | private until match end | self | local | implemented |
-| [`choice_changed`](#choice_changed) | host | private until match end | self | local | implemented |
-| [`choice_timed_out`](#choice_timed_out) | host | private until match end | self | local | implemented |
-| [`choice_outcome_resolved`](#choice_outcome_resolved) | host | private until match end | self | local | implemented |
-| [`round_player_summary`](#round_player_summary) | host | private until match end | self | local | implemented |
-| [`meeting_started`](#meeting_started) | host | public | host_aggregate | local | implemented |
-| [`recording_playback_started`](#recording_playback_started) | host | public | all_participants | local | implemented |
-| [`recording_playback_finished`](#recording_playback_finished) | host | public | host_aggregate | local | implemented |
-| [`meeting_discussion_started`](#meeting_discussion_started) | host | public | host_aggregate | local | implemented |
-| [`meeting_discussion_finished`](#meeting_discussion_finished) | host | public | host_aggregate | local | implemented |
-| [`evidence_presented`](#evidence_presented) | host | public | self | local | implemented |
-| [`meeting_vote_submitted`](#meeting_vote_submitted) | host | public | voter | local | implemented |
-| [`meeting_vote_resolved`](#meeting_vote_resolved) | host | public | host_aggregate | local+cloud | implemented |
-| [`warning_assigned`](#warning_assigned) | host | public | self | local | implemented |
-| [`meeting_finished`](#meeting_finished) | host | public | host_aggregate | local | implemented |
-| [`fault_points_changed`](#fault_points_changed) | host | public | self | local | implemented |
-| [`final_started`](#final_started) | host | public | host_aggregate | local | implemented |
+| [`choice_submitted`](#choice_submitted) | host | private until match end | self | local | pending_integration |
+| [`choice_changed`](#choice_changed) | host | private until match end | self | local | pending_integration |
+| [`choice_timed_out`](#choice_timed_out) | host | private until match end | self | local | pending_integration |
+| [`choice_outcome_resolved`](#choice_outcome_resolved) | host | private until match end | self | local | pending_integration |
+| [`round_player_summary`](#round_player_summary) | host | private until match end | self | local | pending_integration |
+| [`meeting_started`](#meeting_started) | host | public | host_aggregate | local | pending_integration |
+| [`recording_playback_started`](#recording_playback_started) | host | public | all_participants | local | pending_integration |
+| [`recording_playback_finished`](#recording_playback_finished) | host | public | host_aggregate | local | pending_integration |
+| [`meeting_discussion_started`](#meeting_discussion_started) | host | public | host_aggregate | local | pending_integration |
+| [`meeting_discussion_finished`](#meeting_discussion_finished) | host | public | host_aggregate | local | pending_integration |
+| [`evidence_presented`](#evidence_presented) | host | public | self | local | pending_integration |
+| [`meeting_vote_submitted`](#meeting_vote_submitted) | host | public | voter | local | pending_integration |
+| [`meeting_vote_resolved`](#meeting_vote_resolved) | host | public | host_aggregate | local+cloud | pending_integration |
+| [`warning_assigned`](#warning_assigned) | host | public | self | local | pending_integration |
+| [`meeting_finished`](#meeting_finished) | host | public | host_aggregate | local | pending_integration |
+| [`fault_points_changed`](#fault_points_changed) | host | public | self | local | pending_integration |
+| [`final_started`](#final_started) | host | public | host_aggregate | local | pending_integration |
 | [`final_candidate_selected`](#final_candidate_selected) | host | public | host_aggregate | local | not_applicable |
-| [`defense_started`](#defense_started) | host | public | self | local | implemented |
-| [`defense_finished`](#defense_finished) | host | public | self | local | implemented |
-| [`final_vote_submitted`](#final_vote_submitted) | host | public | voter | local | implemented |
-| [`final_vote_resolved`](#final_vote_resolved) | host | public | host_aggregate | local+cloud | implemented |
-| [`player_fired`](#player_fired) | host | public | self | local | implemented |
-| [`task_output_resolved`](#task_output_resolved) | host | public | host_aggregate | local | implemented |
-| [`productivity_changed`](#productivity_changed) | host | public | host_aggregate | local | implemented |
-| [`recovery_opportunities`](#recovery_opportunities) | host | public | host_aggregate | local | implemented |
-| [`remedial_requested`](#remedial_requested) | host | private until match end | all_participants | local | implemented |
-| [`remedial_resolved`](#remedial_resolved) | host | private until match end | all_participants | local | implemented |
-| [`income_credited`](#income_credited) | host | private until match end | self | local | implemented |
-| [`money_transferred`](#money_transferred) | host | private until match end | all_participants | local | implemented |
-| [`evidence_purchased`](#evidence_purchased) | host | private until match end | self | local | implemented |
-| [`incident_created`](#incident_created) | host | private until match end | self | local | implemented |
-| [`sabotage_verified`](#sabotage_verified) | host | public | self | local | implemented |
-| [`objective_assigned`](#objective_assigned) | host | private until match end | self | local | implemented |
-| [`objective_completed`](#objective_completed) | host | private until match end | self | local | implemented |
-| [`career_breakdown`](#career_breakdown) | host | public | self | local | implemented |
-| [`company_result`](#company_result) | host | public | host_aggregate | local+cloud | implemented |
-| [`company_failed`](#company_failed) | host | public | host_aggregate | local | implemented |
-| [`message_sent`](#message_sent) | host | private until match end | self | local | implemented |
+| [`defense_started`](#defense_started) | host | public | self | local | pending_integration |
+| [`defense_finished`](#defense_finished) | host | public | self | local | pending_integration |
+| [`final_vote_submitted`](#final_vote_submitted) | host | public | voter | local | pending_integration |
+| [`final_vote_resolved`](#final_vote_resolved) | host | public | host_aggregate | local+cloud | pending_integration |
+| [`player_fired`](#player_fired) | host | public | self | local | pending_integration |
+| [`task_output_resolved`](#task_output_resolved) | host | public | host_aggregate | local | pending_integration |
+| [`productivity_changed`](#productivity_changed) | host | public | host_aggregate | local | pending_integration |
+| [`recovery_opportunities`](#recovery_opportunities) | host | public | host_aggregate | local | pending_integration |
+| [`remedial_requested`](#remedial_requested) | host | private until match end | all_participants | local | pending_integration |
+| [`remedial_resolved`](#remedial_resolved) | host | private until match end | all_participants | local | pending_integration |
+| [`income_credited`](#income_credited) | host | private until match end | self | local | pending_integration |
+| [`money_transferred`](#money_transferred) | host | private until match end | all_participants | local | pending_integration |
+| [`evidence_purchased`](#evidence_purchased) | host | private until match end | self | local | pending_integration |
+| [`incident_created`](#incident_created) | host | private until match end | self | local | pending_integration |
+| [`sabotage_verified`](#sabotage_verified) | host | public | self | local | pending_integration |
+| [`objective_assigned`](#objective_assigned) | host | private until match end | self | local | pending_integration |
+| [`objective_completed`](#objective_completed) | host | private until match end | self | local | pending_integration |
+| [`career_breakdown`](#career_breakdown) | host | public | self | local | pending_integration |
+| [`company_result`](#company_result) | host | public | host_aggregate | local+cloud | pending_integration |
+| [`company_failed`](#company_failed) | host | public | host_aggregate | local | pending_integration |
+| [`message_sent`](#message_sent) | host | private until match end | self | local | pending_integration |
 | [`message_rejected`](#message_rejected) | client | public | self | local | implemented |
 | [`message_thread_opened`](#message_thread_opened) | client | public | self | local | implemented |
 | [`ui_action_rejected`](#ui_action_rejected) | client | public | self | local | implemented |
@@ -98,8 +98,8 @@ Envelope fields (every event, omitted when not applicable): schema_version, even
 | [`reconnect_failed`](#reconnect_failed) | client | public | self | local | implemented |
 | [`host_departed`](#host_departed) | client | public | self | local | implemented |
 | [`voice_quality_summary`](#voice_quality_summary) | client | public | self | local | pending_integration |
-| [`stuck_phase`](#stuck_phase) | host | public | host_aggregate | local | implemented |
-| [`unexpected_transition`](#unexpected_transition) | host | public | host_aggregate | local | implemented |
+| [`stuck_phase`](#stuck_phase) | host | public | host_aggregate | local | pending_integration |
+| [`unexpected_transition`](#unexpected_transition) | host | public | host_aggregate | local | pending_integration |
 | [`technical_failure`](#technical_failure) | both | public | self | local+cloud | implemented |
 | [`telemetry_queue_dropped`](#telemetry_queue_dropped) | both | public | self | local | implemented |
 | [`telemetry_sink_error`](#telemetry_sink_error) | both | public | self | local | implemented |
@@ -163,7 +163,7 @@ Envelope fields (every event, omitted when not applicable): schema_version, even
 | Param | Type | Required | Cloud | Values |
 |---|---|---|---|---|
 | `reason` | enum | yes | no | host_lost, reconnect_failed, transport_failed, incompatible, kicked |
-| `phase` | enum | yes | no | @PhaseLobby (morning, round_intro, round_play, round_reveal, meeting_dossier, meeting_discussion, meeting_vote, meeting_verdict, final_defense, final_vote, final_verdict, week_results, abandoned, break, lobby, none) |
+| `phase` | enum | yes | no | @PhaseLobby (intro, task_play, task_reveal, break, meeting_dossier, meeting_discussion, meeting_vote, meeting_verdict, crisis_calls, crisis_vote, crisis_verdict, final_discussion, final_defense, final_vote, final_verdict, results, abandoned, lobby, none) |
 | `mid_match` | bool | yes | no |  |
 
 ### lobby_created
@@ -181,7 +181,6 @@ Envelope fields (every event, omitted when not applicable): schema_version, even
 
 | Param | Type | Required | Cloud | Values |
 |---|---|---|---|---|
-| `length` | enum | yes | no | short, full |
 | `recordings_enabled` | bool | yes | no |  |
 
 ### lobby_join_attempted
@@ -306,8 +305,6 @@ Envelope fields (every event, omitted when not applicable): schema_version, even
 |---|---|---|---|---|
 | `humans` | int | yes | yes |  |
 | `bots` | int | yes | yes |  |
-| `length` | enum | yes | yes | short, full |
-| `manager` | enum | yes | yes | @Manager (paragoz, disiplinci, kayirmaci, paranoyak) |
 | `recordings_enabled` | bool | yes | no |  |
 | `lobby_fill_seconds` | float (seconds unless named otherwise) | optional (omitted, never 0) | no |  |
 | `ready_seconds` | float (seconds unless named otherwise) | optional (omitted, never 0) | no |  |
@@ -333,17 +330,17 @@ Envelope fields (every event, omitted when not applicable): schema_version, even
 
 - **Name / version**: `match_abandoned` v1
 - **Meaning**: Fewer than 2 players stayed connected; the engine abandoned the match.
-- **Trigger location**: `Core/Telemetry/LineTelemetryObserver.cs MatchEnded (reason abandoned)`
+- **Trigger location**: `(removed v4) LineTelemetryObserver MatchEnded (reason abandoned)`
 - **Authority**: host
 - **Privacy / consent**: public (written immediately); consent rule `host_aggregate`
 - **Routing**: local
 - **Expected max frequency**: rare
 - **KPI contribution**: connection
-- **Availability**: implemented
+- **Availability**: pending_integration - v5 gameplay observer not implemented yet (the v4 LineTelemetryObserver was removed with the v4 rules in v5 Phase 1)
 
 | Param | Type | Required | Cloud | Values |
 |---|---|---|---|---|
-| `phase` | enum | yes | no | @Phase (morning, round_intro, round_play, round_reveal, meeting_dossier, meeting_discussion, meeting_vote, meeting_verdict, final_defense, final_vote, final_verdict, week_results, abandoned, break) |
+| `phase` | enum | yes | no | @Phase (intro, task_play, task_reveal, break, meeting_dossier, meeting_discussion, meeting_vote, meeting_verdict, crisis_calls, crisis_vote, crisis_verdict, final_discussion, final_defense, final_vote, final_verdict, results, abandoned) |
 | `connected` | int | yes | no |  |
 
 ### rematch_requested
@@ -386,13 +383,13 @@ Envelope fields (every event, omitted when not applicable): schema_version, even
 
 - **Name / version**: `week_started` v1
 - **Meaning**: Match opened.
-- **Trigger location**: `Core/Telemetry/LineTelemetryObserver.cs Start`
+- **Trigger location**: `(removed v4) LineTelemetryObserver Start`
 - **Authority**: host
 - **Privacy / consent**: public (written immediately); consent rule `host_aggregate`
 - **Routing**: local
 - **Expected max frequency**: 1/match
 - **KPI contribution**: pacing
-- **Availability**: implemented
+- **Availability**: pending_integration - v5 gameplay observer not implemented yet (the v4 LineTelemetryObserver was removed with the v4 rules in v5 Phase 1)
 - **Notes**: days from engine view, tasks = Company.TasksScheduled.
 
 | Param | Type | Required | Cloud | Values |
@@ -404,30 +401,30 @@ Envelope fields (every event, omitted when not applicable): schema_version, even
 
 - **Name / version**: `day_started` v1
 - **Meaning**: A work block (Morning) began.
-- **Trigger location**: `Core/Telemetry/LineTelemetryObserver.cs OnPhaseChanged (Morning)`
+- **Trigger location**: `(removed v4) LineTelemetryObserver OnPhaseChanged (Morning)`
 - **Authority**: host
 - **Privacy / consent**: public (written immediately); consent rule `host_aggregate`
 - **Routing**: local
 - **Expected max frequency**: 1/day
 - **KPI contribution**: pacing
-- **Availability**: implemented
+- **Availability**: pending_integration - v5 gameplay observer not implemented yet (the v4 LineTelemetryObserver was removed with the v4 rules in v5 Phase 1)
 
 | Param | Type | Required | Cloud | Values |
 |---|---|---|---|---|
-| `task_a` | enum | yes | no | @Task (invoice_reconcile, budget_split, customer_spec, report_review, room_booking, archive_visitor, bonus_pool, server_code, phishing_check, shift_cover, vendor_pick, supply_swap) |
-| `task_b` | enum | yes | no | @Task (invoice_reconcile, budget_split, customer_spec, report_review, room_booking, archive_visitor, bonus_pool, server_code, phishing_check, shift_cover, vendor_pick, supply_swap) |
+| `task_a` | enum | yes | no | @Task (client_bonus, petty_cash, weekend_shift) |
+| `task_b` | enum | yes | no | @Task (client_bonus, petty_cash, weekend_shift) |
 
 ### phase_entered
 
 - **Name / version**: `phase_entered` v1
 - **Meaning**: A phase began.
-- **Trigger location**: `Core/Telemetry/LineTelemetryObserver.cs OnPhaseChanged`
+- **Trigger location**: `(removed v4) LineTelemetryObserver OnPhaseChanged`
 - **Authority**: host
 - **Privacy / consent**: public (written immediately); consent rule `host_aggregate`
 - **Routing**: local
 - **Expected max frequency**: ~12/day
 - **KPI contribution**: pacing
-- **Availability**: implemented
+- **Availability**: pending_integration - v5 gameplay observer not implemented yet (the v4 LineTelemetryObserver was removed with the v4 rules in v5 Phase 1)
 - **Notes**: planned = engine.PhaseEndTime - phase start (omitted when the engine already moved on).
 
 | Param | Type | Required | Cloud | Values |
@@ -438,13 +435,13 @@ Envelope fields (every event, omitted when not applicable): schema_version, even
 
 - **Name / version**: `phase_exited` v1
 - **Meaning**: A phase ended (actual vs planned duration, why).
-- **Trigger location**: `Core/Telemetry/LineTelemetryObserver.cs OnPhaseChanged`
+- **Trigger location**: `(removed v4) LineTelemetryObserver OnPhaseChanged`
 - **Authority**: host
 - **Privacy / consent**: public (written immediately); consent rule `host_aggregate`
 - **Routing**: local+cloud (cloud only for consent level 3; cloud payload = parameters marked cloud)
 - **Expected max frequency**: ~12/day
 - **KPI contribution**: pacing, productivity
-- **Availability**: implemented
+- **Availability**: pending_integration - v5 gameplay observer not implemented yet (the v4 LineTelemetryObserver was removed with the v4 rules in v5 Phase 1)
 - **Notes**: completion_reason from PhaseChanged.B.
 
 | Param | Type | Required | Cloud | Values |
@@ -458,13 +455,13 @@ Envelope fields (every event, omitted when not applicable): schema_version, even
 
 - **Name / version**: `round_started` v1
 - **Meaning**: RoundPlay began.
-- **Trigger location**: `Core/Telemetry/LineTelemetryObserver.cs OnPhaseChanged (RoundPlay)`
+- **Trigger location**: `(removed v4) LineTelemetryObserver OnPhaseChanged (RoundPlay)`
 - **Authority**: host
 - **Privacy / consent**: public (written immediately); consent rule `host_aggregate`
 - **Routing**: local
 - **Expected max frequency**: 1/task
 - **KPI contribution**: pacing
-- **Availability**: implemented
+- **Availability**: pending_integration - v5 gameplay observer not implemented yet (the v4 LineTelemetryObserver was removed with the v4 rules in v5 Phase 1)
 - **Notes**: task_id/version in the envelope.
 
 | Param | Type | Required | Cloud | Values |
@@ -477,13 +474,13 @@ Envelope fields (every event, omitted when not applicable): schema_version, even
 
 - **Name / version**: `round_finished` v1
 - **Meaning**: A task resolved.
-- **Trigger location**: `Core/Telemetry/LineTelemetryObserver.cs OnTaskResolved`
+- **Trigger location**: `(removed v4) LineTelemetryObserver OnTaskResolved`
 - **Authority**: host
 - **Privacy / consent**: public (written immediately); consent rule `host_aggregate`
 - **Routing**: local+cloud (cloud only for consent level 3; cloud payload = parameters marked cloud)
 - **Expected max frequency**: 1/task
 - **KPI contribution**: productivity, pacing
-- **Availability**: implemented
+- **Availability**: pending_integration - v5 gameplay observer not implemented yet (the v4 LineTelemetryObserver was removed with the v4 rules in v5 Phase 1)
 - **Notes**: output bucket for cloud is computed by the sink.
 
 | Param | Type | Required | Cloud | Values |
@@ -500,13 +497,13 @@ Envelope fields (every event, omitted when not applicable): schema_version, even
 
 - **Name / version**: `day_finished` v1
 - **Meaning**: A work block ended (meeting begins).
-- **Trigger location**: `Core/Telemetry/LineTelemetryObserver.cs OnPhaseChanged (MeetingDossier)`
+- **Trigger location**: `(removed v4) LineTelemetryObserver OnPhaseChanged (MeetingDossier)`
 - **Authority**: host
 - **Privacy / consent**: public (written immediately); consent rule `host_aggregate`
 - **Routing**: local
 - **Expected max frequency**: 1/day
 - **KPI contribution**: productivity
-- **Availability**: implemented
+- **Availability**: pending_integration - v5 gameplay observer not implemented yet (the v4 LineTelemetryObserver was removed with the v4 rules in v5 Phase 1)
 
 | Param | Type | Required | Cloud | Values |
 |---|---|---|---|---|
@@ -518,13 +515,13 @@ Envelope fields (every event, omitted when not applicable): schema_version, even
 
 - **Name / version**: `week_finished` v1
 - **Meaning**: The match ended (any way).
-- **Trigger location**: `Core/Telemetry/LineTelemetryObserver.cs MatchEnded`
+- **Trigger location**: `(removed v4) LineTelemetryObserver MatchEnded`
 - **Authority**: host
 - **Privacy / consent**: public (written immediately); consent rule `host_aggregate`
 - **Routing**: local
 - **Expected max frequency**: 1/match
 - **KPI contribution**: pacing
-- **Availability**: implemented
+- **Availability**: pending_integration - v5 gameplay observer not implemented yet (the v4 LineTelemetryObserver was removed with the v4 rules in v5 Phase 1)
 
 | Param | Type | Required | Cloud | Values |
 |---|---|---|---|---|
@@ -535,13 +532,13 @@ Envelope fields (every event, omitted when not applicable): schema_version, even
 
 - **Name / version**: `week_completed` v1
 - **Meaning**: WeekResults reached.
-- **Trigger location**: `Core/Telemetry/LineTelemetryObserver.cs OnPhaseChanged (WeekResults)`
+- **Trigger location**: `(removed v4) LineTelemetryObserver OnPhaseChanged (WeekResults)`
 - **Authority**: host
 - **Privacy / consent**: public (written immediately); consent rule `host_aggregate`
 - **Routing**: local+cloud (cloud only for consent level 3; cloud payload = parameters marked cloud)
 - **Expected max frequency**: 1/match
 - **KPI contribution**: retention, productivity
-- **Availability**: implemented
+- **Availability**: pending_integration - v5 gameplay observer not implemented yet (the v4 LineTelemetryObserver was removed with the v4 rules in v5 Phase 1)
 
 | Param | Type | Required | Cloud | Values |
 |---|---|---|---|---|
@@ -553,13 +550,13 @@ Envelope fields (every event, omitted when not applicable): schema_version, even
 
 - **Name / version**: `phone_call_requested` v1
 - **Meaning**: A caller dialled.
-- **Trigger location**: `Core/Telemetry/LineTelemetryObserver.cs OnCallIncoming`
+- **Trigger location**: `(removed v4) LineTelemetryObserver OnCallIncoming`
 - **Authority**: host
 - **Privacy / consent**: private_until_match_end (held in host memory, written at results/abandon); consent rule `all_participants`
 - **Routing**: local
 - **Expected max frequency**: <=20/task
 - **KPI contribution**: phone_participation
-- **Availability**: implemented
+- **Availability**: pending_integration - v5 gameplay observer not implemented yet (the v4 LineTelemetryObserver was removed with the v4 rules in v5 Phase 1)
 - **Notes**: partners_in_task from the task Group of the caller.
 
 | Param | Type | Required | Cloud | Values |
@@ -572,13 +569,13 @@ Envelope fields (every event, omitted when not applicable): schema_version, even
 
 - **Name / version**: `phone_call_connected` v1
 - **Meaning**: The callee answered.
-- **Trigger location**: `Core/Telemetry/LineTelemetryObserver.cs OnCallConnected`
+- **Trigger location**: `(removed v4) LineTelemetryObserver OnCallConnected`
 - **Authority**: host
 - **Privacy / consent**: private_until_match_end (held in host memory, written at results/abandon); consent rule `all_participants`
 - **Routing**: local
 - **Expected max frequency**: <=10/task
 - **KPI contribution**: phone_participation
-- **Availability**: implemented
+- **Availability**: pending_integration - v5 gameplay observer not implemented yet (the v4 LineTelemetryObserver was removed with the v4 rules in v5 Phase 1)
 
 | Param | Type | Required | Cloud | Values |
 |---|---|---|---|---|
@@ -592,13 +589,13 @@ Envelope fields (every event, omitted when not applicable): schema_version, even
 
 - **Name / version**: `phone_call_rejected` v1
 - **Meaning**: The callee declined.
-- **Trigger location**: `Core/Telemetry/LineTelemetryObserver.cs OnCallEnded (Declined)`
+- **Trigger location**: `(removed v4) LineTelemetryObserver OnCallEnded (Declined)`
 - **Authority**: host
 - **Privacy / consent**: private_until_match_end (held in host memory, written at results/abandon); consent rule `all_participants`
 - **Routing**: local
 - **Expected max frequency**: <=5/task
 - **KPI contribution**: phone_participation
-- **Availability**: implemented
+- **Availability**: pending_integration - v5 gameplay observer not implemented yet (the v4 LineTelemetryObserver was removed with the v4 rules in v5 Phase 1)
 - **Notes**: Never counts as participation.
 
 | Param | Type | Required | Cloud | Values |
@@ -611,13 +608,13 @@ Envelope fields (every event, omitted when not applicable): schema_version, even
 
 - **Name / version**: `phone_call_missed` v1
 - **Meaning**: Nobody answered (ring timeout or caller hung up).
-- **Trigger location**: `Core/Telemetry/LineTelemetryObserver.cs OnCallEnded (Missed/HungUp while ringing)`
+- **Trigger location**: `(removed v4) LineTelemetryObserver OnCallEnded (Missed/HungUp while ringing)`
 - **Authority**: host
 - **Privacy / consent**: private_until_match_end (held in host memory, written at results/abandon); consent rule `all_participants`
 - **Routing**: local
 - **Expected max frequency**: <=5/task
 - **KPI contribution**: phone_participation
-- **Availability**: implemented
+- **Availability**: pending_integration - v5 gameplay observer not implemented yet (the v4 LineTelemetryObserver was removed with the v4 rules in v5 Phase 1)
 - **Notes**: Never counts as participation.
 
 | Param | Type | Required | Cloud | Values |
@@ -629,13 +626,13 @@ Envelope fields (every event, omitted when not applicable): schema_version, even
 
 - **Name / version**: `phone_call_failed` v1
 - **Meaning**: The call never rang.
-- **Trigger location**: `Core/Telemetry/LineTelemetryObserver.cs OnCallBusy / OnCallEnded`
+- **Trigger location**: `(removed v4) LineTelemetryObserver OnCallBusy / OnCallEnded`
 - **Authority**: host
 - **Privacy / consent**: private_until_match_end (held in host memory, written at results/abandon); consent rule `all_participants`
 - **Routing**: local
 - **Expected max frequency**: <=5/task
 - **KPI contribution**: phone_participation, accessibility
-- **Availability**: implemented
+- **Availability**: pending_integration - v5 gameplay observer not implemented yet (the v4 LineTelemetryObserver was removed with the v4 rules in v5 Phase 1)
 - **Notes**: Rejected Apply() results (PhoneDead, Absent, WrongPhase) are not visible as engine events; only CallBusy/MissedCall/CallEnded are observed.
 
 | Param | Type | Required | Cloud | Values |
@@ -648,13 +645,13 @@ Envelope fields (every event, omitted when not applicable): schema_version, even
 
 - **Name / version**: `phone_call_finished` v1
 - **Meaning**: A connected call ended.
-- **Trigger location**: `Core/Telemetry/LineTelemetryObserver.cs OnCallEnded`
+- **Trigger location**: `(removed v4) LineTelemetryObserver OnCallEnded`
 - **Authority**: host
 - **Privacy / consent**: private_until_match_end (held in host memory, written at results/abandon); consent rule `all_participants`
 - **Routing**: local
 - **Expected max frequency**: <=10/task
 - **KPI contribution**: phone_participation
-- **Availability**: implemented
+- **Availability**: pending_integration - v5 gameplay observer not implemented yet (the v4 LineTelemetryObserver was removed with the v4 rules in v5 Phase 1)
 - **Notes**: censored = ended by disconnect, telemetry stop or match end (duration is a lower bound).
 
 | Param | Type | Required | Cloud | Values |
@@ -663,20 +660,20 @@ Envelope fields (every event, omitted when not applicable): schema_version, even
 | `caller` | slot (0-5) | yes | no |  |
 | `callee` | slot (0-5) | yes | no |  |
 | `duration_seconds` | float (seconds unless named otherwise) | yes | no |  |
-| `end_reason` | enum | yes | no | @CallEnd (none, hung_up, declined, missed, line_cut, phase_end, disconnected) |
+| `end_reason` | enum | yes | no | @CallEnd (none, hung_up, declined, missed, phase_end, disconnected) |
 | `censored` | bool | yes | no |  |
 
 ### phone_round_summary
 
 - **Name / version**: `phone_round_summary` v1
 - **Meaning**: Per task phone usage of observed players.
-- **Trigger location**: `Core/Telemetry/LineTelemetryObserver.cs SummarizeRound`
+- **Trigger location**: `(removed v4) LineTelemetryObserver SummarizeRound`
 - **Authority**: host
 - **Privacy / consent**: private_until_match_end (held in host memory, written at results/abandon); consent rule `host_aggregate`
 - **Routing**: local
 - **Expected max frequency**: 1/task
 - **KPI contribution**: phone_participation
-- **Availability**: implemented
+- **Availability**: pending_integration - v5 gameplay observer not implemented yet (the v4 LineTelemetryObserver was removed with the v4 rules in v5 Phase 1)
 - **Notes**: participation = observed players with >= 1 successful connected call overlapping the task window / observed. rate omitted when observed = 0 (not_measured).
 
 | Param | Type | Required | Cloud | Values |
@@ -694,13 +691,13 @@ Envelope fields (every event, omitted when not applicable): schema_version, even
 
 - **Name / version**: `secret_info_presented` v1
 - **Meaning**: Private facts were dealt to a player.
-- **Trigger location**: `Core/Telemetry/LineTelemetryObserver.cs OnPhaseChanged (RoundPlay) via BuildView`
+- **Trigger location**: `(removed v4) LineTelemetryObserver OnPhaseChanged (RoundPlay) via BuildView`
 - **Authority**: host
 - **Privacy / consent**: private_until_match_end (held in host memory, written at results/abandon); consent rule `self`
 - **Routing**: local
 - **Expected max frequency**: <=6/task
 - **KPI contribution**: information_asymmetry
-- **Availability**: implemented
+- **Availability**: pending_integration - v5 gameplay observer not implemented yet (the v4 LineTelemetryObserver was removed with the v4 rules in v5 Phase 1)
 
 | Param | Type | Required | Cloud | Values |
 |---|---|---|---|---|
@@ -722,20 +719,20 @@ Envelope fields (every event, omitted when not applicable): schema_version, even
 
 | Param | Type | Required | Cloud | Values |
 |---|---|---|---|---|
-| `task_id` | enum | yes | no | @Task (invoice_reconcile, budget_split, customer_spec, report_review, room_booking, archive_visitor, bonus_pool, server_code, phishing_check, shift_cover, vendor_pick, supply_swap) |
+| `task_id` | enum | yes | no | @Task (client_bonus, petty_cash, weekend_shift) |
 | `seconds_into_phase` | float (seconds unless named otherwise) | yes | no |  |
 
 ### choice_submitted
 
 - **Name / version**: `choice_submitted` v1
 - **Meaning**: A player set task controls.
-- **Trigger location**: `Core/Telemetry/LineTelemetryObserver.cs OnHostChoice`
+- **Trigger location**: `(removed v4) LineTelemetryObserver OnHostChoice`
 - **Authority**: host
 - **Privacy / consent**: private_until_match_end (held in host memory, written at results/abandon); consent rule `self`
 - **Routing**: local
 - **Expected max frequency**: <=12/task
 - **KPI contribution**: information_asymmetry, communication
-- **Availability**: implemented
+- **Availability**: pending_integration - v5 gameplay observer not implemented yet (the v4 LineTelemetryObserver was removed with the v4 rules in v5 Phase 1)
 - **Notes**: category per docs/CONTRACTS_V4.md section 8. No lie or intent is inferred.
 
 | Param | Type | Required | Cloud | Values |
@@ -752,13 +749,13 @@ Envelope fields (every event, omitted when not applicable): schema_version, even
 
 - **Name / version**: `choice_changed` v1
 - **Meaning**: A player changed an earlier submission.
-- **Trigger location**: `Core/Telemetry/LineTelemetryObserver.cs OnHostChoice`
+- **Trigger location**: `(removed v4) LineTelemetryObserver OnHostChoice`
 - **Authority**: host
 - **Privacy / consent**: private_until_match_end (held in host memory, written at results/abandon); consent rule `self`
 - **Routing**: local
 - **Expected max frequency**: <=6/task
 - **KPI contribution**: information_asymmetry
-- **Availability**: implemented
+- **Availability**: pending_integration - v5 gameplay observer not implemented yet (the v4 LineTelemetryObserver was removed with the v4 rules in v5 Phase 1)
 
 | Param | Type | Required | Cloud | Values |
 |---|---|---|---|---|
@@ -775,13 +772,13 @@ Envelope fields (every event, omitted when not applicable): schema_version, even
 
 - **Name / version**: `choice_timed_out` v1
 - **Meaning**: A submission was missing at resolution.
-- **Trigger location**: `Core/Telemetry/LineTelemetryObserver.cs OnHostMissedTask`
+- **Trigger location**: `(removed v4) LineTelemetryObserver OnHostMissedTask`
 - **Authority**: host
 - **Privacy / consent**: private_until_match_end (held in host memory, written at results/abandon); consent rule `self`
 - **Routing**: local
 - **Expected max frequency**: <=6/task
 - **KPI contribution**: accessibility, blame_tension
-- **Availability**: implemented
+- **Availability**: pending_integration - v5 gameplay observer not implemented yet (the v4 LineTelemetryObserver was removed with the v4 rules in v5 Phase 1)
 
 | Param | Type | Required | Cloud | Values |
 |---|---|---|---|---|
@@ -792,13 +789,13 @@ Envelope fields (every event, omitted when not applicable): schema_version, even
 
 - **Name / version**: `choice_outcome_resolved` v1
 - **Meaning**: Outcome of one player's task contribution (quality, productive income, cooperation).
-- **Trigger location**: `Core/Telemetry/LineTelemetryObserver.cs OnHostOutcome`
+- **Trigger location**: `(removed v4) LineTelemetryObserver OnHostOutcome`
 - **Authority**: host
 - **Privacy / consent**: private_until_match_end (held in host memory, written at results/abandon); consent rule `self`
 - **Routing**: local
 - **Expected max frequency**: <=6/task
 - **KPI contribution**: information_asymmetry
-- **Availability**: implemented
+- **Availability**: pending_integration - v5 gameplay observer not implemented yet (the v4 LineTelemetryObserver was removed with the v4 rules in v5 Phase 1)
 - **Notes**: From engine HostOutcome (49).
 
 | Param | Type | Required | Cloud | Values |
@@ -813,13 +810,13 @@ Envelope fields (every event, omitted when not applicable): schema_version, even
 
 - **Name / version**: `round_player_summary` v1
 - **Meaning**: Per player per task interaction summary.
-- **Trigger location**: `Core/Telemetry/LineTelemetryObserver.cs SummarizeRound`
+- **Trigger location**: `(removed v4) LineTelemetryObserver SummarizeRound`
 - **Authority**: host
 - **Privacy / consent**: private_until_match_end (held in host memory, written at results/abandon); consent rule `self`
 - **Routing**: local
 - **Expected max frequency**: <=6/task
 - **KPI contribution**: communication, accessibility, phone_participation
-- **Availability**: implemented
+- **Availability**: pending_integration - v5 gameplay observer not implemented yet (the v4 LineTelemetryObserver was removed with the v4 rules in v5 Phase 1)
 - **Notes**: longest_gap = longest stretch of the task window without a connected call, message or submission. post_submit_wait omitted when never submitted; first_contact omitted when no contact.
 
 | Param | Type | Required | Cloud | Values |
@@ -845,13 +842,13 @@ Envelope fields (every event, omitted when not applicable): schema_version, even
 
 - **Name / version**: `meeting_started` v1
 - **Meaning**: A meeting began (MeetingDossier).
-- **Trigger location**: `Core/Telemetry/LineTelemetryObserver.cs OnPhaseChanged (MeetingDossier)`
+- **Trigger location**: `(removed v4) LineTelemetryObserver OnPhaseChanged (MeetingDossier)`
 - **Authority**: host
 - **Privacy / consent**: public (written immediately); consent rule `host_aggregate`
 - **Routing**: local
 - **Expected max frequency**: <=4/match
 - **KPI contribution**: meeting_engagement
-- **Availability**: implemented
+- **Availability**: pending_integration - v5 gameplay observer not implemented yet (the v4 LineTelemetryObserver was removed with the v4 rules in v5 Phase 1)
 
 | Param | Type | Required | Cloud | Values |
 |---|---|---|---|---|
@@ -864,13 +861,13 @@ Envelope fields (every event, omitted when not applicable): schema_version, even
 
 - **Name / version**: `recording_playback_started` v1
 - **Meaning**: A recorded call snippet started to play in a meeting.
-- **Trigger location**: `Core/Telemetry/LineTelemetryObserver.cs RecordingStarted (via HostTelemetryBridge.RecordingStarted)`
+- **Trigger location**: `(removed v4) LineTelemetryObserver RecordingStarted (via HostTelemetryBridge.RecordingStarted)`
 - **Authority**: host
 - **Privacy / consent**: public (written immediately); consent rule `all_participants`
 - **Routing**: local
 - **Expected max frequency**: <=2/meeting
 - **KPI contribution**: recordings
-- **Availability**: implemented
+- **Availability**: pending_integration - v5 gameplay observer not implemented yet (the v4 LineTelemetryObserver was removed with the v4 rules in v5 Phase 1)
 - **Notes**: Needs the voice bridge call site. Audio, paths and transcripts are never recorded.
 
 | Param | Type | Required | Cloud | Values |
@@ -883,7 +880,7 @@ Envelope fields (every event, omitted when not applicable): schema_version, even
 | `call_length_ms` | int | yes | no |  |
 | `caller` | slot (0-5) | yes | no |  |
 | `callee` | slot (0-5) | yes | no |  |
-| `context_task` | enum | optional (omitted, never 0) | no | @Task (invoice_reconcile, budget_split, customer_spec, report_review, room_booking, archive_visitor, bonus_pool, server_code, phishing_check, shift_cover, vendor_pick, supply_swap) |
+| `context_task` | enum | optional (omitted, never 0) | no | @Task (client_bonus, petty_cash, weekend_shift) |
 | `same_group` | bool | yes | no |  |
 | `prior_exposures` | int | yes | no |  |
 | `selection` | enum | yes | no | legacy, context |
@@ -892,13 +889,13 @@ Envelope fields (every event, omitted when not applicable): schema_version, even
 
 - **Name / version**: `recording_playback_finished` v1
 - **Meaning**: The host tape ended or no candidate could play.
-- **Trigger location**: `Core/Telemetry/LineTelemetryObserver.cs RecordingStarted/RecordingFinished`
+- **Trigger location**: `(removed v4) LineTelemetryObserver RecordingStarted/RecordingFinished`
 - **Authority**: host
 - **Privacy / consent**: public (written immediately); consent rule `host_aggregate`
 - **Routing**: local
 - **Expected max frequency**: <=2/meeting
 - **KPI contribution**: recordings
-- **Availability**: implemented
+- **Availability**: pending_integration - v5 gameplay observer not implemented yet (the v4 LineTelemetryObserver was removed with the v4 rules in v5 Phase 1)
 
 | Param | Type | Required | Cloud | Values |
 |---|---|---|---|---|
@@ -911,26 +908,26 @@ Envelope fields (every event, omitted when not applicable): schema_version, even
 
 - **Name / version**: `meeting_discussion_started` v1
 - **Meaning**: Discussion phase began.
-- **Trigger location**: `Core/Telemetry/LineTelemetryObserver.cs OnPhaseChanged (MeetingDiscussion)`
+- **Trigger location**: `(removed v4) LineTelemetryObserver OnPhaseChanged (MeetingDiscussion)`
 - **Authority**: host
 - **Privacy / consent**: public (written immediately); consent rule `host_aggregate`
 - **Routing**: local
 - **Expected max frequency**: <=4/match
 - **KPI contribution**: meeting_engagement
-- **Availability**: implemented
+- **Availability**: pending_integration - v5 gameplay observer not implemented yet (the v4 LineTelemetryObserver was removed with the v4 rules in v5 Phase 1)
 - **Params**: none
 
 ### meeting_discussion_finished
 
 - **Name / version**: `meeting_discussion_finished` v1
 - **Meaning**: Discussion phase ended.
-- **Trigger location**: `Core/Telemetry/LineTelemetryObserver.cs OnPhaseChanged`
+- **Trigger location**: `(removed v4) LineTelemetryObserver OnPhaseChanged`
 - **Authority**: host
 - **Privacy / consent**: public (written immediately); consent rule `host_aggregate`
 - **Routing**: local
 - **Expected max frequency**: <=4/match
 - **KPI contribution**: meeting_engagement
-- **Availability**: implemented
+- **Availability**: pending_integration - v5 gameplay observer not implemented yet (the v4 LineTelemetryObserver was removed with the v4 rules in v5 Phase 1)
 - **Notes**: chat_messages counts HostMessage meeting_chat (counts only).
 
 | Param | Type | Required | Cloud | Values |
@@ -943,13 +940,13 @@ Envelope fields (every event, omitted when not applicable): schema_version, even
 
 - **Name / version**: `evidence_presented` v1
 - **Meaning**: A record was presented in a meeting.
-- **Trigger location**: `Core/Telemetry/LineTelemetryObserver.cs OnEvidence (reads the presenter's view)`
+- **Trigger location**: `(removed v4) LineTelemetryObserver OnEvidence (reads the presenter's view)`
 - **Authority**: host
 - **Privacy / consent**: public (written immediately); consent rule `self`
 - **Routing**: local
 - **Expected max frequency**: <=2/meeting
 - **KPI contribution**: meeting_engagement, sabotage
-- **Availability**: implemented
+- **Availability**: pending_integration - v5 gameplay observer not implemented yet (the v4 LineTelemetryObserver was removed with the v4 rules in v5 Phase 1)
 
 | Param | Type | Required | Cloud | Values |
 |---|---|---|---|---|
@@ -964,13 +961,13 @@ Envelope fields (every event, omitted when not applicable): schema_version, even
 
 - **Name / version**: `meeting_vote_submitted` v1
 - **Meaning**: A daily ballot was cast.
-- **Trigger location**: `Core/Telemetry/LineTelemetryObserver.cs OnVoteCast`
+- **Trigger location**: `(removed v4) LineTelemetryObserver OnVoteCast`
 - **Authority**: host
 - **Privacy / consent**: public (written immediately); consent rule `voter`
 - **Routing**: local
 - **Expected max frequency**: <=6/meeting
 - **KPI contribution**: vote_dynamics
-- **Availability**: implemented
+- **Availability**: pending_integration - v5 gameplay observer not implemented yet (the v4 LineTelemetryObserver was removed with the v4 rules in v5 Phase 1)
 - **Notes**: Emitted when votes become public (MeetingVerdict) so the host log never shows ballots mid-vote; event time is the cast time.
 
 | Param | Type | Required | Cloud | Values |
@@ -983,13 +980,13 @@ Envelope fields (every event, omitted when not applicable): schema_version, even
 
 - **Name / version**: `meeting_vote_resolved` v1
 - **Meaning**: The daily ballot resolved.
-- **Trigger location**: `Core/Telemetry/LineTelemetryObserver.cs OnBallot`
+- **Trigger location**: `(removed v4) LineTelemetryObserver OnBallot`
 - **Authority**: host
 - **Privacy / consent**: public (written immediately); consent rule `host_aggregate`
 - **Routing**: local+cloud (cloud only for consent level 3; cloud payload = parameters marked cloud)
 - **Expected max frequency**: <=4/match
 - **KPI contribution**: vote_dynamics
-- **Availability**: implemented
+- **Availability**: pending_integration - v5 gameplay observer not implemented yet (the v4 LineTelemetryObserver was removed with the v4 rules in v5 Phase 1)
 
 | Param | Type | Required | Cloud | Values |
 |---|---|---|---|---|
@@ -1004,13 +1001,13 @@ Envelope fields (every event, omitted when not applicable): schema_version, even
 
 - **Name / version**: `warning_assigned` v1
 - **Meaning**: A warning was given.
-- **Trigger location**: `Core/Telemetry/LineTelemetryObserver.cs OnWarning`
+- **Trigger location**: `(removed v4) LineTelemetryObserver OnWarning`
 - **Authority**: host
 - **Privacy / consent**: public (written immediately); consent rule `self`
 - **Routing**: local
 - **Expected max frequency**: <=4/match
 - **KPI contribution**: blame_tension
-- **Availability**: implemented
+- **Availability**: pending_integration - v5 gameplay observer not implemented yet (the v4 LineTelemetryObserver was removed with the v4 rules in v5 Phase 1)
 
 | Param | Type | Required | Cloud | Values |
 |---|---|---|---|---|
@@ -1023,13 +1020,13 @@ Envelope fields (every event, omitted when not applicable): schema_version, even
 
 - **Name / version**: `meeting_finished` v1
 - **Meaning**: The meeting (dossier to verdict) ended.
-- **Trigger location**: `Core/Telemetry/LineTelemetryObserver.cs OnPhaseChanged`
+- **Trigger location**: `(removed v4) LineTelemetryObserver OnPhaseChanged`
 - **Authority**: host
 - **Privacy / consent**: public (written immediately); consent rule `host_aggregate`
 - **Routing**: local
 - **Expected max frequency**: <=4/match
 - **KPI contribution**: meeting_engagement
-- **Availability**: implemented
+- **Availability**: pending_integration - v5 gameplay observer not implemented yet (the v4 LineTelemetryObserver was removed with the v4 rules in v5 Phase 1)
 
 | Param | Type | Required | Cloud | Values |
 |---|---|---|---|---|
@@ -1039,32 +1036,32 @@ Envelope fields (every event, omitted when not applicable): schema_version, even
 
 - **Name / version**: `fault_points_changed` v1
 - **Meaning**: Blame changed.
-- **Trigger location**: `Core/Telemetry/LineTelemetryObserver.cs OnBlameChanged`
+- **Trigger location**: `(removed v4) LineTelemetryObserver OnBlameChanged`
 - **Authority**: host
 - **Privacy / consent**: public (written immediately); consent rule `self`
 - **Routing**: local
 - **Expected max frequency**: <=20/match
 - **KPI contribution**: blame_tension
-- **Availability**: implemented
+- **Availability**: pending_integration - v5 gameplay observer not implemented yet (the v4 LineTelemetryObserver was removed with the v4 rules in v5 Phase 1)
 
 | Param | Type | Required | Cloud | Values |
 |---|---|---|---|---|
 | `player` | slot (0-5) | yes | no |  |
 | `delta` | int | yes | no |  |
-| `reason` | enum | yes | no | @BlameReason (warning, missed_task, exposed_sabotage, remedial) |
+| `reason` | enum | yes | no | @BlameReason (vote, cash_caught, whistled, investigation_guilty, investigation_false, crisis) |
 | `blame_after` | int | yes | no |  |
 
 ### final_started
 
 - **Name / version**: `final_started` v1
 - **Meaning**: The final began (defense or closure).
-- **Trigger location**: `Core/Telemetry/LineTelemetryObserver.cs OnPhaseChanged`
+- **Trigger location**: `(removed v4) LineTelemetryObserver OnPhaseChanged`
 - **Authority**: host
 - **Privacy / consent**: public (written immediately); consent rule `host_aggregate`
 - **Routing**: local
 - **Expected max frequency**: 1/match
 - **KPI contribution**: final
-- **Availability**: implemented
+- **Availability**: pending_integration - v5 gameplay observer not implemented yet (the v4 LineTelemetryObserver was removed with the v4 rules in v5 Phase 1)
 
 | Param | Type | Required | Cloud | Values |
 |---|---|---|---|---|
@@ -1088,13 +1085,13 @@ Envelope fields (every event, omitted when not applicable): schema_version, even
 
 - **Name / version**: `defense_started` v1
 - **Meaning**: A final defense turn began.
-- **Trigger location**: `Core/Telemetry/LineTelemetryObserver.cs Tick (polls the public view during FinalDefense)`
+- **Trigger location**: `(removed v4) LineTelemetryObserver Tick (polls the public view during FinalDefense)`
 - **Authority**: host
 - **Privacy / consent**: public (written immediately); consent rule `self`
 - **Routing**: local
 - **Expected max frequency**: <=6/match
 - **KPI contribution**: final
-- **Availability**: implemented
+- **Availability**: pending_integration - v5 gameplay observer not implemented yet (the v4 LineTelemetryObserver was removed with the v4 rules in v5 Phase 1)
 
 | Param | Type | Required | Cloud | Values |
 |---|---|---|---|---|
@@ -1105,13 +1102,13 @@ Envelope fields (every event, omitted when not applicable): schema_version, even
 
 - **Name / version**: `defense_finished` v1
 - **Meaning**: A defense turn ended.
-- **Trigger location**: `Core/Telemetry/LineTelemetryObserver.cs Tick`
+- **Trigger location**: `(removed v4) LineTelemetryObserver Tick`
 - **Authority**: host
 - **Privacy / consent**: public (written immediately); consent rule `self`
 - **Routing**: local
 - **Expected max frequency**: <=6/match
 - **KPI contribution**: final
-- **Availability**: implemented
+- **Availability**: pending_integration - v5 gameplay observer not implemented yet (the v4 LineTelemetryObserver was removed with the v4 rules in v5 Phase 1)
 
 | Param | Type | Required | Cloud | Values |
 |---|---|---|---|---|
@@ -1123,13 +1120,13 @@ Envelope fields (every event, omitted when not applicable): schema_version, even
 
 - **Name / version**: `final_vote_submitted` v1
 - **Meaning**: A final ballot was cast.
-- **Trigger location**: `Core/Telemetry/LineTelemetryObserver.cs OnVoteCast`
+- **Trigger location**: `(removed v4) LineTelemetryObserver OnVoteCast`
 - **Authority**: host
 - **Privacy / consent**: public (written immediately); consent rule `voter`
 - **Routing**: local
 - **Expected max frequency**: <=6/match
 - **KPI contribution**: final, vote_dynamics
-- **Availability**: implemented
+- **Availability**: pending_integration - v5 gameplay observer not implemented yet (the v4 LineTelemetryObserver was removed with the v4 rules in v5 Phase 1)
 - **Notes**: Emitted at FinalVerdict (see meeting_vote_submitted).
 
 | Param | Type | Required | Cloud | Values |
@@ -1142,13 +1139,13 @@ Envelope fields (every event, omitted when not applicable): schema_version, even
 
 - **Name / version**: `final_vote_resolved` v1
 - **Meaning**: The final ballot resolved.
-- **Trigger location**: `Core/Telemetry/LineTelemetryObserver.cs OnBallot`
+- **Trigger location**: `(removed v4) LineTelemetryObserver OnBallot`
 - **Authority**: host
 - **Privacy / consent**: public (written immediately); consent rule `host_aggregate`
 - **Routing**: local+cloud (cloud only for consent level 3; cloud payload = parameters marked cloud)
 - **Expected max frequency**: 1/match
 - **KPI contribution**: final
-- **Availability**: implemented
+- **Availability**: pending_integration - v5 gameplay observer not implemented yet (the v4 LineTelemetryObserver was removed with the v4 rules in v5 Phase 1)
 
 | Param | Type | Required | Cloud | Values |
 |---|---|---|---|---|
@@ -1162,13 +1159,13 @@ Envelope fields (every event, omitted when not applicable): schema_version, even
 
 - **Name / version**: `player_fired` v1
 - **Meaning**: A player was fired.
-- **Trigger location**: `Core/Telemetry/LineTelemetryObserver.cs OnFired`
+- **Trigger location**: `(removed v4) LineTelemetryObserver OnFired`
 - **Authority**: host
 - **Privacy / consent**: public (written immediately); consent rule `self`
 - **Routing**: local
 - **Expected max frequency**: <=1/match
 - **KPI contribution**: final
-- **Availability**: implemented
+- **Availability**: pending_integration - v5 gameplay observer not implemented yet (the v4 LineTelemetryObserver was removed with the v4 rules in v5 Phase 1)
 
 | Param | Type | Required | Cloud | Values |
 |---|---|---|---|---|
@@ -1181,13 +1178,13 @@ Envelope fields (every event, omitted when not applicable): schema_version, even
 
 - **Name / version**: `task_output_resolved` v1
 - **Meaning**: Task output resolved.
-- **Trigger location**: `Core/Telemetry/LineTelemetryObserver.cs OnTaskResolved + OnHostTaskOutcome`
+- **Trigger location**: `(removed v4) LineTelemetryObserver OnTaskResolved + OnHostTaskOutcome`
 - **Authority**: host
 - **Privacy / consent**: public (written immediately); consent rule `host_aggregate`
 - **Routing**: local
 - **Expected max frequency**: 1/task
 - **KPI contribution**: productivity
-- **Availability**: implemented
+- **Availability**: pending_integration - v5 gameplay observer not implemented yet (the v4 LineTelemetryObserver was removed with the v4 rules in v5 Phase 1)
 - **Notes**: sabotage_loss, groups and groups_full come from engine HostTaskOutcome (50); omitted if that event is missing.
 
 | Param | Type | Required | Cloud | Values |
@@ -1202,13 +1199,13 @@ Envelope fields (every event, omitted when not applicable): schema_version, even
 
 - **Name / version**: `productivity_changed` v1
 - **Meaning**: Company productivity moved.
-- **Trigger location**: `Core/Telemetry/LineTelemetryObserver.cs OnProductivity`
+- **Trigger location**: `(removed v4) LineTelemetryObserver OnProductivity`
 - **Authority**: host
 - **Privacy / consent**: public (written immediately); consent rule `host_aggregate`
 - **Routing**: local
 - **Expected max frequency**: <=14/match
 - **KPI contribution**: productivity
-- **Availability**: implemented
+- **Availability**: pending_integration - v5 gameplay observer not implemented yet (the v4 LineTelemetryObserver was removed with the v4 rules in v5 Phase 1)
 - **Notes**: Not emitted while the engine reports -1 (measuring).
 
 | Param | Type | Required | Cloud | Values |
@@ -1221,13 +1218,13 @@ Envelope fields (every event, omitted when not applicable): schema_version, even
 
 - **Name / version**: `recovery_opportunities` v1
 - **Meaning**: Remedial options available at a break.
-- **Trigger location**: `Core/Telemetry/LineTelemetryObserver.cs OnPhaseChanged (Break) via BuildView`
+- **Trigger location**: `(removed v4) LineTelemetryObserver OnPhaseChanged (Break) via BuildView`
 - **Authority**: host
 - **Privacy / consent**: public (written immediately); consent rule `host_aggregate`
 - **Routing**: local
 - **Expected max frequency**: 1/break
 - **KPI contribution**: productivity, economy
-- **Availability**: implemented
+- **Availability**: pending_integration - v5 gameplay observer not implemented yet (the v4 LineTelemetryObserver was removed with the v4 rules in v5 Phase 1)
 
 | Param | Type | Required | Cloud | Values |
 |---|---|---|---|---|
@@ -1238,13 +1235,13 @@ Envelope fields (every event, omitted when not applicable): schema_version, even
 
 - **Name / version**: `remedial_requested` v1
 - **Meaning**: A remedial report was requested.
-- **Trigger location**: `Core/Telemetry/LineTelemetryObserver.cs OnRemedialRequested`
+- **Trigger location**: `(removed v4) LineTelemetryObserver OnRemedialRequested`
 - **Authority**: host
 - **Privacy / consent**: private_until_match_end (held in host memory, written at results/abandon); consent rule `all_participants`
 - **Routing**: local
 - **Expected max frequency**: <=2/match
 - **KPI contribution**: economy, blame_tension
-- **Availability**: implemented
+- **Availability**: pending_integration - v5 gameplay observer not implemented yet (the v4 LineTelemetryObserver was removed with the v4 rules in v5 Phase 1)
 
 | Param | Type | Required | Cloud | Values |
 |---|---|---|---|---|
@@ -1255,13 +1252,13 @@ Envelope fields (every event, omitted when not applicable): schema_version, even
 
 - **Name / version**: `remedial_resolved` v1
 - **Meaning**: A remedial request resolved.
-- **Trigger location**: `Core/Telemetry/LineTelemetryObserver.cs OnRemedialResolved`
+- **Trigger location**: `(removed v4) LineTelemetryObserver OnRemedialResolved`
 - **Authority**: host
 - **Privacy / consent**: private_until_match_end (held in host memory, written at results/abandon); consent rule `all_participants`
 - **Routing**: local
 - **Expected max frequency**: <=2/match
 - **KPI contribution**: economy, blame_tension
-- **Availability**: implemented
+- **Availability**: pending_integration - v5 gameplay observer not implemented yet (the v4 LineTelemetryObserver was removed with the v4 rules in v5 Phase 1)
 - **Notes**: output_added from RemedialResolved.C.
 
 | Param | Type | Required | Cloud | Values |
@@ -1276,13 +1273,13 @@ Envelope fields (every event, omitted when not applicable): schema_version, even
 
 - **Name / version**: `income_credited` v1
 - **Meaning**: Money was credited.
-- **Trigger location**: `Core/Telemetry/LineTelemetryObserver.cs OnHostIncome`
+- **Trigger location**: `(removed v4) LineTelemetryObserver OnHostIncome`
 - **Authority**: host
 - **Privacy / consent**: private_until_match_end (held in host memory, written at results/abandon); consent rule `self`
 - **Routing**: local
 - **Expected max frequency**: <=30/match
 - **KPI contribution**: economy
-- **Availability**: implemented
+- **Availability**: pending_integration - v5 gameplay observer not implemented yet (the v4 LineTelemetryObserver was removed with the v4 rules in v5 Phase 1)
 
 | Param | Type | Required | Cloud | Values |
 |---|---|---|---|---|
@@ -1296,32 +1293,32 @@ Envelope fields (every event, omitted when not applicable): schema_version, even
 
 - **Name / version**: `money_transferred` v1
 - **Meaning**: A transfer happened.
-- **Trigger location**: `Core/Telemetry/LineTelemetryObserver.cs OnTransfer`
+- **Trigger location**: `(removed v4) LineTelemetryObserver OnTransfer`
 - **Authority**: host
 - **Privacy / consent**: private_until_match_end (held in host memory, written at results/abandon); consent rule `all_participants`
 - **Routing**: local
 - **Expected max frequency**: <=20/match
 - **KPI contribution**: economy
-- **Availability**: implemented
+- **Availability**: pending_integration - v5 gameplay observer not implemented yet (the v4 LineTelemetryObserver was removed with the v4 rules in v5 Phase 1)
 
 | Param | Type | Required | Cloud | Values |
 |---|---|---|---|---|
 | `from` | slot (0-5) | yes | no |  |
 | `to` | slot (0-5) | yes | no |  |
 | `amount` | int | yes | no |  |
-| `phase` | enum | yes | no | @Phase (morning, round_intro, round_play, round_reveal, meeting_dossier, meeting_discussion, meeting_vote, meeting_verdict, final_defense, final_vote, final_verdict, week_results, abandoned, break) |
+| `phase` | enum | yes | no | @Phase (intro, task_play, task_reveal, break, meeting_dossier, meeting_discussion, meeting_vote, meeting_verdict, crisis_calls, crisis_vote, crisis_verdict, final_discussion, final_defense, final_vote, final_verdict, results, abandoned) |
 
 ### evidence_purchased
 
 - **Name / version**: `evidence_purchased` v1
 - **Meaning**: An evidence offer was bought.
-- **Trigger location**: `Core/Telemetry/LineTelemetryObserver.cs OnPurchase`
+- **Trigger location**: `(removed v4) LineTelemetryObserver OnPurchase`
 - **Authority**: host
 - **Privacy / consent**: private_until_match_end (held in host memory, written at results/abandon); consent rule `self`
 - **Routing**: local
 - **Expected max frequency**: <=3/match
 - **KPI contribution**: economy
-- **Availability**: implemented
+- **Availability**: pending_integration - v5 gameplay observer not implemented yet (the v4 LineTelemetryObserver was removed with the v4 rules in v5 Phase 1)
 
 | Param | Type | Required | Cloud | Values |
 |---|---|---|---|---|
@@ -1334,13 +1331,13 @@ Envelope fields (every event, omitted when not applicable): schema_version, even
 
 - **Name / version**: `incident_created` v1
 - **Meaning**: A deniable act was created.
-- **Trigger location**: `Core/Telemetry/LineTelemetryObserver.cs OnHostIncident`
+- **Trigger location**: `(removed v4) LineTelemetryObserver OnHostIncident`
 - **Authority**: host
 - **Privacy / consent**: private_until_match_end (held in host memory, written at results/abandon); consent rule `self`
 - **Routing**: local
 - **Expected max frequency**: <=10/match
 - **KPI contribution**: sabotage
-- **Availability**: implemented
+- **Availability**: pending_integration - v5 gameplay observer not implemented yet (the v4 LineTelemetryObserver was removed with the v4 rules in v5 Phase 1)
 
 | Param | Type | Required | Cloud | Values |
 |---|---|---|---|---|
@@ -1352,13 +1349,13 @@ Envelope fields (every event, omitted when not applicable): schema_version, even
 
 - **Name / version**: `sabotage_verified` v1
 - **Meaning**: An incident was proven in a meeting.
-- **Trigger location**: `Core/Telemetry/LineTelemetryObserver.cs OnIncidentExposed`
+- **Trigger location**: `(removed v4) LineTelemetryObserver OnIncidentExposed`
 - **Authority**: host
 - **Privacy / consent**: public (written immediately); consent rule `self`
 - **Routing**: local
 - **Expected max frequency**: <=10/match
 - **KPI contribution**: sabotage
-- **Availability**: implemented
+- **Availability**: pending_integration - v5 gameplay observer not implemented yet (the v4 LineTelemetryObserver was removed with the v4 rules in v5 Phase 1)
 
 | Param | Type | Required | Cloud | Values |
 |---|---|---|---|---|
@@ -1371,13 +1368,13 @@ Envelope fields (every event, omitted when not applicable): schema_version, even
 
 - **Name / version**: `objective_assigned` v1
 - **Meaning**: A secret objective was dealt.
-- **Trigger location**: `Core/Telemetry/LineTelemetryObserver.cs Start via BuildView`
+- **Trigger location**: `(removed v4) LineTelemetryObserver Start via BuildView`
 - **Authority**: host
 - **Privacy / consent**: private_until_match_end (held in host memory, written at results/abandon); consent rule `self`
 - **Routing**: local
 - **Expected max frequency**: <=6/match
 - **KPI contribution**: information_asymmetry
-- **Availability**: implemented
+- **Availability**: pending_integration - v5 gameplay observer not implemented yet (the v4 LineTelemetryObserver was removed with the v4 rules in v5 Phase 1)
 
 | Param | Type | Required | Cloud | Values |
 |---|---|---|---|---|
@@ -1388,13 +1385,13 @@ Envelope fields (every event, omitted when not applicable): schema_version, even
 
 - **Name / version**: `objective_completed` v1
 - **Meaning**: Objective evaluated.
-- **Trigger location**: `Core/Telemetry/LineTelemetryObserver.cs EmitResults (engine.Result at WeekResults; the FinalVerdict HostObjective event is not written early)`
+- **Trigger location**: `(removed v4) LineTelemetryObserver EmitResults (engine.Result at WeekResults; the FinalVerdict HostObjective event is not written early)`
 - **Authority**: host
 - **Privacy / consent**: private_until_match_end (held in host memory, written at results/abandon); consent rule `self`
 - **Routing**: local
 - **Expected max frequency**: <=6/match
 - **KPI contribution**: career
-- **Availability**: implemented
+- **Availability**: pending_integration - v5 gameplay observer not implemented yet (the v4 LineTelemetryObserver was removed with the v4 rules in v5 Phase 1)
 
 | Param | Type | Required | Cloud | Values |
 |---|---|---|---|---|
@@ -1406,13 +1403,13 @@ Envelope fields (every event, omitted when not applicable): schema_version, even
 
 - **Name / version**: `career_breakdown` v1
 - **Meaning**: Career points at results.
-- **Trigger location**: `Core/Telemetry/LineTelemetryObserver.cs EmitResults (engine.Result)`
+- **Trigger location**: `(removed v4) LineTelemetryObserver EmitResults (engine.Result)`
 - **Authority**: host
 - **Privacy / consent**: public (written immediately); consent rule `self`
 - **Routing**: local
 - **Expected max frequency**: <=6/match
 - **KPI contribution**: career
-- **Availability**: implemented
+- **Availability**: pending_integration - v5 gameplay observer not implemented yet (the v4 LineTelemetryObserver was removed with the v4 rules in v5 Phase 1)
 - **Notes**: quality omitted when the engine reports -1.
 
 | Param | Type | Required | Cloud | Values |
@@ -1432,13 +1429,13 @@ Envelope fields (every event, omitted when not applicable): schema_version, even
 
 - **Name / version**: `company_result` v1
 - **Meaning**: Final company outcome.
-- **Trigger location**: `Core/Telemetry/LineTelemetryObserver.cs EmitResults`
+- **Trigger location**: `(removed v4) LineTelemetryObserver EmitResults`
 - **Authority**: host
 - **Privacy / consent**: public (written immediately); consent rule `host_aggregate`
 - **Routing**: local+cloud (cloud only for consent level 3; cloud payload = parameters marked cloud)
 - **Expected max frequency**: 1/match
 - **KPI contribution**: productivity
-- **Availability**: implemented
+- **Availability**: pending_integration - v5 gameplay observer not implemented yet (the v4 LineTelemetryObserver was removed with the v4 rules in v5 Phase 1)
 
 | Param | Type | Required | Cloud | Values |
 |---|---|---|---|---|
@@ -1452,13 +1449,13 @@ Envelope fields (every event, omitted when not applicable): schema_version, even
 
 - **Name / version**: `company_failed` v1
 - **Meaning**: The company closed.
-- **Trigger location**: `Core/Telemetry/LineTelemetryObserver.cs OnCompanyClosed`
+- **Trigger location**: `(removed v4) LineTelemetryObserver OnCompanyClosed`
 - **Authority**: host
 - **Privacy / consent**: public (written immediately); consent rule `host_aggregate`
 - **Routing**: local
 - **Expected max frequency**: <=1/match
 - **KPI contribution**: productivity
-- **Availability**: implemented
+- **Availability**: pending_integration - v5 gameplay observer not implemented yet (the v4 LineTelemetryObserver was removed with the v4 rules in v5 Phase 1)
 
 | Param | Type | Required | Cloud | Values |
 |---|---|---|---|---|
@@ -1468,13 +1465,13 @@ Envelope fields (every event, omitted when not applicable): schema_version, even
 
 - **Name / version**: `message_sent` v1
 - **Meaning**: A message was sent (length bucket only, never text).
-- **Trigger location**: `Core/Telemetry/LineTelemetryObserver.cs OnHostMessage`
+- **Trigger location**: `(removed v4) LineTelemetryObserver OnHostMessage`
 - **Authority**: host
 - **Privacy / consent**: private_until_match_end (held in host memory, written at results/abandon); consent rule `self`
 - **Routing**: local
 - **Expected max frequency**: <=100/match
 - **KPI contribution**: communication, accessibility
-- **Availability**: implemented
+- **Availability**: pending_integration - v5 gameplay observer not implemented yet (the v4 LineTelemetryObserver was removed with the v4 rules in v5 Phase 1)
 
 | Param | Type | Required | Cloud | Values |
 |---|---|---|---|---|
@@ -1536,8 +1533,8 @@ Envelope fields (every event, omitted when not applicable): schema_version, even
 
 | Param | Type | Required | Cloud | Values |
 |---|---|---|---|---|
-| `verb` | enum | yes | no | @Verb (call, answer, decline, hang_up, submit_task, give_item, use_trick, vote, send_text, send_email, send_meeting_chat, file_complaint, transfer, buy_evidence, present_record, start_remedial, respond_remedial, host_continue, pick_next_manager) |
-| `failure` | enum | yes | no | @Failure (wrong_phase, stale_week, duplicate, invalid_target, self, busy, phone_dead, computer_blocked, already_used, not_available, no_attempts_left, not_unlocked, already_in_call, not_in_call, not_ringing, bad_param, absent, host_only, limit_reached, round_solved, too_long, empty_text, rate_limited, insufficient_funds, not_owned, locked, waiting) |
+| `verb` | enum | yes | no | @Verb (call, answer, decline, hang_up, submit_task, vote, send_text, send_meeting_chat, transfer, whistle, investigate, record, leak, host_continue) |
+| `failure` | enum | yes | no | @Failure (wrong_phase, stale_week, duplicate, invalid_target, self, busy, already_used, not_available, already_in_call, not_in_call, not_ringing, bad_param, absent, host_only, limit_reached, too_long, empty_text, rate_limited, insufficient_funds, not_owned, not_eligible, already_resolved, fired) |
 
 ### tutorial_step_viewed
 
@@ -1553,7 +1550,7 @@ Envelope fields (every event, omitted when not applicable): schema_version, even
 
 | Param | Type | Required | Cloud | Values |
 |---|---|---|---|---|
-| `task_id` | enum | yes | no | @Task (invoice_reconcile, budget_split, customer_spec, report_review, room_booking, archive_visitor, bonus_pool, server_code, phishing_check, shift_cover, vendor_pick, supply_swap) |
+| `task_id` | enum | yes | no | @Task (client_bonus, petty_cash, weekend_shift) |
 | `step` | int | yes | no |  |
 | `action` | enum | yes | no | auto, next, back, reopen |
 
@@ -1571,7 +1568,7 @@ Envelope fields (every event, omitted when not applicable): schema_version, even
 
 | Param | Type | Required | Cloud | Values |
 |---|---|---|---|---|
-| `task_id` | enum | yes | yes | @Task (invoice_reconcile, budget_split, customer_spec, report_review, room_booking, archive_visitor, bonus_pool, server_code, phishing_check, shift_cover, vendor_pick, supply_swap) |
+| `task_id` | enum | yes | yes | @Task (client_bonus, petty_cash, weekend_shift) |
 | `steps_seen` | int | yes | yes |  |
 | `seconds_open` | float (seconds unless named otherwise) | yes | no |  |
 | `completed` | bool | yes | yes |  |
@@ -1627,7 +1624,7 @@ Envelope fields (every event, omitted when not applicable): schema_version, even
 | Param | Type | Required | Cloud | Values |
 |---|---|---|---|---|
 | `player` | slot (0-5) | yes | no |  |
-| `phase` | enum | yes | no | @Phase (morning, round_intro, round_play, round_reveal, meeting_dossier, meeting_discussion, meeting_vote, meeting_verdict, final_defense, final_vote, final_verdict, week_results, abandoned, break) |
+| `phase` | enum | yes | no | @Phase (intro, task_play, task_reveal, break, meeting_dossier, meeting_discussion, meeting_vote, meeting_verdict, crisis_calls, crisis_vote, crisis_verdict, final_discussion, final_defense, final_vote, final_verdict, results, abandoned) |
 
 ### player_reconnected
 
@@ -1644,7 +1641,7 @@ Envelope fields (every event, omitted when not applicable): schema_version, even
 | Param | Type | Required | Cloud | Values |
 |---|---|---|---|---|
 | `player` | slot (0-5) | yes | no |  |
-| `phase` | enum | yes | no | @Phase (morning, round_intro, round_play, round_reveal, meeting_dossier, meeting_discussion, meeting_vote, meeting_verdict, final_defense, final_vote, final_verdict, week_results, abandoned, break) |
+| `phase` | enum | yes | no | @Phase (intro, task_play, task_reveal, break, meeting_dossier, meeting_discussion, meeting_vote, meeting_verdict, crisis_calls, crisis_vote, crisis_verdict, final_discussion, final_defense, final_vote, final_verdict, results, abandoned) |
 | `downtime_seconds` | float (seconds unless named otherwise) | optional (omitted, never 0) | no |  |
 
 ### reconnect_attempted
@@ -1713,7 +1710,7 @@ Envelope fields (every event, omitted when not applicable): schema_version, even
 
 | Param | Type | Required | Cloud | Values |
 |---|---|---|---|---|
-| `phase` | enum | yes | no | @PhaseLobby (morning, round_intro, round_play, round_reveal, meeting_dossier, meeting_discussion, meeting_vote, meeting_verdict, final_defense, final_vote, final_verdict, week_results, abandoned, break, lobby, none) |
+| `phase` | enum | yes | no | @PhaseLobby (intro, task_play, task_reveal, break, meeting_dossier, meeting_discussion, meeting_vote, meeting_verdict, crisis_calls, crisis_vote, crisis_verdict, final_discussion, final_defense, final_vote, final_verdict, results, abandoned, lobby, none) |
 | `graceful` | bool | yes | no |  |
 
 ### voice_quality_summary
@@ -1738,36 +1735,36 @@ Envelope fields (every event, omitted when not applicable): schema_version, even
 
 - **Name / version**: `stuck_phase` v1
 - **Meaning**: A phase overran its end time.
-- **Trigger location**: `Core/Telemetry/LineTelemetryObserver.cs Tick`
+- **Trigger location**: `(removed v4) LineTelemetryObserver Tick`
 - **Authority**: host
 - **Privacy / consent**: public (written immediately); consent rule `host_aggregate`
 - **Routing**: local
 - **Expected max frequency**: rare
 - **KPI contribution**: telemetry_health
-- **Availability**: implemented
+- **Availability**: pending_integration - v5 gameplay observer not implemented yet (the v4 LineTelemetryObserver was removed with the v4 rules in v5 Phase 1)
 - **Notes**: Threshold 5 s past engine.PhaseEndTime, once per phase.
 
 | Param | Type | Required | Cloud | Values |
 |---|---|---|---|---|
-| `phase` | enum | yes | no | @Phase (morning, round_intro, round_play, round_reveal, meeting_dossier, meeting_discussion, meeting_vote, meeting_verdict, final_defense, final_vote, final_verdict, week_results, abandoned, break) |
+| `phase` | enum | yes | no | @Phase (intro, task_play, task_reveal, break, meeting_dossier, meeting_discussion, meeting_vote, meeting_verdict, crisis_calls, crisis_vote, crisis_verdict, final_discussion, final_defense, final_vote, final_verdict, results, abandoned) |
 | `seconds_over` | float (seconds unless named otherwise) | yes | no |  |
 
 ### unexpected_transition
 
 - **Name / version**: `unexpected_transition` v1
 - **Meaning**: A phase change outside the documented flow.
-- **Trigger location**: `Core/Telemetry/LineTelemetryObserver.cs OnPhaseChanged`
+- **Trigger location**: `(removed v4) LineTelemetryObserver OnPhaseChanged`
 - **Authority**: host
 - **Privacy / consent**: public (written immediately); consent rule `host_aggregate`
 - **Routing**: local
 - **Expected max frequency**: rare
 - **KPI contribution**: telemetry_health
-- **Availability**: implemented
+- **Availability**: pending_integration - v5 gameplay observer not implemented yet (the v4 LineTelemetryObserver was removed with the v4 rules in v5 Phase 1)
 
 | Param | Type | Required | Cloud | Values |
 |---|---|---|---|---|
-| `from` | enum | yes | no | @PhaseLobby (morning, round_intro, round_play, round_reveal, meeting_dossier, meeting_discussion, meeting_vote, meeting_verdict, final_defense, final_vote, final_verdict, week_results, abandoned, break, lobby, none) |
-| `to` | enum | yes | no | @PhaseLobby (morning, round_intro, round_play, round_reveal, meeting_dossier, meeting_discussion, meeting_vote, meeting_verdict, final_defense, final_vote, final_verdict, week_results, abandoned, break, lobby, none) |
+| `from` | enum | yes | no | @PhaseLobby (intro, task_play, task_reveal, break, meeting_dossier, meeting_discussion, meeting_vote, meeting_verdict, crisis_calls, crisis_vote, crisis_verdict, final_discussion, final_defense, final_vote, final_verdict, results, abandoned, lobby, none) |
+| `to` | enum | yes | no | @PhaseLobby (intro, task_play, task_reveal, break, meeting_dossier, meeting_discussion, meeting_vote, meeting_verdict, crisis_calls, crisis_vote, crisis_verdict, final_discussion, final_defense, final_vote, final_verdict, results, abandoned, lobby, none) |
 
 ### technical_failure
 

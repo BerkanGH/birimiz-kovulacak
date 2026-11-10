@@ -53,7 +53,7 @@ namespace BirimizKovulacak.Telemetry.Tests
         {
             var r = new Rig();
             r.S(ClientConnState.Connecting); r.S(ClientConnState.Connected, dt: 1);
-            r.S(ClientConnState.Reconnecting, "net.reconnecting", LinePhase.RoundPlay, true, 40);
+            r.S(ClientConnState.Reconnecting, "net.reconnecting", LinePhase.TaskPlay, true, 40);
             // the reconnect loop: a rejection flips the state to Failed and the next attempt flips it back
             r.S(ClientConnState.Failed, "reject.in_progress", LinePhase.None, true, 1);
             r.S(ClientConnState.Connecting, dt: 4.5);
@@ -68,7 +68,7 @@ namespace BirimizKovulacak.Telemetry.Tests
             Assert.AreEqual(1, names.Count(n => n == "reconnect_attempted"));
             Assert.AreEqual("reject.in_progress", r.Ev("lobby_join_failed").GetString("reason"), "the most specific reason wins over the generic loop end");
             Assert.AreEqual("reconnect_failed", r.Ev("session_interrupted").GetString("reason"));
-            Assert.AreEqual("round_play", r.Ev("session_interrupted").GetString("phase"));
+            Assert.AreEqual("task_play", r.Ev("session_interrupted").GetString("phase"));
             Assert.IsTrue(r.Ev("session_interrupted").GetBool("mid_match"));
             Assert.AreEqual(3, r.Ev("reconnect_failed").GetInt("attempt"));
         }
@@ -78,7 +78,7 @@ namespace BirimizKovulacak.Telemetry.Tests
         {
             var r = new Rig();
             r.S(ClientConnState.Connecting); r.S(ClientConnState.Connected, dt: 1);
-            r.S(ClientConnState.Reconnecting, "net.reconnecting", LinePhase.RoundPlay, true, 10);
+            r.S(ClientConnState.Reconnecting, "net.reconnecting", LinePhase.TaskPlay, true, 10);
             r.S(ClientConnState.Failed, "reject.in_progress", LinePhase.None, true, 1);
             r.S(ClientConnState.Connecting, dt: 4.5);
             r.S(ClientConnState.Connected, dt: 1);
@@ -95,7 +95,7 @@ namespace BirimizKovulacak.Telemetry.Tests
         {
             var r = new Rig();
             r.S(ClientConnState.Connecting); r.S(ClientConnState.Connected, dt: 1);
-            r.S(ClientConnState.Reconnecting, "net.reconnecting", LinePhase.Morning, true, 5);
+            r.S(ClientConnState.Reconnecting, "net.reconnecting", LinePhase.Intro, true, 5);
             r.S(ClientConnState.Failed, "reject.version", LinePhase.None, true, 1);
             Assert.IsTrue(r.C.HasPendingFailure);
             r.H.Clock += 3; r.C.Tick();
@@ -123,7 +123,7 @@ namespace BirimizKovulacak.Telemetry.Tests
         {
             var r = new Rig();
             r.S(ClientConnState.Connecting); r.S(ClientConnState.Connected, dt: 1);
-            r.S(ClientConnState.Failed, "net.host_lost", LinePhase.WeekResults, true, 60);
+            r.S(ClientConnState.Failed, "net.host_lost", LinePhase.Results, true, 60);
             Assert.IsTrue(r.Ev("host_departed").GetBool("graceful"));
             Assert.AreEqual("host_closed", r.Ev("lobby_left").GetString("reason"));
         }

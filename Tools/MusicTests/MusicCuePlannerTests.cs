@@ -14,21 +14,21 @@ namespace BirimizKovulacak.MusicTests
             Assert.AreEqual(MusicCues.MenuLobby, MusicCuePlanner.Plan(S(LinePhase.None)).Cue);
         }
 
-        [TestCase(LinePhase.Morning)] [TestCase(LinePhase.RoundIntro)] [TestCase(LinePhase.RoundReveal)] [TestCase(LinePhase.Break)]
+        [TestCase(LinePhase.Intro)] [TestCase(LinePhase.TaskReveal)] [TestCase(LinePhase.Break)] [TestCase(LinePhase.CrisisCalls)]
         public void OfficePhases(LinePhase ph) => Assert.AreEqual(MusicCues.OfficeWork, MusicCuePlanner.Plan(S(ph)).Cue);
 
         [Test] public void DeadlineThreshold()
         {
-            Assert.AreEqual(MusicCues.OfficeWork, MusicCuePlanner.Plan(S(LinePhase.RoundPlay, 30.5, 120)).Cue);
-            Assert.AreEqual(MusicCues.Deadline, MusicCuePlanner.Plan(S(LinePhase.RoundPlay, 30.0, 120)).Cue);
-            Assert.AreEqual(MusicCues.Deadline, MusicCuePlanner.Plan(S(LinePhase.RoundPlay, 1, 120)).Cue);
+            Assert.AreEqual(MusicCues.OfficeWork, MusicCuePlanner.Plan(S(LinePhase.TaskPlay, 30.5, 120)).Cue);
+            Assert.AreEqual(MusicCues.Deadline, MusicCuePlanner.Plan(S(LinePhase.TaskPlay, 30.0, 120)).Cue);
+            Assert.AreEqual(MusicCues.Deadline, MusicCuePlanner.Plan(S(LinePhase.TaskPlay, 1, 120)).Cue);
             // short task: 25% of 60 s = 15 s
-            Assert.AreEqual(MusicCues.OfficeWork, MusicCuePlanner.Plan(S(LinePhase.RoundPlay, 20, 60)).Cue);
-            Assert.AreEqual(MusicCues.Deadline, MusicCuePlanner.Plan(S(LinePhase.RoundPlay, 15, 60)).Cue);
+            Assert.AreEqual(MusicCues.OfficeWork, MusicCuePlanner.Plan(S(LinePhase.TaskPlay, 20, 60)).Cue);
+            Assert.AreEqual(MusicCues.Deadline, MusicCuePlanner.Plan(S(LinePhase.TaskPlay, 15, 60)).Cue);
             // unknown length never triggers
-            Assert.AreEqual(MusicCues.OfficeWork, MusicCuePlanner.Plan(S(LinePhase.RoundPlay, 5, 0)).Cue);
-            // deadline cue only inside RoundPlay
-            Assert.AreEqual(MusicCues.OfficeWork, MusicCuePlanner.Plan(S(LinePhase.RoundReveal, 5, 120)).Cue);
+            Assert.AreEqual(MusicCues.OfficeWork, MusicCuePlanner.Plan(S(LinePhase.TaskPlay, 5, 0)).Cue);
+            // deadline cue only inside TaskPlay
+            Assert.AreEqual(MusicCues.OfficeWork, MusicCuePlanner.Plan(S(LinePhase.TaskReveal, 5, 120)).Cue);
         }
 
         [Test] public void DossierIsOneShotStinger()
@@ -39,6 +39,7 @@ namespace BirimizKovulacak.MusicTests
         }
 
         [TestCase(LinePhase.MeetingDiscussion)] [TestCase(LinePhase.MeetingVote)] [TestCase(LinePhase.MeetingVerdict)]
+        [TestCase(LinePhase.CrisisVote)] [TestCase(LinePhase.CrisisVerdict)] [TestCase(LinePhase.FinalDiscussion)]
         public void MeetingBed(LinePhase ph)
         {
             var p = MusicCuePlanner.Plan(S(ph));
@@ -51,8 +52,8 @@ namespace BirimizKovulacak.MusicTests
 
         [Test] public void ResultsSuccessAndCollapsePlayOnce()
         {
-            var ok = S(LinePhase.WeekResults);
-            var bad = S(LinePhase.WeekResults); bad.CompanyClosed = true;
+            var ok = S(LinePhase.Results);
+            var bad = S(LinePhase.Results); bad.CompanyClosed = true;
             var a = MusicCuePlanner.Plan(ok); var b = MusicCuePlanner.Plan(bad);
             Assert.AreEqual(MusicCues.ResultsSuccess, a.Cue); Assert.IsFalse(a.Loop);
             Assert.AreEqual(MusicCues.ResultsCollapse, b.Cue); Assert.IsFalse(b.Loop);
@@ -62,18 +63,18 @@ namespace BirimizKovulacak.MusicTests
 
         [Test] public void MenuReturnAndRematchResetToMenuBed()
         {
-            Assert.AreEqual(MusicCues.ResultsSuccess, MusicCuePlanner.Plan(S(LinePhase.WeekResults)).Cue);
-            var menu = new MusicState { HasView = false, Phase = LinePhase.WeekResults, RecordingActive = true }; // stale flags ignored without a view
+            Assert.AreEqual(MusicCues.ResultsSuccess, MusicCuePlanner.Plan(S(LinePhase.Results)).Cue);
+            var menu = new MusicState { HasView = false, Phase = LinePhase.Results, RecordingActive = true }; // stale flags ignored without a view
             var p = MusicCuePlanner.Plan(menu);
             Assert.AreEqual(MusicCues.MenuLobby, p.Cue);
             Assert.AreEqual(1f, p.Duck, 1e-6);
-            // rematch: the phase returns to Morning of the new week -> office bed again
-            Assert.AreEqual(MusicCues.OfficeWork, MusicCuePlanner.Plan(S(LinePhase.Morning)).Cue);
+            // rematch: the phase returns to Intro of the new match -> office bed again
+            Assert.AreEqual(MusicCues.OfficeWork, MusicCuePlanner.Plan(S(LinePhase.Intro)).Cue);
         }
 
         [Test] public void DuckTargets()
         {
-            var s = S(LinePhase.RoundPlay);
+            var s = S(LinePhase.TaskPlay);
             Assert.AreEqual(1f, MusicCuePlanner.Plan(s).Duck, 1e-6);
             s.AnySpeaking = true; // speech outside meetings does not duck
             Assert.AreEqual(1f, MusicCuePlanner.Plan(s).Duck, 1e-6);

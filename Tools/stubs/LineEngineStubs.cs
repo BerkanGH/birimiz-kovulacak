@@ -31,21 +31,18 @@ namespace BirimizKovulacak.Core
         public static List<LineMessage> DecodeMessages(byte[] b) { throw new NotImplementedException(); }
     }
 
-    public enum LineBotPolicy : byte { Talk = 0, NoComm = 1, Greedy = 2 }
+    public enum LineBotPolicy : byte { Honest = 0, Greedy = 1, Mixed = 2 }
 
     public sealed class LineBot
     {
-        public LineBot(int seat, int seed, LineBotPolicy policy = LineBotPolicy.Talk) { }
-        public LineAction Next(LineView view, LineConfig config, double now, IReadOnlyList<LineView> shared = null) { throw new NotImplementedException(); }
+        public LineBot(int seat, int seed, LineBotPolicy policy = LineBotPolicy.Honest) { }
+        public double ThinkSeconds;
+        public double WakeAt { get { throw new NotImplementedException(); } }
+        public LineBotPolicy Policy { get { throw new NotImplementedException(); } }
+        public LineAction Next(LineView v, LineConfig config, double now) { throw new NotImplementedException(); }
     }
 
-    public static class LineSchedule
-    {
-        public static bool Validate(LineConfig c, int players, WeekLength length, string managerId, out string reasonKey) { throw new NotImplementedException(); }
-        public static List<double> PredictMeetingStarts(LineConfig c, int players, WeekLength length, bool firstSession, bool firstTimeTasks) { throw new NotImplementedException(); }
-    }
-
-    /// <summary>Player-authored text rules (docs/CONTRACTS_V4.md §5), shared by the engine and the host's name sanitiser.</summary>
+    /// <summary>Player-authored text rules (v4 behaviour kept in v5), shared by the engine and the host's name sanitiser.</summary>
     public static class LineText
     {
         public static string Sanitize(string text, int maxChars, bool allowNewlines, out LineFailure failure) { throw new NotImplementedException(); }

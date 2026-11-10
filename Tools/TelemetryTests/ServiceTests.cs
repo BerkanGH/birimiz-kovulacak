@@ -172,7 +172,7 @@ namespace BirimizKovulacak.Telemetry.Tests
             bool withDenied = h.Service.Begin("phone_call_requested").Slot("caller", 0).Slot("callee", 1).Bool("partners_in_task", true).Emit();
             bool reversed = h.Service.Begin("phone_call_requested").Slot("caller", 1).Slot("callee", 0).Bool("partners_in_task", true).Emit();
             bool both = h.Service.Begin("phone_call_requested").Slot("caller", 0).Slot("callee", 2).Bool("partners_in_task", true).Emit();
-            bool self = h.Service.Begin("fault_points_changed").Slot("player", 1).Int("delta", 1).Enum("reason", "warning").Int("blame_after", 6).Emit();
+            bool self = h.Service.Begin("fault_points_changed").Slot("player", 1).Int("delta", 1).Enum("reason", "vote").Int("blame_after", 6).Emit();
             Assert.IsFalse(withDenied);
             Assert.IsFalse(reversed);
             Assert.IsTrue(both);
@@ -193,11 +193,10 @@ namespace BirimizKovulacak.Telemetry.Tests
             h.Service.SetParticipant(2, 2, "p-00000000000000a2", false);
             h.Service.Begin("meeting_vote_submitted").Slot("voter", 0).Ballot("target", 1).Bool("changed", false).Emit();
             h.Service.Begin("meeting_vote_submitted").Slot("voter", 0).Ballot("target", 2).Bool("changed", false).Emit();
-            h.Service.Begin("meeting_vote_submitted").Slot("voter", 0).Ballot("target", LineIds.Nobody).Bool("changed", false).Emit();
             h.Service.Begin("meeting_vote_submitted").Slot("voter", 0).Ballot("target", LineIds.None).Bool("changed", false).Emit();
             Assert.IsFalse(h.Service.Begin("meeting_vote_submitted").Slot("voter", 1).Ballot("target", 0).Bool("changed", false).Emit(), "a non-consenting voter is not logged");
             var t = h.Flushed().Select(e => e.GetString("target") ?? ("slot" + e.GetInt("target"))).ToArray();
-            CollectionAssert.AreEqual(new[] { "unconsented", "slot2", "no_action", "abstain" }, t);
+            CollectionAssert.AreEqual(new[] { "unconsented", "slot2", "abstain" }, t);
         }
 
         [Test]
@@ -207,8 +206,8 @@ namespace BirimizKovulacak.Telemetry.Tests
             h.Service.Context.BeginMatch("m-w", 1, 3, false, null);
             h.Service.SetParticipant(0, 3, "p-00000000000000a0", false);
             h.Service.SetParticipant(1, 3, "p-00000000000000a1", false);
-            h.Service.Begin("fault_points_changed").Slot("player", 1).Int("delta", 1).Enum("reason", "warning").Int("blame_after", 6).Emit();
-            h.Service.Begin("fault_points_changed").Slot("player", 0).Int("delta", 1).Enum("reason", "warning").Int("blame_after", 6).Emit();
+            h.Service.Begin("fault_points_changed").Slot("player", 1).Int("delta", 1).Enum("reason", "vote").Int("blame_after", 6).Emit();
+            h.Service.Begin("fault_points_changed").Slot("player", 0).Int("delta", 1).Enum("reason", "vote").Int("blame_after", 6).Emit();
             h.Service.Begin("choice_submitted").Slot("player", 1).Enum("field", "a").Int("category", 1).Float("latency_seconds", 4).Bool("after_contact", true).Enum("contact_channel", "voice").Bool("sabotage_option", false).Emit();
             h.Service.Begin("choice_submitted").Slot("player", 0).Enum("field", "a").Int("category", 1).Float("latency_seconds", 4).Bool("after_contact", true).Enum("contact_channel", "voice").Bool("sabotage_option", false).Emit();
             Assert.AreEqual(1, h.Service.GetStats().PrivateBuffered - 1);
@@ -509,7 +508,7 @@ namespace BirimizKovulacak.Telemetry.Tests
             Assert.AreEqual("hung_up", TelemetryNames.Of(CallEndReason.HungUp));
             Assert.AreEqual("it_log", TelemetryNames.Snake("ITLog"));
             Assert.AreEqual("meeting_dossier", TelemetryNames.Of(LinePhase.MeetingDossier));
-            Assert.AreEqual("invoice_reconcile", LineTasks.Id(TaskKind.InvoiceReconcile));
+            Assert.AreEqual("client_bonus", LineTasks.Id(TaskKind.ClientBonus));
         }
     }
 }

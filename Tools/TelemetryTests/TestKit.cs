@@ -69,44 +69,22 @@ namespace BirimizKovulacak.Telemetry.Tests
         public FakeEngine(int players = 4, string matchId = "m-test0001")
         {
             Config = LineConfig.CreateDefault();
-            Setup = new LineSetup { WeekId = 1, MatchId = matchId, Length = WeekLength.Short };
+            Setup = new LineSetup { WeekId = 1, MatchId = matchId };
             for (int i = 0; i < players; i++) Setup.Players.Add(new LinePlayerInfo { Id = i, Name = "P" + i });
             ViewFn = (p, now) => DefaultView(p, now);
         }
 
-        public int RoundIndex = -1, TaskNumber = -1;
-        public List<TaskKind> Today = new List<TaskKind> { TaskKind.InvoiceReconcile, TaskKind.ServerCode };
-        public Dictionary<int, List<int>> Groups = new Dictionary<int, List<int>>();
-        public Dictionary<int, int> Votes = new Dictionary<int, int>();
+        public int TaskNumber = -1;
         public bool[] Disconnected = new bool[8];
-        public int[] Blame = { 5, 5, 5, 5, 5, 5 };
-        public int Defender = LineIds.None;
-        public LineMeetingView Meeting;
-        public LineCompanyView Company = new LineCompanyView { TasksScheduled = 6, ProvisionalPermille = 700, TargetPercent = 65 };
-        public List<LineTaskReveal> Reveals = new List<LineTaskReveal>();
+        public int[] Blame = { 0, 0, 0, 0, 0, 0 };
 
         public LineView DefaultView(int player, double now)
         {
             ViewCalls++;
-            var v = new LineView { WeekId = 1, MatchId = Setup.MatchId, Me = player, Now = now, Phase = Phase, PhaseEndTime = PhaseEndTime, Day = Day, DayCount = 3, RoundIndex = RoundIndex, TaskNumber = TaskNumber, Company = Company, Meeting = Meeting };
-            v.TodayTasks = Today;
-            v.TodayReveals = Reveals;
-            v.Features = new LineFeaturesView { FirstTimeTask = true };
+            var v = new LineView { WeekId = 1, MatchId = Setup.MatchId, Me = player, Now = now, Phase = Phase, PhaseEndTime = PhaseEndTime, Day = Day, TaskNumber = TaskNumber };
             foreach (var p in Setup.Players)
-                v.Players.Add(new LinePlayerView { Id = p.Id, Connected = !Disconnected[p.Id], IsBot = p.IsBot, Blame = Blame[p.Id], Voted = Votes.ContainsKey(p.Id) });
-            if (RoundIndex >= 0 && Phase >= LinePhase.RoundIntro && Phase <= LinePhase.Break)
-            {
-                var g = new List<int>();
-                List<int> gl;
-                if (Groups.TryGetValue(player, out gl)) g = gl;
-                v.Task = new LineTaskView { Kind = Today[RoundIndex % Today.Count], Version = 1, Family = TaskFamily.Pair, Number = TaskNumber, Group = g, Role = 0, PlayEndTime = PhaseEndTime };
-                v.Task.Facts.Add(new LineFact { Key = "line" });
-                v.Task.Facts.Add(new LineFact { Key = "partner" });
-            }
-            v.Mine.Objective = new LineObjectiveView { Kind = (ObjectiveKind)(1 + player % 9) };
-            int mv;
-            if (Meeting != null) { var m = Meeting; m.MyVote = Votes.TryGetValue(player, out mv) ? mv : LineIds.None; m.Defender = Defender; }
-            v.Result = Result;
+                v.Players.Add(new LinePlayerView { Id = p.Id, Connected = !Disconnected[p.Id], IsBot = p.IsBot, Blame = Blame[p.Id] });
+            if (Phase == LinePhase.Results) v.Results = Result;
             return v;
         }
 
@@ -160,7 +138,6 @@ namespace BirimizKovulacak.Telemetry.Tests
         public readonly Harness H;
         public readonly FakeEngine Engine;
         public readonly HostTelemetryCoordinator Host;
-        public LineTelemetryObserver Obs { get { return Host.Observer; } }
         public double Now = 1000;
 
         public MatchRig(int players = 4, int consent = 3, Action<TelemetryConfiguration> tweak = null, int[] consents = null, bool bots = false)
@@ -168,14 +145,14 @@ namespace BirimizKovulacak.Telemetry.Tests
             H = new Harness(tweak, 3, true);
             Engine = new FakeEngine(players);
             Host = new HostTelemetryCoordinator(H.Service, () => H.Clock, () => 77);
-            Host.LobbyCreated("s-lobby0001", "G07", WeekLength.Short, true);
+            Host.LobbyCreated("s-lobby0001", "G07", true);
             for (int i = 0; i < players; i++)
             {
                 int c = consents != null ? consents[i] : consent;
                 Host.PlayerConsent(i, c, c >= 2 ? "p-" + (0xA0000000UL + (ulong)i).ToString("x16") : "", false);
             }
-            Engine.Phase = LinePhase.Morning;
-            Engine.PhaseEndTime = Now + 12;
+            Engine.Phase = LinePhase.Intro;
+            Engine.PhaseEndTime = Now + 20;
             Host.MatchStarted(Engine, Engine.Setup, new[] { "rec_select=context" }, Now);
         }
 
@@ -185,12 +162,11 @@ namespace BirimizKovulacak.Telemetry.Tests
         }
 
         /// <summary>Moves to a phase: sets the engine state then feeds the PhaseChanged event.</summary>
-        public void Go(double t, LinePhase to, double planned, PhaseEndReason reason = PhaseEndReason.Timer, int roundIndex = -2, int taskNumber = -2, int day = -1)
+        public void Go(double t, LinePhase to, double planned, PhaseEndReason reason = PhaseEndReason.Timer, int taskNumber = -2, int day = -1)
         {
             Now = t;
             Engine.Phase = to;
             Engine.PhaseEndTime = t + planned;
-            if (roundIndex != -2) Engine.RoundIndex = roundIndex;
             if (taskNumber != -2) Engine.TaskNumber = taskNumber;
             if (day >= 0) Engine.Day = day;
             Feed(Ev.Phase(t, to, reason));
