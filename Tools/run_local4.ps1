@@ -4,6 +4,7 @@
   With -Bots every process is driven by the automated test player; without it you control the host window.
 .EXAMPLE
   powershell -ExecutionPolicy Bypass -File Tools\run_local4.ps1 -Bots -DurationScale 0.5 -Matches 1
+  powershell -ExecutionPolicy Bypass -File Tools\run_local4.ps1 -Bots -DurationScale 0.3 -Players 6 -VoiceTest speech -CallTest
 #>
 param(
     [switch]$Bots,
@@ -18,8 +19,10 @@ param(
     [string]$ExtraAll = "",
     [string]$HostExtra = "",
     [int]$Players = 4,
-    [switch]$Week,
-    [string]$Manager = "",
+    # Policy of the automated players: honest, greedy or mixed (default).
+    [string]$BotPolicy = "",
+    # -bot players call each other in Intro/CrisisCalls, record a call and leak it in meeting 1 (use with -VoiceTest speech).
+    [switch]$CallTest,
     [string]$VoiceTest = "",
     # Analytics for automated runs: per-process in-memory consent, events under <LogDir>	elemetry, cohort bot_sim.
     [switch]$NoTelemetry,
@@ -36,22 +39,24 @@ if ($Seed -ne 0) { $common += @("-seed", $Seed.ToString()) }
 if (-not $NoTelemetry) { $common += @("-telemetry", "local", "-telemetryconsent", "2", "-telemetrydir", (Join-Path $LogDir "telemetry"), "-telemetryenv", "development", "-cohort", $Cohort) }
 if ($ExtraAll) { $common += $ExtraAll.Split(" ") }
 if ($VoiceTest) { $common += @("-voicetest", $VoiceTest) }
+if ($BotPolicy) { $common += @("-botpolicy", $BotPolicy) }
+if ($CallTest) { $common += "-calltest" }
+# Windows PowerShell does not quote array arguments: quote everything with spaces (log paths in a folder with spaces).
+function Join-Args([string[]]$list) { ($list | ForEach-Object { if ($_ -match '\s') { '"' + $_ + '"' } else { $_ } }) -join " " }
 $names = @("Mavi", "Sari", "Pembe", "Yesil", "Turuncu", "Mor")
 $procs = @()
 $hostArgs = @("-autohost", "-autostart", "-name", $names[0], "-logFile", (Join-Path $LogDir "unity_host.log")) + $common
 if ($Bots) { $hostArgs += "-bot" }
-if ($Week) { $hostArgs += "-week" }
-if ($Manager) { $hostArgs += @("-manager", $Manager) }
 if ($HostExtra) { $hostArgs += $HostExtra.Split(" ") }
-$procs += Start-Process -FilePath $Exe -ArgumentList $hostArgs -PassThru
+$procs += Start-Process -FilePath $Exe -ArgumentList (Join-Args $hostArgs) -PassThru
 Start-Sleep -Seconds 3
 for ($i = 1; $i -lt $Players; $i++) {
     $a = @("-autojoin", "127.0.0.1", "-bot", "-name", $names[$i], "-logFile", (Join-Path $LogDir ("unity_client$i.log"))) + $common
     if ($i -eq 2 -and $Client2Extra) { $a += $Client2Extra.Split(" ") }
     if ($i -eq 3 -and $Client3Extra) { $a += $Client3Extra.Split(" ") }
-    $procs += Start-Process -FilePath $Exe -ArgumentList $a -PassThru
+    $procs += Start-Process -FilePath $Exe -ArgumentList (Join-Args $a) -PassThru
     Start-Sleep -Milliseconds 800
 }
 Write-Host "Launched $Players processes; logs in $LogDir"
 $procs | Wait-Process
-python (Join-Path $PSScriptRoot "scripts\verify_logs.py") $LogDir
+python -I (Join-Path $PSScriptRoot "scripts\verify_logs.py") $LogDir

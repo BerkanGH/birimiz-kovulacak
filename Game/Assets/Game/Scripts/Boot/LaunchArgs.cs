@@ -31,6 +31,8 @@ namespace BirimizKovulacak.Game
         /// <summary>Policy of host-side bot seats and of this process's -bot driver (honest, greedy, mixed; default mixed).</summary>
         public BirimizKovulacak.Core.LineBotPolicy BotPolicy = BirimizKovulacak.Core.LineBotPolicy.Mixed;
         public string VoiceTest;
+        /// <summary>-calltest: -bot players call each other, record one call and leak it (LineBotDriver.CallTest).</summary>
+        public bool CallTest;
         /// <summary>Playtest facilitator's friend-group code (analytics grouping), e.g. G07.</summary>
         public string PlaytestGroup;
 
@@ -66,6 +68,7 @@ namespace BirimizKovulacak.Game
                     case "-expectplayers": a.ExpectPlayers = int.Parse(next, CultureInfo.InvariantCulture); i++; break;
                     case "-botpolicy": a.BotPolicy = ParsePolicy(next); i++; break;
                     case "-playtestgroup": a.PlaytestGroup = next; i++; break;
+                    case "-calltest": a.CallTest = true; break;
                     case "-voicetest":
                         if (next != null && !next.StartsWith("-")) { a.VoiceTest = next; i++; }
                         else a.VoiceTest = "sine";

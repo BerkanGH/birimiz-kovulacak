@@ -28,10 +28,49 @@ namespace BirimizKovulacak.Game
             }
             if (Time.unscaledTime < _next) return;
             _next = Time.unscaledTime + 0.25f;
+            if (LaunchArgs.Current.CallTest && CallTest(lc, v)) return;
             LineAction a;
             try { a = _bot.Next(v, lc.Config, lc.Now); }
             catch (System.Exception e) { Debug.LogException(e); return; }
             if (a != null) lc.Send(a.Verb, a.Target, a.A, a.B, a.C, a.Text);
+        }
+
+        // ---- -calltest: exercise calls, the recorder and leaks (LineBot itself never calls; Phase 3 adds that).
+        double _phaseKey = double.NaN;
+        bool _called, _recordAsked, _hungUp, _leakAsked;
+
+        /// <summary>
+        /// Test hook for automated runs: in Intro and CrisisCalls the connected players pair up by seat order (1st calls
+        /// 2nd, 3rd calls 4th, ...); callees answer; a caller records its first call and leaks it in meeting 1's
+        /// discussion. Returns true when it sent something this tick.
+        /// </summary>
+        bool CallTest(LineClient lc, LineView v)
+        {
+            if (v.PhaseStartTime != _phaseKey) { _phaseKey = v.PhaseStartTime; _called = _hungUp = _leakAsked = false; }
+            var m = v.Mine;
+            var ph = m.Phone;
+            if (ph.Status == CallStatus.Ringing) { lc.Send(LineVerb.Answer); return true; }
+            double now = lc.Now, len = v.PhaseEndTime - v.PhaseStartTime, elapsed = now - v.PhaseStartTime;
+            if (v.Phase == LinePhase.Intro || v.Phase == LinePhase.CrisisCalls)
+            {
+                var order = new List<int>();
+                foreach (var p in v.Players) if (p.Connected) order.Add(p.Id);
+                order.Sort();
+                int idx = order.IndexOf(lc.MySlot);
+                bool caller = idx >= 0 && idx % 2 == 0 && idx + 1 < order.Count;
+                if (!caller) return false;
+                if (ph.Status == CallStatus.Idle && !_called && elapsed > 0.5) { _called = true; lc.Send(LineVerb.Call, order[idx + 1]); return true; }
+                if (ph.Status == CallStatus.Connected)
+                {
+                    if (!_recordAsked && v.Features.RecordingsEnabled && m.RecorderUsesLeft > 0) { _recordAsked = true; lc.Send(LineVerb.Record); return true; }
+                    if (!_hungUp && elapsed > len * 0.8) { _hungUp = true; lc.Send(LineVerb.HangUp); return true; }
+                }
+                return false;
+            }
+            if (v.Phase == LinePhase.MeetingDiscussion && v.Day == 0 && v.Features.LeakOpen && !_leakAsked)
+                foreach (var r in m.Recorded)
+                    if (!r.Leaked) { _leakAsked = true; lc.Send(LineVerb.Leak, a: r.CallId); return true; }
+            return false;
         }
     }
 

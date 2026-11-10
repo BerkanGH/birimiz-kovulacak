@@ -3,6 +3,14 @@
 *Ofisi birlikte kurtar. Sonra suçu arkadaşına at.*
 
 A 3–6 player online social-deduction office comedy for Windows (Turkish + English) with **built-in voice**.
+
+> **v5 integration (branch `feature/v5-integration`).** The game now runs the v5 ruleset "Her Şey Kayıtta"
+> (`v5.0-kayit`): 3 tasks (Client Bonus, Petty Cash, Weekend Shift), 1–2 meetings with blame votes, investigations
+> and leaked call recordings, a crisis vote and a final firing vote whose desk goes to the voters. Rules:
+> `docs/V5_ENGINE_SPEC.md` (design `docs/V5_DESIGN.md`, plan `docs/V5_IMPLEMENTATION_PLAN.md`). The in-match UI is a
+> deliberately minimal debug-style screen (`Game/Assets/Game/Scripts/UI/Play`, Phase 2a); the v4 text below and the
+> tester steps about the desk/monitor, Short/Full weeks and task tutorials describe v4 and are history.
+
 **v4 "Hybrid Office"** (ruleset `v4.0-hybrid`): everyone sits alone in a first-person office and talks through the desk
 phone (private 1:1 calls) or by text (messages, email with replies, meeting chat, anonymous complaints). Each match is
 3 work blocks (Short, ≈ 20 min) or 5 (Full, ≈ 33 min); every block has two office **tasks** (12 in the pool: invoices,
@@ -47,15 +55,19 @@ cd Tools\CoreTests\Tests ; dotnet test
 # Regenerate Unity content (materials, prefabs, Rooms scene) and build the Windows x64 player
 powershell -ExecutionPolicy Bypass -File Tools\build.ps1            # add -Art to regenerate Blender assets first
 
-# N local windows (host + clients, 3..6) driven by test bots, then verify identical results
-powershell -ExecutionPolicy Bypass -File Tools\run_local4.ps1 -Bots -DurationScale 0.3 -Matches 1 -Players 6 -Week -VoiceTest speech
+# N local windows (host + clients, 3..6) driven by v5 test bots, then verify identical results and the v5 phase sequence
+# (-CallTest: bots also call each other, record one call and leak it in meeting 1; -BotPolicy honest|greedy|mixed)
+powershell -ExecutionPolicy Bypass -File Tools\run_local4.ps1 -Bots -DurationScale 0.3 -Matches 1 -Players 6 -VoiceTest speech -CallTest
 
-# v3 UI mocks / 3D scene test (screenshots without a network)
-Builds\BirimizKovulacak-Windows\BirimizKovulacak.exe -uimock "desk.*" -uimockout Builds\mock
+# v5 play-screen mocks / 3D scene test (screenshots without a network)
+Builds\BirimizKovulacak-Windows\BirimizKovulacak.exe -uimock "v5.*" -uimockout Builds\mock
 Builds\BirimizKovulacak-Windows\BirimizKovulacak.exe -scenetest -scenetestout Builds\scenetest
 
-# v4 balance simulator (synthetic bots: Talk = perfect info sharing after contact, NoComm, Greedy)
-dotnet run -c Release --project Tools\LineSim\LineSim.csproj -- --matches 20 --players all --length both --mix all --seed 1927 --step 2 --session-matches 10 --output Tools\LineSim\v4-sim.txt
+# v5 balance simulator (synthetic Honest / Greedy / Mixed bots; they never call or record)
+dotnet run -c Release --project Tools\LineSim\LineSim.csproj -- --matches 1000 --output Tools\LineSim\v5-sim.txt
+
+# Localisation checks (v5 play UI area; shell + privacy areas)
+python -I Tools\scripts\loc_check.py ; python -I Tools\scripts\loc_parity_meeting.py
 
 # Telemetry / music tests (pure C#)
 dotnet test Tools\TelemetryTests ; dotnet test Tools\MusicTests
