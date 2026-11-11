@@ -9,9 +9,10 @@ namespace BirimizKovulacak.Game
     /// <summary>
     /// The office computer ("KOVA OS"): an OS-like desktop laid exactly over the monitor's screen while the camera is
     /// framed on it (wallpaper, app icons, one app window, a sticky note with the "Şimdi" hint, taskbar with the phase
-    /// clock and your prim). Apps: Görev (task card, choices, reveal, whistle — Petty Cash and Weekend Shift live here
-    /// until their desk objects arrive), Havale (transfers), Mesajlar (private texts), Arama geçmişi (call log and
-    /// line board), Kurallar (the how-to pages). Content comes from the shared <see cref="PlayBlocks"/>.
+    /// clock and your prim). Apps: Görev (task card: Client Bonus is chosen here; Petty Cash, Weekend Shift and the
+    /// whistle are played on the desk objects, so the card says where and one button turns the view there), Havale
+    /// (transfers), Mesajlar (private texts), Arama geçmişi (call log and line board), Kurallar (the how-to pages).
+    /// Content comes from the shared <see cref="PlayBlocks"/>.
     /// </summary>
     public sealed class OfficeComputer
     {
@@ -299,13 +300,16 @@ namespace BirimizKovulacak.Game
                     Line(card, F("focus.intro_goal", lc.Config.StartPrim));
                     break;
                 case LinePhase.TaskPlay:
-                    state = PlayBlocks.FocusTask(card, lc, v);
-                    if (v.Task != null && v.Task.Kind != TaskKind.ClientBonus) Line(card, T("office.task_note." + LineTasks.Id(v.Task.Kind)), "os-note");
+                    state = PlayBlocks.FocusTask(card, lc, v, _ui.OpenTaskObject);
                     break;
                 case LinePhase.TaskReveal:
                 case LinePhase.Break:
-                    state = PlayBlocks.FocusReveal(card, lc, v);
-                    if (v.Phase == LinePhase.Break && v.Features.WhistleOpen && v.Mine.WitnessOf.Count > 0) Line(card, T("office.task_note.whistle"), "os-note");
+                    state = PlayBlocks.FocusReveal(card, lc, v, _ui.OpenTaskObject);
+                    if (state != Todo && v.Task != null && v.Task.Kind != TaskKind.ClientBonus && v.Task.Revealed)
+                    {
+                        var kind = v.Task.Kind;
+                        Btn(T("office.look." + LineTasks.Id(kind)), () => _ui.OpenTaskObject(kind), "pl-small").AddTo(card);
+                    }
                     break;
                 case LinePhase.CrisisCalls:
                     PlayBlocks.CrisisCalls(card, lc, v, "office.crisis_how");

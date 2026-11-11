@@ -23,10 +23,13 @@ PLAY = [os.path.join(ROOT, "Game", "Assets", "Game", "Scripts", "UI", d) for d i
 ENUMS = os.path.join(ROOT, "Game", "Assets", "Game", "Core", "Line", "Contracts", "LineEnums.cs")
 EMPTY_OK = {"v5.hint.None"}
 TASK_IDS = ["client_bonus", "petty_cash", "weekend_shift"]
-# office keys built from an enum / id: office.use.<DeskTarget>, office.app.<app id>, office.task_note.<task id>
-OFFICE_FAMILIES = {"office.use.": ["Monitor", "Phone", "Board", "Chair", "Mug", "Drawer", "Nameplate"],
+# office keys built from an enum / id: office.use.<DeskTarget>, office.app.<app id>, office.task_where.<task id>,
+# office.goto.<task id> (the Görev app's shortcut to the task's desk object)
+OFFICE_FAMILIES = {"office.use.": ["Monitor", "Phone", "Board", "Chair", "Mug", "Drawer", "Nameplate", "CashBox", "Roster"],
                    "office.app.": ["task", "transfer", "messages", "calls", "rules"],
-                   "office.task_note.": ["petty_cash", "weekend_shift", "whistle"]}
+                   "office.task_where.": ["petty_cash", "weekend_shift", "whistle"],
+                   "office.goto.": ["petty_cash", "weekend_shift", "whistle"],
+                   "office.look.": ["petty_cash", "weekend_shift"]}
 FAMILIES = {"phase.": "LinePhase", "hint.": "LinePhase", "fail.": "LineFailure", "verb.": "LineVerb",
             "decision.": "FiringDecision", "fire.decision.": "FiringDecision", "blame.": "BlameReason",
             "phone.log_missed.": "CallEndReason"}

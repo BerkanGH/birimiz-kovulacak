@@ -14,11 +14,13 @@ namespace BirimizKovulacak.Game
     /// incoming-call card; the use prompt under the crosshair. Opens the desk objects: the computer
     /// (<see cref="OfficeComputer"/>, Q / E on the monitor), the desk phone (<see cref="OfficePhone"/>, Tab / E on
     /// the phone), the cork board zoom (E) and the cassette recorder (R / E). Y / N answer / decline from anywhere.
+    /// Step 2: the Petty Cash box, the Weekend Shift roster and the drawer's prim stack (<see cref="OfficeObjects"/>:
+    /// E on the object, or the computer's Görev app shortcut).
     /// Drives the camera through <see cref="RoomsPresenter"/> (computer and phone sit you down; Esc goes back).
     /// </summary>
     public sealed class OfficeUi : UiKit.Screen
     {
-        public enum Focus { None, Computer, Phone, Board }
+        public enum Focus { None, Computer, Phone, Board, CashBox, Roster, Drawer }
 
         public static OfficeUi I { get; private set; }
 
@@ -26,6 +28,7 @@ namespace BirimizKovulacak.Game
         readonly Label _phase, _timer, _prim, _now, _callText, _callTime, _callRec, _ringName, _ringHint, _ringTime, _promptKey, _promptText, _promptAlt, _micText;
         readonly OfficeComputer _computer;
         readonly OfficePhone _phone;
+        readonly OfficeObjects _objects;
         readonly CorkBoard _board = new CorkBoard();
         readonly PlayState _st = new PlayState();
         readonly List<KeyValuePair<VisualElement, float>> _toastList = new List<KeyValuePair<VisualElement, float>>();
@@ -40,8 +43,8 @@ namespace BirimizKovulacak.Game
         string _promptSig;
 
         public Focus Current => _focus;
-        /// <summary>The computer or the phone panel is open: the cursor is free.</summary>
-        public bool WantsCursor => _focus == Focus.Computer || _focus == Focus.Phone;
+        /// <summary>The computer, the phone panel or a task object's card is open: the cursor is free.</summary>
+        public bool WantsCursor => _focus == Focus.Computer || _focus == Focus.Phone || _focus == Focus.CashBox || _focus == Focus.Roster;
         public bool PhoneOpen => _focus == Focus.Phone;
         public OfficeComputer Computer => _computer;
 
@@ -60,6 +63,7 @@ namespace BirimizKovulacak.Game
             _computer = new OfficeComputer(this, Root, _st);
             _st.FocusMessageField = _computer.FocusField;
             _phone = new OfficePhone(this, Root);
+            _objects = new OfficeObjects(this, Root);
 
             // ---- top strip
             _strip = Box("of-strip").NoPick().AddTo(Root);
@@ -111,7 +115,7 @@ namespace BirimizKovulacak.Game
 
         // ------------------------------------------------------------------ lifecycle
 
-        protected override void OnShow() { _dirty = true; }
+        protected override void OnShow() { _dirty = true; _objects.OnShow(); }
 
         protected override void OnHide()
         {
@@ -155,6 +159,7 @@ namespace BirimizKovulacak.Game
             if (_bound) Rooms.DeskClicked -= OnDesk;
             _bound = false;
             _board.Release();
+            _objects.Release();
             StopLoops();
             return true;
         }
@@ -182,9 +187,10 @@ namespace BirimizKovulacak.Game
         {
             if (Detached()) return;
             _dirty = true;
-            if (!Visible) return;
             var lc = LineClient.I;
             int me = lc != null ? lc.MySlot : -1;
+            if (lc != null) _objects.OnEvent(e, me, lc.Config);
+            if (!Visible) return;
             switch (e.Type)
             {
                 case LineEventType.TransferReceived:
@@ -233,10 +239,13 @@ namespace BirimizKovulacak.Game
         void OnPhase(LinePhase from, LinePhase to)
         {
             if (Detached()) return;
-            if (to == LinePhase.None) { CloseFocus(false); _pendingPhaseToast = null; return; }
+            if (to == LinePhase.None) { CloseFocus(false); _pendingPhaseToast = null; _objects.Reset(); return; }
             var lc = LineClient.I;
             var v = lc != null ? lc.View : null;
             if (v == null || !LineClient.IsCallsPhase(to)) return;
+            // an office phase never follows itself: the same phase again (a re-sent view) is not news
+            if (from == to) return;
+            _objects.OnPhase(to, lc, v);
             if (to == LinePhase.Intro) return; // the strip says it
             _pendingPhaseToast = PlayText.PhaseTitle(v);
             if (_focus == Focus.Computer) _computer.MarkDirty();
@@ -255,12 +264,9 @@ namespace BirimizKovulacak.Game
                 case DeskTarget.Phone: OpenPhone(); break;
                 case DeskTarget.Recorder: Record(); break;
                 case DeskTarget.Board: OpenBoard(); break;
-                case DeskTarget.Drawer:
-                {
-                    var v = LineClient.I != null ? LineClient.I.View : null;
-                    if (v != null) Toast(F("office.toast_drawer", v.Mine.Prim), "of-toast-money", 3.5f);
-                    break;
-                }
+                case DeskTarget.Drawer: OpenObject(Focus.Drawer); break;
+                case DeskTarget.CashBox: OpenObject(Focus.CashBox); break;
+                case DeskTarget.Roster: OpenObject(Focus.Roster); break;
             }
         }
 
@@ -297,6 +303,32 @@ namespace BirimizKovulacak.Game
             rooms.SetPovMode(PovMode.Board);
         }
 
+        /// <summary>v5 step 2: the Petty Cash box, the Weekend Shift roster or the drawer in front of you (camera eases to
+        /// it; the computer's Görev app uses this as its one-click shortcut, so nobody has to walk).</summary>
+        public void OpenObject(Focus f)
+        {
+            var rooms = RoomsPresenter.Instance;
+            if (rooms == null || rooms.InMeeting) return;
+            if (f != Focus.CashBox && f != Focus.Roster && f != Focus.Drawer) return;
+            var lc = LineClient.I;
+            var v = lc != null ? lc.View : null;
+            if (f == Focus.CashBox && (rooms.Office == null || !OfficeObjects.CashTask(v))) { Toast(T("office.cash.not_here"), "of-toast-warn"); Sfx.Play("deny", 0.5f); return; }
+            _computer.Close();
+            _phone.Close();
+            _focus = f;
+            if (v != null) _objects.SyncNow(lc, v, f); // the box may not be on the desk yet in the frame the task starts
+            rooms.SetPovMode(f == Focus.CashBox ? PovMode.CashBox : f == Focus.Roster ? PovMode.Roster : PovMode.Drawer);
+            Sfx.Play(f == Focus.Drawer ? "drawer_slide" : f == Focus.CashBox ? "lid_open" : "click", 0.6f);
+            _objects.MarkDirty();
+        }
+
+        /// <summary>The object that plays this task (Petty Cash: the box, Weekend Shift: the roster).</summary>
+        public void OpenTaskObject(TaskKind kind)
+        {
+            if (kind == TaskKind.PettyCash) OpenObject(Focus.CashBox);
+            else if (kind == TaskKind.WeekendShift) OpenObject(Focus.Roster);
+        }
+
         /// <summary>Back to looking around the office (Esc, the close buttons).</summary>
         public void CloseFocus() { CloseFocus(true); }
 
@@ -314,6 +346,8 @@ namespace BirimizKovulacak.Game
                 var v = LineClient.I != null ? LineClient.I.View : null;
                 if (v != null && v.Mine.Phone.Status == CallStatus.Idle) Sfx.Play("place", 0.6f);
             }
+            if (camera && was == Focus.CashBox) Sfx.Play("lid_close", 0.6f);
+            if (camera && was == Focus.Drawer) Sfx.Play("drawer_slide", 0.45f);
         }
 
         /// <summary>Esc from UIRoot: closes the open desk object; false when nothing was open (UIRoot opens the menu).</summary>
@@ -375,14 +409,18 @@ namespace BirimizKovulacak.Game
             PlaceComputer(dt);
             _computer.Tick(lc, v, now, dirty, live);
             _phone.Tick(lc, v, now, dirty, live);
+            _objects.Tick(lc, v, now, dirty, live, _focus);
             _boardHint.Show(_focus == Focus.Board);
-            _strip.Show(_focus == Focus.None || _focus == Focus.Phone);
+            _strip.Show(_focus != Focus.Computer && _focus != Focus.Board);
             if (_pendingPhaseToast != null && ScreenFade.Alpha < 0.5f)
             {
                 Toast(_pendingPhaseToast, "of-toast-phase", 4f);
                 Sfx.Play("phase", 0.5f);
                 _pendingPhaseToast = null;
             }
+            // the box can vanish under the open card (Petty Cash is over): nothing left to look at
+            var office = RoomsPresenter.Instance != null ? RoomsPresenter.Instance.Office : null;
+            if (_focus == Focus.CashBox && office != null && !office.CashBoxShown) CloseFocus();
             TickToasts();
         }
 
@@ -402,6 +440,7 @@ namespace BirimizKovulacak.Game
                 else if (_focus == Focus.Phone) CloseFocus();
             }
             if (_focus == Focus.Board && Pressed(GameInput.Interact)) CloseFocus();
+            else if ((_focus == Focus.CashBox || _focus == Focus.Roster || _focus == Focus.Drawer) && Pressed(GameInput.Interact)) _objects.Primary(_focus, lc, v);
         }
 
         static bool Pressed(UnityEngine.InputSystem.InputAction a) { return a != null && a.WasPressedThisFrame(); }
@@ -411,7 +450,8 @@ namespace BirimizKovulacak.Game
         {
             var rooms = RoomsPresenter.Instance;
             if (rooms == null || rooms.InMeeting || rooms.Mode == PovMode.Cutscene) return;
-            var want = _focus == Focus.Computer ? PovMode.Monitor : _focus == Focus.Phone ? PovMode.Phone : _focus == Focus.Board ? PovMode.Board : PovMode.Office;
+            var want = _focus == Focus.Computer ? PovMode.Monitor : _focus == Focus.Phone ? PovMode.Phone : _focus == Focus.Board ? PovMode.Board
+                : _focus == Focus.CashBox ? PovMode.CashBox : _focus == Focus.Roster ? PovMode.Roster : _focus == Focus.Drawer ? PovMode.Drawer : PovMode.Office;
             if (rooms.Mode != want) rooms.SetPovMode(want);
         }
 
@@ -442,6 +482,7 @@ namespace BirimizKovulacak.Game
             }
             bool todo;
             string text = OfficeText.Now(lc, v, out todo);
+            if (v.Phase == LinePhase.Break && _objects.WhistledOnMe) text = F("office.cash.out_whistled_me", Name(_objects.WhistledBy), _objects.WhistledLost);
             _now.SetText(text);
             _strip.EnableInClassList("of-strip-todo", todo);
         }
@@ -583,7 +624,19 @@ namespace BirimizKovulacak.Game
         public void Toast(string text, string kind = null, float seconds = 5f)
         {
             if (string.IsNullOrEmpty(text)) return;
+            // the same message still on screen: keep that one up a little longer instead of stacking a copy
+            string key = text + "|" + kind;
+            for (int i = 0; i < _toastList.Count; i++)
+            {
+                var old = _toastList[i];
+                if (!(old.Key.userData is string k) || k != key) continue;
+                _toastList[i] = new KeyValuePair<VisualElement, float>(old.Key, Mathf.Max(old.Value, Time.unscaledTime + seconds));
+                old.Key.style.opacity = 1f;
+                UiMotion.Pulse(old.Key, 0.04f, 0.2f);
+                return;
+            }
             var el = Box("of-toast").NoPick();
+            el.userData = key;
             if (!string.IsNullOrEmpty(kind)) el.AddToClassList(kind);
             Box("of-toast-bar").NoPick().AddTo(el);
             Text(text, "of-toast-text").NoPick().AddTo(el);

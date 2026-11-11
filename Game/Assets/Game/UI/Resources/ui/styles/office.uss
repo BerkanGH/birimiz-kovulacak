@@ -240,3 +240,56 @@
 .cb-title { font-size: 46px; color: rgb(31, 42, 68); letter-spacing: 1px; white-space: nowrap; }
 .cb-sub { font-size: 25px; color: rgb(46, 56, 82); white-space: normal; -unity-text-align: middle-center; }
 .cb-legend { font-size: 24px; color: rgb(70, 78, 100); white-space: normal; -unity-text-align: middle-center; margin-top: 8px; }
+
+/* ---------------------------------------------------------------- v5 step 2: task object card (cash box, roster, drawer) */
+.oc-card { position: absolute; background-color: rgb(244, 239, 227); border-radius: 22px; border-width: 4px; border-color: rgb(31, 42, 68);
+    border-bottom-width: 12px; padding: 12px 26px 12px 26px; color: rgb(31, 42, 68); }
+.oc-bottom { left: 50%; bottom: 3%; translate: -50% 0; width: 900px; }
+.oc-side { left: 4.5%; top: 52%; translate: 0 -50%; width: 610px; }
+.oc-mini { left: 50%; bottom: 4.5%; translate: -50% 0; width: 700px; padding: 10px 24px 10px 24px; }
+.oc-head { flex-direction: row; align-items: center; margin-bottom: 2px; }
+.oc-kicker { font-size: 17px; color: rgb(107, 111, 128); letter-spacing: 3px; }
+.oc-clock { font-size: 30px; color: rgb(31, 42, 68); }
+.oc-clock-low { color: rgb(210, 56, 47); }
+.oc-card .pl-focus-text { font-size: 23px; color: rgb(31, 42, 68); white-space: normal; margin: 2px 0 6px 0; }
+.oc-card .pl-text { font-size: 19px; color: rgb(46, 56, 82); white-space: normal; }
+.oc-card .pl-dim { color: rgb(105, 112, 132); }
+.oc-card .pl-good { color: rgb(36, 120, 74); }
+.oc-card .pl-bad { color: rgb(190, 50, 42); }
+.oc-card .pl-sub { color: rgb(36, 120, 74); font-size: 19px; }
+.oc-card .pl-chip { background-color: rgba(31, 42, 68, 0.1); color: rgb(31, 42, 68); }
+.oc-card .pl-chip-bad { background-color: rgba(210, 56, 47, 0.22); }
+.oc-card .oc-status-todo { color: rgb(184, 104, 20); -unity-font-style: bold; }
+.oc-card .oc-status-done { color: rgb(36, 120, 74); -unity-font-style: bold; }
+.oc-card .oc-status-took { color: rgb(190, 50, 42); -unity-font-style: bold; }
+.oc-card .oc-needed { font-size: 25px; color: rgb(190, 50, 42); -unity-font-style: bold; }
+.oc-buttons { flex-direction: row; flex-wrap: wrap; align-items: center; margin-top: 10px; }
+.oc-buttons .pl-btn { margin-right: 12px; }
+.oc-take { background-color: rgb(206, 128, 34); border-color: rgb(255, 214, 150); }
+.oc-take:hover { background-color: rgb(226, 146, 50); }
+.oc-confirm { border-width: 3px; border-color: rgb(210, 56, 47); border-radius: 14px; padding: 8px 16px 10px 16px; background-color: rgb(255, 238, 230); margin-bottom: 8px; }
+.oc-confirm-kicker { font-size: 16px; color: rgb(210, 56, 47); letter-spacing: 4px; }
+.oc-flash { font-size: 18px; color: rgb(255, 255, 255); background-color: rgb(190, 50, 42); border-radius: 8px; padding: 4px 12px; margin-top: 8px; align-self: flex-start; white-space: normal; }
+.oc-foot { font-size: 15px; color: rgb(107, 111, 128); margin-top: 8px; }
+.os-root .pl-where { font-size: 17px; color: rgb(110, 90, 60); background-color: rgba(232, 201, 138, 0.35); border-radius: 8px; padding: 6px 10px; margin: 6px 0 4px 0; white-space: normal; }
+
+/* ---------------------------------------------------------------- v5 step 2: the roster sheet (rendered into the clipboard paper, 512x704) */
+.rs-root { background-color: rgb(251, 248, 240); }
+.rs-title { position: absolute; left: 0; right: 0; top: 52px; font-size: 46px; color: rgb(31, 42, 68); -unity-text-align: middle-center; letter-spacing: 2px; }
+.rs-days { position: absolute; left: 0; right: 0; top: 104px; font-size: 27px; color: rgb(110, 116, 136); -unity-text-align: middle-center; }
+.rs-needed { position: absolute; left: 40px; top: 146px; font-size: 36px; color: rgb(190, 50, 42); border-bottom-width: 3px; border-color: rgba(190, 50, 42, 0.6); padding: 0 6px; }
+.rs-needed-dim { color: rgb(130, 136, 152); border-color: rgba(130, 136, 152, 0.4); font-size: 30px; }
+.rs-row { flex-direction: row; align-items: flex-end; }
+.rs-num { position: absolute; left: 6px; bottom: 6px; font-size: 32px; color: rgb(150, 156, 172); }
+.rs-num-need { color: rgb(31, 42, 68); }
+.rs-rule { position: absolute; left: 50px; right: 4px; bottom: 8px; height: 2px; background-color: rgba(70, 120, 190, 0.45); }
+.rs-need-line { position: absolute; left: 0; right: 0; bottom: -4px; height: 3px; background-color: rgba(190, 50, 42, 0.5); }
+.rs-clip { position: absolute; left: 60px; bottom: 2px; height: 58px; overflow: hidden; }
+.rs-name { position: absolute; left: 0; bottom: 0; font-size: 46px; white-space: nowrap; -unity-text-align: lower-left; padding: 0 4px 0 4px; }
+.rs-note { font-size: 26px; color: rgb(110, 116, 136); white-space: normal; }
+.rs-stamp { position: absolute; border-width: 6px; border-radius: 10px; align-items: center; justify-content: center; }
+.rs-stamp-ok { border-color: rgba(36, 120, 74, 0.85); }
+.rs-stamp-bad { border-color: rgba(210, 56, 47, 0.88); }
+.rs-stamp-text { font-size: 44px; letter-spacing: 2px; }
+.rs-stamp-ok .rs-stamp-text { color: rgba(36, 120, 74, 0.9); }
+.rs-stamp-bad .rs-stamp-text { color: rgba(210, 56, 47, 0.92); }

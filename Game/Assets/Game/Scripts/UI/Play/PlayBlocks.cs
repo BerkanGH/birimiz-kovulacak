@@ -34,7 +34,10 @@ namespace BirimizKovulacak.Game
     {
         // ---- task (TaskPlay: choose; TaskReveal / Break: results and the whistle)
 
-        public static int FocusTask(VisualElement card, LineClient lc, LineView v)
+        /// <summary>The task card. <paramref name="goTo"/> (office computer): Petty Cash and Weekend Shift are played on
+        /// their desk objects, so instead of the two choices the card says where and offers one button that turns the
+        /// view to the object (docs/V5_INTERACTION.md §1.3, §2).</summary>
+        public static int FocusTask(VisualElement card, LineClient lc, LineView v, Action<TaskKind> goTo = null)
         {
             var t = v.Task;
             if (t == null) { Big(card, T("hint.TaskPlay")); return Info; }
@@ -49,6 +52,14 @@ namespace BirimizKovulacak.Game
             }
             if (t.Kind == TaskKind.WeekendShift) Line(card, F("task.everyone", t.Needed >= 0 ? t.Needed : LineConfig.ShiftNeeded(v.Players.Count)));
             else Line(card, F("task.group", PlayText.Names(t.Group.FindAll(id => id != me))));
+            if (goTo != null && (t.Kind == TaskKind.PettyCash || t.Kind == TaskKind.WeekendShift))
+            {
+                var kind = t.Kind;
+                Line(card, t.Submitted ? F("task.submitted", PlayText.Choice(t.Kind, t.MyChoice)) : F("task.default", PlayText.Choice(t.Kind, 0)), t.Submitted ? "pl-good" : "pl-warn");
+                Line(card, T("office.task_where." + LineTasks.Id(kind)), "pl-where");
+                Btn(T("office.goto." + LineTasks.Id(kind)), () => goTo(kind), "pl-primary", "pl-choice").AddTo(card);
+                return t.Submitted ? Done : Todo;
+            }
             var row = Wrap(card);
             for (int choice = 0; choice <= 1; choice++)
             {
@@ -60,7 +71,8 @@ namespace BirimizKovulacak.Game
             return t.Submitted ? Done : Todo;
         }
 
-        public static int FocusReveal(VisualElement card, LineClient lc, LineView v)
+        /// <summary>Reveal / break card; with <paramref name="goTo"/> (office) the whistle is done on the cash box.</summary>
+        public static int FocusReveal(VisualElement card, LineClient lc, LineView v, Action<TaskKind> goTo = null)
         {
             var t = v.Task;
             if (t == null) { Big(card, PlayText.Hint(v.Phase)); return Info; }
@@ -75,7 +87,12 @@ namespace BirimizKovulacak.Game
                 {
                     int id = thief;
                     Big(card, F("break.witness", Name(id), c.CashWhistleBlame, c.CashWhistleReward), "pl-bad");
-                    Btn(F("break.whistle_btn", Name(id)), () => Send(LineVerb.Whistle, id), "pl-danger", "pl-choice").AddTo(card);
+                    if (goTo == null) Btn(F("break.whistle_btn", Name(id)), () => Send(LineVerb.Whistle, id), "pl-danger", "pl-choice").AddTo(card);
+                }
+                if (goTo != null)
+                {
+                    Line(card, T("office.task_where.whistle"), "pl-where");
+                    Btn(T("office.goto.whistle"), () => goTo(TaskKind.PettyCash), "pl-danger", "pl-choice").AddTo(card);
                 }
                 Line(card, T("focus.witness_or"), "pl-dim");
                 state = Todo;

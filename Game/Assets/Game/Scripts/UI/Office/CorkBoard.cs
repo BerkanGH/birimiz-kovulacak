@@ -26,66 +26,27 @@ namespace BirimizKovulacak.Game
 
         /// <summary>The board's own decal material (kept across UI rebuilds, which make a new CorkBoard).</summary>
         static Material s_decal;
-        Renderer _surface;
-        Material _orig, _mat;
-        RenderTexture _rt;
-        GameObject _go;
-        PanelSettings _ps;
+        readonly WorldPanel _panel = new WorldPanel();
         VisualElement _root;
         string _sig;
         bool _failed;
 
-        public RenderTexture Texture => _rt;
+        public RenderTexture Texture => _panel.Texture;
 
         /// <summary>Creates the panel and swaps the board's material (once per surface).</summary>
         public bool Ensure(Renderer surface, PanelSettings like)
         {
             if (_failed || surface == null) return false;
-            if (_surface == surface && _root != null)
-            {
-                if (surface.sharedMaterial != _mat) surface.sharedMaterial = _mat; // an older board restored the decal
-                return true;
-            }
+            if (_panel.Surface == surface && _root != null) { _panel.Keep(); return true; } // an older board restored the decal
             try
             {
-                Release();
-                _surface = surface;
-                _orig = surface.sharedMaterial;
-                if (_orig != null && _orig.name.StartsWith("M_RmCorkBoardLive") && s_decal != null) _orig = s_decal;
-                else if (_orig != null) s_decal = _orig;
-                _rt = new RenderTexture(W, H, 24, RenderTextureFormat.ARGB32, RenderTextureReadWrite.sRGB)
-                {
-                    name = "CorkBoardRT", useMipMap = true, autoGenerateMips = true, filterMode = FilterMode.Trilinear, anisoLevel = 4,
-                };
-                _rt.Create();
-                _ps = ScriptableObject.CreateInstance<PanelSettings>();
-                _ps.name = "CorkBoardPanel";
-                _ps.targetTexture = _rt;
-                _ps.scaleMode = PanelScaleMode.ConstantPixelSize;
-                _ps.scale = 1f;
-                _ps.clearColor = true;
-                _ps.colorClearValue = new Color32(0xC9, 0xA4, 0x78, 255);
-                _ps.sortingOrder = -50;
-                if (like != null) _ps.themeStyleSheet = like.themeStyleSheet;
-                _ps.SetScreenToPanelSpaceFunction(_ => new Vector2(float.NaN, float.NaN)); // never takes the mouse
-                _go = new GameObject("CorkBoardPanel");
-                _go.SetActive(false);
-                Object.DontDestroyOnLoad(_go);
-                var doc = _go.AddComponent<UIDocument>();
-                doc.panelSettings = _ps;
-                _go.SetActive(true);
-                _root = doc.rootVisualElement;
-                _root.pickingMode = PickingMode.Ignore;
-                var sheet = Resources.Load<StyleSheet>("ui/styles/office");
-                if (sheet != null) _root.styleSheets.Add(sheet);
+                var orig = surface.sharedMaterial;
+                if (orig != null && orig.name.StartsWith("M_CorkBoardLive") && s_decal != null) orig = s_decal;
+                else if (orig != null) s_decal = orig;
+                _root = _panel.Create(surface, like, W, H, new Color32(0xC9, 0xA4, 0x78, 255), "CorkBoard", orig);
                 _root.AddToClassList("cb-root");
-                _root.style.width = W; _root.style.height = H;
-                var art = _orig != null ? (_orig.HasProperty("_BaseMap") ? _orig.GetTexture("_BaseMap") : _orig.mainTexture) as Texture2D : null;
+                var art = orig != null ? (orig.HasProperty("_BaseMap") ? orig.GetTexture("_BaseMap") : orig.mainTexture) as Texture2D : null;
                 if (art != null) _root.style.backgroundImage = new StyleBackground(art);
-                _mat = new Material(_orig) { name = "M_RmCorkBoardLive" };
-                if (_mat.HasProperty("_BaseMap")) _mat.SetTexture("_BaseMap", _rt);
-                _mat.mainTexture = _rt;
-                surface.sharedMaterial = _mat;
                 _sig = null;
                 return true;
             }
@@ -100,12 +61,8 @@ namespace BirimizKovulacak.Game
 
         public void Release()
         {
-            if (_surface != null && _orig != null && _surface.sharedMaterial == _mat) _surface.sharedMaterial = _orig;
-            if (_go != null) Object.Destroy(_go);
-            if (_ps != null) Object.Destroy(_ps);
-            if (_mat != null) Object.Destroy(_mat);
-            if (_rt != null) { _rt.Release(); Object.Destroy(_rt); }
-            _go = null; _ps = null; _mat = null; _rt = null; _root = null; _surface = null; _sig = null;
+            _panel.Release();
+            _root = null; _sig = null;
         }
 
         /// <summary>Rebuilds the notes when the public board state changed.</summary>

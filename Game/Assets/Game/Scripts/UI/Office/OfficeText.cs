@@ -30,17 +30,23 @@ namespace BirimizKovulacak.Game
                     if (!t.Submitted)
                     {
                         todo = true;
+                        // each task has its own object: the computer (Client Bonus), the cash box, the roster
+                        if (t.Kind == TaskKind.PettyCash) return F("office.now.choose_cash", Key(GameInput.Interact));
+                        if (t.Kind == TaskKind.WeekendShift) return F("office.now.choose_shift", Key(GameInput.Interact));
                         return F("office.now.choose", PlayText.Task(t.Kind), Key(GameInput.Computer), PlayText.Choice(t.Kind, 0));
                     }
                     return F("office.now.chosen", PlayText.Choice(t.Kind, t.MyChoice));
                 case LinePhase.TaskReveal:
-                    if (t != null && t.MyPayout >= 0) return F("office.now.reveal_payout", t.MyPayout, Key(GameInput.Computer));
+                    if (t != null && t.MyPayout >= 0)
+                        return t.Kind == TaskKind.PettyCash ? F("office.now.reveal_payout_cash", t.MyPayout)
+                            : t.Kind == TaskKind.WeekendShift ? F("office.now.reveal_payout_shift", t.MyPayout)
+                            : F("office.now.reveal_payout", t.MyPayout, Key(GameInput.Computer));
                     return T("office.now.reveal");
                 case LinePhase.Break:
                     if (v.Features.WhistleOpen && m.WitnessOf.Count > 0)
                     {
                         todo = true;
-                        return F("office.now.witness", PlayText.Names(m.WitnessOf), Key(GameInput.Computer));
+                        return F("office.now.witness", PlayText.Names(m.WitnessOf), Key(GameInput.Interact));
                     }
                     if (v.Features.WhistleOpen && t != null && PlayBlocks.SoleTaker(t, me)) return T("office.now.thief");
                     return T(t != null && t.Number == 0 ? "office.now.break_task" : "office.now.break_meeting");
@@ -59,6 +65,13 @@ namespace BirimizKovulacak.Game
                 case DeskTarget.Recorder:
                     if (v != null && PlayBlocks.RecordingCurrentCall(v)) return T("office.use.Recorder_on");
                     return T(v != null && v.Mine.Phone.Status == CallStatus.Connected ? "office.use.Recorder" : "office.use.Recorder_idle");
+                case DeskTarget.CashBox:
+                    if (v != null && v.Phase == LinePhase.Break && v.Features.WhistleOpen && v.Mine.WitnessOf.Count > 0) return T("office.use.CashBox_whistle");
+                    return T(v != null && v.Phase == LinePhase.TaskPlay ? "office.use.CashBox_play" : "office.use.CashBox");
+                case DeskTarget.Roster:
+                    if (v != null && v.Phase == LinePhase.TaskPlay && v.Task != null && v.Task.Kind == TaskKind.WeekendShift)
+                        return T(v.Task.Submitted && v.Task.MyChoice == LineChoice.Volunteer ? "office.use.Roster_signed" : "office.use.Roster_play");
+                    return T("office.use.Roster");
                 case DeskTarget.Monitor:
                 case DeskTarget.Phone:
                 case DeskTarget.Board:
