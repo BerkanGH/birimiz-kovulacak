@@ -18,7 +18,9 @@ $logs = Join-Path $root "Builds\logs"
 New-Item -ItemType Directory -Force $logs | Out-Null
 
 if ($Art) {
-    foreach ($s in "build_characters.py", "build_props.py", "build_architecture.py", "build_rooms.py") {
+    # build_architecture.py (the v2 open-plan office shell) is no longer used by the v3+ rooms scene and fails on the
+    # retired v2 map layout: it is skipped here (run it by hand only for the v2 map).
+    foreach ($s in "build_characters.py", "build_props.py", "build_rooms.py") {
         Write-Host "Blender: $s"
         & $Blender -b --factory-startup -P (Join-Path $root "Art\Scripts\$s") | Select-String "DONE|Error|Traceback"
     }
