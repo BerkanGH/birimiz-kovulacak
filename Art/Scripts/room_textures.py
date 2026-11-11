@@ -432,12 +432,91 @@ def screen_coffee():
     return im
 
 
+# ------------------------------------------------------------------------------------------------ v5 banknote
+
+# 5x7 bitmap glyphs for the few letters printed on the note ("1 PRİM", "KOVA"); '#' = ink
+GLYPHS = {
+    "1": ["..#..", ".##..", "#.#..", "..#..", "..#..", "..#..", "#####"],
+    "P": ["####.", "#...#", "#...#", "####.", "#....", "#....", "#...."],
+    "R": ["####.", "#...#", "#...#", "####.", "#.#..", "#..#.", "#...#"],
+    "I": ["#####", "..#..", "..#..", "..#..", "..#..", "..#..", "#####"],
+    "M": ["#...#", "##.##", "#.#.#", "#.#.#", "#...#", "#...#", "#...#"],
+    "K": ["#...#", "#..#.", "#.#..", "##...", "#.#..", "#..#.", "#...#"],
+    "O": [".###.", "#...#", "#...#", "#...#", "#...#", "#...#", ".###."],
+    "V": ["#...#", "#...#", "#...#", "#...#", ".#.#.", ".#.#.", "..#.."],
+    "A": [".###.", "#...#", "#...#", "#####", "#...#", "#...#", "#...#"],
+}
+
+
+def _text(im, s, x, y, px, col, dot_i=None, a=1.0):
+    """Blocky letters, px = size of one glyph cell; dot_i = index of an 'I' that gets the Turkish dot (İ)."""
+    for k, ch in enumerate(s):
+        g = GLYPHS.get(ch)
+        gx = x + k * px * 6
+        if g is None:
+            continue
+        for row, line in enumerate(g):
+            for col_, bit in enumerate(line):
+                if bit == "#":
+                    im.rect(gx + col_ * px, y + row * px, gx + (col_ + 1) * px, y + (row + 1) * px, col, a)
+        if dot_i is not None and k == dot_i:
+            im.rect(gx + 2 * px, y - 2 * px, gx + 3 * px, y - px, col, a)
+
+
+def bill(w=512, h=256):
+    """One prim banknote (v5 cash box and drawer): mint paper, guilloche, a bean in the medallion, '1 PRİM'."""
+    paper, paper2 = hexc("#D3EBCB"), hexc("#B9DDB1")
+    ink, ink2, light = hexc("#2F6B4F"), hexc("#5E9E77"), hexc("#EAF5E4")
+    im = Img(w, h, paper)
+    n = [Noise(8, 91), Noise(16, 92)]
+    for y in range(h):
+        for x in range(w):
+            t = 0.5 + 0.5 * math.cos((x / w - 0.3) * math.pi * 1.6) * math.cos((y / h - 0.5) * math.pi)
+            v = fbm(n, x / w, y / h)
+            col = tuple(int(paper2[k] + (paper[k] - paper2[k]) * t + (v - 0.5) * 14) for k in range(3))
+            im.set(x, y, col)
+    # guilloche bands top and bottom
+    for k in range(7):
+        ph = k * 0.9
+        pts = [(x, 30 + 10 * math.sin(x / 19.0 + ph) + k * 1.6) for x in range(0, w + 8, 6)]
+        pts2 = [(x, h - 30 - 10 * math.sin(x / 17.0 + ph) - k * 1.6) for x in range(0, w + 8, 6)]
+        for seq in (pts, pts2):
+            for (x0, y0), (x1, y1) in zip(seq, seq[1:]):
+                im.line(x0, y0, x1, y1, 1.2, ink2, 0.55)
+    # frame
+    for (x0, y0, x1, y1) in ((0, 0, w, 9), (0, h - 9, w, h), (0, 0, 9, h), (w - 9, 0, w, h)):
+        im.rect(x0, y0, x1, y1, ink)
+    for (x0, y0, x1, y1) in ((16, 16, w - 16, 18), (16, h - 18, w - 16, h - 16), (16, 16, 18, h - 16), (w - 18, 16, w - 16, h - 16)):
+        im.rect(x0, y0, x1, y1, ink, 0.8)
+    # medallion with a bean (the game's people) on the left
+    cx, cy = 132, h / 2
+    for r_, a in ((86, 0.35), (80, 1.0)):
+        im.circle(cx, cy, r_, light, a)
+    for k in range(18):
+        ang = k / 18.0 * math.pi * 2
+        im.line(cx + math.cos(ang) * 60, cy + math.sin(ang) * 72, cx + math.cos(ang) * 78, cy + math.sin(ang) * 82, 1.5, ink2, 0.5)
+    im.circle(cx, cy, 80, ink, 1.0, ring=3.5)
+    im.rrect(cx - 26, cy - 48, cx + 26, cy + 58, 26, ink)              # bean body
+    im.rrect(cx - 34, cy + 30, cx + 34, cy + 66, 16, ink)              # shoulders
+    im.circle(cx - 10, cy - 14, 8, light); im.circle(cx + 12, cy - 14, 8, light)
+    im.circle(cx - 8, cy - 13, 3.5, ink); im.circle(cx + 14, cy - 13, 3.5, ink)
+    im.rect(cx - 4, cy + 26, cx + 4, cy + 52, light, 0.9)             # tie
+    # value: big "1", "PRİM", the KOVA mark, corner numerals
+    _text(im, "1", 300, 50, 13, ink)
+    _text(im, "PRIM", 260, 160, 8, ink, dot_i=2)
+    _text(im, "KOVA", 404, 40, 4, ink2)
+    _bucket(im, 446, 96, 22, ink2)
+    _text(im, "1", 30, 30, 4, ink)
+    _text(im, "1", w - 52, h - 58, 4, ink)
+    return im
+
+
 def main():
     os.makedirs(OUT, exist_ok=True)
     jobs = [("Wood", wood), ("Planks", planks), ("Carpet", carpet), ("Plaster", plaster),
             ("Facade", lambda: facade(False)), ("FacadeLit", lambda: facade(True)), ("Silhouette", silhouette),
             ("ScreenDesktop", screen_desktop), ("ScreenAlert", screen_alert), ("ScreenOffline", screen_offline),
-            ("ScreenCoffee", screen_coffee)]
+            ("ScreenCoffee", screen_coffee), ("Bill", bill)]
     only = [a for a in sys.argv[1:] if not a.startswith("-")]
     for name, fn in jobs:
         if only and name not in only:

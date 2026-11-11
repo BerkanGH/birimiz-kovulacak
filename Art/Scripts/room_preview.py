@@ -120,6 +120,13 @@ def setup(res, fast):
         nt.links.new(tn.outputs["Color"], bsdf.inputs["Base Color"])
         nt.links.new(tn.outputs["Color"], bsdf.inputs["Emission Color"])
         bsdf.inputs["Emission Strength"].default_value = 1.0
+    bill = os.path.join(bk.ROOT, "Game", "Assets", "Game", "Art", "Textures", "Rooms", "Bill.png")
+    m = bpy.data.materials.get("M_RmBill")
+    if m is not None and os.path.exists(bill):
+        nt = m.node_tree
+        tn = nt.nodes.new("ShaderNodeTexImage")
+        tn.image = bpy.data.images.load(bill)
+        nt.links.new(tn.outputs["Color"], nt.nodes.get("Principled BSDF").inputs["Base Color"])
 
 
 def render(path, cam):
@@ -184,7 +191,8 @@ def render_all(roots, fast=False):
     stand = (w["stand"][0], w["eye"], w["stand"][1])
     shots += [("office_stand_back", (-1.55, w["eye"], -1.75), 32, 12), ("office_stand_door", (1.55, w["eye"], -0.85), -95, 10),
               ("office_stand_desk", stand, 8, 30), ("office_stand_rear", (0.3, w["eye"], 0.2), 180, 10),
-              ("office_recorder_close", (0.3, 1.02, 1.08), 29, 34)]
+              ("office_recorder_close", (0.3, 1.02, 1.08), 29, 34),
+              ("office_cashbox_close", (-0.4, 1.06, 0.88), -34, 40), ("office_roster_close", (1.22, 1.5, 0.95), 25, 6)]
     for name, eye, yaw, pitch in shots:
         cam = camera("Cam_" + name, eye, yaw, pitch)
         render(os.path.join(out, name + ".png"), cam)

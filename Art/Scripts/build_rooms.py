@@ -64,9 +64,13 @@ OFFICE_PROPS = [
     ("mouse", "RmMouse", (0.34, 0.75, 1.04), -4),
     ("phone", "RmPhone", (0.62, 0.75, 1.1), 26),
     ("recorder", "RmRecorder", (0.47, 0.75, 1.385), -10),
-    ("mug", "RmMug", (-0.42, 0.75, 0.99), 205),
-    ("spill", "RmSpill", (-0.2, 0.751, 0.97), 0),
-    ("notepad", "RmNotepad", (-0.64, 0.75, 1.02), -12),
+    ("mug", "RmMug", (-0.35, 0.75, 0.92), 205),
+    ("spill", "RmSpill", (-0.16, 0.751, 0.93), 0),
+    ("notepad", "RmNotepad", (-0.71, 0.75, 0.94), -12),
+    # v5 task objects: the Petty Cash box (left of the keyboard, turned toward the seat; shown only during Petty
+    # Cash) and the Weekend Shift roster (clipboard on the desk wall right of the cork board, reachable from the chair)
+    ("cashbox", "RmCashBox", (-0.58, 0.75, 1.19), -24),
+    ("roster", "RmRoster", (1.52, 1.42, 1.6), 0),
     ("lamp", "RmLamp", (-0.6, 0.75, 1.4), 14),
     ("photo", "RmPhotoFrame", (-0.38, 0.75, 1.47), 10),
     ("nameplate", "RmNameplate", (0.2, 0.75, 1.255), -6),
@@ -97,6 +101,8 @@ OFFICE_ANCHORS = {
     "yawLimit": 115.0, "pitchUp": 40.0, "pitchDown": 65.0,
     "corridor": {"x": 2.75, "z0": -4.0, "z1": 3.0},
     "handL": (-0.21, 0.775, 0.97), "handR": (0.32, 0.785, 1.0),
+    # v5: where the Petty Cash notes lie on the desk once you take them out of the box (right of the box)
+    "cashPile": (-0.33, 0.75, 1.2), "cashPileYaw": -8.0,
 }
 # Walking (v5): where the player stands after getting up, the chair pushed back, eye height, body radius, and the
 # furniture footprints the runtime collides with (Unity x/z, half extents, yaw). Generated from OFFICE_PROPS below.

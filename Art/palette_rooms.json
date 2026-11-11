@@ -63,6 +63,18 @@
     "M_RmBinderGreen":   { "color": "#3E8A5E", "smooth": 0.45 },
     "M_RmBinderMustard": { "color": "#D9A441", "smooth": 0.45 },
     "M_RmBinderGrey":    { "color": "#7E8790", "smooth": 0.45 },
-    "M_RmLabel":         { "color": "#F6F0E2", "smooth": 0.2 }
+    "M_RmLabel":         { "color": "#F6F0E2", "smooth": 0.2 },
+    "M_RmCashSteel":     { "color": "#4D6679", "smooth": 0.58, "metal": 0.35 },
+    "M_RmCashSteelDark": { "color": "#3A4E5E", "smooth": 0.5, "metal": 0.35 },
+    "M_RmCashInner":     { "color": "#2A3037", "smooth": 0.08 },
+    "M_RmCashTray":      { "color": "#C9CFD5", "smooth": 0.55, "metal": 0.2 },
+    "M_RmAlarmOff":      { "color": "#8A2A22", "smooth": 0.75 },
+    "M_RmSeal":          { "color": "#C8312A", "smooth": 0.3 },
+    "M_RmMasonite":      { "color": "#94633F", "smooth": 0.32 },
+    "M_RmBill":          { "color": "#FFFFFF", "smooth": 0.12, "tex": "Bill", "tile": 1.0 },
+    "M_RmBillPaper":     { "color": "#B7D9AF", "smooth": 0.1 },
+    "M_RmBillBand":      { "color": "#D9A441", "smooth": 0.2 },
+    "M_RmEraser":        { "color": "#E8908A", "smooth": 0.15 },
+    "M_RmAlarmOn":       { "color": "#FF4A3A", "smooth": 0.7, "emit": 0.85 }
   }
 }

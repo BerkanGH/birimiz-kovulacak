@@ -30,9 +30,11 @@ DRIVEN_ROOMS = {
     "MinuteHand", "Glow", "CorkSurface", "Photo", "Fabric", "Canvas", "BoardSurface", "Spill", "Mitten",
     # v5 cassette recorder
     "RecButton", "RecLight", "TapeIn", "ReelL", "ReelR", "Cassette0", "Cassette1", "Cassette2",
+    # v5 task objects: the Petty Cash box, the Weekend Shift roster
+    "CashLid", "AlarmButton", "CashSeal", "RosterSheet", "RosterPen",
 }
-# Driven meshes that carry their own 0..1 UVs (never box-projected).
-OWN_UV = {"Screen", "CorkSurface", "Photo", "Canvas", "BoardSurface"}
+# Meshes that carry their own 0..1 UVs (never box-projected): driven surfaces and the banknote props.
+OWN_UV = {"Screen", "CorkSurface", "Photo", "Canvas", "BoardSurface", "RosterSheet", "RmBillBody", "RmBundleBody"}
 
 
 def room_prop(fn):
@@ -231,12 +233,22 @@ def rm_drawer_unit(c):
     B("Face", (w - 0.03, 0.02, 0.13), c, "M_RmWalnut", drawer, (0, -d / 2 - 0.005, 0), bevel=0.005)
     B("Pull", (0.12, 0.018, 0.016), c, "M_RmBrass", drawer, (0, -d / 2 - 0.022, 0.025), bevel=0.004)
     B("LabelCard", (0.06, 0.004, 0.025), c, "M_RmLabel", drawer, (0.13, -d / 2 - 0.016, 0.03))
-    B("Tray", (w - 0.06, d - 0.06, 0.09), c, "M_RmCream", drawer, (0, 0.0, -0.01))
-    B("Papers", (0.22, 0.3, 0.025), c, "M_Paper", drawer, (-0.05, 0.02, 0.045)).rotation_euler = (0, 0, R(6))
-    B("Folder", (0.24, 0.32, 0.012), c, "M_Manila", drawer, (-0.04, 0.03, 0.062)).rotation_euler = (0, 0, R(-4))
-    B("Stapler", (0.045, 0.16, 0.035), c, "M_PlasticRed", drawer, (0.12, -0.05, 0.055), bevel=0.01)
+    # v5: an open tray (floor + walls) so the prim stack fits; the money lies in the front half, which is what
+    # shows when the drawer is out; papers, a folder, the stapler and candies stay at the back
+    iw, idp, fz = w - 0.05, d - 0.05, -0.052
+    B("TrayFloor", (iw, idp, 0.008), c, "M_RmCream", drawer, (0, 0.006, fz))
+    for sx in (-1, 1):
+        B("TraySide", (0.008, idp, 0.1), c, "M_RmOakLight", drawer, (sx * (iw / 2 - 0.004), 0.006, fz + 0.046), bevel=0.0015)
+    B("TrayBack", (iw, 0.008, 0.1), c, "M_RmOakLight", drawer, (0, 0.006 + idp / 2 - 0.004, fz + 0.046), bevel=0.0015)
+    B("TrayFront", (iw, 0.008, 0.1), c, "M_RmOakLight", drawer, (0, -d / 2 + 0.009, fz + 0.046), bevel=0.0015)
+    B("Divider", (iw - 0.016, 0.006, 0.05), c, "M_RmOakLight", drawer, (0, 0.0, fz + 0.029), bevel=0.0015)
+    B("Papers", (0.2, 0.2, 0.02), c, "M_Paper", drawer, (-0.06, 0.135, fz + 0.014)).rotation_euler = (0, 0, R(6))
+    B("Folder", (0.22, 0.22, 0.01), c, "M_Manila", drawer, (-0.05, 0.14, fz + 0.03)).rotation_euler = (0, 0, R(-4))
+    B("Stapler", (0.045, 0.16, 0.035), c, "M_PlasticRed", drawer, (0.125, 0.13, fz + 0.022), bevel=0.01)
     for k, m in enumerate(("M_PlasticRed", "M_DuckYellow", "M_PlasticBlue")):
-        SP("Candy", 0.016, c, m, drawer, (0.13 + 0.02 * k, 0.12 - 0.015 * k, 0.05), scale=(1.4, 1, 0.8), segments=8, rings=5)
+        SP("Candy", 0.016, c, m, drawer, (0.09 + 0.022 * k, 0.21 - 0.015 * k, fz + 0.016), scale=(1.4, 1, 0.8), segments=8, rings=5)
+    # where the prim stack starts (front left of the money half; the runtime lays bundles in a 2 x 2 grid from here)
+    bk.empty("CashSpot", c, (0.0, -0.14, fz + 0.004), drawer)
     return r
 
 
@@ -762,6 +774,221 @@ def rm_notepad(c):
     for k in range(5):
         B("Line", (0.11, 0.003, 0.001), c, "M_RmBinderBlue", r, (-0.005, 0.06 - k * 0.025, 0.0125))
     pen = CY("Pen", 0.005, 0.14, c, "M_RmBlack", r, (0.1, -0.01, 0.006), rotation=(R(90), 0, R(12)), segments=8)
+    return r
+
+
+# ================================================================================================ v5 task objects
+
+BILL_W, BILL_D, BILL_T = 0.15, 0.068, 0.0016
+
+
+def ring_slab(name, outer, inner, z0, z1, coll, mat, parent=None, location=(0, 0, 0)):
+    """Hollow extrusion between two closed XY outlines with the same vertex count (an open box's walls)."""
+    bm = bmesh.new()
+    n = len(outer)
+    ob = [bm.verts.new((x, y, z0)) for x, y in outer]
+    ot = [bm.verts.new((x, y, z1)) for x, y in outer]
+    ib = [bm.verts.new((x, y, z0)) for x, y in inner]
+    it = [bm.verts.new((x, y, z1)) for x, y in inner]
+    for i in range(n):
+        j = (i + 1) % n
+        bm.faces.new((ob[i], ob[j], ot[j], ot[i]))      # outside
+        bm.faces.new((ib[j], ib[i], it[i], it[j]))      # inside
+        bm.faces.new((ot[i], ot[j], it[j], it[i]))      # top rim
+        bm.faces.new((ob[j], ob[i], ib[i], ib[j]))      # bottom rim
+    bmesh.ops.recalc_face_normals(bm, faces=bm.faces)
+    return bk.mesh_obj(name, bm, coll, mat, parent, location, smooth=False)
+
+
+def _bill_box(bm, uv, center, rot=0.0, curl=0.0, seg=6):
+    """One banknote into `bm`: printed top and bottom (material 0, 0..1 UVs of Bill.png) and mint paper edges
+    (material 1, UVs on the border colour). `curl` lifts the short ends a little (a loose bill is never flat)."""
+    cx, cy, cz = center
+    c, s = math.cos(rot), math.sin(rot)
+    hw, hd = BILL_W / 2, BILL_D / 2
+    edge_uv = (0.004, 0.5)
+
+    def p(u, v, top):
+        x = -hw + u * BILL_W
+        y = -hd + v * BILL_D
+        z = curl * ((2 * u - 1) ** 2) + (BILL_T if top else 0.0)
+        return bm.verts.new((cx + x * c - y * s, cy + x * s + y * c, cz + z))
+    cols = [i / seg for i in range(seg + 1)]
+    tops = [(p(u, 0, True), p(u, 1, True)) for u in cols]
+    bots = [(p(u, 0, False), p(u, 1, False)) for u in cols]
+
+    def face(vs, uvs, m):
+        f = bm.faces.new(vs)
+        f.material_index = m
+        for loop, co in zip(f.loops, uvs):
+            loop[uv].uv = co
+        return f
+    for i in range(seg):
+        u0, u1 = cols[i], cols[i + 1]
+        face((tops[i][0], tops[i + 1][0], tops[i + 1][1], tops[i][1]), [(u0, 0), (u1, 0), (u1, 1), (u0, 1)], 0)
+        face((bots[i][1], bots[i + 1][1], bots[i + 1][0], bots[i][0]), [(1 - u0, 1), (1 - u1, 1), (1 - u1, 0), (1 - u0, 0)], 0)
+        face((bots[i][0], bots[i + 1][0], tops[i + 1][0], tops[i][0]), [edge_uv] * 4, 1)
+        face((tops[i][1], tops[i + 1][1], bots[i + 1][1], bots[i][1]), [edge_uv] * 4, 1)
+    face((bots[0][1], bots[0][0], tops[0][0], tops[0][1]), [edge_uv] * 4, 1)
+    face((bots[seg][0], bots[seg][1], tops[seg][1], tops[seg][0]), [edge_uv] * 4, 1)
+
+
+def _bills_obj(name, coll, parent, bills, band=None):
+    """Mesh of banknotes (list of (center, rot, curl)) plus an optional paper band (x centre, width, z0, z1)."""
+    bm = bmesh.new()
+    uv = bm.loops.layers.uv.new("UVMap")
+    for center, rot, curl in bills:
+        _bill_box(bm, uv, center, rot, curl)
+    if band is not None:
+        bx, bw, z0, z1 = band
+        g = 0.0007
+        for (x0, x1, y0, y1, za, zb) in ((bx - bw / 2, bx + bw / 2, -BILL_D / 2 - g, BILL_D / 2 + g, z1, z1 + 0.0006),
+                                         (bx - bw / 2, bx + bw / 2, -BILL_D / 2 - g, BILL_D / 2 + g, z0 - 0.0006, z0),
+                                         (bx - bw / 2, bx + bw / 2, -BILL_D / 2 - g - 0.0006, -BILL_D / 2 - g, z0 - 0.0006, z1 + 0.0006),
+                                         (bx - bw / 2, bx + bw / 2, BILL_D / 2 + g, BILL_D / 2 + g + 0.0006, z0 - 0.0006, z1 + 0.0006)):
+            faces = map_kit_box(bm, (x0, x1, y0, y1, za, zb))
+            for f in faces:
+                f.material_index = 2
+                for loop in f.loops:
+                    loop[uv].uv = (0.5, 0.5)
+    bmesh.ops.recalc_face_normals(bm, faces=bm.faces)
+    return bk.mesh_obj(name, bm, coll, ["M_RmBill", "M_RmBillPaper", "M_RmBillBand"], parent)
+
+
+def map_kit_box(bm, ext):
+    x0, x1, y0, y1, z0, z1 = ext
+    v = [bm.verts.new(p) for p in ((x0, y0, z0), (x1, y0, z0), (x1, y1, z0), (x0, y1, z0),
+                                   (x0, y0, z1), (x1, y0, z1), (x1, y1, z1), (x0, y1, z1))]
+    return [bm.faces.new(f) for f in ((v[0], v[3], v[2], v[1]), (v[4], v[5], v[6], v[7]), (v[0], v[1], v[5], v[4]),
+                                       (v[1], v[2], v[6], v[5]), (v[2], v[3], v[7], v[6]), (v[3], v[0], v[4], v[7]))]
+
+
+@room_prop
+def rm_bill(c):
+    """v5: one prim banknote (Bill.png both sides, mint edges), slightly curled. Runtime clones: the bills in the
+    Petty Cash box and on the desk after taking them, the loose bills in the drawer. Pivot: bottom centre."""
+    r = root("RmBill", c)
+    _bills_obj("Note", c, r, [((0, 0, 0), 0.0, 0.0022)])
+    return r
+
+
+@room_prop
+def rm_bundle(c):
+    """v5: a bundle of five prim notes with a mustard paper band (the drawer stacks them: one bundle = 5 prim).
+    The notes are a little out of line so the edges read as a stack. Pivot: bottom centre."""
+    r = root("RmBundle", c)
+    rnd = random.Random(23)
+    bills = []
+    for k in range(5):
+        bills.append(((rnd.uniform(-0.0012, 0.0012), rnd.uniform(-0.0009, 0.0009), k * (BILL_T + 0.0002)), rnd.uniform(-0.006, 0.006), 0.0))
+    top = 5 * (BILL_T + 0.0002) - 0.0002
+    _bills_obj("Stack", c, r, bills, band=(0.018, 0.026, 0.0, top))
+    return r
+
+
+@room_prop
+def rm_cash_box(c):
+    """v5 Küçük Kasa: a steel petty-cash box on the desk while the Petty Cash task runs. CashLid (driven) hinges at
+    the back (its pivot is the hinge); the İhbar button AlarmButton (driven, lit for a witness in the break) sits in
+    a brass bezel on the front right, the lock and key in the middle; CashSeal = red tape over the closed lid (both
+    takers caught). Inside: a coin tray at the front, the bill well behind it (BillSlot: where the runtime notes
+    lie). Pivot: bottom centre, front toward -Y."""
+    r = root("RmCashBox", c)
+    w, d, h, lh, t = 0.24, 0.17, 0.068, 0.022, 0.006
+    rr = 0.014
+    outer = rrect_pts(w, d, rr, 4)
+    inner = rrect_pts(w - 2 * t, d - 2 * t, rr - t, 4)
+    ring_slab("Walls", outer, inner, 0.006, h, c, "M_RmCashSteel", r)
+    slab("Floor", outer, 0.008, c, "M_RmCashSteel", r, (0, 0, 0.0))
+    # rolled lip around the opening
+    ring_slab("Lip", rrect_pts(w + 0.003, d + 0.003, rr + 0.0015, 4), rrect_pts(w - 2 * t + 0.002, d - 2 * t + 0.002, rr - t + 0.001, 4),
+              h - 0.004, h, c, "M_RmCashSteel", r)
+    for sx in (-1, 1):
+        for sy in (-1, 1):
+            CY("Foot", 0.008, 0.004, c, "M_RmBlack", r, (sx * (w / 2 - 0.025), sy * (d / 2 - 0.022), 0.0), segments=10)
+    # inside: felt floor, coin tray at the front, the bill well behind it
+    slab("Felt", inner, 0.003, c, "M_RmCashInner", r, (0, 0, 0.008))
+    ty0, ty1 = -d / 2 + t, -d / 2 + t + 0.058
+    B("Tray", (w - 2 * t - 0.002, ty1 - ty0, 0.004), c, "M_RmCashTray", r, ((0, (ty0 + ty1) / 2, 0.013)))
+    for k in range(5):
+        x = -(w - 2 * t) / 2 + k * (w - 2 * t) / 4
+        B("TrayWall", (0.003, ty1 - ty0, 0.026), c, "M_RmCashTray", r, (x, (ty0 + ty1) / 2, 0.026), bevel=0.001)
+    B("TrayBack", (w - 2 * t, 0.003, 0.03), c, "M_RmCashTray", r, (0, ty1, 0.028), bevel=0.001)
+    rnd = random.Random(31)
+    for k in range(4):
+        cx = -(w - 2 * t) / 2 + (k + 0.5) * (w - 2 * t) / 4
+        for j in range(2 if k % 2 == 0 else 3):
+            rad = rnd.uniform(0.008, 0.011)
+            coin = CY("Coin", rad, 0.0022, c, "M_RmBrass" if (k + j) % 3 else "M_Metal", r,
+                      (cx + rnd.uniform(-0.01, 0.01), (ty0 + ty1) / 2 + rnd.uniform(-0.012, 0.012), 0.016 + j * 0.0024), segments=14)
+            coin.rotation_euler = (rnd.uniform(-0.15, 0.15), rnd.uniform(-0.15, 0.15), 0)
+    bk.empty("BillSlot", c, (0.0, (ty1 + d / 2 - t) / 2 + 0.002, 0.011), r)
+    # front: lock with a key, the İhbar button, latch catch
+    fy = -d / 2
+    CY("LockPlate", 0.013, 0.003, c, "M_RmBrass", r, (0, fy - 0.0012, h - 0.025), rotation=(R(90), 0, 0), segments=18, cap_bevel=0.0008)
+    B("Keyhole", (0.0028, 0.002, 0.008), c, "M_RmBlack", r, (0, fy - 0.0032, h - 0.026))
+    key = B("KeyBlade", (0.004, 0.012, 0.0025), c, "M_RmBrass", r, (0, fy - 0.009, h - 0.025))
+    bk.torus("KeyBow", 0.0075, 0.0018, c, "M_RmBrass", r, (0, fy - 0.017, h - 0.034), rotation=(R(90), 0, 0), major_seg=14, minor_seg=5)
+    B("KeyNeck", (0.0025, 0.0025, 0.006), c, "M_RmBrass", r, (0, fy - 0.0155, h - 0.0285))
+    bk.torus("AlarmRim", 0.0125, 0.0022, c, "M_RmBrass", r, (0.068, fy - 0.0012, 0.032), rotation=(R(90), 0, 0), major_seg=18, minor_seg=5)
+    CY("AlarmBase", 0.0112, 0.003, c, "M_RmBlack", r, (0.068, fy - 0.0014, 0.032), rotation=(R(90), 0, 0), segments=16)
+    SP("AlarmButton", 0.0092, c, "M_RmAlarmOff", r, (0.068, fy - 0.0028, 0.032), scale=(1, 0.62, 1), segments=16, rings=10)
+    B("LabelPlate", (0.05, 0.0016, 0.012), c, "M_RmLabel", r, (0.068, fy - 0.0006, 0.0125), bevel=0.0005)
+    # lid (hinged at the back top edge): a shallow inverted tray with a folding brass handle and a label frame
+    lid = bk.empty("CashLid", c, (0, d / 2, h), r)
+    lo = [(x, y - d / 2) for x, y in rrect_pts(w + 0.004, d + 0.004, rr + 0.002, 4)]
+    slab("LidTop", lo, lh, c, "M_RmCashSteel", lid, (0, 0, 0.0), bevel=0.003)
+    slab("LidPanel", [(x, y - d / 2) for x, y in rrect_pts(w - 0.02, d - 0.02, rr - 0.006, 4)], 0.0012, c, "M_RmCashInner", lid, (0, 0, -0.0008))
+    slab("LidBand", [(x, y - d / 2) for x, y in rrect_pts(w - 0.03, d - 0.03, rr - 0.008, 4)], 0.0015, c, "M_RmCashSteelDark", lid, (0, 0, lh - 0.0005))
+    for sx in (-1, 1):
+        B("HandlePost", (0.012, 0.012, 0.008), c, "M_RmBrass", lid, (sx * 0.05, -d / 2 + 0.02, lh + 0.003), bevel=0.002)
+    cable("Handle", [(-0.05, -d / 2 + 0.02, lh + 0.006), (-0.044, -d / 2 + 0.035, lh + 0.0045), (0.044, -d / 2 + 0.035, lh + 0.0045),
+                     (0.05, -d / 2 + 0.02, lh + 0.006)], 0.0032, c, "M_RmBrass", lid, segments=8)
+    B("TagFrame", (0.112, 0.036, 0.0016), c, "M_RmBrass", lid, (0, -d + 0.036, lh + 0.0008), bevel=0.0006)
+    B("Tag", (0.104, 0.028, 0.0018), c, "M_RmLabel", lid, (0, -d + 0.036, lh + 0.0012))
+    B("Latch", (0.022, 0.003, 0.016), c, "M_RmBrass", lid, (0, -d - 0.0035, -0.002), bevel=0.0008)
+    for sx in (-1, 1):
+        CY("Hinge", 0.0045, 0.05, c, "M_RmCashSteelDark", r, (sx * 0.07, d / 2 + 0.002, h), rotation=(0, R(90), 0), segments=10)
+    # red tape across the closed lid (shown when the box is confiscated: both takers caught)
+    seal = bk.empty("CashSeal", c, (0, 0, 0), r)
+    sx0 = -0.085
+    B("SealTop", (0.032, 0.07, 0.0008), c, "M_RmSeal", seal, (sx0, -d / 2 + 0.035, h + lh + 0.0006))
+    B("SealFront", (0.032, 0.0008, 0.05), c, "M_RmSeal", seal, (sx0, fy - 0.0026 - 0.0006, h - 0.006))
+    B("SealEdge", (0.032, 0.006, 0.0008), c, "M_RmSeal", seal, (sx0, fy - 0.0026, h + lh + 0.0004)).rotation_euler = (R(45), 0, 0)
+    return r
+
+
+@room_prop
+def rm_roster(c):
+    """v5 Hafta Sonu Nöbeti: a hardboard clipboard hanging from a nail (pivot: back centre at the board's centre).
+    RosterSheet (own 0..1 UVs) is the roster the runtime draws into; RosterPen (driven, pivot at its tip) is a yellow
+    pencil with a pink eraser that rests in a half-open loop on the right edge, writes names and, turned round, rubs
+    them out; StringBase is where its string is tied (the string is drawn at runtime)."""
+    r = root("RmRoster", c)
+    bw, bh, bt = 0.235, 0.33, 0.006
+    vslab("Board", bw, bh, bt, 0.014, c, "M_RmMasonite", r, (0, -0.004, -bh / 2), bevel=0.0015)
+    front = -0.004 - bt
+    B("Under", (0.214, 0.0016, 0.29), c, "M_Paper", r, (0.0015, front - 0.0008, -0.022)).rotation_euler = (0, R(0.8), 0)
+    uv_plane("RosterSheet", 0.21, 0.287, c, "M_Paper", r, (0, front - 0.0019, -0.0215))
+    # clip at the top
+    B("ClipBase", (0.118, 0.004, 0.036), c, "M_Metal", r, (0, front - 0.002, 0.137), bevel=0.0012)
+    lever = B("ClipLever", (0.1, 0.012, 0.024), c, "M_Metal", r, (0, front - 0.009, 0.128), bevel=0.004)
+    lever.rotation_euler = (R(-12), 0, 0)
+    for sx in (-1, 1):
+        CY("Rivet", 0.0035, 0.004, c, "M_RmBrass", r, (sx * 0.048, front - 0.0045, 0.147), rotation=(R(90), 0, 0), segments=10)
+    CY("Hole", 0.006, 0.0012, c, "M_RmBlack", r, (0, front - 0.0002, 0.157), rotation=(R(90), 0, 0), segments=14)
+    CY("Nail", 0.0035, 0.012, c, "M_RmBrass", r, (0, front - 0.004, 0.158), rotation=(R(90), 0, 0), segments=10, cap_bevel=0.001)
+    # pen loop on the right edge (open to the front so the pen can leave it) and the pen, tip down
+    px = bw / 2 + 0.008
+    bk.torus("PenLoop", 0.0062, 0.0016, c, "M_RmBlack", r, (px, front + 0.0004, 0.0), rotation=(0, 0, R(180)), arc=math.pi * 1.1, major_seg=12, minor_seg=5)
+    B("LoopTab", (0.014, 0.003, 0.012), c, "M_RmBlack", r, (px - 0.007, front + 0.001, 0.0))
+    pen = bk.empty("RosterPen", c, (px, front - 0.0055, -0.07), r)
+    CY("Lead", 0.0007, 0.004, c, "M_RmBlack", pen, (0, 0, 0.002), segments=6, radius_top=0.0016)
+    CY("Wood", 0.0016, 0.012, c, "M_RmOakLight", pen, (0, 0, 0.01), segments=6, radius_top=0.0042)
+    CY("Body", 0.0042, 0.11, c, "M_DuckYellow", pen, (0, 0, 0.071), segments=6, smooth=False)
+    CY("Ferrule", 0.0045, 0.012, c, "M_RmBrass", pen, (0, 0, 0.132), segments=12)
+    CY("Eraser", 0.0041, 0.012, c, "M_RmEraser", pen, (0, 0, 0.144), segments=12, cap_bevel=0.0014)
+    bk.empty("StringBase", c, (bw / 2 - 0.012, front - 0.004, 0.13), r)
     return r
 
 

@@ -1,15 +1,16 @@
 RmLowBookcase             5408
 RmShelf                   4296
+RmCashBox                 3808
 RmRecorder                3740
 RmPhone                   2668
 RmChair                   2360
 RmMeetingShell            2316
 RmMeetingChair            1932
+RmDrawerUnit              1908
 RmOfficeShell             1704
 RmMeetingTable            1684
 RmPlant                   1496
 RmFileCabinet             1448
-RmDrawerUnit              1368
 RmClock                   1292
 RmMonitor                 1266
 RmHandL                   1248
@@ -17,6 +18,7 @@ RmHandR                   1248
 RmCoatRack                1188
 RmSideboard               1152
 RmDesk                    1148
+RmRoster                  1136
 RmSkyline                  948
 RmLamp                     892
 RmTrayCups                 892
@@ -36,6 +38,7 @@ RmProjector                500
 RmCactus                   488
 RmBox                      388
 RmPendantBar               368
+RmBundle                   308
 RmPhotoFrame               298
 RmCorkBoard                286
 RmCeilingLamp              276
@@ -44,3 +47,4 @@ RmPenCup                   208
 RmNotepad                  208
 RmGlass                    208
 RmSpill                    140
+RmBill                      52
