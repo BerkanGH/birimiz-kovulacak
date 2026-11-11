@@ -68,6 +68,8 @@ Oturarak oynanır. Fare ile serbest bakılır (sağa sola yaklaşık 110°).
 
 1. **Ofis:** Bakma ve yürüme, bilgisayar (görev, havale, mesajlar), telefon ve rehber, kasetçalar, mantar pano,
    ince şerit. Şimdiki arayüzün parçaları monitörün ve telefonun içine taşınır.
+   *Uygulandı (`feature/v5-integration`):* ofis 4,6 × 4,0 m; dosyalar ve ayrıntılar `UI.md` (v5 → Office).
+   Küçük Kasa / Hafta Sonu Nöbeti seçimleri ve ihbar 2. adıma kadar bilgisayardaki Görev uygulamasında.
 2. **Görev nesneleri:** Kasa kutusu, nöbet çizelgesi, çekmecedeki prim destesi.
 3. **Toplantı:** Bakış ve paylaşılan bakış yönü, projektör, beyaz tahta, klasör, pusula ve kutu, savunma, masa açılışı.
 4. **Sonra, ayrı karar:** Yüz yüze görüşme için ortak mola alanı (kayda girmez ama herkes görür). Oyun testinden sonra.

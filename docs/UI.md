@@ -5,8 +5,10 @@
 Rules: `docs/V5_ENGINE_SPEC.md` (normative) and `docs/V5_DESIGN.md` (Turkish, rationale). Everything below the
 "History" line describes the v2–v4 UI, which no longer exists in code.
 
-During a match the whole game is **one UI Toolkit screen built in code** over the first-person rooms. Shell screens
-(menu, lobby, settings, how-to, first-launch flow) are the older shell code, updated for v5 where needed.
+During a match the player is either **in their own office** (Intro, tasks, breaks, crisis calls: the diegetic office
+layer of docs/V5_INTERACTION.md step 1) or **in the meeting room** (meetings, crisis vote, final, results: one UI Toolkit
+screen built in code over the first-person room; step 3 will replace it). Shell screens (menu, lobby, settings,
+how-to, first-launch flow) are the older shell code, updated for v5 where needed.
 
 | File (under `Game/Assets/Game/`) | What |
 |---|---|
@@ -19,6 +21,26 @@ During a match the whole game is **one UI Toolkit screen built in code** over th
 | `Scripts/UI/ShellOverlays.cs` | First-launch flow (language, consent, 3 intro cards in `*.privacy.json`), moment marker. |
 | `Scripts/UI/MenuScreens.cs`, `UIRoot.cs` | Menu, lobby, pause (how-to button in all three); layers, Esc routing, cursor. |
 | `Scripts/UI/Dev/LineMock.cs` | UI mocks: hand-made `LineView`s pushed into `LineClient` (`-uimock "v5.*"`). |
+| `Scripts/UI/Play/PlayKit.cs`, `PlayBlocks.cs` | Shared by the meeting screen and the office: play-styled buttons, live labels, the content-diffed `PlaySection`; the task card, rules, intro, transfer, messages and call-log blocks (no rule text is duplicated). |
+| `Scripts/UI/Office/OfficeUi.cs` | Office layer: thin HUD strip, toasts, incoming-call card, call pill, use prompt, hotkeys; opens the desk objects and drives the office camera. |
+| `Scripts/UI/Office/OfficeComputer.cs` | "KOVA OS" laid exactly over the monitor screen: apps Görev, Havale, Mesajlar, Arama geçmişi, Kurallar; sticky note with the "Şimdi" hint; taskbar. |
+| `Scripts/UI/Office/OfficePhone.cs` | Desk phone face (left half; the 3D phone and the lifted handset stay visible): LCD, contacts = line board, call actions, missed calls. |
+| `Scripts/UI/Office/CorkBoard.cs` | Suç tahtası: a UI Toolkit panel rendered into the cork board's texture (one pinned note per colleague). |
+| `Scripts/UI/Office/OfficeText.cs`, `ScreenFade.cs` | "Şimdi: …" sentence and use prompts; the black fade of office ↔ meeting switches. |
+| `Scripts/UI/Dev/OfficeMock.cs` | Office mocks (`-uimock "v5.office*"`). |
+| `UI/Resources/ui/styles/office.uss` | Office layer, OS, phone and cork board styles. |
+
+**Office (v5 step 1).** Cursor locked, mouse look; WASD stands up from the chair and walks (2 m/s, local only:
+`Scripts/Rooms/OfficeWalker.cs` collides a 0.24 m circle with the walls and the furniture footprints that
+`Art/Scripts/build_rooms.py` writes into `rooms_v3.json` → `walk`). The crosshair names what it is on within 2.4 m
+("E — Bilgisayar · kısayol: Q"); E or a left click uses it. Hotkeys from anywhere: Q computer, Tab phone, R record,
+Y / N answer / decline (N also hangs up), V push-to-talk, Esc puts down what you hold, then opens the menu. The computer
+and the phone sit you down (the camera eases ~0.4 s); answering from across the room walks you back too (the cord
+reaches 1.15 m). The only permanent element is the top strip: phase, timer, *Primin*, recorder tapes and one "Şimdi"
+line (`OfficeText.Now`: the same decisions as the meeting screen's focus card, pointing at the desk object). Toasts
+(right): texts, prim received, missed / declined / busy calls, the recorder, phase changes. The cassette recorder on the
+desk (`RmRecorder`): REC key and lamp, turning reels, one blank tape per use left in the rack. The lamp over the door
+lights up in the last 15 s before a meeting; switching rooms fades to black (`LineWorldDriver.ShownPlace`).
 
 **Data flow.** `LineClient.View` (the player's `LineView`, docs/V5_ENGINE_SPEC.md §11), `LineClient.Config` (the host's
 `LineConfig`; every number on screen comes from it), `LineClient.Messages`, and `EventReceived` (→ `PlayText.Event` →
@@ -66,7 +88,13 @@ python -I Tools/scripts/loc_parity_meeting.py  # shell + privacy areas, how-to p
 python -I Tools/scripts/compile_check.py --rsp
 ```
 
-Scenarios: `v5.task`, `v5.task_shift`, `v5.reveal` (witness), `v5.meeting`, `v5.meeting_vote` (leak playing over the
+Office scenarios: `v5.office_desk` (strip, prompts on the monitor / recorder / board), `v5.office_task` (computer:
+task, messages, transfer, call log, rules), `v5.office_ring` (incoming call card, prim toast, phone panel while ringing),
+`v5.office_call` (recorded crisis call: phone panel, call pill, recorder), `v5.office_board`, `v5.office_witness`,
+`v5.office_shift`, `v5.office_standing` (standing views, door lamp), `v5.office_en`. The room itself:
+`-scenetest` (now also the recorder states, standing, walking into the desk, the door lamp and the board zoom).
+
+Scenarios: `v5.task`, `v5.task_shift`, `v5.reveal` (witness; all three open the office computer), `v5.meeting`, `v5.meeting_vote` (leak playing over the
 ballots), `v5.crisis_vote`, `v5.crisis_verdict`, `v5.sealed` (I am a candidate), `v5.defense`, `v5.final` (second
 firing vote), `v5.verdict`, `v5.verdict_tie`, `v5.results`, `v5.results_tabs`, `v5.howto` (all pages), `v5.en_task`,
 `v5.en_verdict`. Automated matches (`Tools/run_local4.ps1 -Bots`) also save one screenshot per phase per slot under
