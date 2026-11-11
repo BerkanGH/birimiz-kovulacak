@@ -8,8 +8,9 @@ namespace BirimizKovulacak.Game
     // meeting UI). The world implements IRoomPresenter and registers it in Rooms.Presenter when the scene loads;
     // everybody else only talks to these types. See docs/V3_DESIGN.md §9.
 
-    /// <summary>Clickable things in the local player's office (v5 appends the recorder, the cork board and the chair).</summary>
-    public enum DeskTarget { None, Monitor, Phone, Mug, Window, Drawer, Nameplate, Recorder, Board, Chair }
+    /// <summary>Clickable things in the local player's office (v5 appends the recorder, the cork board and the chair; step 2
+    /// the Petty Cash box and the Weekend Shift roster).</summary>
+    public enum DeskTarget { None, Monitor, Phone, Mug, Window, Drawer, Nameplate, Recorder, Board, Chair, CashBox, Roster }
 
     /// <summary>Where the first-person camera is and what the mouse does.</summary>
     public enum PovMode
@@ -28,6 +29,12 @@ namespace BirimizKovulacak.Game
         Cutscene,
         /// <summary>v5: camera framed on the office cork board (suç tahtası); no mouse-look.</summary>
         Board,
+        /// <summary>v5 step 2: leaning over the Petty Cash box on the desk (lid open); cursor free (the box card).</summary>
+        CashBox,
+        /// <summary>v5 step 2: in front of the Weekend Shift roster on the wall; cursor free (the roster card).</summary>
+        Roster,
+        /// <summary>v5 step 2: looking into the open desk drawer (the prim stack); no mouse-look.</summary>
+        Drawer,
     }
 
     public enum MonitorState { Normal, Alert, Offline, Coffee, Off }

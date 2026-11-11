@@ -163,6 +163,16 @@ namespace BirimizKovulacak.Game
             Add("rec_clunk", SfxSynth.RecClunk());
             Add("busy", SfxSynth.Busy());
             Add("offhook", SfxSynth.OffHook());
+            // v5 step 2: the Petty Cash box, the roster pencil, the drawer
+            Add("lid_open", SfxSynth.Lid(true));
+            Add("lid_close", SfxSynth.Lid(false));
+            Add("box_drop", SfxSynth.BoxDrop());
+            Add("bills", SfxSynth.Bills());
+            Add("alarm_btn", SfxSynth.AlarmButton());
+            Add("pencil", SfxSynth.Pencil());
+            Add("eraser", SfxSynth.Eraser());
+            Add("drawer_slide", SfxSynth.DrawerSlide());
+            Add("drawer_thunk", SfxSynth.DrawerThunk());
             // tricks landing on your desk
             Add("internet_down", SfxSynth.InternetDown());
             Add("power_down", SfxSynth.PowerDown());

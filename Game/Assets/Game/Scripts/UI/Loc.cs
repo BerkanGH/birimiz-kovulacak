@@ -54,7 +54,14 @@ namespace BirimizKovulacak.Game
             }
         }
 
-        public static string Upper(string s) { return string.IsNullOrEmpty(s) ? "" : s.ToUpper(Culture); }
+        /// <summary>Upper case with the language's rules. Turkish dotted/dotless i are mapped explicitly, so a player
+        /// without the tr-TR culture data (or with invariant globalization) still gets "MAVİ", never "MAVI".</summary>
+        public static string Upper(string s)
+        {
+            if (string.IsNullOrEmpty(s)) return "";
+            if (Language == "tr") return s.Replace('i', 'İ').Replace('ı', 'I').ToUpperInvariant();
+            return s.ToUpper(Culture);
+        }
 
         static Dictionary<string, string> Table
         {

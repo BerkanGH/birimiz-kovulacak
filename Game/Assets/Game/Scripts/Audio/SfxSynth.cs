@@ -328,6 +328,104 @@ namespace BirimizKovulacak.Game
             return Normalize(d, 0.4f);
         }
 
+        // ------------------------------------------------------------------ v5 step 2: task objects
+
+        /// <summary>Steel cash-box lid: hinge squeak and a tinny knock (open), or the knock first (close).</summary>
+        public static float[] Lid(bool open)
+        {
+            var rnd = new System.Random(open ? 101 : 102);
+            var d = new float[N(0.42f)];
+            float knock = open ? 0.18f : 0f;
+            AddTone(d, open ? 0f : 0.08f, 0.16f, open ? 1250f : 1500f, open ? 1700f : 1150f, 0.05f, Wave.Triangle, 0.06f, 0.01f);
+            AddNoise(d, knock, 0.03f, 0.45f, rnd, 0.5f, false, 0.01f, 0.0004f);
+            AddTone(d, knock, 0.2f, 620f, 590f, 0.22f, Wave.Sine, 0.05f, 0.001f);
+            AddTone(d, knock, 0.2f, 1310f, 1290f, 0.1f, Wave.Sine, 0.035f, 0.001f);
+            return Normalize(d, 0.5f);
+        }
+
+        /// <summary>The box landing on the desk: a dull wooden thud with a metal ring.</summary>
+        public static float[] BoxDrop()
+        {
+            var rnd = new System.Random(103);
+            var d = new float[N(0.5f)];
+            AddTone(d, 0f, 0.3f, 110f, 70f, 0.7f, Wave.Sine, 0.07f, 0.001f);
+            AddNoise(d, 0f, 0.05f, 0.4f, rnd, 0.15f, false, 0.015f, 0.0005f);
+            AddTone(d, 0.005f, 0.4f, 780f, 760f, 0.12f, Wave.Sine, 0.09f, 0.002f);
+            AddNoise(d, 0.11f, 0.04f, 0.12f, rnd, 0.2f, false, 0.01f, 0.0005f);
+            return Normalize(d, 0.6f);
+        }
+
+        /// <summary>A handful of banknotes: crisp paper rustle in short bursts.</summary>
+        public static float[] Bills()
+        {
+            var rnd = new System.Random(104);
+            var d = new float[N(0.55f)];
+            for (int k = 0; k < 7; k++)
+            {
+                float t = 0.02f + k * 0.06f + (float)rnd.NextDouble() * 0.03f;
+                AddNoise(d, t, 0.05f + (float)rnd.NextDouble() * 0.04f, 0.32f - k * 0.02f, rnd, 1f, true, 0.018f, 0.002f);
+            }
+            return Normalize(d, 0.45f);
+        }
+
+        /// <summary>The İhbar button: a firm plastic click and a short alarm chirp.</summary>
+        public static float[] AlarmButton()
+        {
+            var rnd = new System.Random(105);
+            var d = new float[N(0.45f)];
+            AddNoise(d, 0f, 0.02f, 0.5f, rnd, 0.4f, false, 0.006f, 0.0003f);
+            AddTone(d, 0.05f, 0.12f, 1180f, 1180f, 0.18f, Wave.Square, 0f, 0.004f);
+            AddTone(d, 0.2f, 0.16f, 880f, 880f, 0.18f, Wave.Square, 0f, 0.004f);
+            return Normalize(d, 0.5f);
+        }
+
+        /// <summary>Pencil writing a name: scratchy strokes.</summary>
+        public static float[] Pencil()
+        {
+            var rnd = new System.Random(106);
+            var d = new float[N(1.15f)];
+            float t = 0.3f;
+            while (t < 1.1f)
+            {
+                float len = 0.05f + (float)rnd.NextDouble() * 0.08f;
+                AddNoise(d, t, len, 0.22f, rnd, 1f, true, 0f, 0.008f);
+                t += len + 0.015f + (float)rnd.NextDouble() * 0.03f;
+            }
+            return Normalize(d, 0.32f);
+        }
+
+        /// <summary>Rubber eraser rubbing back and forth (softer, lower than the pencil).</summary>
+        public static float[] Eraser()
+        {
+            var rnd = new System.Random(107);
+            var d = new float[N(1.25f)];
+            for (int k = 0; k < 6; k++)
+                AddNoise(d, 0.32f + k * 0.15f, 0.13f, 0.28f, rnd, 0.35f, false, 0f, 0.03f);
+            return Normalize(d, 0.32f);
+        }
+
+        /// <summary>Wooden drawer sliding on its runners.</summary>
+        public static float[] DrawerSlide()
+        {
+            var rnd = new System.Random(108);
+            var d = new float[N(0.4f)];
+            AddNoise(d, 0f, 0.3f, 0.3f, rnd, 0.25f, false, 0f, 0.04f);
+            AddTone(d, 0f, 0.3f, 160f, 190f, 0.08f, Wave.Saw, 0f, 0.04f);
+            AddNoise(d, 0.29f, 0.04f, 0.35f, rnd, 0.3f, false, 0.012f, 0.0005f);
+            return Normalize(d, 0.42f);
+        }
+
+        /// <summary>Money landing in the drawer: a soft wooden thunk and a short rustle.</summary>
+        public static float[] DrawerThunk()
+        {
+            var rnd = new System.Random(109);
+            var d = new float[N(0.5f)];
+            AddTone(d, 0f, 0.22f, 130f, 80f, 0.6f, Wave.Sine, 0.05f, 0.001f);
+            AddNoise(d, 0f, 0.04f, 0.4f, rnd, 0.2f, false, 0.012f, 0.0005f);
+            AddNoise(d, 0.07f, 0.12f, 0.16f, rnd, 1f, true, 0.03f, 0.004f);
+            return Normalize(d, 0.55f);
+        }
+
         // ------------------------------------------------------------------ stamps
 
         public static float[] Stamp()

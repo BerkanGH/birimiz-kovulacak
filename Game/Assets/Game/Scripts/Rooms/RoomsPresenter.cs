@@ -209,7 +209,8 @@ namespace BirimizKovulacak.Game
         {
             rect = default;
             Renderer r = framing == PovMode.Monitor ? Office.Screen : framing == PovMode.Phone ? (Office.Phone != null ? Office.Phone.GetComponentInChildren<Renderer>() : null)
-                : framing == PovMode.MeetingProjector ? Meeting.Canvas : framing == PovMode.Board ? Office.CorkSurface : null;
+                : framing == PovMode.MeetingProjector ? Meeting.Canvas : framing == PovMode.Board ? Office.CorkSurface
+                : framing == PovMode.Roster ? Office.RosterSheet : null;
             var cam = PovCamera;
             if (r == null || cam == null) return false;
             var b = r.bounds;
@@ -379,6 +380,15 @@ namespace BirimizKovulacak.Game
                 case PovMode.Board:
                     if (Frame(Office.CorkSurface, 0.9f, framingFov, out pos, out rot)) { fov = framingFov; return; }
                     break;
+                case PovMode.CashBox:
+                    if (CashBoxPose(out pos, out rot, out fov)) return;
+                    break;
+                case PovMode.Roster:
+                    if (RosterPose(out pos, out rot, out fov)) return;
+                    break;
+                case PovMode.Drawer:
+                    if (DrawerPose(out pos, out rot, out fov)) return;
+                    break;
                 case PovMode.MeetingProjector:
                     if (Frame(Meeting.Canvas, 0.94f, framingFov, out pos, out rot)) { fov = framingFov; return; }
                     break;
@@ -433,6 +443,53 @@ namespace BirimizKovulacak.Game
             float d = Mathf.Max(dh, dw);
             pos = center + normal * d;
             rot = Quaternion.LookRotation(-normal, tr.up);
+            return true;
+        }
+
+        /// <summary>v5 step 2: leaning over the Petty Cash box (in front of it, looking down into the open lid); the box
+        /// sits in the upper part of the view so the box card fits underneath.</summary>
+        bool CashBoxPose(out Vector3 pos, out Quaternion rot, out float fov)
+        {
+            pos = Vector3.zero; rot = Quaternion.identity; fov = 44f;
+            var b = Office.CashBox;
+            if (b == null || !b.gameObject.activeInHierarchy) return false;
+            // frame the box and the spot beside it where taken notes lie
+            Vector3 c = b.position + Vector3.up * 0.05f;
+            if (Office.CashPile != null) c = Vector3.Lerp(c, Office.CashPile.position + Vector3.up * 0.05f, 0.3f);
+            Vector3 front = -b.forward; front.y = 0f;
+            front = front.sqrMagnitude > 1e-4f ? front.normalized : Vector3.back;
+            pos = c + front * 0.34f + Vector3.up * 0.33f + Breath() * 0.5f;
+            Vector3 aim = c + Vector3.down * 0.07f + front * 0.03f;
+            rot = Quaternion.LookRotation(aim - pos, Vector3.up);
+            return true;
+        }
+
+        /// <summary>v5 step 2: in front of the roster; the sheet sits right of centre (the roster card is on the left).</summary>
+        bool RosterPose(out Vector3 pos, out Quaternion rot, out float fov)
+        {
+            fov = 36f;
+            if (!Frame(Office.RosterSheet, 0.7f, fov, out pos, out rot)) return false;
+            var tr = Office.RosterSheet.transform;
+            float dist = Vector3.Distance(pos, Office.RosterSheet.bounds.center);
+            float aspect = Rig.Cam != null ? Rig.Cam.aspect : 16f / 9f;
+            float halfH = Mathf.Tan(fov * 0.5f * Mathf.Deg2Rad) * dist, halfW = halfH * aspect;
+            // the sheet right of centre (the card is on the left) and a little low (the clip clears the top strip)
+            pos -= tr.right * (halfW * 0.3f);
+            pos += tr.up * (halfH * 0.1f);
+            pos += Breath() * 0.5f;
+            return true;
+        }
+
+        /// <summary>v5 step 2: looking down into the open drawer (follows it while it slides out).</summary>
+        bool DrawerPose(out Vector3 pos, out Quaternion rot, out float fov)
+        {
+            pos = Vector3.zero; rot = Quaternion.identity; fov = 44f;
+            var spot = Office.DrawerCash != null ? Office.DrawerCash : Office.Drawer;
+            if (spot == null) return false;
+            Vector3 c = spot.position + Vector3.up * 0.02f;
+            pos = c + Office.transform.rotation * new Vector3(-0.17f, 0.47f, -0.27f) + Breath() * 0.5f;
+            Vector3 aim = c + Office.transform.rotation * new Vector3(0.0f, -0.035f, 0.0f);
+            rot = Quaternion.LookRotation(aim - pos, Vector3.up);
             return true;
         }
 

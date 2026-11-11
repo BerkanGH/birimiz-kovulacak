@@ -11,10 +11,11 @@ namespace BirimizKovulacak.Game
     /// dead), coffee spill, mug/drawer/nameplate click feedback, posters per slot and language, your own bean hands,
     /// passers-by behind the frosted door glass. v5: the cassette recorder (REC key and lamp, turning reels, blank
     /// tapes = recorder uses left), the chair that rolls back when you stand up, the walk footprints the walker
-    /// collides with, the cork board surface (suç tahtası) and the meeting lamp over the door.
+    /// collides with, the cork board surface (suç tahtası) and the meeting lamp over the door. v5 step 2 (the Petty
+    /// Cash box, the Weekend Shift roster, the drawer's prim stack): OfficeRoom.Tasks.cs.
     /// All references are wired by ProjectBuilder.Rooms.
     /// </summary>
-    public sealed class OfficeRoom : MonoBehaviour
+    public sealed partial class OfficeRoom : MonoBehaviour
     {
         [Serializable]
         public sealed class DecalSlot
@@ -192,6 +193,7 @@ namespace BirimizKovulacak.Game
             }
             SetRecorder(1, false, false);
             if (DoorLight != null) { DoorLight.intensity = 0f; DoorLight.enabled = false; }
+            InitTasks();
         }
 
         // ------------------------------------------------------------------ personalisation
@@ -206,12 +208,17 @@ namespace BirimizKovulacak.Game
             if (ChairFabric != null && c < SeatColors.Length) ChairFabric.sharedMaterial = SeatColors[c];
             if (MugStripe != null && c < PlayerColors.Length) MugStripe.sharedMaterial = PlayerColors[c];
             if (NameStripe != null && c < PlayerColors.Length) NameStripe.sharedMaterial = PlayerColors[c];
-            string label = string.IsNullOrEmpty(playerName) ? "—" : playerName.ToUpperInvariant();
-            foreach (var l in NameLabels) if (l != null) l.text = label;
             if (Photo != null && PhotoMats.Length > 0) Photo.sharedMaterial = PhotoMats[c % PhotoMats.Length];
             SetSkin(c);
             _lang = null;
             ApplyLanguage();
+        }
+
+        /// <summary>The nameplate in capitals with the language's casing (Turkish: "Mavi" → "MAVİ", "Işık" → "IŞIK").</summary>
+        void ApplyName()
+        {
+            string label = string.IsNullOrEmpty(_name) ? "—" : Loc.Upper(_name);
+            foreach (var l in NameLabels) if (l != null && l.text != label) l.text = label;
         }
 
         static int Mod(int a, int n) { return ((a % n) + n) % n; }
@@ -235,7 +242,9 @@ namespace BirimizKovulacak.Game
             string lang = Loc.Language;
             if (lang == _lang) return;
             _lang = lang;
+            ApplyName();
             if (DoorLabel != null) DoorLabel.text = Loc.T("v5.office.door_sign");
+            ApplyTaskLabels();
             int s = Mathf.Max(0, _slot);
             foreach (var d in Decals)
             {
@@ -283,7 +292,7 @@ namespace BirimizKovulacak.Game
             switch (t)
             {
                 case DeskTarget.Mug: if (_monitor != MonitorState.Coffee) _sipUntil = Time.time + 1.5f; break;
-                case DeskTarget.Drawer: _drawerUntil = Time.time + 2.2f; break;
+                case DeskTarget.Drawer: _drawerUntil = Time.time + 0.6f; break; // the drawer view keeps it open (SetDrawerHeld)
                 case DeskTarget.Nameplate: _wobbleStart = Time.time; break;
             }
         }
@@ -312,6 +321,7 @@ namespace BirimizKovulacak.Game
             TickChair(dt);
             TickRecorder(now, dt);
             TickDoor(now, dt);
+            TickTasks(cam, mode, now, dt);
         }
 
         void TickChair(float dt)
@@ -513,9 +523,9 @@ namespace BirimizKovulacak.Game
             }
             if (Drawer != null)
             {
-                _drawerOpen = Mathf.MoveTowards(_drawerOpen, now < _drawerUntil ? 1f : 0f, dt * 3.5f);
+                _drawerOpen = Mathf.MoveTowards(_drawerOpen, now < _drawerUntil || _drawerHeld ? 1f : 0f, dt * 3.5f);
                 float de = _drawerOpen * _drawerOpen * (3f - 2f * _drawerOpen);
-                Drawer.localPosition = _drawerRest + new Vector3(0f, 0f, -0.26f * de);
+                Drawer.localPosition = _drawerRest + new Vector3(0f, 0f, -0.26f * de - DrawerKickOffset(now));
             }
             if (Nameplate != null)
             {
@@ -527,16 +537,30 @@ namespace BirimizKovulacak.Game
 
         void TickHands(Camera cam, PovMode mode, float now, float dt)
         {
-            // standing: the resting hands stay out of view; the right one still holds a lifted handset
-            // the phone and board views look away from the keyboard: the resting mittens would show as long arms
-            bool seated = !_standing && _stand < 0.5f && mode != PovMode.Phone && mode != PovMode.Board;
-            bool showL = seated, showR = seated || _lift > 0.05f;
+            // The resting mittens belong to the keyboard: standing, in the phone / board / task-object views, or
+            // looking far to one side (the arm would read as a long tube) they slide back toward you and hide.
+            // The left one comes back for the mug, the right one for the handset and to carry the Petty Cash notes
+            // (the roster pencil moves on its own: a mitten that close to the camera would hide the sheet).
+            bool desk = !_standing && _stand < 0.5f && (mode == PovMode.Office || mode == PovMode.Monitor);
+            float yaw = mode == PovMode.Office ? SeatYaw(cam) : 0f;
+            bool grab = GrabHand(cam, out var grabPos, out var grabRot);
+            float wantL = (desk && yaw > -26f) || _sip > 0f ? 1f : 0f;
+            float wantR = (desk && yaw < 26f) || _lift > 0.05f || grab ? 1f : 0f;
+            _presL = Mathf.MoveTowards(_presL, wantL, dt * (wantL > _presL ? 5f : 7f));
+            _presR = Mathf.MoveTowards(_presR, wantR, dt * (wantR > _presR ? 5f : 7f));
+            if (grab || _lift > 0.05f) _presR = 1f;
+            // the carrying mitten leaves the view at the end of its move: it must not slide back in from the mouse
+            if (_grabWas && !grab && wantR < 0.5f) _presR = 0f;
+            _grabWas = grab;
+            bool showL = _presL > 0.01f, showR = _presR > 0.01f;
             if (showL != _handLShown) { _handLShown = showL; foreach (var hr in _handLR) if (hr != null) hr.enabled = showL; }
             if (showR != _handRShown) { _handRShown = showR; foreach (var hr in _handRR) if (hr != null) hr.enabled = showR; }
             float breathe = Mathf.Sin(now * 1.3f) * 0.0025f;
+            Vector3 back = transform.rotation * new Vector3(0f, 0.015f, -0.3f);
+            float rl = 1f - Ease(_presL), rr = 1f - Ease(_presR);
             if (HandL != null)
             {
-                Vector3 lp = _handLPos + Vector3.up * breathe;
+                Vector3 lp = _handLPos + Vector3.up * breathe + back * rl;
                 Quaternion lr = _handLRot;
                 if (_sip > 0f && Mug != null && cam != null)
                 {
@@ -550,7 +574,7 @@ namespace BirimizKovulacak.Game
                 HandL.SetPositionAndRotation(lp, lr);
             }
             if (HandR == null) return;
-            Vector3 p = _handRPos + Vector3.up * breathe * 0.7f;
+            Vector3 p = _handRPos + Vector3.up * breathe * 0.7f + back * rr;
             Quaternion r = _handRRot;
             if (_phone == PhoneLineState.Dialing && _lift < 0.98f && Phone != null)
             {
@@ -568,6 +592,7 @@ namespace BirimizKovulacak.Game
                 p = Vector3.Lerp(p, grip, e);
                 r = Quaternion.Slerp(r, gripRot, e);
             }
+            if (grab) { p = grabPos; r = grabRot; }
             HandR.SetPositionAndRotation(p, r);
         }
 

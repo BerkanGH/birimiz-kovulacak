@@ -144,6 +144,11 @@ namespace BirimizKovulacak.EditorTools
             cord.SetColor("_BaseColor", Hex("#E2DACB"));
             SetOpaque(cord);
             EditorUtility.SetDirty(cord);
+            // v5 step 2: the string of the roster pencil
+            var str = GetOrCreate("M_RmString", unlit);
+            str.SetColor("_BaseColor", Hex("#4A4650"));
+            SetOpaque(str);
+            EditorUtility.SetDirty(str);
             var canvas = GetOrCreate("M_RmCanvasUnlit", unlit);
             canvas.SetColor("_BaseColor", new Color(0.93f, 0.93f, 0.93f));
             SetOpaque(canvas);
@@ -215,6 +220,7 @@ namespace BirimizKovulacak.EditorTools
             foreach (var t in new[] { "ScreenDesktop", "ScreenAlert", "ScreenOffline", "ScreenCoffee" })
                 ImportRoomTex(RoomsTexDir + "/" + t + ".png", false, 512, false);
             ImportRoomTex(RoomsTexDir + "/Silhouette.png", false, 128, true);
+            ImportRoomTex(RoomsTexDir + "/Bill.png", false, 512, false);
         }
 
         /// <summary>Copies an Art/UI image into Art/Textures/Rooms/&lt;sub&gt; (changed files only) and imports it.</summary>
@@ -836,14 +842,28 @@ namespace BirimizKovulacak.EditorTools
                 var coffee = FindDeep(g.transform, "Coffee");
                 office.Coffee = coffee != null ? coffee.gameObject : null;
                 office.MugStripe = RendererUnder(g.transform, "Stripe");
-                MakeTarget(g, g.GetComponentsInChildren<Renderer>(true), DeskTarget.Mug, rb, 0.04f);
+                MakeTarget(g, g.GetComponentsInChildren<Renderer>(true), DeskTarget.Mug, rb, 0.015f); // tight: the cash box sits behind it
             }
             if (props.TryGetValue("spill", out g)) office.Spill = g;
-            // drawer
+            // drawer (v5 step 2: the prim stack lies from CashSpot on, with a paper tag that shows the exact number)
             if (props.TryGetValue("drawerunit", out g))
             {
                 office.Drawer = FindDeep(g.transform, "Drawer");
                 MakeTarget(g, g.GetComponentsInChildren<Renderer>(true), DeskTarget.Drawer, rb);
+                var spot = FindDeep(g.transform, "CashSpot");
+                if (spot != null && office.Drawer != null)
+                {
+                    spot.SetParent(office.Drawer, true);
+                    office.DrawerCash = spot;
+                    var tag = new GameObject("PrimTag").transform;
+                    tag.SetParent(spot, false);
+                    var card = Cube(tag, "Card", new Vector3(0f, 0.0006f, 0f), new Vector3(0.08f, 0.0012f, 0.042f), Mat("M_Manila"));
+                    card.GetComponent<Renderer>().shadowCastingMode = ShadowCastingMode.Off;
+                    var tfont = rb.Fonts != null ? rb.Fonts.TmpTitle ?? rb.Fonts.Tmp : null;
+                    office.PrimTag = tag;
+                    office.PrimTagText = Label3D(tag, "Text", new Vector3(0f, 0.0014f, 0.001f), new Vector3(90f, 0f, 0f), new Vector2(0.07f, 0.03f), tfont, Hex("#2A1C10"), "6 PRİM", 0.5f);
+                }
+                Log("ROOMS drawer: cash spot=" + (office.DrawerCash != null) + " tag=" + (office.PrimTag != null));
             }
             // nameplate (+ names on both brass plates)
             if (props.TryGetValue("nameplate", out g))
@@ -896,6 +916,7 @@ namespace BirimizKovulacak.EditorTools
                 office.CorkSurface = cs;
                 MakeTarget(g, g.GetComponentsInChildren<Renderer>(true), DeskTarget.Board, rb, 0.02f);
             }
+            BuildTaskObjects(root, office, props, a, rb);
             office.PhotoMats = Enumerable.Range(0, 6).Select(i => Mat("M_RmPhoto" + i)).Where(m => m != null).ToArray();
             office.PlayerColors = Enumerable.Range(0, 6).Select(i => Mat("M_PlayerColor" + i)).ToArray();
             office.SeatColors = Enumerable.Range(0, 6).Select(i => Mat("M_RmSeatColor" + i)).ToArray();
@@ -977,6 +998,83 @@ namespace BirimizKovulacak.EditorTools
             BuildOfficeWalk(office, o, rx0, rx1, rz0, rz1);
             BuildDoorLamp(root, office, o, rb);
             return office;
+        }
+
+        /// <summary>v5 step 2: the Petty Cash box (lid, notes slot, İhbar button with its glow and label, the seal), the
+        /// spot on the desk where taken notes lie, the Weekend Shift roster (sheet, pencil and its string) and the note /
+        /// bundle templates the runtime clones (OfficeRoom.Tasks.cs).</summary>
+        static void BuildTaskObjects(Transform root, OfficeRoom office, Dictionary<string, GameObject> props, JObject a, RoomBuild rb)
+        {
+            var font = rb.Fonts != null ? rb.Fonts.TmpTitle ?? rb.Fonts.Tmp : null;
+            GameObject g;
+            if (props.TryGetValue("cashbox", out g))
+            {
+                office.CashBox = g.transform;
+                office.CashLid = FindDeep(g.transform, "CashLid");
+                office.CashSlot = FindDeep(g.transform, "BillSlot");
+                office.CashButton = RendererUnder(g.transform, "AlarmButton");
+                office.CashButtonOff = Mat("M_RmAlarmOff");
+                office.CashButtonOn = Mat("M_RmAlarmOn");
+                var seal = FindDeep(g.transform, "CashSeal");
+                office.CashSeal = seal != null ? seal.gameObject : null;
+                MakeTarget(g, g.GetComponentsInChildren<Renderer>(true), DeskTarget.CashBox, rb, 0.02f);
+                // labels (texts from tr/en.v5.json at runtime): the lid tag moves with the lid
+                var labels = new List<TextMeshPro>();
+                var lidTag = Label3D(g.transform, "LidLabel", new Vector3(0f, 0.0925f, -0.049f), new Vector3(90f, 0f, 0f), new Vector2(0.094f, 0.022f), font, Hex("#2A1C10"), "KÜÇÜK KASA", 0.5f);
+                if (office.CashLid != null) lidTag.transform.SetParent(office.CashLid, true);
+                labels.Add(lidTag);
+                labels.Add(Label3D(g.transform, "ButtonLabel", new Vector3(0.068f, 0.0125f, -0.0868f), Vector3.zero, new Vector2(0.044f, 0.0095f), font, Hex("#7A2620"), "İHBAR", 0.5f));
+                if (seal != null)
+                    labels.Add(Label3D(seal, "SealLabel", new Vector3(-0.085f, 0.06f, -0.0892f), new Vector3(0f, 0f, -90f), new Vector2(0.046f, 0.026f), font, Hex("#FFF4E8"), "EL KONULDU", 0.5f));
+                office.CashLabels = labels.ToArray();
+                var glow = new GameObject("ButtonGlow").AddComponent<Light>();
+                glow.transform.SetParent(g.transform, false);
+                glow.transform.localPosition = new Vector3(0.068f, 0.05f, -0.16f);
+                glow.type = LightType.Point;
+                glow.color = Hex("#FF3B2F");
+                glow.range = 0.26f;
+                glow.intensity = 0f;
+                glow.shadows = LightShadows.None;
+                glow.enabled = false;
+                office.CashButtonLight = glow;
+                Log("ROOMS cash box: lid=" + (office.CashLid != null) + " slot=" + (office.CashSlot != null) + " button=" + (office.CashButton != null) + " seal=" + (office.CashSeal != null));
+            }
+            if (a["cashPile"] != null)
+            {
+                var pile = new GameObject("CashPile").transform;
+                pile.SetParent(root, false);
+                pile.localPosition = RV(a["cashPile"]);
+                pile.localRotation = Quaternion.Euler(0f, (float?)a["cashPileYaw"] ?? 0f, 0f);
+                office.CashPile = pile;
+            }
+            if (props.TryGetValue("roster", out g))
+            {
+                office.Roster = g.transform;
+                office.RosterSheet = RendererUnder(g.transform, "RosterSheet");
+                office.RosterPen = FindDeep(g.transform, "RosterPen");
+                office.RosterStringBase = FindDeep(g.transform, "StringBase");
+                if (office.RosterSheet != null) office.RosterSheet.shadowCastingMode = ShadowCastingMode.Off;
+                MakeTarget(g, g.GetComponentsInChildren<Renderer>(true), DeskTarget.Roster, rb, 0.03f);
+                var sgo = new GameObject("PenString");
+                sgo.transform.SetParent(g.transform, false);
+                var lr = sgo.AddComponent<LineRenderer>();
+                lr.sharedMaterial = Mat("M_RmString");
+                lr.widthMultiplier = 0.0018f;
+                lr.numCapVertices = 2;
+                lr.alignment = LineAlignment.View;
+                lr.shadowCastingMode = ShadowCastingMode.Off;
+                lr.receiveShadows = false;
+                lr.useWorldSpace = true;
+                lr.positionCount = 2;
+                office.RosterString = lr;
+                Log("ROOMS roster: sheet=" + (office.RosterSheet != null) + " pen=" + (office.RosterPen != null) + " string=" + (office.RosterStringBase != null));
+            }
+            var bill = RoomProp(root, "RmBill", Vector3.zero, 0, "BillTemplate", rb);
+            bill.SetActive(false);
+            office.BillTemplate = bill;
+            var bundle = RoomProp(root, "RmBundle", Vector3.zero, 0, "BundleTemplate", rb);
+            bundle.SetActive(false);
+            office.BundleTemplate = bundle;
         }
 
         /// <summary>v5: walking data from the layout ("walk": eye height, body radius, stand spot, chair, footprints).</summary>
