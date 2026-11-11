@@ -233,7 +233,10 @@ UiSettings.SetFloat(Rooms.PrefSensitivity, v), v => v.ToString("0.00") + "×");
             }, "btn-small", "btn-ghost").AddTo(resetRow);
 
             Section(_body, Loc.T("settings.bindings"), "info");
+            BindRow(GameInput.Interact, 0, "input.use");
+            BindRow(GameInput.Computer, 0, "input.computer");
             BindRow(GameInput.Phone, 0, "input.phone");
+            BindRow(GameInput.Record, 0, "input.record");
             BindRow(GameInput.PushToTalk, 0, "input.push_to_talk");
             BindRow(GameInput.AnswerCall, 0, "input.answer_call");
             BindRow(GameInput.HangUp, 0, "input.hang_up");
@@ -352,6 +355,10 @@ UiSettings.SetFloat(Rooms.PrefSensitivity, v), v => v.ToString("0.00") + "×");
                 default: return new object[0];
             }
         }
+
+        /// <summary>Page title / text with the rules' numbers (the office computer's Kurallar app reads the same pages).</summary>
+        public static string PageTitle(int page) { return Loc.T("howto." + Mathf.Clamp(page, 0, Pages - 1) + ".title"); }
+        public static string PageBody(int page) { page = Mathf.Clamp(page, 0, Pages - 1); return Loc.F("howto." + page + ".text", Args(page)); }
 
         readonly VisualElement _card, _pic, _text, _dots;
         readonly Label _title, _body, _pageLabel, _kicker;

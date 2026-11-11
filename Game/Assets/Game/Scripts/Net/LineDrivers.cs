@@ -74,48 +74,100 @@ namespace BirimizKovulacak.Game
         }
     }
 
-    /// <summary>Saves screenshots at key moments of each match (automation: -screenshots).</summary>
+    /// <summary>
+    /// Saves screenshots at key moments of each match (automation: -screenshots). Office phases capture the office
+    /// views a player sees: the desk, the computer on the task app, the phone panel (a call is usually running with
+    /// -calltest), the cork board and a standing view; meeting phases capture the meeting screen.
+    /// </summary>
     public sealed class LineScreenshotRecorder : MonoBehaviour
     {
+        struct ShotSpec
+        {
+            public float Delay;
+            public string Tag;
+            public System.Action Setup;
+            public ShotSpec(float delay, string tag, System.Action setup) { Delay = delay; Tag = tag; Setup = setup; }
+        }
+
         void Start() { LineClient.I.PhaseChanged += (from, to) => StartCoroutine(Shot(to)); }
+
+        static OfficeUi Office => OfficeUi.I;
+        static RoomsPresenter World => RoomsPresenter.Instance;
+
+        static void Desk(float yaw, float pitch)
+        {
+            if (Office != null) Office.CloseFocus();
+            if (World != null) { World.SitDown(false); World.SetLook(yaw, pitch); }
+        }
+
+        static ShotSpec[] Plan(LinePhase phase)
+        {
+            switch (phase)
+            {
+                case LinePhase.Intro:
+                    return new[] { new ShotSpec(2.5f, "desk", () => Desk(0f, 15f)), new ShotSpec(9f, "phone", () => Office?.OpenPhone()) };
+                case LinePhase.TaskPlay:
+                    return new[] { new ShotSpec(4f, "computer", () => Office?.OpenComputer(OfficeComputer.App.Task)), new ShotSpec(20f, "board", () => Office?.OpenBoard()) };
+                case LinePhase.TaskReveal:
+                    return new[] { new ShotSpec(1.5f, "computer", () => Office?.OpenComputer(OfficeComputer.App.Task)) };
+                case LinePhase.Break:
+                    return new[]
+                    {
+                        new ShotSpec(3f, "computer", () => Office?.OpenComputer(OfficeComputer.App.Task)),
+                        new ShotSpec(12f, "standing", () => { Office?.CloseFocus(); World?.StandAt(new Vector2(-1.45f, -1.7f), 32f, 12f); }),
+                    };
+                case LinePhase.CrisisCalls:
+                    return new[]
+                    {
+                        new ShotSpec(6f, "phone", () => Office?.OpenPhone()),
+                        new ShotSpec(30f, "desk", () => Desk(24f, 22f)),
+                        new ShotSpec(52f, "board", () => Office?.OpenBoard()),
+                    };
+                case LinePhase.MeetingDossier: return new[] { new ShotSpec(6f, null, null) };
+                case LinePhase.MeetingDiscussion: return new[] { new ShotSpec(10f, null, null) };
+                case LinePhase.MeetingVote: return new[] { new ShotSpec(8f, null, null) };
+                case LinePhase.MeetingVerdict: return new[] { new ShotSpec(3f, null, null) };
+                case LinePhase.CrisisVote: return new[] { new ShotSpec(8f, null, null) };
+                case LinePhase.CrisisVerdict: return new[] { new ShotSpec(3f, null, null) };
+                case LinePhase.FinalDiscussion: return new[] { new ShotSpec(8f, null, null) };
+                case LinePhase.FinalDefense: return new[] { new ShotSpec(6f, null, null) };
+                case LinePhase.FinalVote: return new[] { new ShotSpec(8f, null, null) };
+                case LinePhase.FinalVerdict: return new[] { new ShotSpec(4f, null, null) };
+                case LinePhase.Results: return new[] { new ShotSpec(5f, null, null) };
+                default: return null;
+            }
+        }
 
         IEnumerator Shot(LinePhase phase)
         {
-            float[] delays;
-            switch (phase)
-            {
-                case LinePhase.Intro: delays = new[] { 4f }; break;
-                case LinePhase.TaskPlay: delays = new[] { 6f }; break;
-                case LinePhase.TaskReveal: delays = new[] { 3f }; break;
-                case LinePhase.Break: delays = new[] { 6f }; break;
-                case LinePhase.MeetingDossier: delays = new[] { 6f }; break;
-                case LinePhase.MeetingDiscussion: delays = new[] { 10f }; break;
-                case LinePhase.MeetingVote: delays = new[] { 8f }; break;
-                case LinePhase.MeetingVerdict: delays = new[] { 3f }; break;
-                case LinePhase.CrisisCalls: delays = new[] { 10f }; break;
-                case LinePhase.CrisisVote: delays = new[] { 8f }; break;
-                case LinePhase.CrisisVerdict: delays = new[] { 3f }; break;
-                case LinePhase.FinalDiscussion: delays = new[] { 8f }; break;
-                case LinePhase.FinalDefense: delays = new[] { 6f }; break;
-                case LinePhase.FinalVote: delays = new[] { 8f }; break;
-                case LinePhase.FinalVerdict: delays = new[] { 4f }; break;
-                case LinePhase.Results: delays = new[] { 5f }; break;
-                default: yield break;
-            }
+            var plan = Plan(phase);
+            if (plan == null) yield break;
             var v0 = LineClient.I.View;
             if (v0 == null) yield break;
             int week = v0.WeekId, day = v0.Day, task = v0.TaskNumber;
             double phaseStart = v0.PhaseStartTime;
             float start = Time.realtimeSinceStartup;
-            foreach (float d in delays)
+            float scale = Mathf.Max(0.3f, LaunchArgs.Current.DurationScale);
+            foreach (var spec in plan)
             {
-                while (Time.realtimeSinceStartup - start < d * Mathf.Max(0.3f, LaunchArgs.Current.DurationScale)) yield return null;
+                while (Time.realtimeSinceStartup - start < spec.Delay * scale) yield return null;
                 var v = LineClient.I.View;
                 if (v == null || v.Phase != phase || v.PhaseStartTime != phaseStart) yield break;
+                if (spec.Setup != null)
+                {
+                    try { spec.Setup(); }
+                    catch (System.Exception e) { Debug.LogException(e); }
+                    // the camera eases to the object, the panel fades in
+                    float settle = Time.realtimeSinceStartup + 1.0f;
+                    while (Time.realtimeSinceStartup < settle) yield return null;
+                    v = LineClient.I.View;
+                    if (v == null || v.Phase != phase || v.PhaseStartTime != phaseStart) yield break;
+                }
                 string dir = Path.GetFullPath(Path.Combine(MatchLog.Directory ?? Application.persistentDataPath, "shots"));
                 Directory.CreateDirectory(dir);
                 string extra = task >= 0 && LineClient.IsCallsPhase(phase) && phase != LinePhase.Intro && phase != LinePhase.CrisisCalls ? "_t" + task
                     : phase == LinePhase.FinalVote || phase == LinePhase.FinalVerdict ? "_r" + (v.Final != null ? v.Final.Round : 0) + (v.Final != null && v.Final.Revote ? "rv" : "") : "";
+                if (!string.IsNullOrEmpty(spec.Tag)) extra += "_" + spec.Tag;
                 string file = Path.Combine(dir, string.Format("slot{0}_w{1}_d{2}_{3}{4}_{5:000}.png", LineClient.I.MySlot, week, day, phase, extra, (int)(Time.realtimeSinceStartup - start)));
                 yield return new WaitForEndOfFrame();
                 ScreenCapture.CaptureScreenshot(file);
@@ -126,14 +178,22 @@ namespace BirimizKovulacak.Game
 
     /// <summary>
     /// Client side: drives the 3D world (<see cref="Rooms.Presenter"/>) from the local <see cref="LineView"/>. v5: the
-    /// calls phases (intro, tasks, breaks, crisis calls) put the player at the office desk (phone/monitor states, light
-    /// moving from morning to evening over the three tasks); meetings, the crisis vote, the final and the results put
-    /// everyone at the meeting table (talk animation, defense spotlight, fired players).
+    /// calls phases (intro, tasks, breaks, crisis calls) put the player in their office (phone/monitor/recorder states,
+    /// the meeting lamp over the door before a meeting, light moving from morning to evening over the three tasks);
+    /// meetings, the crisis vote, the final and the results put everyone at the meeting table (talk animation,
+    /// defense spotlight, fired players). A place switch happens under a short fade to black
+    /// (<see cref="ShownPlace"/> flips while the screen is dark, and UIRoot shows the matching UI).
     /// </summary>
     [DefaultExecutionOrder(-100)] // before UIRoot
     public sealed class LineWorldDriver : MonoBehaviour
     {
+        public enum Place { None, Office, Meeting }
+
+        /// <summary>The room on screen right now (changes in the dark middle of a fade).</summary>
+        public static Place ShownPlace { get; private set; }
+
         int _officeKey = -1, _meetingKey = -1, _firedShown = -2;
+        bool _switching, _closed, _bound;
         readonly List<MeetingSeatInfo> _seats = new List<MeetingSeatInfo>();
 
         void Update()
@@ -141,28 +201,88 @@ namespace BirimizKovulacak.Game
             var rooms = Rooms.Presenter;
             var lc = LineClient.I;
             if (rooms == null || lc == null) return;
+            if (!_bound) { _bound = true; lc.PhaseChanged += (from, to) => { if (to == LinePhase.None) _closed = true; }; }
             var v = lc.View;
-            if (v == null) { _officeKey = _meetingKey = -1; _firedShown = -2; return; }
+            if (v == null || _closed)
+            {
+                // the week closed (lobby; a new mock scenario may already have a view in the same frame)
+                _closed = false;
+                _officeKey = _meetingKey = -1; _firedShown = -2;
+                if (ShownPlace != Place.None) { ShownPlace = Place.None; ScreenFade.To(0f, 0f); }
+                if (v == null) return;
+            }
+            var want = LineClient.IsCallsPhase(v.Phase) ? Place.Office
+                : LineClient.IsMeetingPhase(v.Phase) || v.Phase == LinePhase.Results ? Place.Meeting : ShownPlace;
+            if (want == Place.None) return;
+            if (want != ShownPlace)
+            {
+                if (!_switching) StartCoroutine(Switch(want));
+                return;
+            }
+            if (_switching) return;
+            if (want == Place.Office) TickOffice(rooms, lc, v);
+            else TickMeeting(rooms, lc, v);
+        }
+
+        /// <summary>Fade to black, swap the room (and with it the UI), fade back in.</summary>
+        IEnumerator Switch(Place want)
+        {
+            _switching = true;
+            if (ShownPlace == Place.None) ScreenFade.To(1f, 0f);
+            else
+            {
+                ScreenFade.To(1f, 0.28f);
+                float until = Time.realtimeSinceStartup + 0.6f;
+                while (ScreenFade.Alpha < 0.99f && Time.realtimeSinceStartup < until) yield return null;
+            }
+            _officeKey = _meetingKey = -1;
+            bool fresh = ShownPlace == Place.None;
+            ShownPlace = want;
+            _switching = false;
+            // a new match (or the first office of this session) starts in the chair
+            if (fresh && want == Place.Office && RoomsPresenter.Instance != null) RoomsPresenter.Instance.ResetOffice();
+            // let the new room enter and the camera snap before the light comes back
+            yield return null;
+            yield return null;
+            ScreenFade.To(0f, 0.45f);
+        }
+
+        void TickOffice(IRoomPresenter rooms, LineClient lc, LineView v)
+        {
             double now = lc.Now;
             int me = lc.MySlot;
             int key = v.WeekId * 100 + v.Day * 10 + (v.Phase == LinePhase.CrisisCalls ? 5 : 0);
-            if (LineClient.IsCallsPhase(v.Phase))
+            if (_officeKey != key)
             {
-                if (_officeKey != key)
-                {
-                    _officeKey = key;
-                    _meetingKey = -1;
-                    var p = lc.Me;
-                    rooms.EnterOffice(me, p != null ? p.ColorIndex : me, p != null ? p.Name : "");
-                    rooms.SetPovMode(PovMode.Office);
-                }
-                rooms.SetPhoneState(PhoneState(v));
-                rooms.SetMonitorState(MonitorStateOf(v, now));
-                rooms.SetTimeOfDay(TimeOfDay(v, now));
-                return;
+                _officeKey = key;
+                _meetingKey = -1;
+                var p = lc.Me;
+                rooms.EnterOffice(me, p != null ? p.ColorIndex : me, p != null ? p.Name : "");
+                rooms.SetPovMode(PovMode.Office);
             }
-            bool meetingPlace = LineClient.IsMeetingPhase(v.Phase) || v.Phase == LinePhase.Results;
-            if (!meetingPlace) return;
+            rooms.SetPhoneState(PhoneState(v));
+            rooms.SetMonitorState(MonitorStateOf(v, now));
+            rooms.SetTimeOfDay(TimeOfDay(v, now));
+            var office = RoomsPresenter.Instance != null ? RoomsPresenter.Instance.Office : null;
+            if (office != null)
+            {
+                var m = v.Mine;
+                office.SetRecorder(v.Features.RecordingsEnabled ? Mathf.Clamp(m.RecorderUsesLeft, 0, 3) : 0, PlayBlocks.RecordingCurrentCall(v), m.Recorded.Count > 0);
+                office.SetDoorLamp(MeetingSoon(v, now));
+            }
+        }
+
+        /// <summary>The next phase is in the meeting room and it starts within 15 s (the lamp over the door lights up).</summary>
+        static bool MeetingSoon(LineView v, double now)
+        {
+            bool next = v.Phase == LinePhase.CrisisCalls || (v.Phase == LinePhase.Break && v.TaskNumber == 1);
+            return next && v.PhaseEndTime - now < 15.0;
+        }
+
+        void TickMeeting(IRoomPresenter rooms, LineClient lc, LineView v)
+        {
+            int me = lc.MySlot;
+            int key = v.WeekId * 100 + v.Day * 10 + (v.Phase == LinePhase.CrisisCalls ? 5 : 0);
             if (_meetingKey != key)
             {
                 _meetingKey = key;
@@ -191,7 +311,7 @@ namespace BirimizKovulacak.Game
                 case CallStatus.Ringing: return PhoneLineState.Ringing;
                 case CallStatus.Dialing: return PhoneLineState.Dialing;
                 case CallStatus.Connected: return PhoneLineState.InCall;
-                default: return PhoneLineState.Idle;
+                default: return OfficeUi.I != null && OfficeUi.I.PhoneOpen ? PhoneLineState.OffHook : PhoneLineState.Idle;
             }
         }
 

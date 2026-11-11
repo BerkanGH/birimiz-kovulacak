@@ -1,0 +1,233 @@
+/* v5 office layer (OfficeUi.cs, OfficeComputer.cs, OfficePhone.cs, CorkBoard.cs). Logical 1920x1080 (scaled).
+   Palette: paper #F4EFE3, manila #E8C98A, office green #2F6B4F, stamp red #D2382F, ink navy #1F2A44,
+   sticky #FFE066, HR teal #3BB9B0. */
+
+.of-screen { color: rgb(31, 42, 68); font-size: 20px; }
+
+/* ---------------------------------------------------------------- top strip (phase, timer, prim, tapes, Şimdi) */
+.of-strip { position: absolute; top: 14px; left: 50%; translate: -50% 0; max-width: 1240px; min-width: 620px; align-items: center;
+    background-color: rgba(23, 31, 52, 0.84); border-radius: 18px; padding: 6px 22px 8px 22px; border-width: 2px; border-color: rgba(244, 239, 227, 0.16); }
+.of-strip-todo { border-color: rgba(255, 170, 70, 0.95); border-bottom-width: 4px; }
+.of-strip-main { flex-direction: row; align-items: center; }
+.of-phase { font-size: 21px; color: rgb(244, 239, 227); margin-right: 14px; }
+.of-timer { font-size: 31px; color: rgb(255, 224, 102); min-width: 74px; -unity-text-align: middle-center; }
+.of-timer-low { color: rgb(255, 128, 104); }
+.of-sep { width: 2px; height: 26px; background-color: rgba(244, 239, 227, 0.22); margin: 0 14px; }
+.of-prim { font-size: 22px; color: rgb(255, 224, 102); }
+.of-tapes { flex-direction: row; align-items: center; }
+.of-tapes-label { font-size: 17px; color: rgb(200, 206, 222); margin-right: 8px; }
+.of-cassette { width: 34px; height: 22px; border-radius: 4px; background-color: rgb(232, 201, 138); border-width: 2px; border-color: rgb(244, 239, 227);
+    flex-direction: row; align-items: center; justify-content: space-around; padding: 0 3px; margin-right: 5px; }
+.of-cassette-reel { width: 9px; height: 9px; border-radius: 5px; background-color: rgb(31, 42, 68); }
+.of-cassette-used { opacity: 0.28; }
+.of-now-row { flex-direction: row; align-items: center; margin-top: 3px; max-width: 1190px; }
+.of-now-label { font-size: 14px; color: rgb(59, 185, 176); letter-spacing: 1px; margin-right: 8px; padding: 1px 7px; border-radius: 6px;
+    background-color: rgba(59, 185, 176, 0.16); }
+.of-now { font-size: 18px; color: rgb(232, 236, 245); white-space: normal; flex-shrink: 1; }
+.of-strip-todo .of-now-label { color: rgb(31, 42, 68); background-color: rgb(255, 176, 76); }
+
+/* ---------------------------------------------------------------- call pill + incoming call card */
+.of-call { position: absolute; top: 134px; left: 50%; translate: -50% 0; flex-direction: row; align-items: center;
+    background-color: rgba(47, 107, 79, 0.94); border-radius: 22px; padding: 5px 18px; border-width: 2px; border-color: rgba(244, 239, 227, 0.4); }
+.of-call-dialing { background-color: rgba(31, 42, 68, 0.92); }
+.of-call-dot { width: 12px; height: 12px; border-radius: 6px; background-color: rgb(150, 236, 180); margin-right: 10px; }
+.of-call-text { font-size: 19px; color: rgb(244, 239, 227); }
+.of-call-time { font-size: 22px; color: rgb(255, 224, 102); margin-left: 12px; }
+.of-call-rec { font-size: 14px; color: rgb(255, 255, 255); background-color: rgb(210, 56, 47); border-radius: 6px; padding: 1px 8px; margin-left: 12px; letter-spacing: 1px; }
+
+.of-ring { position: absolute; top: 134px; left: 50%; translate: -50% 0; min-width: 470px; align-items: center;
+    background-color: rgb(244, 239, 227); border-radius: 18px; border-width: 4px; border-color: rgb(210, 56, 47); border-bottom-width: 9px; padding: 10px 26px 12px 26px; }
+.of-ring-pulse { border-color: rgb(255, 120, 90); background-color: rgb(255, 246, 226); }
+.of-ring-top { flex-direction: row; align-items: center; }
+.of-ring-bell { width: 30px; height: 30px; border-radius: 15px; background-color: rgb(210, 56, 47); border-width: 4px; border-color: rgb(255, 214, 200); margin-right: 14px; }
+.of-ring-name { font-size: 34px; color: rgb(31, 42, 68); }
+.of-ring-time { font-size: 20px; color: rgb(150, 70, 60); margin-left: 16px; }
+.of-ring-hint { font-size: 20px; color: rgb(47, 107, 79); margin-top: 2px; }
+
+/* ---------------------------------------------------------------- mic, toasts, prompt, board hint */
+.of-mic { position: absolute; left: 26px; bottom: 26px; flex-direction: row; align-items: center; padding: 6px 14px; border-radius: 16px;
+    background-color: rgba(47, 107, 79, 0.92); }
+.of-mic-alone { background-color: rgba(120, 60, 50, 0.92); }
+.of-mic-dot { width: 14px; height: 14px; border-radius: 7px; background-color: rgb(150, 236, 180); margin-right: 10px; }
+.of-mic-alone .of-mic-dot { background-color: rgb(255, 160, 140); }
+.of-mic-text { font-size: 18px; color: rgb(244, 239, 227); }
+
+.of-toasts { position: absolute; right: 26px; top: 134px; width: 470px; align-items: flex-end; }
+/* while the computer is open the toasts and the call pill sit in the desktop's right column, under the sticky note */
+.of-toasts-os { width: 300px; }
+.of-toasts-os .of-toast { max-width: 300px; }
+.of-toasts-os .of-toast-text { font-size: 16px; }
+.of-call-os { translate: 0 0; }
+.of-ring-os { top: auto; }
+.of-toast { flex-direction: row; align-items: stretch; background-color: rgb(244, 239, 227); border-radius: 12px; margin-bottom: 10px; max-width: 470px;
+    border-width: 2px; border-bottom-width: 5px; border-color: rgb(31, 42, 68); overflow: hidden; }
+.of-toast-bar { width: 9px; background-color: rgb(150, 152, 165); }
+.of-toast-text { font-size: 18px; color: rgb(31, 42, 68); white-space: normal; padding: 8px 14px 8px 12px; flex-shrink: 1; }
+.of-toast-money .of-toast-bar { background-color: rgb(47, 107, 79); }
+.of-toast-msg .of-toast-bar { background-color: rgb(59, 185, 176); }
+.of-toast-call .of-toast-bar { background-color: rgb(232, 160, 60); }
+.of-toast-warn .of-toast-bar { background-color: rgb(210, 56, 47); }
+.of-toast-rec .of-toast-bar { background-color: rgb(210, 56, 47); }
+.of-toast-rec { background-color: rgb(255, 238, 230); }
+.of-toast-phase { background-color: rgb(255, 224, 102); }
+.of-toast-phase .of-toast-bar { background-color: rgb(31, 42, 68); }
+.of-toast-phase .of-toast-text { font-size: 21px; -unity-font-style: bold; }
+
+.of-prompt { position: absolute; top: 55.5%; left: 50%; translate: -50% 0; flex-direction: row; align-items: center;
+    background-color: rgba(23, 31, 52, 0.78); border-radius: 14px; padding: 5px 16px 5px 8px; }
+.of-prompt-key { margin-right: 10px; height: 30px; font-size: 17px; }
+.of-prompt-text { font-size: 20px; color: rgb(244, 239, 227); }
+.of-prompt-alt { font-size: 16px; color: rgb(170, 178, 200); margin-left: 10px; }
+
+.of-board-hint { position: absolute; bottom: 30px; left: 50%; translate: -50% 0; background-color: rgba(23, 31, 52, 0.82); border-radius: 14px; padding: 6px 18px; }
+.of-board-hint-text { font-size: 19px; color: rgb(244, 239, 227); }
+
+/* ---------------------------------------------------------------- KOVA OS (laid over the monitor screen) */
+.os-root { overflow: hidden; border-radius: 4px; background-color: rgb(242, 237, 224); -unity-background-scale-mode: scale-and-crop; flex-direction: column; color: rgb(31, 42, 68); }
+.os-desk { flex-direction: row; flex-grow: 1; flex-shrink: 1; padding: 18px 18px 10px 14px; }
+.os-icons { width: 132px; flex-shrink: 0; }
+.os-tile { width: 122px; height: 118px; align-items: center; justify-content: center; margin-bottom: 8px; border-radius: 16px; border-width: 2px;
+    border-color: rgba(0, 0, 0, 0); padding: 6px 4px; background-color: rgba(0, 0, 0, 0); }
+.os-tile:hover { background-color: rgba(255, 253, 247, 0.8); border-color: rgba(31, 42, 68, 0.25); }
+.os-tile-on { background-color: rgb(255, 250, 235); border-color: rgb(31, 42, 68); border-bottom-width: 5px; }
+.os-tile-img { width: 62px; height: 62px; -unity-background-scale-mode: scale-to-fit; }
+.os-tile-img-fallback { background-color: rgb(47, 107, 79); border-radius: 12px; }
+.os-tile-label { font-size: 16px; color: rgb(31, 42, 68); -unity-text-align: middle-center; margin-top: 2px; -unity-font-style: bold; white-space: normal; }
+.os-badge { position: absolute; top: 2px; right: 6px; background-color: rgb(210, 56, 47); color: rgb(255, 255, 255); border-radius: 13px; min-width: 26px; height: 26px;
+    font-size: 15px; -unity-text-align: middle-center; padding: 0 6px; border-width: 2px; border-color: rgb(250, 247, 238); }
+
+.os-window { flex-grow: 1; flex-shrink: 1; background-color: rgb(250, 247, 238); border-width: 3px; border-color: rgb(31, 42, 68); border-radius: 14px;
+    border-bottom-width: 7px; overflow: hidden; margin: 0 14px 0 8px; }
+.os-titlebar { flex-direction: row; align-items: center; height: 56px; background-color: rgb(232, 201, 138); border-bottom-width: 3px; border-color: rgb(31, 42, 68);
+    padding: 0 8px 0 12px; flex-shrink: 0; }
+.os-win-icon { width: 40px; height: 40px; -unity-background-scale-mode: scale-to-fit; margin-right: 10px; }
+.os-win-title { font-size: 27px; color: rgb(31, 42, 68); }
+.os-win-sub { font-size: 16px; color: rgb(96, 74, 34); margin-left: 14px; }
+.os-win-close { width: 38px; height: 38px; font-size: 24px; border-radius: 19px; border-width: 2px; border-color: rgb(31, 42, 68); background-color: rgb(244, 239, 227);
+    color: rgb(31, 42, 68); -unity-text-align: middle-center; padding: 0; margin: 0; }
+.os-win-close:hover { background-color: rgb(210, 56, 47); color: rgb(255, 255, 255); }
+.os-body { flex-grow: 1; flex-shrink: 1; }
+.os-body .os-section { padding: 16px 22px 18px 22px; }
+.os-compose { flex-shrink: 0; border-top-width: 2px; border-color: rgba(31, 42, 68, 0.2); padding: 8px 18px 10px 18px; background-color: rgb(244, 239, 227); }
+
+.os-side { width: 280px; flex-shrink: 0; align-items: center; }
+.os-sticky { width: 256px; min-height: 196px; background-color: rgb(255, 224, 102); padding: 16px 16px 18px 18px; rotate: 2.5deg; margin-top: 10px;
+    border-bottom-width: 6px; border-color: rgba(150, 120, 30, 0.35); }
+.os-sticky-kicker { font-size: 21px; color: rgb(150, 90, 30); margin-bottom: 4px; }
+.os-sticky-text { font-size: 23px; color: rgb(31, 42, 68); white-space: normal; }
+.os-sticky-todo { color: rgb(160, 40, 30); }
+
+.os-taskbar { height: 60px; flex-shrink: 0; flex-direction: row; align-items: center; padding: 0 12px 0 14px; background-color: rgb(31, 42, 68); }
+.os-tb-brand { flex-direction: row; align-items: center; padding: 3px 12px 3px 6px; border-radius: 10px; background-color: rgba(244, 239, 227, 0.12); }
+.os-tb-logo { width: 34px; height: 34px; -unity-background-scale-mode: scale-to-fit; margin-right: 8px; }
+.os-tb-logo-fallback { background-color: rgb(47, 107, 79); border-radius: 8px; }
+.os-tb-brand-text { font-size: 21px; color: rgb(255, 224, 102); letter-spacing: 2px; }
+.os-tb-user { flex-direction: row; align-items: center; margin-left: 18px; }
+.os-tb-dot { width: 16px; height: 16px; border-radius: 8px; border-width: 2px; border-color: rgb(244, 239, 227); margin-right: 8px; }
+.os-tb-text { font-size: 17px; color: rgb(244, 239, 227); }
+.os-tb-dim { color: rgb(180, 188, 210); margin-right: 14px; }
+.os-tb-timer { font-size: 26px; color: rgb(255, 224, 102); margin-right: 18px; }
+.os-tb-prim { font-size: 19px; color: rgb(255, 224, 102); margin-right: 16px; }
+.os-tb-close { margin: 0; }
+
+/* play blocks re-skinned for the light OS window */
+.os-root .pl-title { color: rgb(31, 42, 68); }
+.os-root .pl-sub { color: rgb(31, 42, 68); }
+.os-root .pl-text { color: rgb(46, 56, 82); white-space: normal; font-size: 19px; }
+.os-root .pl-dim { color: rgb(110, 116, 136); }
+.os-root .pl-good { color: rgb(36, 120, 74); }
+.os-root .pl-bad { color: rgb(190, 50, 42); }
+.os-root .pl-warn { color: rgb(184, 104, 20); }
+.os-root .pl-private { color: rgb(86, 64, 160); }
+.os-root .pl-amount { color: rgb(31, 42, 68); }
+.os-root .pl-focus { background-color: rgb(255, 250, 235); border-color: rgba(31, 42, 68, 0.35); }
+.os-root .pl-focus-todo { border-color: rgb(232, 140, 40); background-color: rgb(255, 243, 222); }
+.os-root .pl-focus-done { border-color: rgb(80, 170, 110); }
+.os-root .pl-focus-kicker { color: rgb(150, 90, 30); }
+.os-root .pl-focus-text { color: rgb(31, 42, 68); white-space: normal; }
+.os-root .pl-chip { background-color: rgba(31, 42, 68, 0.1); color: rgb(31, 42, 68); }
+.os-root .pl-chip-bad { background-color: rgba(210, 56, 47, 0.2); }
+.os-root .pl-chip-warn { background-color: rgba(232, 140, 40, 0.25); }
+.os-root .pl-tag { background-color: rgba(31, 42, 68, 0.8); }
+.os-card { margin-bottom: 12px; padding: 10px 16px 14px 16px; }
+.os-note { font-size: 16px; color: rgb(110, 90, 60); background-color: rgba(232, 201, 138, 0.35); border-radius: 8px; padding: 6px 10px; margin-top: 8px; white-space: normal; }
+.os-msg-row { flex-direction: row; margin-bottom: 8px; }
+.os-msg-row-out { justify-content: flex-end; }
+.os-msg { max-width: 72%; border-radius: 14px; padding: 6px 14px 8px 14px; border-width: 2px; border-color: rgba(31, 42, 68, 0.18); }
+.os-msg-in { background-color: rgb(255, 255, 255); border-bottom-left-radius: 4px; }
+.os-msg-out { background-color: rgb(214, 238, 220); border-bottom-right-radius: 4px; }
+.os-msg-sys { background-color: rgb(255, 243, 200); }
+.os-msg-who { font-size: 15px; color: rgb(80, 88, 110); }
+.os-msg-text { font-size: 19px; color: rgb(31, 42, 68); white-space: normal; }
+.os-rules { flex-direction: row; }
+.os-rules-list { width: 300px; flex-shrink: 0; margin-right: 18px; }
+.os-rules-item { -unity-text-align: middle-left; margin: 2px 0; }
+.os-rules-text { flex-grow: 1; flex-shrink: 1; }
+.os-rules-title { font-size: 30px; color: rgb(31, 42, 68); margin-bottom: 8px; }
+.os-rules-body { font-size: 20px; color: rgb(46, 56, 82); white-space: normal; }
+
+/* ---------------------------------------------------------------- desk phone face */
+.ph-wrap { position: absolute; left: 6%; top: 14%; bottom: 8%; width: 640px; justify-content: center; }
+.ph-face { background-color: rgb(232, 225, 211); border-radius: 36px; border-width: 4px; border-color: rgb(31, 42, 68); border-bottom-width: 14px; padding: 18px 26px 16px 26px; }
+.ph-face-ringing { border-color: rgb(210, 56, 47); }
+.ph-top { flex-direction: row; align-items: center; margin-bottom: 8px; }
+.ph-brand { font-size: 18px; color: rgb(107, 111, 128); letter-spacing: 3px; }
+.ph-led { width: 14px; height: 14px; border-radius: 7px; background-color: rgb(120, 40, 34); }
+.ph-face-ringing .ph-led { background-color: rgb(255, 80, 60); }
+.ph-lcd { background-color: rgb(157, 185, 138); border-radius: 14px; border-width: 6px; border-color: rgb(60, 70, 62); padding: 12px 18px 12px 18px; min-height: 104px; }
+.ph-lcd-row { flex-direction: row; align-items: center; }
+.ph-lcd-1 { font-size: 28px; color: rgb(24, 38, 22); }
+.ph-lcd-time { font-size: 28px; color: rgb(24, 38, 22); }
+.ph-lcd-2 { font-size: 18px; color: rgb(36, 56, 32); white-space: normal; margin-top: 4px; }
+.ph-rec { position: absolute; right: 14px; bottom: -14px; flex-direction: row; align-items: center; background-color: rgb(210, 56, 47); border-radius: 8px; padding: 2px 10px;
+    border-width: 2px; border-color: rgb(244, 239, 227); }
+.ph-rec-dot { width: 10px; height: 10px; border-radius: 5px; background-color: rgb(255, 255, 255); margin-right: 6px; }
+.ph-rec-text { font-size: 15px; color: rgb(255, 255, 255); letter-spacing: 2px; }
+.ph-actions { margin-top: 14px; }
+.ph-row { flex-direction: row; align-items: center; flex-wrap: wrap; min-height: 50px; }
+.ph-hint { font-size: 18px; color: rgb(80, 86, 104); white-space: normal; }
+.ph-recording { font-size: 17px; color: rgb(255, 255, 255); background-color: rgb(210, 56, 47); border-radius: 8px; padding: 4px 12px; }
+.ph-recbtn { background-color: rgb(150, 42, 36); }
+.ph-head { font-size: 15px; color: rgb(107, 111, 128); letter-spacing: 2px; margin: 12px 0 4px 2px; }
+.ph-head-missed { color: rgb(190, 50, 42); }
+.ph-contact { flex-direction: row; align-items: center; background-color: rgb(244, 239, 227); border-radius: 12px; padding: 6px 10px 6px 12px; margin-bottom: 6px;
+    border-width: 2px; border-color: rgba(31, 42, 68, 0.18); }
+.ph-dot { width: 22px; height: 22px; border-radius: 11px; border-width: 3px; border-color: rgb(244, 239, 227); margin-right: 12px; }
+.ph-contact-names { flex-grow: 1; flex-shrink: 1; }
+.ph-name { font-size: 21px; color: rgb(31, 42, 68); }
+.ph-status { font-size: 16px; color: rgb(100, 106, 124); margin: 0; }
+.ph-st-free { color: rgb(36, 120, 74); }
+.ph-st-busy { color: rgb(184, 104, 20); }
+.ph-st-off { color: rgb(140, 144, 158); }
+.ph-call { min-width: 96px; margin: 0 0 0 10px; }
+.ph-missed-row { flex-direction: row; align-items: center; margin-bottom: 3px; }
+.ph-missed-text { color: rgb(150, 50, 42); font-size: 17px; }
+.ph-footer { font-size: 15px; color: rgb(107, 111, 128); margin-top: 10px; -unity-text-align: middle-center; }
+.ph-face .pl-tag { background-color: rgba(31, 42, 68, 0.75); margin-left: 6px; }
+
+/* ---------------------------------------------------------------- cork board (rendered into the board texture, 1024x768) */
+.cb-root { -unity-background-scale-mode: stretch-to-fill; }
+.cb-note { padding: 30px 14px 8px 16px; overflow: hidden; }
+.cb-head { flex-direction: row; align-items: flex-end; }
+.cb-name { font-size: 44px; color: rgb(31, 42, 68); margin: 0; padding: 0; -unity-text-align: lower-left; }
+.cb-me { font-size: 24px; color: rgb(190, 50, 42); margin-left: 8px; margin-bottom: 6px; }
+.cb-marker { height: 8px; width: 62%; border-radius: 4px; margin-top: -4px; margin-bottom: 2px; opacity: 0.9; }
+.cb-blame-row { flex-direction: row; align-items: flex-end; margin-top: -2px; }
+.cb-blame-label { font-size: 28px; color: rgb(70, 78, 100); margin-right: 8px; margin-bottom: 10px; }
+.cb-blame { font-size: 60px; color: rgb(70, 78, 100); margin: 0; padding: 0; }
+.cb-blame-on { color: rgb(196, 48, 40); }
+.cb-tags { flex-direction: row; flex-wrap: wrap; }
+.cb-stamp { font-size: 25px; border-width: 3px; padding: 0 7px; margin: 0 6px 2px 0; rotate: -4deg; border-radius: 4px; }
+.cb-stamp-cand { color: rgb(214, 110, 20); border-color: rgb(214, 110, 20); }
+.cb-stamp-sealed { color: rgb(31, 42, 68); border-color: rgb(31, 42, 68); rotate: 3deg; }
+.cb-status { font-size: 25px; margin: 0; padding: 0; white-space: normal; }
+.cb-status-phone { color: rgb(30, 130, 122); }
+.cb-status-done { color: rgb(36, 120, 74); }
+.cb-status-wait { color: rgb(130, 120, 100); }
+.cb-status-off { color: rgb(140, 144, 158); }
+.cb-fired { position: absolute; left: 14px; top: 64px; font-size: 64px; color: rgba(210, 56, 47, 0.92); border-width: 5px; border-color: rgba(210, 56, 47, 0.92);
+    border-radius: 8px; padding: 0 14px; }
+.cb-center { align-items: center; justify-content: center; padding: 40px 12px 8px 12px; }
+.cb-title { font-size: 46px; color: rgb(31, 42, 68); letter-spacing: 1px; white-space: nowrap; }
+.cb-sub { font-size: 25px; color: rgb(46, 56, 82); white-space: normal; -unity-text-align: middle-center; }
+.cb-legend { font-size: 24px; color: rgb(70, 78, 100); white-space: normal; -unity-text-align: middle-center; margin-top: 8px; }

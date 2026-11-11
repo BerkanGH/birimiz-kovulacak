@@ -611,5 +611,17 @@
   "settings.tab.privacy": "Gizlilik",
   "settings.music_volume": "Müzik",
   "settings.music_mute": "Müziği kapat",
-  "settings.fullscreen_note": "Tam ekran tercihin bir sonraki açılışta da hatırlanır."
+  "settings.fullscreen_note": "Tam ekran tercihin bir sonraki açılışta da hatırlanır.",
+  "pause.rules": "Kurallar",
+  "ctl.v5.walk": "yürü",
+  "ctl.v5.use": "baktığını kullan",
+  "ctl.v5.computer": "bilgisayar",
+  "ctl.v5.phone": "telefon",
+  "ctl.v5.record": "görüşmeyi kaydet",
+  "ctl.v5.answer": "cevapla / reddet",
+  "ctl.v5.talk": "bas-konuş",
+  "ctl.v5.menu": "geri / menü",
+  "input.computer": "Bilgisayar",
+  "input.record": "Görüşmeyi kaydet (kasetçalar)",
+  "input.use": "Baktığını kullan"
 }

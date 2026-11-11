@@ -8,6 +8,8 @@ namespace BirimizKovulacak.Game
     /// UI Toolkit root. All screens are built in code (UiKit + Game.uss) so the UI is reproducible from source.
     /// Owns screen visibility, Esc routing and the cursor policy: menu / lobby screens keep the cursor free; during a
     /// week the cursor is locked only while the player looks around the room (no computer, phone or overlay open).
+    /// v5: in the office the <see cref="OfficeUi"/> layer is shown (HUD strip, desk objects), in the meeting room the
+    /// <see cref="PlayUi"/> screen; which one follows <see cref="LineWorldDriver.ShownPlace"/> (switched under a fade).
     /// </summary>
     [RequireComponent(typeof(UIDocument))]
     public sealed class UIRoot : MonoBehaviour
@@ -34,6 +36,7 @@ namespace BirimizKovulacak.Game
         IntroScreen _intro;
         MomentMarker _moment;
         PlayUi _play;
+        OfficeUi _office;
         bool _built, _rebuildPending;
         readonly System.Collections.Generic.List<VisualElement> _screenElements = new System.Collections.Generic.List<VisualElement>();
 
@@ -45,6 +48,9 @@ namespace BirimizKovulacak.Game
             I = this;
             UiInput.Initialize();
         }
+
+        /// <summary>Pause menu, settings, how-to, a modal or the intro is open (office hotkeys and walking pause).</summary>
+        public bool OverlayOpen { get; private set; }
 
         /// <summary>True while a text field has keyboard focus (suppresses push-to-talk / hotkeys).</summary>
         public bool TextInputFocused
@@ -105,6 +111,7 @@ namespace BirimizKovulacak.Game
             _lobby = new LobbyScreen(_root);
             _menu = new MainMenuScreen(_root);
             _play = new PlayUi(_root);
+            _office = new OfficeUi(_root);
             _pause = new PauseMenu(_root);
             _howTo = new HowToPlayScreen(_root);
             _settings = new SettingsScreen(_root);
@@ -113,6 +120,7 @@ namespace BirimizKovulacak.Game
             _intro = new IntroScreen(_root);
             _consent = new ConsentScreen(_root);
             _moment = new MomentMarker(_root);
+            ScreenFade.Attach(_root); // above everything
             for (int i = before; i < _root.childCount; i++) _screenElements.Add(_root[i]);
             _built = true;
         }
@@ -121,12 +129,15 @@ namespace BirimizKovulacak.Game
         {
             if (_rebuildPending) { _rebuildPending = false; Rebuild(); }
             if (!_built) return;
+            ScreenFade.Tick(Time.unscaledDeltaTime);
             var conn = ConnectionManager.I;
             var lineView = LineClient.I != null ? LineClient.I.View : null;
             if (lineView != null) { UpdateWeek(lineView); return; }
 
             // ---- no week running: main menu or lobby
             _play.SetVisible(false);
+            _office.SetVisible(false);
+            RoomsPresenter.AllowWalk = false;
             bool online = conn != null && (conn.Current == ConnectionManager.State.Hosting || conn.Current == ConnectionManager.State.Connected || conn.Current == ConnectionManager.State.Reconnecting || conn.Current == ConnectionManager.State.Connecting);
             online |= LineClient.I != null && LineClient.I.Lobby != null; // lobby (also the UI mock)
 
@@ -150,39 +161,46 @@ namespace BirimizKovulacak.Game
             _settings.Tick(); _howTo.Tick(); _confirm.Tick(); _status.Tick(); _intro.Tick(); _moment.Tick();
 
             bool modal = !online || _lobby.Visible || overlay;
+            OverlayOpen = overlay;
             BlocksGameplay = modal;
             UnityEngine.Cursor.lockState = CursorLockMode.None;
             UnityEngine.Cursor.visible = true;
             PointerOverUI = modal;
         }
 
-        /// <summary>Match running: the play screen over the first-person rooms.</summary>
+        /// <summary>Match running: the office layer or the meeting screen over the first-person rooms.</summary>
         void UpdateWeek(LineView v)
         {
+            // v5: the office layer while the player is in their own office (the meeting screen elsewhere / without rooms)
+            bool office = Rooms.Presenter != null && LineWorldDriver.ShownPlace == LineWorldDriver.Place.Office;
             if (GameInput.Pause != null && GameInput.Pause.WasPressedThisFrame())
             {
                 if (Modal.CloseTop()) { }
                 else if (_intro.Visible) _intro.Skip();
                 else if (_settings.Visible) _settings.Hide();
                 else if (_howTo.Visible) _howTo.Hide();
+                else if (!_pause.Visible && office && _office.Back()) { } // Esc first puts down what you hold
                 else _pause.Toggle();
             }
             bool overlay = _pause.Visible || _settings.Visible || _howTo.Visible || Modal.AnyOpen || _intro.Visible;
+            OverlayOpen = overlay;
             _menu.SetVisible(false); _lobby.SetVisible(false);
-            // v5 Phase 2a: one minimal play screen for every phase (the 3D room shows through it).
-            _play.SetVisible(true);
+            _play.SetVisible(!office);
+            _office.SetVisible(office);
 
             _play.Tick();
+            _office.Tick();
             _pause.Tick(); _settings.Tick(); _howTo.Tick(); _confirm.Tick(); _status.Tick(); _intro.Tick(); _moment.Tick();
 
             var rooms = Rooms.Presenter;
-            bool lookMode = rooms != null && (rooms.Mode == PovMode.Office || rooms.Mode == PovMode.Meeting);
-            bool wantsCursor = overlay || _play.WantsCursor || !lookMode;
+            bool lookMode = rooms != null && (rooms.Mode == PovMode.Office || rooms.Mode == PovMode.Meeting || rooms.Mode == PovMode.Board);
+            bool wantsCursor = overlay || (office ? _office.WantsCursor : _play.WantsCursor) || !lookMode;
             BlocksGameplay = wantsCursor;
             bool wantLock = !wantsCursor && Application.isFocused && !LaunchArgs.Current.Bot && !LineMockDriver.Active;
             UnityEngine.Cursor.lockState = wantLock ? CursorLockMode.Locked : CursorLockMode.None;
             UnityEngine.Cursor.visible = !wantLock;
             PointerOverUI = wantsCursor;
+            RoomsPresenter.AllowWalk = office && !overlay && !TextInputFocused;
         }
     }
 }

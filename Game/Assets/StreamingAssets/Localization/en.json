@@ -216,5 +216,17 @@
   "settings.tab.privacy": "Privacy",
   "settings.music_volume": "Music",
   "settings.music_mute": "Mute music",
-  "settings.fullscreen_note": "Your fullscreen choice is remembered for the next launch."
+  "settings.fullscreen_note": "Your fullscreen choice is remembered for the next launch.",
+  "pause.rules": "Rules",
+  "ctl.v5.walk": "walk",
+  "ctl.v5.use": "use what you look at",
+  "ctl.v5.computer": "computer",
+  "ctl.v5.phone": "phone",
+  "ctl.v5.record": "record the call",
+  "ctl.v5.answer": "answer / decline",
+  "ctl.v5.talk": "push-to-talk",
+  "ctl.v5.menu": "back / menu",
+  "input.computer": "Computer",
+  "input.record": "Record the call (recorder)",
+  "input.use": "Use what you look at"
 }

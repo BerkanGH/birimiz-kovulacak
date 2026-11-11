@@ -1,11 +1,11 @@
-"""Localisation check for the v5 play UI (UI/Play: PlayUi, PlayText, TapeDeck).
+"""Localisation check for the v5 play UI (UI/Play: PlayUi, PlayText, PlayBlocks, TapeDeck; UI/Office: the office layer).
 
     python -I Tools/scripts/loc_check.py            # check, exit code 1 on problems
 
 Checks (Game/Assets/StreamingAssets/Localization):
   * tr.v5.json / en.v5.json are JSON objects of strings with identical key sets and no empty values;
   * every {0}.. placeholder of a key appears in both languages;
-  * every key literal used by UI/Play (PlayText.T/F prefix "v5.", Loc.T/F literals) resolves in both languages
+  * every key literal used by UI/Play and UI/Office (PlayText.T/F prefix "v5.", Loc.T/F literals) resolves in both languages
     (merged like Loc.Load: <lang>.json + every <lang>.<area>.json);
   * enum-derived families exist for every enum value: phase./hint. (LinePhase), fail. (LineFailure), verb. (LineVerb),
     decision./fire.decision. (FiringDecision), blame. (BlameReason), phone.log_missed. (CallEndReason),
@@ -19,10 +19,14 @@ import sys
 
 ROOT = os.path.abspath(os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", ".."))
 LOC = os.path.join(ROOT, "Game", "Assets", "StreamingAssets", "Localization")
-PLAY = os.path.join(ROOT, "Game", "Assets", "Game", "Scripts", "UI", "Play")
+PLAY = [os.path.join(ROOT, "Game", "Assets", "Game", "Scripts", "UI", d) for d in ("Play", "Office")]
 ENUMS = os.path.join(ROOT, "Game", "Assets", "Game", "Core", "Line", "Contracts", "LineEnums.cs")
 EMPTY_OK = {"v5.hint.None"}
 TASK_IDS = ["client_bonus", "petty_cash", "weekend_shift"]
+# office keys built from an enum / id: office.use.<DeskTarget>, office.app.<app id>, office.task_note.<task id>
+OFFICE_FAMILIES = {"office.use.": ["Monitor", "Phone", "Board", "Chair", "Mug", "Drawer", "Nameplate"],
+                   "office.app.": ["task", "transfer", "messages", "calls", "rules"],
+                   "office.task_note.": ["petty_cash", "weekend_shift", "whistle"]}
 FAMILIES = {"phase.": "LinePhase", "hint.": "LinePhase", "fail.": "LineFailure", "verb.": "LineVerb",
             "decision.": "FiringDecision", "fire.decision.": "FiringDecision", "blame.": "BlameReason",
             "phone.log_missed.": "CallEndReason"}
@@ -65,7 +69,7 @@ def main():
             problems.append("placeholders differ: " + k)
     mt, me = merged("tr"), merged("en")
     used = set()
-    for f in glob.glob(os.path.join(PLAY, "*.cs")):
+    for f in [g for d in PLAY for g in glob.glob(os.path.join(d, "*.cs"))]:
         s = open(f, encoding="utf-8").read()
         for m in re.finditer(r'(Loc\.)?\b(?:T|F|TOr|Has)\(\s*"([a-z][a-z0-9_.]*)"', s):
             key = m.group(2)
@@ -89,6 +93,11 @@ def main():
         k = "v5.vote.todo." + ph
         if k not in tr or k not in en:
             problems.append("missing vote key: " + k)
+    for prefix, ids in OFFICE_FAMILIES.items():
+        for i in ids:
+            k = "v5." + prefix + i
+            if k not in tr or k not in en:
+                problems.append("missing office key: " + k)
     for t in TASK_IDS:
         for suffix in ("name", "choice.0", "choice.1"):
             k = "v5.task.%s.%s" % (t, suffix)

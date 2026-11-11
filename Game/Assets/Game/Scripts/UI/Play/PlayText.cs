@@ -29,6 +29,19 @@ namespace BirimizKovulacak.Game
         }
 
         public static string Phase(LinePhase p) { return T("phase." + p); }
+
+        /// <summary>Header title: "Görev 1/3 · Müşteri Bonusu · Seçim", "1. toplantı · …", "… · Kovma 1/2".</summary>
+        public static string PhaseTitle(LineView v)
+        {
+            string title = Phase(v.Phase);
+            if (v.Task != null && (v.Phase == LinePhase.TaskPlay || v.Phase == LinePhase.TaskReveal || v.Phase == LinePhase.Break))
+                title = F("header.task", v.Task.Number + 1, LineTasks.Count, Task(v.Task.Kind)) + " · " + title;
+            else if (v.Meeting != null && v.Meeting.Index < 2 && v.Phase >= LinePhase.MeetingDossier && v.Phase <= LinePhase.MeetingVerdict)
+                title = F("header.meeting", v.Meeting.Index + 1) + " · " + title;
+            if (v.Phase == LinePhase.FinalVote && v.Final != null)
+                title += " · " + F(v.Final.Revote ? "header.final_revote" : "header.final_round", v.Final.Round + 1, System.Math.Max(1, v.Final.FiringsTotal));
+            return title;
+        }
         public static string Hint(LinePhase p) { return T("hint." + p); }
         public static string Task(TaskKind k) { return T("task." + LineTasks.Id(k) + ".name"); }
         public static string Choice(TaskKind k, int choice) { return T("task." + LineTasks.Id(k) + ".choice." + choice); }

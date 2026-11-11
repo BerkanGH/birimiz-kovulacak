@@ -637,7 +637,7 @@ namespace BirimizKovulacak.Game
             Btn(Loc.T("pause.resume"), Hide, "btn-primary", "menu-btn").AddTo(_card);
             var row = Box("menu-row").AddTo(_card);
             Btn(Loc.T("menu.settings"), () => SettingsScreen.Open(), "btn-ghost", "menu-small").AddTo(row);
-            Btn(Loc.T("menu.how_to"), HowToPlayScreen.Open, "btn-ghost", "menu-small").AddTo(row);
+            Btn(Loc.T("pause.rules"), HowToPlayScreen.Open, "btn-ghost", "menu-small").AddTo(row);
             ControlsStrip(_card);
             _returnLobby = Btn(Loc.T("pause.return_lobby"), () => ConfirmDialog.Show(Loc.T("pause.return_lobby"), Loc.T("pause.return_lobby_confirm"), Loc.T("pause.return_lobby"),
                 () => { HostLineController.Current?.ReturnToLobby(); Hide(); }, true), "btn-ghost", "menu-btn").AddTo(_card);
@@ -646,15 +646,19 @@ namespace BirimizKovulacak.Game
             Btn(Loc.T("menu.quit"), () => ConfirmDialog.Show(Loc.T("menu.quit"), Loc.T("menu.quit_confirm"), Loc.T("menu.quit"), Application.Quit, true), "btn-ghost", "menu-small").AddTo(bottom);
         }
 
-        /// <summary>v3 controls: mouse look, click, Tab phone, V talk, Esc.</summary>
+        /// <summary>v5 office controls: look, walk, use, computer, phone, record, answer / decline, talk, Esc.</summary>
         public static void ControlsStrip(VisualElement parent)
         {
             var s = Box("controls-strip", "controls-v3").AddTo(parent);
             Ctl(s, Loc.T("ctl.mouse_key"), "ctl.v3.look");
-            Ctl(s, Loc.T("ctl.click_key"), "ctl.v3.click");
-            Ctl(s, GameInput.KeyLabel(GameInput.Phone), "ctl.v3.phone");
-            Ctl(s, GameInput.KeyLabel(GameInput.PushToTalk), "ctl.v3.talk");
-            Ctl(s, "Esc", "ctl.v3.menu");
+            Ctl(s, "WASD", "ctl.v5.walk");
+            Ctl(s, GameInput.KeyLabel(GameInput.Interact) + " / " + Loc.T("ctl.click_key"), "ctl.v5.use");
+            Ctl(s, GameInput.KeyLabel(GameInput.Computer), "ctl.v5.computer");
+            Ctl(s, GameInput.KeyLabel(GameInput.Phone), "ctl.v5.phone");
+            Ctl(s, GameInput.KeyLabel(GameInput.Record), "ctl.v5.record");
+            Ctl(s, GameInput.KeyLabel(GameInput.AnswerCall) + " / " + GameInput.KeyLabel(GameInput.HangUp), "ctl.v5.answer");
+            Ctl(s, GameInput.KeyLabel(GameInput.PushToTalk), "ctl.v5.talk");
+            Ctl(s, "Esc", "ctl.v5.menu");
         }
 
         static void Ctl(VisualElement parent, string key, string labelKey)

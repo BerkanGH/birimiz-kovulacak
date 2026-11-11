@@ -4,7 +4,7 @@ using System.Text;
 using BirimizKovulacak.Core;
 using UnityEngine;
 using UnityEngine.UIElements;
-using static BirimizKovulacak.Game.UiKit;
+using static BirimizKovulacak.Game.PlayKit;
 
 namespace BirimizKovulacak.Game
 {
@@ -24,8 +24,9 @@ namespace BirimizKovulacak.Game
     public sealed class PlayUi : UiKit.Screen
     {
         readonly Label _phase, _timer, _prim, _me, _voice, _toast;
-        readonly Section _players, _focus, _content, _phone, _transfer, _events, _messages, _composeTargets;
-        readonly Section[] _sections;
+        readonly PlaySection _players, _focus, _content, _phone, _transfer, _events, _messages, _composeTargets;
+        readonly PlaySection[] _sections;
+        readonly PlayState _st = new PlayState();
         readonly VisualElement _tapeHost;
         readonly TapeDeck _tape;
         readonly TextField _msgField;
@@ -33,9 +34,6 @@ namespace BirimizKovulacak.Game
         readonly List<string> _feed = new List<string>();
         bool _dirty = true, _bound;
         float _toastUntil, _nextLive;
-        int _transferTarget = LineIds.None, _transferAmount = 1;
-        /// <summary>-2 = nobody chosen, -1 = meeting chat (everyone), else a player id.</summary>
-        int _msgTarget = -2;
         int _week = int.MinValue;
         bool _ringing;
         string _resultsTab = TabBallots;
@@ -43,7 +41,6 @@ namespace BirimizKovulacak.Game
         const string TabFirings = "firings", TabBallots = "ballots", TabTransfers = "transfers", TabChoices = "choices", TabIncidents = "incidents";
         /// <summary>UI mocks (Dev/LineMock.cs): switch the results details to this tab ("ballots", "firings", "choices", "transfers", "incidents").</summary>
         public static string MockResultsTab;
-        const int Info = 0, Todo = 1, Done = 2;
 
         public PlayUi(VisualElement parent) : base(parent, "pl-screen")
         {
@@ -64,20 +61,20 @@ namespace BirimizKovulacak.Game
             var center = Column(body, "pl-col-center");
             var right = Column(body, "pl-col-right");
 
-            _players = new Section(left);
-            _focus = new Section(center);
+            _players = new PlaySection(left);
+            _focus = new PlaySection(center);
             _tapeHost = Box("pl-tape").AddTo(center);
             _tape = new TapeDeck(_tapeHost);
             _tapeHost.Show(false);
-            _content = new Section(center);
-            _phone = new Section(right);
-            _transfer = new Section(right);
-            _events = new Section(right);
-            _messages = new Section(right);
+            _content = new PlaySection(center);
+            _phone = new PlaySection(right);
+            _transfer = new PlaySection(right);
+            _events = new PlaySection(right);
+            _messages = new PlaySection(right);
 
             var compose = Box("pl-section", "pl-compose").AddTo(right);
             _composeInfo = Text("", "pl-text", "pl-dim").AddTo(compose);
-            _composeTargets = new Section(compose);
+            _composeTargets = new PlaySection(compose);
             var row = Box("pl-row").AddTo(compose);
             _msgField = new TextField { maxLength = 200 }.Cls("pl-field", "grow").AddTo(row);
             _msgField.RegisterCallback<KeyDownEvent>(e =>
@@ -86,6 +83,15 @@ namespace BirimizKovulacak.Game
             }, TrickleDown.TrickleDown);
             Btn(T("msg.send"), SendMessage, "pl-primary").AddTo(row);
             _sections = new[] { _players, _focus, _content, _phone, _transfer, _events, _messages, _composeTargets };
+            _st.Dirty = () => _dirty = true;
+            _st.Toast = ShowToast;
+            _st.FocusMessageField = () => _msgField.Focus();
+        }
+
+        void ShowToast(string text)
+        {
+            _toast.SetText(text);
+            _toastUntil = Time.unscaledTime + 4f;
         }
 
         static VisualElement Column(VisualElement body, string cls)
@@ -98,10 +104,6 @@ namespace BirimizKovulacak.Game
 
         /// <summary>The play screen always wants the cursor (no mouse-look while it is up).</summary>
         public bool WantsCursor => true;
-
-        static string T(string key) { return PlayText.T(key); }
-        static string F(string key, params object[] a) { return PlayText.F(key, a); }
-        static string Name(int id) { return PlayText.Name(id); }
 
         protected override void OnShow() { _dirty = true; }
 
@@ -173,7 +175,7 @@ namespace BirimizKovulacak.Game
             {
                 _week = v.WeekId;
                 _feed.Clear();
-                _transferTarget = LineIds.None; _transferAmount = 1; _msgTarget = -2; _resultsTab = TabBallots;
+                _st.ResetWeek(); _resultsTab = TabBallots;
                 _dirty = true;
             }
             if (MockResultsTab != null) { _resultsTab = MockResultsTab; MockResultsTab = null; _dirty = true; }
@@ -189,10 +191,10 @@ namespace BirimizKovulacak.Game
                 _focus.Update(p => BuildFocus(p, lc, v, now));
                 _content.Update(p => BuildContent(p, lc, v, now));
                 _phone.Update(p => BuildPhone(p, lc, v, now));
-                _transfer.Update(p => BuildTransfer(p, lc, v));
+                _transfer.Update(p => PlayBlocks.BuildTransfer(p, lc, v, _st));
                 _events.Update(BuildEvents);
-                _messages.Update(p => BuildMessages(p, lc, v));
-                _composeTargets.Update(p => BuildComposeTargets(p, lc, v));
+                _messages.Update(p => PlayBlocks.BuildMessages(p, lc, v));
+                _composeTargets.Update(p => PlayBlocks.BuildComposeTargets(p, lc, v, _st, _composeInfo));
             }
             // live labels: countdowns and status marks, refreshed in place (≤ 2 Hz), never a section rebuild
             if (Time.unscaledTime >= _nextLive)
@@ -204,14 +206,7 @@ namespace BirimizKovulacak.Game
 
         void UpdateHeader(LineClient lc, LineView v, double now)
         {
-            string title = PlayText.Phase(v.Phase);
-            if (v.Task != null && (v.Phase == LinePhase.TaskPlay || v.Phase == LinePhase.TaskReveal || v.Phase == LinePhase.Break))
-                title = F("header.task", v.Task.Number + 1, LineTasks.Count, PlayText.Task(v.Task.Kind)) + " · " + title;
-            else if (v.Meeting != null && v.Meeting.Index < 2 && v.Phase >= LinePhase.MeetingDossier && v.Phase <= LinePhase.MeetingVerdict)
-                title = F("header.meeting", v.Meeting.Index + 1) + " · " + title;
-            if (v.Phase == LinePhase.FinalVote && v.Final != null)
-                title += " · " + F(v.Final.Revote ? "header.final_revote" : "header.final_round", v.Final.Round + 1, Math.Max(1, v.Final.FiringsTotal));
-            _phase.SetText(title);
+            _phase.SetText(PlayText.PhaseTitle(v));
             double left = Math.Max(0, v.PhaseEndTime - now);
             _timer.SetText(v.Phase == LinePhase.Abandoned ? "" : UiKit.Clock(left));
             var m = v.Mine;
@@ -268,74 +263,16 @@ namespace BirimizKovulacak.Game
 
         // ================================================================ actions
 
-        static void Send(LineVerb verb, int target = LineIds.None, int a = -1, string text = "")
-        {
-            var lc = LineClient.I;
-            if (lc != null) lc.Send(verb, target, a, -1, -1, text);
-        }
-
         void SendMessage()
         {
             var lc = LineClient.I;
             var v = lc != null ? lc.View : null;
-            string text = (_msgField.value ?? "").Trim();
-            if (v == null || text.Length == 0) return;
-            int target = _msgTarget == -2 && v.Features.MeetingChatOpen ? -1 : _msgTarget;
-            if (target == -1)
-            {
-                if (!v.Features.MeetingChatOpen) { _toast.SetText(T("msg.chat_closed")); _toastUntil = Time.unscaledTime + 4f; return; }
-                Send(LineVerb.SendMeetingChat, text: text);
-            }
-            else if (target >= 0) Send(LineVerb.SendText, target, text: text);
-            else { _toast.SetText(T("msg.pick_target")); _toastUntil = Time.unscaledTime + 4f; return; }
+            if (!PlayBlocks.SendMessage(v, _st, _msgField.value)) return;
             _msgField.SetValueWithoutNotify("");
             _msgField.Focus();
         }
 
-        /// <summary>I am a candidate whose desk is sealed (no outgoing transfers), or fired (nothing left to send).</summary>
-        static bool CannotSend(LineClient lc)
-        {
-            var me = lc.Player(lc.MySlot);
-            return me != null && (me.Candidate || me.Fired);
-        }
-
         // ================================================================ builders
-
-        static Button Btn(string text, Action onClick, params string[] cls)
-        {
-            var b = new Button(() => { Sfx.Play("click"); onClick?.Invoke(); }) { text = text };
-            b.enableRichText = false;
-            b.AddToClassList("pl-btn");
-            foreach (var c in cls) if (!string.IsNullOrEmpty(c)) b.AddToClassList(c);
-            return b;
-        }
-
-        static Label Head(VisualElement p, string text) { return Title(text, "pl-title").AddTo(p); }
-        static Label Sub(VisualElement p, string text) { return Bold(text, "pl-sub").AddTo(p); }
-        static Label Line(VisualElement p, string text, params string[] cls) { return Text(text, "pl-text").Cls(cls).AddTo(p); }
-        static Label Big(VisualElement p, string text, params string[] cls) { return Bold(text, "pl-focus-text").Cls(cls).AddTo(p); }
-        static VisualElement Row(VisualElement p) { return Box("pl-row").AddTo(p); }
-        static VisualElement Wrap(VisualElement p) { return Box("pl-wrap").AddTo(p); }
-
-        static Label Tag(VisualElement p, string text, string cls = null) { return Bold(text, "pl-tag").Cls(cls).AddTo(p); }
-
-        /// <summary>
-        /// A label whose text (and classes) <paramref name="apply"/> refreshes at 2 Hz without rebuilding its section.
-        /// Its text is not part of the section's content diff: put everything the closure depends on into
-        /// <paramref name="key"/>, or let the closure read the current view (<see cref="LineClient.View"/>).
-        /// </summary>
-        static Label Live(VisualElement p, string key, double now, Action<Label, double> apply, params string[] cls)
-        {
-            var l = Text("", "pl-text").Cls(cls).AddTo(p);
-            l.userData = new LiveLabel { Key = key, Apply = apply };
-            apply(l, now);
-            return l;
-        }
-
-        static Label Live(VisualElement p, string key, double now, Func<double, string> text, params string[] cls)
-        {
-            return Live(p, key, now, (l, t) => l.SetText(text(t)), cls);
-        }
 
         // ---- players (left)
 
@@ -392,15 +329,9 @@ namespace BirimizKovulacak.Game
                 if (f.WhistleOpen && m.WitnessOf.Contains(id)) Btn(T("act.whistle"), () => Send(LineVerb.Whistle, id), "pl-danger").AddTo(acts);
                 if (f.InvestigationOpen && !m.InvestigationUsed && m.InvestigationTargets.Contains(id))
                     Btn(F("act.investigate", lc.Config.InvestigationCost), () => Send(LineVerb.Investigate, id), "pl-danger").AddTo(acts);
-                if (canSend) Btn(T("act.transfer"), () => { _transferTarget = id; _dirty = true; }, _transferTarget == id ? "pl-on" : null).AddTo(acts);
-                if (f.TextsOpen) Btn(T("act.text"), () => { _msgTarget = id; _dirty = true; _msgField.Focus(); }, _msgTarget == id ? "pl-on" : null).AddTo(acts);
+                if (canSend) Btn(T("act.transfer"), () => { _st.TransferTarget = id; _dirty = true; }, _st.TransferTarget == id ? "pl-on" : null).AddTo(acts);
+                if (f.TextsOpen) Btn(T("act.text"), () => { _st.MsgTarget = id; _dirty = true; _msgField.Focus(); }, _st.MsgTarget == id ? "pl-on" : null).AddTo(acts);
             }
-        }
-
-        static bool InCall(LineView v, int id)
-        {
-            foreach (var c in v.LineBoard) if (c.Caller == id || c.Callee == id) return true;
-            return false;
         }
 
         // ---- focus card (top of the centre column): what to do now, with this phase's main actions
@@ -412,7 +343,7 @@ namespace BirimizKovulacak.Game
             var head = Row(card);
             string kicker = v.Phase == LinePhase.Results ? "focus.kicker_results" : v.Phase == LinePhase.FinalVerdict ? "focus.kicker_verdict" : "focus.kicker";
             Bold(T(kicker), "pl-focus-kicker", "grow").AddTo(head);
-            int page = HowToPage(v);
+            int page = PlayBlocks.HowToPage(v);
             if (page >= 0) Btn(T("focus.rules"), () => HowToPlayScreen.OpenAt(page), "pl-small").AddTo(head);
             int state = Info;
             switch (v.Phase)
@@ -421,20 +352,16 @@ namespace BirimizKovulacak.Game
                     Big(card, T("hint.Intro"));
                     Line(card, F("focus.intro_goal", lc.Config.StartPrim));
                     break;
-                case LinePhase.TaskPlay: state = FocusTask(card, lc, v); break;
+                case LinePhase.TaskPlay: state = PlayBlocks.FocusTask(card, lc, v); break;
                 case LinePhase.TaskReveal:
-                case LinePhase.Break: state = FocusReveal(card, lc, v); break;
+                case LinePhase.Break: state = PlayBlocks.FocusReveal(card, lc, v); break;
                 case LinePhase.MeetingDossier:
                 case LinePhase.MeetingDiscussion: FocusMeeting(card, lc, v); break;
                 case LinePhase.MeetingVote:
                 case LinePhase.CrisisVote:
                 case LinePhase.FinalVote: state = FocusVote(card, lc, v, now); break;
                 case LinePhase.MeetingVerdict: FocusMeetingVerdict(card, v); break;
-                case LinePhase.CrisisCalls:
-                    Big(card, F("focus.crisis_calls", lc.Config.CrisisBlame));
-                    Line(card, F("crisis.candidates_rule", lc.Config.CandidatesFor(v.Players.Count)));
-                    Line(card, T("focus.crisis_how"), "pl-dim");
-                    break;
+                case LinePhase.CrisisCalls: PlayBlocks.CrisisCalls(card, lc, v, "focus.crisis_how"); break;
                 case LinePhase.CrisisVerdict: FocusCrisisVerdict(card, lc, v); break;
                 case LinePhase.FinalDiscussion: FocusFinalDiscussion(card, lc, v); break;
                 case LinePhase.FinalDefense: state = FocusDefense(card, lc, v, now); break;
@@ -447,103 +374,6 @@ namespace BirimizKovulacak.Game
             }
             card.EnableInClassList("pl-focus-todo", state == Todo);
             card.EnableInClassList("pl-focus-done", state == Done);
-        }
-
-        /// <summary>The how-to page that explains this phase (-1 = none).</summary>
-        static int HowToPage(LineView v)
-        {
-            switch (v.Phase)
-            {
-                case LinePhase.Intro: return HowToPlayScreen.PageGoal;
-                case LinePhase.TaskPlay:
-                case LinePhase.TaskReveal:
-                case LinePhase.Break:
-                    if (v.Task == null) return HowToPlayScreen.PageFlow;
-                    return v.Task.Kind == TaskKind.ClientBonus ? HowToPlayScreen.PageBonus : v.Task.Kind == TaskKind.PettyCash ? HowToPlayScreen.PageCash : HowToPlayScreen.PageShift;
-                case LinePhase.MeetingDossier:
-                case LinePhase.MeetingDiscussion: return v.Day == 0 ? HowToPlayScreen.PageInvestigation : HowToPlayScreen.PageBlame;
-                case LinePhase.MeetingVote:
-                case LinePhase.MeetingVerdict: return HowToPlayScreen.PageBlame;
-                case LinePhase.CrisisCalls:
-                case LinePhase.CrisisVote:
-                case LinePhase.CrisisVerdict: return HowToPlayScreen.PageCrisis;
-                case LinePhase.FinalDiscussion:
-                case LinePhase.FinalDefense:
-                case LinePhase.FinalVote:
-                case LinePhase.FinalVerdict: return HowToPlayScreen.PageFinal;
-                default: return -1;
-            }
-        }
-
-        int FocusTask(VisualElement card, LineClient lc, LineView v)
-        {
-            var t = v.Task;
-            if (t == null) { Big(card, T("hint.TaskPlay")); return Info; }
-            int me = lc.MySlot;
-            var c = lc.Config;
-            switch (t.Kind)
-            {
-                case TaskKind.ClientBonus: Big(card, T("focus.task.client_bonus")); break;
-                case TaskKind.PettyCash: Big(card, T("focus.task.petty_cash")); break;
-                case TaskKind.WeekendShift: Big(card, F("focus.task.weekend_shift", c.ShiftSkipPay, t.Needed >= 0 ? t.Needed : LineConfig.ShiftNeeded(v.Players.Count))); break;
-                default: Big(card, T("hint.TaskPlay")); break;
-            }
-            if (t.Kind == TaskKind.WeekendShift) Line(card, F("task.everyone", t.Needed >= 0 ? t.Needed : LineConfig.ShiftNeeded(v.Players.Count)));
-            else Line(card, F("task.group", PlayText.Names(t.Group.FindAll(id => id != me))));
-            var row = Wrap(card);
-            for (int choice = 0; choice <= 1; choice++)
-            {
-                int ch = choice;
-                bool on = t.Submitted && t.MyChoice == ch;
-                Btn(PlayText.Choice(t.Kind, ch), () => Send(LineVerb.SubmitTask, a: ch), "pl-choice", on ? "pl-on" : null).AddTo(row);
-            }
-            Line(card, t.Submitted ? F("task.submitted", PlayText.Choice(t.Kind, t.MyChoice)) : F("task.default", PlayText.Choice(t.Kind, 0)), t.Submitted ? "pl-good" : "pl-warn");
-            return t.Submitted ? Done : Todo;
-        }
-
-        int FocusReveal(VisualElement card, LineClient lc, LineView v)
-        {
-            var t = v.Task;
-            if (t == null) { Big(card, PlayText.Hint(v.Phase)); return Info; }
-            int me = lc.MySlot;
-            var m = v.Mine;
-            var c = lc.Config;
-            int state = Info;
-            bool witness = v.Phase == LinePhase.Break && v.Features.WhistleOpen && m.WitnessOf.Count > 0;
-            if (witness)
-            {
-                foreach (int thief in m.WitnessOf)
-                {
-                    int id = thief;
-                    Big(card, F("break.witness", Name(id), c.CashWhistleBlame, c.CashWhistleReward), "pl-bad");
-                    Btn(F("break.whistle_btn", Name(id)), () => Send(LineVerb.Whistle, id), "pl-danger", "pl-choice").AddTo(card);
-                }
-                Line(card, T("focus.witness_or"), "pl-dim");
-                state = Todo;
-            }
-            else if (v.Phase == LinePhase.Break && v.Features.WhistleOpen && SoleTaker(t, me)) Big(card, T("focus.thief"), "pl-warn");
-            else if (v.Phase == LinePhase.Break) Big(card, T(t.Number == 0 ? "break.next_task" : "break.meeting")); // breaks follow tasks 1 and 2 only
-            else Big(card, T("hint.TaskReveal"));
-            if (!t.Revealed) { Line(card, T("task.not_revealed"), "pl-dim"); return state; }
-            var row = Wrap(card);
-            foreach (var ch in t.Choices)
-            {
-                bool bad = ch.Choice == LineChoice.Take && t.Kind != TaskKind.WeekendShift;
-                Bold(Name(ch.Player) + ": " + PlayText.Choice(t.Kind, ch.Choice), "pl-chip", bad ? "pl-chip-bad" : null).AddTo(row);
-            }
-            if (t.MyPayout >= 0) Bold(F("task.my_payout", t.MyPayout), "pl-good", "pl-sub").AddTo(card);
-            return state;
-        }
-
-        /// <summary>Petty Cash: I am the only taker in my group (a witness may whistle on me in the break).</summary>
-        static bool SoleTaker(LineTaskView t, int me)
-        {
-            if (t.Kind != TaskKind.PettyCash || !t.Revealed) return false;
-            int takers = 0;
-            bool mine = false;
-            foreach (var ch in t.Choices)
-                if (ch.Choice == LineChoice.Take) { takers++; if (ch.Player == me) mine = true; }
-            return mine && takers == 1;
         }
 
         void FocusMeeting(VisualElement card, LineClient lc, LineView v)
@@ -781,40 +611,16 @@ namespace BirimizKovulacak.Game
         {
             switch (v.Phase)
             {
-                case LinePhase.Intro: BuildIntro(p, lc, v); return;
+                case LinePhase.Intro: PlayBlocks.BuildIntro(p, lc, v); return;
                 case LinePhase.TaskPlay:
                 case LinePhase.TaskReveal:
                 case LinePhase.Break:
-                    BuildTask(p, lc, v); return;
+                    PlayBlocks.BuildTask(p, lc, v); return;
                 case LinePhase.Results: BuildResultDetails(p, lc, v); return;
                 case LinePhase.Abandoned: return;
             }
             if (v.Final != null) BuildFinal(p, lc, v);
             if (v.Meeting != null && (LineClient.IsMeetingPhase(v.Phase) || v.Phase == LinePhase.CrisisCalls)) BuildMeeting(p, lc, v, now);
-        }
-
-        void BuildIntro(VisualElement p, LineClient lc, LineView v)
-        {
-            Head(p, T("intro.title"));
-            var c = lc.Config;
-            Line(p, F("intro.goal", c.StartPrim));
-            Line(p, T("intro.flow"));
-            Line(p, F("intro.final", c.CandidatesFor(v.Players.Count), c.FiringsFor(v.Players.Count)));
-            Line(p, T("intro.phone"));
-            if (v.Features.RecordingsEnabled) Line(p, F("intro.recorder", c.RecorderUses));
-            Line(p, F("intro.transfer", c.TransferMax));
-        }
-
-        void BuildTask(VisualElement p, LineClient lc, LineView v)
-        {
-            var t = v.Task;
-            if (t == null) return;
-            Head(p, F("task.title", t.Number + 1, PlayText.Task(t.Kind)));
-            Sub(p, T("task.rules_title"));
-            Line(p, PlayText.TaskRules(t, lc.Config, v.Players.Count));
-            if (!t.Revealed) return;
-            if (t.Takers >= 0) Line(p, F("task.public_takers", t.Takers));
-            if (t.Kind == TaskKind.WeekendShift) Line(p, F("task.public_roster", PlayText.Names(t.Roster), t.Roster.Count, t.Needed));
         }
 
         void BuildMeeting(VisualElement p, LineClient lc, LineView v, double now)
@@ -1044,73 +850,7 @@ namespace BirimizKovulacak.Game
                     Live(p, "board" + c.CallId + ":" + c.Status + ":" + start, now, t => head + " · " + UiKit.Clock(Math.Max(0, t - start)));
                 }
             }
-            if (m.CallLog.Count > 0)
-            {
-                Sub(p, T("phone.log"));
-                for (int i = m.CallLog.Count - 1, n = 0; i >= 0 && n < 6; i--, n++)
-                {
-                    var c = m.CallLog[i];
-                    string head = T(c.Outgoing ? "phone.log_out" : "phone.log_in") + " " + Name(c.Other) + " · ";
-                    if (c.Connected && c.End < 0)
-                    {
-                        double start = c.Start;
-                        Live(p, "log" + c.CallId + ":" + start, now, t => head + F("phone.log_active", UiKit.Clock(Math.Max(0, t - start))), "pl-dim");
-                    }
-                    else Line(p, head + (c.Connected ? UiKit.Clock(c.End - c.Start) : T("phone.log_missed." + c.EndReason)), "pl-dim");
-                }
-            }
-        }
-
-        static string KeyLabel(UnityEngine.InputSystem.InputAction a) { return a != null ? GameInput.KeyLabel(a) : "?"; }
-
-        void BuildTransfer(VisualElement p, LineClient lc, LineView v)
-        {
-            var f = v.Features;
-            var m = v.Mine;
-            int me = lc.MySlot;
-            if (!f.TransfersOpen && m.Transfers.Count == 0) return;
-            Head(p, T("transfer.title"));
-            var meP = lc.Player(me);
-            if (f.TransfersOpen)
-            {
-                if (meP != null && meP.Fired) Line(p, T("transfer.fired"), "pl-dim");
-                else if (meP != null && meP.Candidate)
-                {
-                    // sealed desk (docs/V5_ENGINE_SPEC.md §18): sending is disabled, receiving still works
-                    Line(p, T("transfer.sealed"), "pl-bad");
-                    Line(p, T("transfer.sealed_receive"), "pl-dim");
-                    Btn(T("transfer.sealed_btn"), null, "pl-primary").AddTo(p).SetEnabled(false);
-                }
-                else
-                {
-                    Line(p, F("transfer.rules", lc.Config.TransferMax), "pl-dim");
-                    if (v.Final != null && v.Final.Candidates.Count > 0) Line(p, T("transfer.candidates_note"), "pl-warn");
-                    var targets = Wrap(p);
-                    foreach (var pl in v.Players)
-                    {
-                        if (pl.Id == me) continue;
-                        int id = pl.Id;
-                        Btn(pl.Name, () => { _transferTarget = id; _dirty = true; }, _transferTarget == id ? "pl-on" : null).AddTo(targets);
-                    }
-                    int max = Math.Max(1, Math.Min(lc.Config.TransferMax, m.Prim));
-                    _transferAmount = Mathf.Clamp(_transferAmount, 1, max);
-                    var row = Row(p);
-                    Btn("−", () => { _transferAmount = Math.Max(1, _transferAmount - 1); _dirty = true; }).AddTo(row);
-                    Bold(F("transfer.amount", _transferAmount), "pl-amount").AddTo(row);
-                    Btn("+", () => { _transferAmount = Math.Min(Math.Max(1, Math.Min(lc.Config.TransferMax, LineClient.I.View.Mine.Prim)), _transferAmount + 1); _dirty = true; }).AddTo(row);
-                    var send = Btn(_transferTarget >= 0 ? F("transfer.send", _transferAmount, Name(_transferTarget)) : T("transfer.pick"), () =>
-                    {
-                        if (_transferTarget >= 0) Send(LineVerb.Transfer, _transferTarget, _transferAmount);
-                    }, "pl-primary").AddTo(p);
-                    send.SetEnabled(_transferTarget >= 0 && m.Prim > 0);
-                }
-            }
-            if (m.Transfers.Count > 0)
-            {
-                Sub(p, T("transfer.log"));
-                foreach (var t in m.Transfers)
-                    Line(p, t.From == me ? F("transfer.out", Name(t.To), t.Amount) : F("transfer.in", Name(t.From), t.Amount), t.From == me ? "pl-bad" : "pl-good");
-            }
+            PlayBlocks.BuildCallLog(p, v, now, 6);
         }
 
         void BuildEvents(VisualElement p)
@@ -1118,110 +858,6 @@ namespace BirimizKovulacak.Game
             if (_feed.Count == 0) return;
             Head(p, T("events.title"));
             for (int i = _feed.Count - 1; i >= 0; i--) Line(p, _feed[i], "pl-dim");
-        }
-
-        void BuildMessages(VisualElement p, LineClient lc, LineView v)
-        {
-            Head(p, T("msg.title"));
-            var msgs = lc.Messages;
-            if (msgs.Count == 0) Line(p, T("msg.empty"), "pl-dim");
-            int me = lc.MySlot;
-            for (int i = Math.Max(0, msgs.Count - 30); i < msgs.Count; i++)
-            {
-                var msg = msgs[i];
-                string who;
-                if (msg.Kind == MessageKind.MeetingChat) who = F("msg.chat_from", Name(msg.From));
-                else if (msg.Kind == MessageKind.System) who = T("msg.system");
-                else if (msg.From == me) who = F("msg.text_to", Name(msg.To));
-                else who = F("msg.text_from", Name(msg.From));
-                Line(p, who + " " + msg.Text, msg.Kind == MessageKind.MeetingChat ? null : "pl-private");
-            }
-        }
-
-        void BuildComposeTargets(VisualElement p, LineClient lc, LineView v)
-        {
-            var f = v.Features;
-            var m = v.Mine;
-            int me = lc.MySlot;
-            int target = _msgTarget == -2 && f.MeetingChatOpen ? -1 : _msgTarget;
-            _composeInfo.SetText(target == -1 ? F("msg.to_all", m.MeetingChatLeft) : target >= 0 ? F("msg.to", Name(target), m.TextsLeft) : T("msg.pick_target"));
-            var row = Wrap(p);
-            if (f.MeetingChatOpen) Btn(T("msg.all"), () => { _msgTarget = -1; _dirty = true; }, target == -1 ? "pl-on" : null).AddTo(row);
-            if (f.TextsOpen)
-                foreach (var pl in v.Players)
-                {
-                    if (pl.Id == me) continue;
-                    int id = pl.Id;
-                    Btn(pl.Name, () => { _msgTarget = id; _dirty = true; }, target == id ? "pl-on" : null).AddTo(row);
-                }
-        }
-
-        // ================================================================ section with content diff and live labels
-
-        sealed class LiveLabel
-        {
-            public string Key;
-            public Action<Label, double> Apply;
-        }
-
-        /// <summary>
-        /// A rebuildable block. <see cref="Update"/> builds a fresh subtree and swaps it in only when its rendered
-        /// content (element types, classes, texts, enabled state) differs from what is shown. Live labels count only
-        /// by their key; <see cref="TickLive"/> refreshes them in place.
-        /// </summary>
-        sealed class Section
-        {
-            readonly VisualElement _holder;
-            readonly List<Label> _live = new List<Label>();
-            VisualElement _current;
-            string _dump = "";
-
-            public Section(VisualElement parent) { _holder = Box("pl-section").AddTo(parent); }
-
-            public void Update(Action<VisualElement> build)
-            {
-                var next = Box("pl-section-body");
-                try { build(next); }
-                catch (Exception e) { Debug.LogException(e); next.Clear(); Text("UI: " + e.GetType().Name, "pl-text", "pl-bad").AddTo(next); }
-                var sb = new StringBuilder(256);
-                Dump(next, sb);
-                string dump = sb.ToString();
-                if (_current != null && dump == _dump) return;
-                _dump = dump;
-                _current?.RemoveFromHierarchy();
-                _current = next;
-                _holder.Add(next);
-                _holder.Show(next.childCount > 0);
-                _live.Clear();
-                Collect(next, _live);
-            }
-
-            public void TickLive(double now)
-            {
-                for (int i = 0; i < _live.Count; i++)
-                {
-                    var l = _live[i];
-                    if (l.userData is LiveLabel ll) ll.Apply(l, now);
-                }
-            }
-
-            static void Collect(VisualElement e, List<Label> into)
-            {
-                if (e is Label l && l.userData is LiveLabel) into.Add(l);
-                foreach (var child in e.Children()) Collect(child, into);
-            }
-
-            static void Dump(VisualElement e, StringBuilder sb)
-            {
-                if (e.userData is LiveLabel ll) { sb.Append("<live:").Append(ll.Key).Append('>'); return; }
-                sb.Append('<').Append(e.GetType().Name);
-                foreach (var c in e.GetClasses()) sb.Append('.').Append(c);
-                if (e is TextElement te) sb.Append('|').Append(te.text);
-                if (!e.enabledSelf) sb.Append("|off");
-                sb.Append(':');
-                foreach (var child in e.Children()) Dump(child, sb);
-                sb.Append('>');
-            }
         }
     }
 }
