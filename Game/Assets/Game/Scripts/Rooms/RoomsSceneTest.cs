@@ -168,6 +168,48 @@ namespace BirimizKovulacak.Game
             p.SetLook(0f, 55f);
             yield return Shot("office_look_down", 0.8f);
 
+            // ---------------------------------------------------------------- v5 office: recorder, standing, walking, door lamp, board
+            rooms.EnterOffice(0, 0, "Deniz");
+            rooms.SetTimeOfDay(0.3f);
+            p.Office.SetRecorder(1, false, false);
+            p.AimAt(p.Office.Recorder.position + Vector3.up * 0.04f);
+            yield return Shot("v5_recorder_idle", 1.0f);
+            Debug.Log("[SceneTest] hovered " + Rooms.Hovered);
+            rooms.SetPhoneState(PhoneLineState.InCall);
+            p.Office.SetRecorder(0, true, true);
+            yield return Shot("v5_recorder_recording", 1.2f);
+            p.Office.SetRecorder(0, false, true);
+            rooms.SetPhoneState(PhoneLineState.Idle);
+            rooms.SetPovMode(PovMode.Phone);
+            rooms.SetPhoneState(PhoneLineState.OffHook);
+            yield return Shot("v5_phone_offhook", 1.3f);
+            rooms.SetPhoneState(PhoneLineState.Idle);
+            rooms.SetPovMode(PovMode.Office);
+            p.StandAt(p.Office.StandSpot, 0f, 24f);
+            yield return Shot("v5_stand_at_desk", 1.2f);
+            // walk into the desk: the walker must stop in front of it
+            RoomsPresenter.ScriptedMove = new Vector2(0f, 1f);
+            yield return new WaitForSeconds(1.2f);
+            Debug.Log("[SceneTest] walk forward -> " + p.Walker.Position.ToString("F2"));
+            RoomsPresenter.ScriptedMove = new Vector2(0.3f, -1f);
+            yield return new WaitForSeconds(2.2f);
+            RoomsPresenter.ScriptedMove = null;
+            Debug.Log("[SceneTest] walk back -> " + p.Walker.Position.ToString("F2"));
+            yield return Shot("v5_walked_back", 0.6f);
+            p.StandAt(new Vector2(-1.45f, -1.7f), 32f, 12f);
+            yield return Shot("v5_stand_back_corner", 1.0f);
+            p.StandAt(new Vector2(-0.2f, -0.9f), 95f, 4f);
+            p.Office.SetDoorLamp(true);
+            yield return Shot("v5_door_lamp", 1.4f);
+            p.Office.SetDoorLamp(false);
+            p.StandAt(new Vector2(1.5f, -0.7f), -100f, 6f);
+            yield return Shot("v5_stand_door_side", 1.0f);
+            p.SitDown(false);
+            rooms.SetPovMode(PovMode.Board);
+            yield return Shot("v5_board_zoom", 1.4f);
+            rooms.SetPovMode(PovMode.Office);
+            p.SetLook(0f, 13f);
+
             // ---------------------------------------------------------------- meeting
             var seats = new List<MeetingSeatInfo>();
             string[] names = { "Deniz", "Ayşe", "Mert", "Elif", "Kerem", "Zeynep" };

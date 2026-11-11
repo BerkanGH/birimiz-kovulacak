@@ -155,7 +155,9 @@ namespace BirimizKovulacak.Game
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.AfterAssembliesLoaded)]
         static void Register()
         {
-            LineMock.Register("v5.task", () => new LineMockScenario().Do(0f, () => Show(Task(TaskKind.ClientBonus, 0, 4, LinePhase.TaskPlay))).Do(0.3f, Messages, true));
+            // office phases (v5 step 1): the task card lives on the office computer
+            LineMock.Register("v5.task", () => new LineMockScenario().Do(0f, () => Show(Task(TaskKind.ClientBonus, 0, 4, LinePhase.TaskPlay))).Do(0.3f, Messages, true)
+                .Do(1.0f, () => OfficeUi.I?.OpenComputer(OfficeComputer.App.Task), true));
             LineMock.Register("v5.task_shift", () => new LineMockScenario().Do(0f, () =>
             {
                 var v = Task(TaskKind.WeekendShift, 2, 6, LinePhase.TaskPlay);
@@ -163,14 +165,14 @@ namespace BirimizKovulacak.Game
                 v.Mine.Phone.Status = CallStatus.Connected; v.Mine.Phone.CallId = 9; v.Mine.Phone.Since = LineMock.Now - 23;
                 v.Players[3].Submitted = true; v.Players[4].Submitted = true;
                 Show(v);
-            }));
+            }).Do(1.0f, () => OfficeUi.I?.OpenComputer(OfficeComputer.App.Task), true));
             LineMock.Register("v5.reveal", () => new LineMockScenario().Do(0f, () =>
             {
                 var v = Task(TaskKind.PettyCash, 1, 4, LinePhase.Break);
                 v.Features.WhistleOpen = true; v.Mine.WitnessOf.Add(1);
                 v.Mine.Phone.Status = CallStatus.Connected; v.Mine.Phone.CallId = 9; v.Mine.Phone.Since = LineMock.Now - 41;
                 Show(v);
-            }));
+            }).Do(1.0f, () => OfficeUi.I?.OpenComputer(OfficeComputer.App.Task), true));
             LineMock.Register("v5.meeting", () => new LineMockScenario().Do(0f, () =>
             {
                 var v = LineMock.BaseView(LinePhase.MeetingDiscussion, 5);
@@ -495,6 +497,9 @@ namespace BirimizKovulacak.Game
             client.ResetSession(); // also drops the previous scenario's messages
             client.ClearWeek();
             client.SetIdentity(s.Me, s.Config);
+            // two frames without a week: the office closes what was open and the world forgets the last room
+            yield return null;
+            yield return null;
             LineClient.Transport = req => { MatchLog.Write("[mock] send " + req); s.OnSend?.Invoke(req); };
             float t0 = Time.realtimeSinceStartup;
             int shot = 0;
