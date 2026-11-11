@@ -45,6 +45,20 @@ namespace BirimizKovulacak.Game
                 .Do(1.2f, () => OfficeUi.I.OpenBoard(), true)
                 .Do(2.8f, () => { OfficeUi.I.CloseFocus(); Aim(26f, -6f); }, true));
 
+            // layout check of the small notes: I am Mor (bottom row), on the phone; stamps on two notes
+            LineMock.Register("v5.office_board_tags", () => new LineMockScenario { Me = 5 }
+                .Do(0f, () =>
+                {
+                    Look();
+                    var v = Board();
+                    v.Me = 5;
+                    v.Players[5].Connected = true;
+                    v.LineBoard.Add(new LineBoardCall { CallId = 32, Caller = 5, Callee = 4, Status = CallStatus.Connected, Start = LineMock.Now - 40 });
+                    v.Players[2].Candidate = true; v.Players[3].Candidate = true; v.Players[3].Fired = true;
+                    Show(v);
+                })
+                .Do(1.0f, () => OfficeUi.I.OpenBoard(), true));
+
             LineMock.Register("v5.office_witness", () => new LineMockScenario()
                 .Do(0f, () =>
                 {

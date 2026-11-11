@@ -474,7 +474,7 @@ namespace BirimizKovulacak.Game
             else if (!dialing && _backLoop) { _backLoop = false; Sfx.StopLoop("ringback"); }
 
             // the call pill (dialing / talking), hidden while the phone panel shows the same
-            bool pill = (ph.Status == CallStatus.Connected || dialing) && _focus != Focus.Phone;
+            bool pill = (ph.Status == CallStatus.Connected || dialing) && _focus != Focus.Phone && _focus != Focus.Board;
             _call.Show(pill);
             bool rec = PlayBlocks.RecordingCurrentCall(v);
             if (pill)

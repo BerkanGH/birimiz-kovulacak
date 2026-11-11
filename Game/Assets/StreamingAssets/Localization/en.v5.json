@@ -452,7 +452,7 @@
   "v5.office.board.me": "(you)",
   "v5.office.board.blame": "blame",
   "v5.office.board.offline": "offline",
-  "v5.office.board.on_phone": "on the phone with {0}",
+  "v5.office.board.on_phone": "on the phone: {0}",
   "v5.office.board.ringing": "phone ringing",
   "v5.office.board.chosen": "chose",
   "v5.office.board.choosing": "choosing",

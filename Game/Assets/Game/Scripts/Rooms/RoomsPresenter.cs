@@ -292,7 +292,8 @@ namespace BirimizKovulacak.Game
             {
                 Meeting.Tick(cam != null ? cam.transform.position : _meetEye, dt);
             }
-            UpdateHover(inputOk && (!Rig.Transitioning || !_seated));
+            // no hover while the camera eases (also: the E that closed the board must not reopen it)
+            UpdateHover(inputOk && !Rig.Transitioning);
             if (inputOk && _hover != null && (locked || ForceLookInput) && UsePressed()) Click();
             Rig.SetCrosshair(_entered && LookMode && (ForceLookInput || !Cursor.visible), _hover != null, dt);
             if (HoverMat != null && _hover != null)

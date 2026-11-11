@@ -166,11 +166,12 @@ namespace BirimizKovulacak.Game
 
         void Note(Vector4 r, float tilt, LinePlayerView p, LineClient lc, LineView v)
         {
-            var note = Place(_root, r, tilt, "cb-note");
+            // the middle and bottom notes of the art are shorter: smaller ink there
+            var note = Place(_root, r, tilt, "cb-note", r.w < 170f ? "cb-note-small" : null);
             bool me = p.Id == lc.MySlot;
             var head = UiKit.Box("cb-head").NoPick().AddTo(note);
             Ink(p.Name, UiKit.HandFont, "cb-name").AddTo(head);
-            if (me) Ink(PlayText.T("office.board.me"), UiKit.HandFont, "cb-me").AddTo(head);
+            if (me) Ink(PlayText.T("office.board.me"), UiKit.HandFont, "cb-me").AddTo(note);
             var marker = UiKit.Box("cb-marker").NoPick().AddTo(note);
             marker.style.backgroundColor = UiKit.PlayerColor(p.ColorIndex);
             var blame = UiKit.Box("cb-blame-row").NoPick().AddTo(note);
