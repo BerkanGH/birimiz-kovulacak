@@ -26,6 +26,9 @@ how-to, first-launch flow) are the older shell code, updated for v5 where needed
 | `Scripts/UI/Office/OfficeComputer.cs` | "KOVA OS" laid exactly over the monitor screen: apps Görev, Havale, Mesajlar, Arama geçmişi, Kurallar; sticky note with the "Şimdi" hint; taskbar. |
 | `Scripts/UI/Office/OfficePhone.cs` | Desk phone face (left half; the 3D phone and the lifted handset stay visible): LCD, contacts = line board, call actions, missed calls. |
 | `Scripts/UI/Office/CorkBoard.cs` | Suç tahtası: a UI Toolkit panel rendered into the cork board's texture (one pinned note per colleague). |
+| `Scripts/UI/Office/OfficeObjects.cs` | Step 2 task objects: the object card (cash box, roster, drawer), their world states from the view, the prim watcher (drawer thunk + toast). |
+| `Scripts/UI/Office/RosterSheet.cs`, `WorldPanel.cs` | The Weekend Shift roster drawn into the clipboard paper; the shared "UI panel → texture on a room surface" helper (also used by the cork board). |
+| `Scripts/Rooms/OfficeRoom.Tasks.cs` | Step 2 world side: the cash box (lid, notes, the mitten that carries them, İhbar button, seal), the roster pencil (it writes on its own) and its string, the drawer's prim stack, the hands that slide away when you look aside. |
 | `Scripts/UI/Office/OfficeText.cs`, `ScreenFade.cs` | "Şimdi: …" sentence and use prompts; the black fade of office ↔ meeting switches. |
 | `Scripts/UI/Dev/OfficeMock.cs` | Office mocks (`-uimock "v5.office*"`). |
 | `UI/Resources/ui/styles/office.uss` | Office layer, OS, phone and cork board styles. |
@@ -88,12 +91,36 @@ python -I Tools/scripts/loc_parity_meeting.py  # shell + privacy areas, how-to p
 python -I Tools/scripts/compile_check.py --rsp
 ```
 
+**Task objects (v5 step 2).** Each task has its own object (docs/V5_INTERACTION.md §2, §6.1): Client Bonus stays on the
+computer; **Küçük Kasa** is the steel cash box that drops onto the desk when Petty Cash starts and leaves after its
+break; **Hafta Sonu Nöbeti** is the clipboard on the desk wall right of the cork board (in reach from the chair). E on
+an object (or the Görev app's one button, so nobody has to walk) eases the camera to it and opens a small card
+(`OfficeObjects`): bottom for the box, left for the roster (the sheet sits right of centre), a one-line caption for the
+drawer. The card's main action is also on E; Esc goes back.
+
+| Object | While choosing | After the reveal / in the break |
+|---|---|---|
+| Cash box | Lid open, the notes (config `CashTake`, runtime clones of `RmBill`) lie in the box. "Al" → the right mitten carries them out onto the desk beside the box; "Geri koy" puts them back (also "Dokunma" before any choice). The box always shows your current choice; "Seçmezsen: dokunmazsın". | Your group's outcome: notes still in the box (nobody took), beside it (you were the only taker), gone (a group-mate took them, or a whistle took them back), or a red **EL KONULDU** seal (both took). A witness's **İhbar** button glows in the break; E on the box → a red confirm card naming the thief → `Whistle`; after it the button stays pressed. The sole taker gets a warning toast when the break starts. Other presses get a reason (deny sound). |
+| Roster | "Gerekli: K kişi", one line per colleague; the pencil (on a string) writes your name in your ink (`Volunteer`) or turns round and rubs it out (`Skip`). Everyone else's line stays empty until the reveal. | The public roster in seat order (yours first) with a TAMAM / EKSİK stamp; it stays on the wall until the end of the match. |
+| Drawer | Always: bundles of five (`RmBundle`, back row first so tall stacks never hide the front), the remainder as loose notes, a manila tag with the exact number. Prim coming in → the drawer jolts with a thunk and a toast "+N prim" (transfers and whistle rewards keep their own toast); prim going out → the stack shrinks. | Same. |
+
+The Görev app no longer has Petty Cash / Weekend Shift / whistle buttons: the card says where the task is played and
+offers "Kasa kutusuna bak" / "Nöbet çizelgesine bak" / "Kasa kutusuna git: İhbar". Art: `RmCashBox`, `RmRoster`,
+`RmBill`, `RmBundle` and the open drawer tray in `Art/Scripts/room_props.py` (banknote texture `Bill.png` from
+`room_textures.py Bill`), placed by `build_rooms.py` (the desk's mug and notepad moved a little to make room).
+
 Office scenarios: `v5.office_desk` (strip, prompts on the monitor / recorder / board), `v5.office_task` (computer:
 task, messages, transfer, call log, rules), `v5.office_ring` (incoming call card, prim toast, phone panel while ringing),
 `v5.office_call` (recorded crisis call: phone panel, call pill, recorder), `v5.office_board`, `v5.office_board_tags`
 (small notes, stamps), `v5.office_witness`,
-`v5.office_shift`, `v5.office_standing` (standing views, door lamp), `v5.office_en`. The room itself:
-`-scenetest` (now also the recorder states, standing, walking into the desk, the door lamp and the board zoom).
+`v5.office_shift`, `v5.office_standing` (standing views, door lamp), `v5.office_en`. Step 2: `v5.office_cashbox`
+(prompt, open box, the notes in the mitten, on the desk, put back), `v5.office_cashbox_reveal` (only taker, a
+group-mate took, both caught, nobody), `v5.office_cashbox_witness` (lit button, confirm card, after the whistle),
+`v5.office_cashbox_thief` (warning toast, whistled on), `v5.office_roster` (prompt, empty sheet, writing, written,
+rubbing out), `v5.office_roster_reveal` (full / short), `v5.office_drawer` (6 → 23 → +4 transfer → 0 → 58 prim, then
+looking sharply right and left from the chair). The room itself: `-scenetest` (now also the recorder states,
+standing, walking into the desk, the door lamp, the board zoom, and step 2: the cash box states and the mitten, the
+roster pencil, the drawer stacks, the hands looking aside, nameplates "MAVİ / YEŞİL / IŞIK").
 
 Scenarios: `v5.task`, `v5.task_shift`, `v5.reveal` (witness; all three open the office computer), `v5.meeting`, `v5.meeting_vote` (leak playing over the
 ballots), `v5.crisis_vote`, `v5.crisis_verdict`, `v5.sealed` (I am a candidate), `v5.defense`, `v5.final` (second
