@@ -4,20 +4,11 @@
 
 A 3–6 player online social-deduction office comedy for Windows (Turkish + English) with **built-in voice**.
 
-## Geliştiriciler
+## Developers
 
-**Lucestdra** ve **BerkanGH** tarafından birlikte geliştiriliyor.
+Developed together by **Lucestdra** and **BerkanGH**.
 
-v5 "Her Şey Kayıtta" yeniden tasarımı (BerkanGH):
-
-- **Oyun tasarımı** (`docs/V5_DESIGN.md`): puan olarak gizli prim bakiyeleri, herkese açık suç tahtası, soruşturma,
-  gizli kriz oylaması, adayların mühürlü masaları ve kovulan oyuncunun masasının ona oy verenler arasında paylaşılması.
-- **Kural motoru**: saf C# ile yazılmış, deterministik yeni kural motoru; 198 birim testi ve denge simülatörü
-  (`Tools/LineSim`).
-- **Unity entegrasyonu**: Unity 6000.6.8f1'e yükseltme dahil.
-- **Arayüz ve araçlar**: yeni oyun arayüzü, v5 "Nasıl oynanır" sayfaları ve çok pencereli bot test araçları.
-
-Geliştirmede yapay zekâ desteği kullanıldı (Claude Code; önceki sürümlerde OpenAI Codex de kullanıldı).
+Development was AI-assisted (Claude Code; earlier versions also used OpenAI Codex).
 
 > **v5 is the current version.** The game runs the v5 ruleset "Her Şey Kayıtta" (`v5.0-kayit`): 3 tasks (Client
 > Bonus, Petty Cash, Weekend Shift), 1–2 meetings with blame votes, investigations and leaked call recordings, a crisis
