@@ -210,6 +210,66 @@ namespace BirimizKovulacak.Game
             rooms.SetPovMode(PovMode.Office);
             p.SetLook(0f, 13f);
 
+            // ---------------------------------------------------------------- v5 step 2: cash box, roster, drawer, hands, nameplate
+            var o = p.Office;
+            o.SetCashBox(true, 3, false, false, false, false, false, false);
+            p.AimAt(o.CashBox.position + Vector3.up * 0.05f);
+            yield return Shot("v5s2_cashbox_desk", 1.2f);
+            Debug.Log("[SceneTest] hovered " + Rooms.Hovered);
+            rooms.SetPovMode(PovMode.CashBox);
+            o.SetCashBox(true, 3, false, false, true, false, false, false);
+            yield return Shot("v5s2_cashbox_open", 1.4f);
+            o.SetCashBox(true, 3, true, false, true, false, false, false);
+            o.CashGrab(true);
+            yield return Shot("v5s2_cashbox_grab", 0.5f);
+            yield return Shot("v5s2_cashbox_taken", 1.0f);
+            o.SetCashBox(true, 3, true, false, false, false, false, false);
+            rooms.SetPovMode(PovMode.Office);
+            p.SetLook(-28f, 30f);
+            yield return Shot("v5s2_cashbox_on_desk", 1.2f);
+            o.SetCashBox(true, 3, false, true, false, true, false, false);
+            p.AimAt(o.CashBox.position + Vector3.up * 0.04f);
+            yield return Shot("v5s2_cashbox_witness_lit", 1.0f);
+            o.SetCashBox(true, 3, false, false, false, false, false, true);
+            yield return Shot("v5s2_cashbox_sealed", 1.0f);
+            o.SetCashBox(false, 3, false, false, false, false, false, false);
+            p.AimAt(o.Roster.position);
+            yield return Shot("v5s2_roster_from_chair", 1.0f);
+            Debug.Log("[SceneTest] hovered " + Rooms.Hovered);
+            rooms.SetPovMode(PovMode.Roster);
+            yield return Shot("v5s2_roster_zoom", 1.4f);
+            o.PenStroke(new Vector2(0.18f, 0.58f), new Vector2(0.55f, 0.58f), false, 1.4f);
+            yield return Shot("v5s2_roster_writing", 0.9f);
+            yield return new WaitForSeconds(1.4f);
+            o.PenStroke(new Vector2(0.18f, 0.58f), new Vector2(0.55f, 0.58f), true, 1.4f);
+            yield return Shot("v5s2_roster_erasing", 0.9f);
+            yield return new WaitForSeconds(1.4f);
+            rooms.SetPovMode(PovMode.Office);
+            o.SetPrim(6, false);
+            o.SetDrawerHeld(true);
+            rooms.SetPovMode(PovMode.Drawer);
+            yield return Shot("v5s2_drawer_6", 1.5f);
+            o.SetPrim(23, true);
+            yield return Shot("v5s2_drawer_23", 0.8f);
+            o.SetPrim(64, true);
+            yield return Shot("v5s2_drawer_64", 0.8f);
+            o.SetDrawerHeld(false);
+            rooms.SetPovMode(PovMode.Office);
+            p.SetLook(75f, 25f);
+            yield return Shot("v5s2_look_right_hands", 1.2f);
+            p.SetLook(-75f, 20f);
+            yield return Shot("v5s2_look_left_hands", 1.0f);
+            p.SetLook(30f, 18f);
+            yield return Shot("v5s2_look_right30_hands", 1.0f);
+            foreach (var nm in new[] { "Mavi", "Yeşil", "Işık" })
+            {
+                rooms.EnterOffice(0, 0, nm);
+                p.AimAt(o.Nameplate.position + Vector3.up * 0.06f);
+                yield return Shot("v5s2_nameplate_" + (nm == "Işık" ? "Isik" : nm == "Yeşil" ? "Yesil" : nm), 0.8f);
+            }
+            rooms.EnterOffice(0, 0, "Deniz");
+            p.SetLook(0f, 13f);
+
             // ---------------------------------------------------------------- meeting
             var seats = new List<MeetingSeatInfo>();
             string[] names = { "Deniz", "Ayşe", "Mert", "Elif", "Kerem", "Zeynep" };

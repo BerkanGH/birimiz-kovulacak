@@ -77,7 +77,9 @@ namespace BirimizKovulacak.Game
     /// <summary>
     /// Saves screenshots at key moments of each match (automation: -screenshots). Office phases capture the office
     /// views a player sees: the desk, the computer on the task app, the phone panel (a call is usually running with
-    /// -calltest), the cork board and a standing view; meeting phases capture the meeting screen.
+    /// -calltest), the cork board and a standing view; step 2: the task's object (the Petty Cash box while choosing and
+    /// in its break, the Weekend Shift roster while choosing and at the reveal) and the drawer; meeting phases capture
+    /// the meeting screen.
     /// </summary>
     public sealed class LineScreenshotRecorder : MonoBehaviour
     {
@@ -100,21 +102,37 @@ namespace BirimizKovulacak.Game
             if (World != null) { World.SitDown(false); World.SetLook(yaw, pitch); }
         }
 
-        static ShotSpec[] Plan(LinePhase phase)
+        /// <summary>The object that plays the task (step 2): its view, or the computer's task app for Client Bonus.</summary>
+        static ShotSpec TaskObject(float delay, TaskKind kind)
         {
+            if (kind == TaskKind.PettyCash) return new ShotSpec(delay, "cashbox", () => Office?.OpenObject(OfficeUi.Focus.CashBox));
+            if (kind == TaskKind.WeekendShift) return new ShotSpec(delay, "roster", () => Office?.OpenObject(OfficeUi.Focus.Roster));
+            return new ShotSpec(delay, "computer", () => Office?.OpenComputer(OfficeComputer.App.Task));
+        }
+
+        static ShotSpec[] Plan(LinePhase phase, LineView v)
+        {
+            var kind = v.Task != null ? v.Task.Kind : TaskKind.None;
             switch (phase)
             {
                 case LinePhase.Intro:
-                    return new[] { new ShotSpec(2.5f, "desk", () => Desk(0f, 15f)), new ShotSpec(9f, "phone", () => Office?.OpenPhone()) };
+                    return new[]
+                    {
+                        new ShotSpec(2.5f, "desk", () => Desk(0f, 15f)), new ShotSpec(9f, "phone", () => Office?.OpenPhone()),
+                        new ShotSpec(15f, "drawer", () => Office?.OpenObject(OfficeUi.Focus.Drawer)),
+                    };
                 case LinePhase.TaskPlay:
-                    return new[] { new ShotSpec(4f, "computer", () => Office?.OpenComputer(OfficeComputer.App.Task)), new ShotSpec(20f, "board", () => Office?.OpenBoard()) };
+                    return kind == TaskKind.ClientBonus
+                        ? new[] { TaskObject(4f, kind), new ShotSpec(20f, "board", () => Office?.OpenBoard()) }
+                        : new[] { TaskObject(4f, kind), new ShotSpec(14f, "computer", () => Office?.OpenComputer(OfficeComputer.App.Task)), new ShotSpec(24f, "board", () => Office?.OpenBoard()) };
                 case LinePhase.TaskReveal:
-                    return new[] { new ShotSpec(1.5f, "computer", () => Office?.OpenComputer(OfficeComputer.App.Task)) };
+                    return new[] { TaskObject(1.5f, kind) };
                 case LinePhase.Break:
                     return new[]
                     {
-                        new ShotSpec(3f, "computer", () => Office?.OpenComputer(OfficeComputer.App.Task)),
+                        kind == TaskKind.PettyCash ? TaskObject(3f, kind) : new ShotSpec(3f, "computer", () => Office?.OpenComputer(OfficeComputer.App.Task)),
                         new ShotSpec(12f, "standing", () => { Office?.CloseFocus(); World?.StandAt(new Vector2(-1.45f, -1.7f), 32f, 12f); }),
+                        new ShotSpec(20f, "drawer", () => { World?.SitDown(false); Office?.OpenObject(OfficeUi.Focus.Drawer); }),
                     };
                 case LinePhase.CrisisCalls:
                     return new[]
@@ -140,10 +158,10 @@ namespace BirimizKovulacak.Game
 
         IEnumerator Shot(LinePhase phase)
         {
-            var plan = Plan(phase);
-            if (plan == null) yield break;
             var v0 = LineClient.I.View;
             if (v0 == null) yield break;
+            var plan = Plan(phase, v0);
+            if (plan == null) yield break;
             int week = v0.WeekId, day = v0.Day, task = v0.TaskNumber;
             double phaseStart = v0.PhaseStartTime;
             float start = Time.realtimeSinceStartup;

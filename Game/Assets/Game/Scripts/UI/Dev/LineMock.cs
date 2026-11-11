@@ -429,6 +429,14 @@ namespace BirimizKovulacak.Game
             Steps.Add(new LineMockStep { At = atSeconds, Action = action, Shot = shot });
             return this;
         }
+
+        /// <summary>Like <see cref="Do(float, Action, bool)"/> but shot <paramref name="shotDelay"/> seconds after the step
+        /// (mid-animation shots: the pencil writing, the notes in the hand).</summary>
+        public LineMockScenario Do(float atSeconds, Action action, float shotDelay)
+        {
+            Steps.Add(new LineMockStep { At = atSeconds, Action = action, Shot = true, ShotDelay = shotDelay });
+            return this;
+        }
     }
 
     public sealed class LineMockStep
@@ -438,6 +446,8 @@ namespace BirimizKovulacak.Game
         public List<LineEvent> Events;
         public Action Action;
         public bool Shot;
+        /// <summary>Seconds between the step and its screenshot (entrance motion settles in the default 1.2 s).</summary>
+        public float ShotDelay = 1.2f;
     }
 
     /// <summary>Added by <see cref="GameBootstrap"/> when <c>-uimock</c> is present.</summary>
@@ -494,8 +504,8 @@ namespace BirimizKovulacak.Game
                 yield return null;
             }
             var client = LineClient.I;
+            client.ClearWeek();    // the UI hears "week closed" (phase None) like after a real match
             client.ResetSession(); // also drops the previous scenario's messages
-            client.ClearWeek();
             client.SetIdentity(s.Me, s.Config);
             // two frames without a week: the office closes what was open and the world forgets the last room
             yield return null;
@@ -517,7 +527,7 @@ namespace BirimizKovulacak.Game
                 if (st.Events != null && st.Events.Count > 0) client.ApplyEvents(st.Events);
                 if (st.Shot || i == s.Steps.Count - 1)
                 {
-                    yield return new WaitForSecondsRealtime(1.2f); // let entrance motion settle
+                    yield return new WaitForSecondsRealtime(st.ShotDelay); // let entrance motion settle
                     yield return new WaitForEndOfFrame();
                     string file = Path.Combine(_outDir, name + "_" + (shot++).ToString("00") + ".png");
                     ScreenCapture.CaptureScreenshot(file);
