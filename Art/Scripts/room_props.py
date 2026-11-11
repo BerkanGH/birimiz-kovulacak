@@ -28,6 +28,8 @@ ROOM_PROPS = []
 DRIVEN_ROOMS = {
     "Screen", "PcLed", "Handset", "RingLight", "PhoneDisplay", "Plug", "Drawer", "Coffee", "Stripe", "HourHand",
     "MinuteHand", "Glow", "CorkSurface", "Photo", "Fabric", "Canvas", "BoardSurface", "Spill", "Mitten",
+    # v5 cassette recorder
+    "RecButton", "RecLight", "TapeIn", "ReelL", "ReelR", "Cassette0", "Cassette1", "Cassette2",
 }
 # Driven meshes that carry their own 0..1 UVs (never box-projected).
 OWN_UV = {"Screen", "CorkSurface", "Photo", "Canvas", "BoardSurface"}
@@ -287,13 +289,12 @@ def rm_shelf(c):
 
 @room_prop
 def rm_cork_board(c):
-    """Cork board (pivot: back centre at its centre). CorkSurface carries the pinned-notes decal (corkboard_notes)."""
+    """Cork board (pivot: back centre at its centre). CorkSurface carries the pinned-notes decal (corkboard_notes); in a
+    v5 match the suç tahtası is drawn into it at runtime. No 3D pins: the art has its own and they would cover names."""
     r = root("RmCorkBoard", c)
     w, h = 0.8, 0.6
     vslab("Frame", w + 0.05, h + 0.05, 0.025, 0.012, c, "M_RmWalnut", r, (0, 0.0, -(h + 0.05) / 2), bevel=0.004)
     uv_plane("CorkSurface", w, h, c, "M_RmCork", r, (0, -0.0262, 0))
-    for (x, z, m) in ((-0.3, 0.22, "M_PlasticRed"), (0.25, 0.2, "M_PlasticBlue"), (-0.05, -0.18, "M_DuckYellow"), (0.32, -0.2, "M_PlasticGreen")):
-        SP("Pin", 0.009, c, m, r, (x, -0.033, z), segments=8, rings=5)
     return r
 
 
@@ -581,6 +582,82 @@ def rm_phone(c):
 
 
 @room_prop
+def rm_recorder(c):
+    """v5 desk cassette recorder (records the connected call). Graphite body with a cream deck: speaker grille,
+    REC lamp (RecLight), a row of piano keys whose red one is RecButton (pressed at runtime), the cassette well with
+    TapeIn (the recorded tape, shown once a call was recorded) and its two reels ReelL / ReelR (turn while
+    recording). A walnut rack on the right holds the blank tapes Cassette0..2 (one per recorder use left).
+    Pivot: bottom centre of the body; the rack sticks out to +X."""
+    r = root("RmRecorder", c)
+    w, d, h = 0.26, 0.16, 0.052
+    top = h + 0.001
+    slab("Body", rrect_pts(w, d, 0.022, 5), h - 0.006, c, "M_RmGraphite", r, (0, 0, 0.004), bevel=0.006)
+    slab("Deck", rrect_pts(w - 0.016, d - 0.016, 0.016, 5), 0.004, c, "M_RmCream", r, (0, 0, h - 0.003), bevel=0.0015)
+    for sx in (-1, 1):
+        for sy in (-1, 1):
+            CY("Foot", 0.009, 0.005, c, "M_RmBlack", r, (sx * (w / 2 - 0.03), sy * (d / 2 - 0.025), 0.0025), segments=10)
+    # speaker grille (left) + volume knob
+    B("Grille", (0.07, 0.092, 0.002), c, "M_RmBlack", r, (-0.08, 0.012, top), bevel=0.0008)
+    for k in range(7):
+        B("Slot", (0.058, 0.0045, 0.0022), c, "M_RmGraphite", r, (-0.08, -0.024 + k * 0.012, top + 0.0004))
+    CY("Knob", 0.011, 0.01, c, "M_RmBrass", r, (-0.1, -0.056, top + 0.004), segments=14, cap_bevel=0.002)
+    B("KnobMark", (0.002, 0.008, 0.0015), c, "M_RmBlack", r, (-0.1, -0.06, top + 0.0095))
+    # REC lamp in a brass bezel
+    bk.torus("LampRim", 0.0085, 0.0018, c, "M_RmBrass", r, (-0.058, -0.056, top + 0.001), major_seg=14, minor_seg=4)
+    SP("RecLight", 0.0068, c, "M_RmRingOff", r, (-0.058, -0.056, top + 0.001), scale=(1, 1, 0.55), segments=12, rings=8)
+    # cassette well (back right) with a chrome rim
+    wx, wy, ww, wd = 0.045, 0.022, 0.15, 0.088
+    B("Well", (ww, wd, 0.0016), c, "M_RmBlack", r, (wx, wy, top - 0.0002))
+    for (cx, cy, sx_, sy_) in ((wx, wy - wd / 2, ww + 0.006, 0.003), (wx, wy + wd / 2, ww + 0.006, 0.003),
+                               (wx - ww / 2, wy, 0.003, wd), (wx + ww / 2, wy, 0.003, wd)):
+        B("WellRim", (sx_, sy_, 0.003), c, "M_Metal", r, (cx, cy, top + 0.0008))
+    # the recorded tape in the well, with its reels (driven)
+    tape = bk.empty("TapeIn", c, (wx, wy + 0.004, top + 0.001), r)
+    B("Shell", (0.112, 0.07, 0.008), c, "M_RmPhoneDark", tape, (0, 0, 0.004), bevel=0.0015)
+    B("Label", (0.096, 0.026, 0.001), c, "M_RmLabel", tape, (0, -0.02, 0.0085))
+    B("Band", (0.096, 0.006, 0.0012), c, "M_PlasticRed", tape, (0, -0.028, 0.009))
+    B("TapeWin", (0.064, 0.024, 0.0012), c, "M_Coffee", tape, (0, 0.012, 0.0085))
+    for name, sx in (("ReelL", -1), ("ReelR", 1)):
+        reel = bk.empty(name, c, (wx + sx * 0.022, wy + 0.004 + 0.012, top + 0.0105), r)
+        CY("Hub", 0.0095, 0.0024, c, "M_RmCream", reel, (0, 0, 0), segments=16)
+        for k in range(3):
+            tooth = B("Tooth", (0.0034, 0.008, 0.0028), c, "M_RmBlack", reel, (0, 0, 0.0003))
+            tooth.rotation_euler = (0, 0, R(60 * k))
+    # piano keys along the front edge: the red one records
+    for k in range(5):
+        x = -0.012 + k * 0.027
+        if k == 0:
+            btn = bk.empty("RecButton", c, (x, -0.054, top + 0.004), r)
+            B("Key", (0.024, 0.036, 0.012), c, "M_PlasticRed", btn, (0, 0, 0), bevel=0.003).rotation_euler = (R(-6), 0, 0)
+            SP("RecDot", 0.0035, c, "M_RmCream", btn, (0, -0.008, 0.0068), scale=(1, 1, 0.4), segments=8, rings=4)
+            continue
+        key = B("Key", (0.024, 0.036, 0.012), c, "M_RmBlack" if k == 4 else "M_RmKeys", r, (x, -0.054, top + 0.004), bevel=0.003)
+        key.rotation_euler = (R(-6), 0, 0)
+    # front face: brass badge + microphone
+    B("Badge", (0.05, 0.002, 0.011), c, "M_RmBrass", r, (-0.075, -d / 2 - 0.0005, 0.03), bevel=0.0006)
+    CY("Mic", 0.007, 0.003, c, "M_RmBlack", r, (0.085, -d / 2 - 0.001, 0.028), rotation=(R(90), 0, 0), segments=12)
+    # carry handle folded flat along the back
+    cable("Handle", [(-0.1, d / 2 - 0.004, h - 0.012), (-0.1, d / 2 + 0.014, h - 0.004), (0.1, d / 2 + 0.014, h - 0.004),
+                     (0.1, d / 2 - 0.004, h - 0.012)], 0.0055, c, "M_RmBlack", r, segments=8)
+    for sx in (-1, 1):
+        CY("Hinge", 0.008, 0.012, c, "M_RmBrass", r, (sx * 0.1, d / 2 - 0.002, h - 0.012), rotation=(0, R(90), 0), segments=10)
+    # tape rack on the right: three slots, one blank cassette per recorder use left
+    rx = w / 2 + 0.048
+    slab("RackBase", rrect_pts(0.076, 0.124, 0.01, 3), 0.02, c, "M_RmWalnut", r, (rx, 0, 0), bevel=0.003)
+    for k in range(4):
+        B("Fin", (0.003, 0.11, 0.014), c, "M_RmWalnutDark", r, (rx - 0.033 + k * 0.022, 0, 0.027), bevel=0.001)
+    stripes = ("M_PlasticRed", "M_PlasticBlue", "M_RmBinderMustard")
+    for k in range(3):
+        cas = bk.empty("Cassette%d" % k, c, (rx - 0.022 + k * 0.022, 0, 0.02), r)
+        B("Shell", (0.016, 0.104, 0.068), c, "M_RmPhoneDark", cas, (0, 0, 0.034), bevel=0.0018)
+        for sx in (-1, 1):
+            B("Label", (0.0012, 0.086, 0.03), c, "M_RmLabel", cas, (sx * 0.0084, -0.002, 0.044))
+            B("TapeBand", (0.0014, 0.086, 0.007), c, stripes[k], cas, (sx * 0.0086, -0.002, 0.033))
+        B("Spine", (0.0172, 0.07, 0.0012), c, "M_RmLabel", cas, (0, 0, 0.0685))
+    return r
+
+
+@room_prop
 def rm_mug(c):
     """Ceramic mug with a colour band (Stripe, the player's colour) and Coffee."""
     r = root("RmMug", c)
@@ -633,7 +710,8 @@ def rm_nameplate(c):
     for sy in (-1, 1):
         p = B("Plate", (0.25, 0.004, 0.05), c, "M_RmBrass", r, (0, sy * 0.022, 0.06), bevel=0.002)
         p.rotation_euler = (R(18 * sy), 0, 0)
-        B("PlateBack", (0.012, 0.03, 0.05), c, "M_RmWalnutDark", r, (0, sy * 0.012, 0.055)).rotation_euler = (R(18 * sy), 0, 0)
+        # support behind the plate (must stay behind it: it used to poke through the middle of the name)
+        B("PlateBack", (0.012, 0.016, 0.046), c, "M_RmWalnutDark", r, (0, sy * 0.009, 0.055)).rotation_euler = (R(18 * sy), 0, 0)
     B("Stripe", (0.26, 0.072, 0.006), c, "M_PlasticBlue", r, (0, 0, 0.036))
     return r
 

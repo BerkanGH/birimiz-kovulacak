@@ -179,7 +179,59 @@ def render_all(roots, fast=False):
     eye2 = (s2["p"][0] + f2[0] + mo[0], 1.24, s2["p"][2] + f2[2] + mo[2])
     shots += [("meeting_seat", eye2, yaw2, 8), ("meeting_head", eye2, yaw2 - 55, -2),
               ("meeting_overview", (0.0 + mo[0], 2.3, -2.7 + mo[2]), 0, 22)]
+    # v5: standing views (the office is walkable) and a top-down plan with the walk footprints
+    w = br.OFFICE_WALK
+    stand = (w["stand"][0], w["eye"], w["stand"][1])
+    shots += [("office_stand_back", (-1.55, w["eye"], -1.75), 32, 12), ("office_stand_door", (1.55, w["eye"], -0.85), -95, 10),
+              ("office_stand_desk", stand, 8, 30), ("office_stand_rear", (0.3, w["eye"], 0.2), 180, 10),
+              ("office_recorder_close", (0.3, 1.02, 1.08), 29, 34)]
     for name, eye, yaw, pitch in shots:
         cam = camera("Cam_" + name, eye, yaw, pitch)
         render(os.path.join(out, name + ".png"), cam)
+    plan(out)
     print("ROOM_PREVIEWS_DONE", out)
+
+
+def plan(out):
+    """Orthographic top view just under the ceiling, with the walker's footprints in translucent red."""
+    o = br.OFFICE
+    lay = br.walk_layout()
+    mat = bpy.data.materials.new("PlanMark")
+    mat.use_nodes = True
+    bsdf = mat.node_tree.nodes["Principled BSDF"]
+    bsdf.inputs["Base Color"].default_value = (1.0, 0.1, 0.05, 1)
+    bsdf.inputs["Emission Color"].default_value = (1.0, 0.1, 0.05, 1)
+    bsdf.inputs["Emission Strength"].default_value = 0.6
+    bsdf.inputs["Alpha"].default_value = 0.35
+    if hasattr(mat, "surface_render_method"):
+        mat.surface_render_method = "BLENDED"
+    c = bpy.context.scene.collection
+    marks = []
+    for rc in lay["rects"]:
+        b = bk.box("PlanRect", (rc["h"][0] * 2, rc["h"][1] * 2, 0.02), c, None, None, u2b((rc["c"][0], 1.2, rc["c"][1])))
+        b.rotation_euler = (0, 0, -R(rc["r"]))
+        b.data.materials.append(mat)
+        marks.append(b)
+    for ci in lay["circles"] + [{"c": list(w), "r": lay["chairRadius"]} for w in (lay["chairBack"],)]:
+        cy = bk.cylinder("PlanCircle", ci["r"], 0.02, c, None, None, u2b((ci["c"][0], 1.2, ci["c"][1])), segments=24)
+        cy.data.materials.append(mat)
+        marks.append(cy)
+    st = bk.cylinder("PlanStand", lay["radius"], 0.02, c, None, None, u2b((lay["stand"][0], 1.25, lay["stand"][1])), segments=24)
+    st.data.materials.append(bk.mat("M_PlasticBlue"))
+    marks.append(st)
+    cd = bpy.data.cameras.new("Plan")
+    cd.type = "ORTHO"
+    cd.ortho_scale = max(o["x1"] - o["x0"], o["z1"] - o["z0"]) + 0.6
+    cd.clip_start = 0.05
+    cd.clip_end = 10
+    cam = bpy.data.objects.new("Cam_plan", cd)
+    c.objects.link(cam)
+    cam.location = u2b(((o["x0"] + o["x1"]) / 2, 2.62, (o["z0"] + o["z1"]) / 2))
+    cam.rotation_euler = (0, 0, 0)
+    sc = bpy.context.scene
+    rx, ry = sc.render.resolution_x, sc.render.resolution_y
+    sc.render.resolution_x, sc.render.resolution_y = 900, 900
+    render(os.path.join(out, "office_plan.png"), cam)
+    sc.render.resolution_x, sc.render.resolution_y = rx, ry
+    for m in marks:
+        bpy.data.objects.remove(m)

@@ -42,8 +42,10 @@ PREV_DIR = os.path.join(bk.PREVIEW_DIR, "rooms")
 # ================================================================================================ layout (Unity coords)
 
 OFFICE = {
-    "x0": -1.8, "x1": 1.8, "z0": -1.6, "z1": 1.6, "h": 2.8, "t": 0.14,
-    "window": {"wall": "x0", "s0": -0.8, "s1": 1.2, "sill": 0.86, "top": 2.32},
+    # v5: 4.6 x 4.0 m so the player can take a few steps (v3: 3.6 x 3.2). The desk wall (z1), the desk kit, the window
+    # and the door keep their places relative to the seat; the room grows sideways and behind the chair.
+    "x0": -2.3, "x1": 2.3, "z0": -2.4, "z1": 1.6, "h": 2.8, "t": 0.14,
+    "window": {"wall": "x0", "s0": -0.9, "s1": 1.2, "sill": 0.86, "top": 2.32},
     "door": {"wall": "x1", "s0": -1.3, "s1": -0.4, "h": 2.1, "glass": [1.08, 1.92]},
 }
 MEET_ORIGIN = (0.0, 0.0, 30.0)
@@ -61,48 +63,81 @@ OFFICE_PROPS = [
     ("keyboard", "RmKeyboard", (-0.02, 0.75, 1.02), 0),
     ("mouse", "RmMouse", (0.34, 0.75, 1.04), -4),
     ("phone", "RmPhone", (0.62, 0.75, 1.1), 26),
+    ("recorder", "RmRecorder", (0.47, 0.75, 1.385), -10),
     ("mug", "RmMug", (-0.42, 0.75, 0.99), 205),
     ("spill", "RmSpill", (-0.2, 0.751, 0.97), 0),
     ("notepad", "RmNotepad", (-0.64, 0.75, 1.02), -12),
     ("lamp", "RmLamp", (-0.6, 0.75, 1.4), 14),
     ("photo", "RmPhotoFrame", (-0.38, 0.75, 1.47), 10),
-    ("nameplate", "RmNameplate", (0.45, 0.75, 1.32), -8),
-    ("pencup", "RmPenCup", (0.4, 0.75, 1.5), 0),
-    ("intray", "RmInTray", (0.64, 0.75, 1.42), -6),
+    ("nameplate", "RmNameplate", (0.2, 0.75, 1.255), -6),
+    ("pencup", "RmPenCup", (0.2, 0.75, 1.47), 0),
     ("drawerunit", "RmDrawerUnit", (1.08, 0.0, 1.24), 0),
-    ("smallplant", "RmSmallPlant", (1.14, 0.66, 1.36), 0),
+    ("intray", "RmInTray", (1.06, 0.66, 1.12), 4),
+    ("smallplant", "RmSmallPlant", (1.13, 0.66, 1.42), 0),
     ("bin", "RmBin", (-0.98, 0.0, 0.98), 0),
-    ("plant", "RmPlant", (-1.38, 0.0, 1.22), 30),
-    ("rug", "RmRug", (0.0, 0.0, 0.45), 0),
-    ("coatrack", "RmCoatRack", (1.4, 0.0, -1.2), 200),
-    ("filecabinet", "RmFileCabinet", (1.52, 0.0, 0.38), 90),
-    ("bookcase", "RmLowBookcase", (-0.75, 0.0, -1.43), 180),
+    ("plant", "RmPlant", (-1.78, 0.0, 1.18), 30),
+    ("rug", "RmRug", (0.0, 0.0, 0.3), 0),
+    ("coatrack", "RmCoatRack", (1.97, 0.0, -1.78), 200),
+    ("filecabinet", "RmFileCabinet", (2.02, 0.0, 0.42), 90),
+    ("bookcase", "RmLowBookcase", (-1.2, 0.0, -2.23), 180),
+    ("sideboard", "RmSideboard", (0.62, 0.0, -2.15), 180),
+    ("traycups", "RmTrayCups", (1.1, 0.76, -2.17), 180),
+    ("sideplant", "RmSmallPlant", (0.05, 0.76, -2.18), 0),
+    ("tallplant", "RmTallPlant", (-2.0, 0.0, -1.95), 20),
+    ("armchair", "RmMeetingChair", (-1.8, 0.0, -1.1), 72),
     ("shelf", "RmShelf", (-0.42, 1.48, 1.6), 0),
     ("cork", "RmCorkBoard", (0.8, 1.45, 1.6), 0),
     ("clock", "RmClock", (0.8, 2.22, 1.6), 0),
     ("ceilinglamp", "RmCeilingLamp", (0.0, 2.8, 0.35), 0),
-    ("cactus", "RmCactus", (-1.66, 0.87, 0.15), 0),
+    ("ceilinglamp2", "RmCeilingLamp", (0.0, 2.8, -1.45), 0),
+    ("cactus", "RmCactus", (-2.255, 0.87, 0.15), 0),
 ]
 OFFICE_ANCHORS = {
     "eye": (0.0, 1.24, 0.42), "eyeYaw": 0.0, "eyePitch": 15.0,
     "yawLimit": 115.0, "pitchUp": 40.0, "pitchDown": 65.0,
-    "corridor": {"x": 2.25, "z0": -4.0, "z1": 3.0},
+    "corridor": {"x": 2.75, "z0": -4.0, "z1": 3.0},
     "handL": (-0.21, 0.775, 0.97), "handR": (0.32, 0.785, 1.0),
 }
+# Walking (v5): where the player stands after getting up, the chair pushed back, eye height, body radius, and the
+# furniture footprints the runtime collides with (Unity x/z, half extents, yaw). Generated from OFFICE_PROPS below.
+WALK_RECTS = {"RmDesk": (1.62, 0.78), "RmDrawerUnit": (0.46, 0.6), "RmFileCabinet": (0.48, 0.58),
+              "RmLowBookcase": (1.12, 0.36), "RmSideboard": (1.82, 0.48)}
+WALK_CIRCLES = {"RmPlant": 0.3, "RmTallPlant": 0.22, "RmCoatRack": 0.25, "RmBin": 0.17, "RmMeetingChair": 0.36}
+OFFICE_WALK = {"eye": 1.56, "radius": 0.24, "stand": (0.0, 0.54), "chairBack": (0.06, -0.06), "chairBackYaw": 14.0,
+               "chairRadius": 0.3, "doorLamp": (2.3, 2.24, -0.85)}
 OFFICE_DECALS = [
     {"id": "poster", "p": (-1.27, 1.6, 1.6), "r": 0, "size": (0.5, 0.75),
      "variants": ["poster_kahve", "poster_sadakat", "poster_takim_ruhu", "poster_verimlilik", "poster_motivation", "poster_teamwork"]},
-    {"id": "poster2", "p": (1.8, 1.68, 0.36), "r": 90, "size": (0.46, 0.65),
+    {"id": "poster2", "p": (2.3, 1.68, 0.42), "r": 90, "size": (0.46, 0.65),
      "variants": ["poster_teamwork", "poster_safety", "poster_motivation", "poster_kahve", "poster_takim_ruhu", "poster_sadakat"]},
-    {"id": "diploma", "p": (-0.75, 1.55, -1.6), "r": 180, "size": (0.45, 0.34), "variants": ["diploma"]},
+    {"id": "diploma", "p": (-1.2, 1.55, -2.4), "r": 180, "size": (0.45, 0.34), "variants": ["diploma"]},
+    {"id": "poster3", "p": (0.62, 1.62, -2.4), "r": 180, "size": (0.62, 0.46), "variants": ["poster_kpi"]},
+    {"id": "poster4", "p": (-2.3, 1.62, -1.55), "r": -90, "size": (0.42, 0.56), "variants": ["poster_mission"]},
 ]
 OFFICE_LIGHTS = [
     {"name": "Ceiling", "t": "point", "p": (0.0, 2.5, 0.35), "color": "#FFE2B5", "i": 1.4, "range": 6.0},
+    {"name": "Ceiling2", "t": "point", "p": (0.0, 2.5, -1.45), "color": "#FFE2B5", "i": 1.15, "range": 5.5},
     {"name": "DeskLamp", "t": "spot", "p": (-0.6, 1.06, 1.38), "pitch": 90, "yaw": 0, "angle": 110, "color": "#FFD08A", "i": 2.2, "range": 1.8},
     {"name": "Monitor", "t": "point", "p": (0.0, 1.06, 1.22), "color": "#A9DCEB", "i": 0.45, "range": 1.4},
-    {"name": "WindowFill", "t": "point", "p": (-1.2, 1.7, 0.25), "color": "#D3E3F7", "i": 1.0, "range": 5.0},
-    {"name": "Corridor", "t": "point", "p": (2.55, 2.4, -0.85), "color": "#FFF0D8", "i": 2.2, "range": 4.0},
+    {"name": "WindowFill", "t": "point", "p": (-1.7, 1.7, 0.15), "color": "#D3E3F7", "i": 1.0, "range": 5.5},
+    {"name": "Corridor", "t": "point", "p": (3.05, 2.4, -0.85), "color": "#FFF0D8", "i": 2.2, "range": 4.0},
 ]
+
+
+def walk_layout():
+    """Collision footprints for the runtime walker (Unity coordinates)."""
+    rects, circles = [], []
+    for pid, model, p, yaw in OFFICE_PROPS:
+        if model in WALK_RECTS:
+            w, d = WALK_RECTS[model]
+            rects.append({"id": pid, "c": [p[0], p[2]], "h": [w / 2, d / 2], "r": yaw})
+        elif model in WALK_CIRCLES:
+            circles.append({"id": pid, "c": [p[0], p[2]], "r": WALK_CIRCLES[model]})
+    out = dict(OFFICE_WALK)
+    out["rects"] = rects
+    out["circles"] = circles
+    return out
+
 
 SEAT_Z = (0.95, -0.15, -1.25)
 SEATS = []  # seat order: alternating sides, nearest to the manager first
@@ -247,7 +282,7 @@ def window_unit(mb, glass, blinds, axis, s0, s1, f, t, inside, sill, top, blind_
     put(s1 - 0.01, s1, sill, top, f, inner, "M_RmWallCream")
     put(s0, s1, top - 0.01, top, f, inner, "M_RmWallCream")
     # interior sill board + exterior stone ledge
-    put(s0 - 0.06, s1 + 0.06, sill - 0.035, sill + 0.01, f, inner + inside * 0.06, "M_RmTrim")
+    put(s0 - 0.06, s1 + 0.06, sill - 0.035, sill + 0.01, f, inner + inside * 0.1, "M_RmTrim")
     put(s0 - 0.04, s1 + 0.04, sill - 0.06, sill, f - inside * (t / 2 + 0.08), f, "M_RmExterior")
     # glass
     put(s0 + fr, s1 - fr, sill + fr, top - fr, f - 0.004, f + 0.004, "M_RmWindowGlass", glass)
@@ -648,7 +683,8 @@ def write_layout():
         return out
     data = {
         "_comment": "Generated by Art/Scripts/build_rooms.py (Unity coordinates, yaw degrees). Read by Editor/ProjectBuilder.Rooms.cs.",
-        "office": {"room": OFFICE, "props": props(OFFICE_PROPS), "anchors": OFFICE_ANCHORS, "decals": OFFICE_DECALS, "lights": OFFICE_LIGHTS},
+        "office": {"room": OFFICE, "props": props(OFFICE_PROPS), "anchors": OFFICE_ANCHORS, "walk": walk_layout(), "decals": OFFICE_DECALS,
+                   "lights": OFFICE_LIGHTS},
         "meeting": {"origin": list(MEET_ORIGIN), "room": MEETING, "props": props(MEETING_PROPS), "seats": SEATS,
                     "anchors": MEETING_ANCHORS, "decals": MEETING_DECALS, "lights": MEETING_LIGHTS},
     }
