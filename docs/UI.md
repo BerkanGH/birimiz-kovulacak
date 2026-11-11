@@ -90,7 +90,8 @@ python -I Tools/scripts/compile_check.py --rsp
 
 Office scenarios: `v5.office_desk` (strip, prompts on the monitor / recorder / board), `v5.office_task` (computer:
 task, messages, transfer, call log, rules), `v5.office_ring` (incoming call card, prim toast, phone panel while ringing),
-`v5.office_call` (recorded crisis call: phone panel, call pill, recorder), `v5.office_board`, `v5.office_witness`,
+`v5.office_call` (recorded crisis call: phone panel, call pill, recorder), `v5.office_board`, `v5.office_board_tags`
+(small notes, stamps), `v5.office_witness`,
 `v5.office_shift`, `v5.office_standing` (standing views, door lamp), `v5.office_en`. The room itself:
 `-scenetest` (now also the recorder states, standing, walking into the desk, the door lamp and the board zoom).
 
