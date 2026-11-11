@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using TMPro;
 using UnityEngine;
 
@@ -8,7 +9,10 @@ namespace BirimizKovulacak.Game
     /// The local player's private office (one room, personalised on <see cref="Enter"/>): monitor states, the desk
     /// phone (rings physically, handset lifts to your ear during a call, coiled cord, pulled plug when the line is
     /// dead), coffee spill, mug/drawer/nameplate click feedback, posters per slot and language, your own bean hands,
-    /// passers-by behind the frosted door glass. All references are wired by ProjectBuilder.Rooms.
+    /// passers-by behind the frosted door glass. v5: the cassette recorder (REC key and lamp, turning reels, blank
+    /// tapes = recorder uses left), the chair that rolls back when you stand up, the walk footprints the walker
+    /// collides with, the cork board surface (suç tahtası) and the meeting lamp over the door.
+    /// All references are wired by ProjectBuilder.Rooms.
     /// </summary>
     public sealed class OfficeRoom : MonoBehaviour
     {
@@ -74,6 +78,39 @@ namespace BirimizKovulacak.Game
         public Transform Silhouette;
         public float CorridorX = 2.45f, CorridorZ0 = -4f, CorridorZ1 = 3f;
 
+        [Header("Recorder (v5)")]
+        public Transform Recorder;
+        public Transform RecButton;
+        public Renderer RecLight;
+        public Material RecOff, RecOn;
+        public GameObject TapeIn;
+        public Transform ReelL, ReelR;
+        /// <summary>Blank tapes in the rack: Cassettes[i] is shown while more than i recorder uses are left.</summary>
+        public GameObject[] Cassettes = new GameObject[0];
+
+        [Header("Walking (v5, office space = world space of the office root)")]
+        public Transform Chair;
+        /// <summary>Chair position (office local) and extra yaw while the player stands.</summary>
+        public Vector3 ChairBack = new Vector3(0.06f, 0f, -0.06f);
+        public float ChairBackYaw = 14f, ChairRadius = 0.3f;
+        public float StandEye = 1.56f, WalkRadius = 0.24f;
+        /// <summary>Where the player stands after getting up (x, z).</summary>
+        public Vector2 StandSpot = new Vector2(0f, 0.54f);
+        /// <summary>Inner wall faces (x0, z0) and (x1, z1).</summary>
+        public Vector2 RoomMin = new Vector2(-2.3f, -2.4f), RoomMax = new Vector2(2.3f, 1.6f);
+        /// <summary>Furniture rectangles: centre x, centre z, half width, half depth (rotated by <see cref="WalkRectYaw"/>).</summary>
+        public Vector4[] WalkRects = new Vector4[0];
+        public float[] WalkRectYaw = new float[0];
+        /// <summary>Round furniture: centre x, centre z, radius.</summary>
+        public Vector3[] WalkCircles = new Vector3[0];
+
+        [Header("Board and door (v5)")]
+        public Renderer CorkSurface;
+        public Renderer DoorLamp;
+        public Material DoorLampOff, DoorLampOn;
+        public Light DoorLight;
+        public TextMeshPro DoorLabel;
+
         PhoneLineState _phone;
         MonitorState _monitor;
         Material _screenShown;
@@ -87,7 +124,7 @@ namespace BirimizKovulacak.Game
         float _drawerOpen, _drawerUntil;
         Quaternion _nameRest;
         float _wobbleStart = -10f;
-        const int CordPoints = 72;
+        const int CordPoints = 160;
         readonly Vector3[] _cord = new Vector3[CordPoints];
         float _silT = -1f, _silNext, _silDir = 1f, _silSpeed = 1.2f, _silBaseY;
         Vector3 _handLPos, _handRPos;
@@ -99,9 +136,28 @@ namespace BirimizKovulacak.Game
         string _lang;
         float _nextLangCheck;
         bool _awake;
+        // v5
+        bool _standing;
+        float _stand;
+        Vector3 _chairRestPos;
+        Quaternion _chairRestRot;
+        int _usesLeft = -1;
+        bool _recording, _tapeIn, _recApplied;
+        float _recPress = -10f, _reelAngle, _recDown;
+        Vector3 _recBtnRest;
+        Quaternion _reelLRest, _reelRRest;
+        bool _doorLamp;
+        float _doorGlow;
+        readonly List<Renderer> _handLR = new List<Renderer>(), _handRR = new List<Renderer>();
+        bool _handLShown = true, _handRShown = true;
 
         public PhoneLineState PhoneState => _phone;
         public MonitorState MonitorState => _monitor;
+        /// <summary>The handset is up (call, dialing or the phone panel is open).</summary>
+        public bool HandsetUp => _phone == PhoneLineState.InCall || _phone == PhoneLineState.Dialing || _phone == PhoneLineState.OffHook;
+        /// <summary>Current chair position in office space (moves when the player stands up).</summary>
+        public Vector3 ChairPosition => Chair != null ? Chair.localPosition : new Vector3(0f, 0f, 0.36f);
+        public bool Standing => _standing;
 
         void Awake() { Init(); }
 
@@ -125,6 +181,17 @@ namespace BirimizKovulacak.Game
             if (Plug != null) Plug.SetActive(false);
             if (Spill != null) Spill.SetActive(false);
             ApplyPhoneLook(PhoneLineState.Idle, false);
+            if (Chair != null) { _chairRestPos = Chair.localPosition; _chairRestRot = Chair.localRotation; }
+            if (RecButton != null) _recBtnRest = RecButton.localPosition;
+            if (ReelL != null) _reelLRest = ReelL.localRotation;
+            if (ReelR != null) _reelRRest = ReelR.localRotation;
+            foreach (var r in HandRenderers)
+            {
+                if (r == null) continue;
+                if (HandL != null && r.transform.IsChildOf(HandL)) _handLR.Add(r); else _handRR.Add(r);
+            }
+            SetRecorder(1, false, false);
+            if (DoorLight != null) { DoorLight.intensity = 0f; DoorLight.enabled = false; }
         }
 
         // ------------------------------------------------------------------ personalisation
@@ -168,6 +235,7 @@ namespace BirimizKovulacak.Game
             string lang = Loc.Language;
             if (lang == _lang) return;
             _lang = lang;
+            if (DoorLabel != null) DoorLabel.text = Loc.T("v5.office.door_sign");
             int s = Mathf.Max(0, _slot);
             foreach (var d in Decals)
             {
@@ -181,6 +249,31 @@ namespace BirimizKovulacak.Game
         // ------------------------------------------------------------------ states
 
         public void SetPhone(PhoneLineState s) { _phone = s; }
+
+        /// <summary>v5: standing (walking) or seated; the chair rolls back while you stand, the resting hands hide.</summary>
+        public void SetStanding(bool standing) { Init(); _standing = standing; }
+
+        /// <summary>v5 recorder: blank tapes = <paramref name="usesLeft"/>, REC lamp and turning reels while
+        /// <paramref name="recording"/>, the recorded tape in the deck once <paramref name="tapeIn"/>.</summary>
+        public void SetRecorder(int usesLeft, bool recording, bool tapeIn)
+        {
+            if (_recApplied && usesLeft == _usesLeft && recording == _recording && (tapeIn || recording) == _tapeIn) return;
+            _recApplied = true;
+            _usesLeft = usesLeft; _recording = recording; _tapeIn = tapeIn || recording;
+            for (int i = 0; i < Cassettes.Length; i++)
+                if (Cassettes[i] != null && Cassettes[i].activeSelf != (i < usesLeft)) Cassettes[i].SetActive(i < usesLeft);
+            if (TapeIn != null && TapeIn.activeSelf != _tapeIn) TapeIn.SetActive(_tapeIn);
+            if (ReelL != null && ReelL.gameObject.activeSelf != _tapeIn) ReelL.gameObject.SetActive(_tapeIn);
+            if (ReelR != null && ReelR.gameObject.activeSelf != _tapeIn) ReelR.gameObject.SetActive(_tapeIn);
+            var m = recording ? RecOn : RecOff;
+            if (RecLight != null && m != null && RecLight.sharedMaterial != m) RecLight.sharedMaterial = m;
+        }
+
+        /// <summary>The REC key dips (feedback for a press, also when nothing can be recorded).</summary>
+        public void PressRecord() { _recPress = Time.time; }
+
+        /// <summary>The lamp over the door: a meeting is about to start.</summary>
+        public void SetDoorLamp(bool on) { _doorLamp = on; }
 
         public void SetMonitor(MonitorState s) { _monitor = s; }
 
@@ -216,6 +309,47 @@ namespace BirimizKovulacak.Game
             TickDesk(cam, now, dt);
             TickHands(cam, mode, now, dt);
             TickSilhouette(cam, now, dt);
+            TickChair(dt);
+            TickRecorder(now, dt);
+            TickDoor(now, dt);
+        }
+
+        void TickChair(float dt)
+        {
+            _stand = Mathf.MoveTowards(_stand, _standing ? 1f : 0f, dt * 2.4f);
+            if (Chair == null) return;
+            float e = _stand * _stand * (3f - 2f * _stand);
+            Chair.localPosition = Vector3.Lerp(_chairRestPos, ChairBack, e);
+            Chair.localRotation = _chairRestRot * Quaternion.Euler(0f, ChairBackYaw * e, 0f);
+        }
+
+        void TickRecorder(float now, float dt)
+        {
+            if (RecButton != null)
+            {
+                float tap = now - _recPress;
+                float dip = tap >= 0f && tap < 0.22f ? Mathf.Sin(tap / 0.22f * Mathf.PI) : 0f;
+                float want = Mathf.Max(_recording ? 0.75f : 0f, dip);
+                _recDown = Mathf.MoveTowards(_recDown, want, dt * 14f);
+                RecButton.localPosition = _recBtnRest + Vector3.down * (0.0055f * _recDown);
+            }
+            if (_recording) _reelAngle = Mathf.Repeat(_reelAngle + dt * 240f, 360f);
+            if (ReelL != null) ReelL.localRotation = _reelLRest * Quaternion.Euler(0f, _reelAngle, 0f);
+            if (ReelR != null) ReelR.localRotation = _reelRRest * Quaternion.Euler(0f, _reelAngle * 1.3f, 0f);
+        }
+
+        void TickDoor(float now, float dt)
+        {
+            float want = _doorLamp ? 0.75f + 0.25f * Mathf.Sin(now * 5f) : 0f;
+            _doorGlow = Mathf.MoveTowards(_doorGlow, want, dt * 4f);
+            var m = _doorGlow > 0.4f ? DoorLampOn : DoorLampOff;
+            if (DoorLamp != null && m != null && DoorLamp.sharedMaterial != m) DoorLamp.sharedMaterial = m;
+            if (DoorLight != null)
+            {
+                DoorLight.intensity = _doorGlow * 1.1f;
+                bool on = _doorGlow > 0.01f;
+                if (DoorLight.enabled != on) DoorLight.enabled = on;
+            }
         }
 
         void TickMonitor(float now, float dt)
@@ -294,7 +428,7 @@ namespace BirimizKovulacak.Game
                 if (RingGlow.enabled != on) RingGlow.enabled = on;
             }
             if (Handset == null) return;
-            bool up = _phone == PhoneLineState.InCall || _phone == PhoneLineState.Dialing;
+            bool up = HandsetUp;
             _lift = Mathf.MoveTowards(_lift, up ? 1f : 0f, dt * (up ? 2.4f : 2.0f));
             var parent = Handset.parent;
             Vector3 restPos = parent != null ? parent.TransformPoint(_handsetRestPos) : _handsetRestPos;
@@ -330,7 +464,8 @@ namespace BirimizKovulacak.Game
             float dist = Vector3.Distance(a, b);
             float sag = 0.035f + dist * 0.35f;
             Vector3 mid = (a + b) * 0.5f + Vector3.down * sag;
-            float turns = Mathf.Max(6f, dist * 55f);
+            // the coils stretch when the cord is pulled (standing with the handset): at most ~1 coil per 4 points
+            float turns = Mathf.Clamp(dist * 55f, 6f, 40f);
             for (int i = 0; i < CordPoints; i++)
             {
                 float t = i / (float)(CordPoints - 1);
@@ -392,6 +527,12 @@ namespace BirimizKovulacak.Game
 
         void TickHands(Camera cam, PovMode mode, float now, float dt)
         {
+            // standing: the resting hands stay out of view; the right one still holds a lifted handset
+            // the phone and board views look away from the keyboard: the resting mittens would show as long arms
+            bool seated = !_standing && _stand < 0.5f && mode != PovMode.Phone && mode != PovMode.Board;
+            bool showL = seated, showR = seated || _lift > 0.05f;
+            if (showL != _handLShown) { _handLShown = showL; foreach (var hr in _handLR) if (hr != null) hr.enabled = showL; }
+            if (showR != _handRShown) { _handRShown = showR; foreach (var hr in _handRR) if (hr != null) hr.enabled = showR; }
             float breathe = Mathf.Sin(now * 1.3f) * 0.0025f;
             if (HandL != null)
             {

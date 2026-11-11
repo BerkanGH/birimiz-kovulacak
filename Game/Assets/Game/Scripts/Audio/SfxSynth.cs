@@ -284,6 +284,50 @@ namespace BirimizKovulacak.Game
             return Normalize(d, 0.45f);
         }
 
+        // ------------------------------------------------------------------ v5 office
+
+        /// <summary>Soft footstep on the oak floor (two variants by seed).</summary>
+        public static float[] Step(int seed)
+        {
+            var rnd = new System.Random(seed);
+            var d = new float[N(0.16f)];
+            AddTone(d, 0f, 0.12f, 120f + seed * 7f, 70f, 0.5f, Wave.Sine, 0.03f, 0.002f);
+            AddNoise(d, 0f, 0.05f, 0.35f, rnd, 0.18f, false, 0.012f, 0.001f);
+            AddNoise(d, 0.004f, 0.02f, 0.08f, rnd, 1f, true, 0.004f, 0.0005f);
+            return Normalize(d, 0.5f);
+        }
+
+        /// <summary>Piano key of the cassette recorder: plastic clunk + motor whirr starting.</summary>
+        public static float[] RecClunk()
+        {
+            var rnd = new System.Random(71);
+            var d = new float[N(0.42f)];
+            AddNoise(d, 0f, 0.025f, 0.55f, rnd, 0.35f, false, 0.008f, 0.0004f);
+            AddTone(d, 0f, 0.08f, 260f, 180f, 0.35f, Wave.Triangle, 0.02f, 0.001f);
+            AddTone(d, 0.05f, 0.35f, 95f, 130f, 0.12f, Wave.Saw, 0.25f, 0.03f);
+            return Normalize(d, 0.55f);
+        }
+
+        /// <summary>Busy signal (three short beeps).</summary>
+        public static float[] Busy()
+        {
+            var d = new float[N(1.05f)];
+            for (int i = 0; i < 3; i++) AddTone(d, i * 0.34f, 0.2f, 480f, 480f, 0.2f, Wave.Sine, 0f, 0.004f);
+            for (int i = 0; i < 3; i++) AddTone(d, i * 0.34f, 0.2f, 620f, 620f, 0.16f, Wave.Sine, 0f, 0.004f);
+            return d;
+        }
+
+        /// <summary>Handset lifted off the cradle (click) and the dial tone's first breath.</summary>
+        public static float[] OffHook()
+        {
+            var rnd = new System.Random(77);
+            var d = new float[N(0.5f)];
+            AddNoise(d, 0f, 0.02f, 0.4f, rnd, 0.4f, false, 0.006f, 0.0004f);
+            AddTone(d, 0.06f, 0.42f, 350f, 350f, 0.08f, Wave.Sine, 0.3f, 0.02f);
+            AddTone(d, 0.06f, 0.42f, 440f, 440f, 0.08f, Wave.Sine, 0.3f, 0.02f);
+            return Normalize(d, 0.4f);
+        }
+
         // ------------------------------------------------------------------ stamps
 
         public static float[] Stamp()

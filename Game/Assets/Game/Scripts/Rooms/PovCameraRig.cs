@@ -22,6 +22,8 @@ namespace BirimizKovulacak.Game
         public float Yaw { get; private set; }
         public float Pitch { get; private set; }
         public bool Transitioning => _blending;
+        /// <summary>0..1 (with a little overshoot) while blending to a new pose, 1 when settled.</summary>
+        public float BlendProgress => _blending ? _p : 1f;
 
         float _yawLimit = 110f, _pitchUp = 40f, _pitchDown = 60f;
         float _sens = 1f, _fov = 60f;
@@ -97,6 +99,8 @@ namespace BirimizKovulacak.Game
             if (d.sqrMagnitude < 1e-6f) return;
             float k = DegreesPerPixel * _sens;
             Yaw = Mathf.Clamp(Yaw + d.x * k, -_yawLimit, _yawLimit);
+            // unlimited yaw (standing in the office): keep it in -180..180
+            if (_yawLimit >= 1000f) Yaw = Mathf.Repeat(Yaw + 180f, 360f) - 180f;
             Pitch = Mathf.Clamp(Pitch + (_invert ? d.y : -d.y) * k, -_pitchUp, _pitchDown);
         }
 

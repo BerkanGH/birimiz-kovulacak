@@ -157,6 +157,12 @@ namespace BirimizKovulacak.Game
             Add("tip_dial", SfxSynth.Dial());
             Add("email_ding", SfxSynth.EmailDing());
             Add("mail_drop", SfxSynth.MailDrop());
+            // v5 office: footsteps, the cassette recorder, busy line, handset lifted
+            Add("step_a", SfxSynth.Step(3));
+            Add("step_b", SfxSynth.Step(9));
+            Add("rec_clunk", SfxSynth.RecClunk());
+            Add("busy", SfxSynth.Busy());
+            Add("offhook", SfxSynth.OffHook());
             // tricks landing on your desk
             Add("internet_down", SfxSynth.InternetDown());
             Add("power_down", SfxSynth.PowerDown());

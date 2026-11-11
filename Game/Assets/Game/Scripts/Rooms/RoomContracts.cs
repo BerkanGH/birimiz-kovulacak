@@ -8,8 +8,8 @@ namespace BirimizKovulacak.Game
     // meeting UI). The world implements IRoomPresenter and registers it in Rooms.Presenter when the scene loads;
     // everybody else only talks to these types. See docs/V3_DESIGN.md §9.
 
-    /// <summary>Clickable things on the local player's desk.</summary>
-    public enum DeskTarget { None, Monitor, Phone, Mug, Window, Drawer, Nameplate }
+    /// <summary>Clickable things in the local player's office (v5 appends the recorder, the cork board and the chair).</summary>
+    public enum DeskTarget { None, Monitor, Phone, Mug, Window, Drawer, Nameplate, Recorder, Board, Chair }
 
     /// <summary>Where the first-person camera is and what the mouse does.</summary>
     public enum PovMode
@@ -26,11 +26,14 @@ namespace BirimizKovulacak.Game
         MeetingProjector,
         /// <summary>Scripted camera (warning stamp, firing); no input.</summary>
         Cutscene,
+        /// <summary>v5: camera framed on the office cork board (suç tahtası); no mouse-look.</summary>
+        Board,
     }
 
     public enum MonitorState { Normal, Alert, Offline, Coffee, Off }
 
-    public enum PhoneLineState { Idle, Ringing, Dialing, InCall, Dead }
+    /// <summary>OffHook (v5): the handset is up (phone panel open) but no call is running.</summary>
+    public enum PhoneLineState { Idle, Ringing, Dialing, InCall, Dead, OffHook }
 
     public enum MeetingReaction { None, Nod, Laugh, Gasp, Point, Slump, Cheer }
 

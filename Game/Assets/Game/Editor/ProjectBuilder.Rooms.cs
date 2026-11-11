@@ -137,6 +137,9 @@ namespace BirimizKovulacak.EditorTools
             sil.SetFloat("_Cull", 0f);
             sil.renderQueue = (int)RenderQueue.AlphaTest;
             EditorUtility.SetDirty(sil);
+            // v5: the meeting lamp over the office door (dark red glass / glowing amber-red)
+            CreateLit("M_RmDoorLampOff", lit, Hex("#6B2D26"), 0.75f, 0f, 0f, 1f);
+            CreateLit("M_RmDoorLampOn", lit, Hex("#FF6A48"), 0.6f, 0f, 1.25f, 1f);
             var cord = GetOrCreate("M_RmCord", unlit);
             cord.SetColor("_BaseColor", Hex("#E2DACB"));
             SetOpaque(cord);
@@ -256,7 +259,7 @@ namespace BirimizKovulacak.EditorTools
                 var en = RoomImage("Art/UI/decals_en/" + id + ".png", "DecalsEn", 512);
                 if (en != null) ImageMat("M_RmDecalEn_" + id, en, lit);
             }
-            var cork = RoomImage("Art/UI/decals/corkboard_notes.png", "Decals", 512);
+            var cork = RoomImage("Art/UI/decals/corkboard_notes.png", "Decals", 1024);
             if (cork != null) ImageMat("M_RmCorkNotes", cork, lit, 0.05f);
             var wb = RoomImage("Art/UI/decals/whiteboard_doodles.png", "Decals", 1024);
             if (wb != null) ImageMat("M_RmWhiteboardDoodles", wb, lit, 0.75f);
@@ -854,7 +857,35 @@ namespace BirimizKovulacak.EditorTools
                 office.NameLabels = new[] { front, back };
                 MakeTarget(g, g.GetComponentsInChildren<MeshRenderer>(true), DeskTarget.Nameplate, rb, 0.03f);
             }
-            if (props.TryGetValue("chair", out g)) office.ChairFabric = RendererUnder(g.transform, "Fabric");
+            if (props.TryGetValue("chair", out g))
+            {
+                office.ChairFabric = RendererUnder(g.transform, "Fabric");
+                office.Chair = g.transform;
+                MakeTarget(g, g.GetComponentsInChildren<Renderer>(true), DeskTarget.Chair, rb, 0.02f);
+            }
+            // v5 cassette recorder
+            if (props.TryGetValue("recorder", out g))
+            {
+                office.Recorder = g.transform;
+                office.RecButton = FindDeep(g.transform, "RecButton");
+                office.RecLight = RendererUnder(g.transform, "RecLight");
+                var tape = FindDeep(g.transform, "TapeIn");
+                office.TapeIn = tape != null ? tape.gameObject : null;
+                office.ReelL = FindDeep(g.transform, "ReelL");
+                office.ReelR = FindDeep(g.transform, "ReelR");
+                var cassettes = new List<GameObject>();
+                for (int i = 0; i < 3; i++)
+                {
+                    var c = FindDeep(g.transform, "Cassette" + i);
+                    if (c != null) cassettes.Add(c.gameObject);
+                }
+                office.Cassettes = cassettes.ToArray();
+                office.RecOff = Mat("M_RmRingOff");
+                office.RecOn = Mat("M_LEDRed");
+                MakeTarget(g, g.GetComponentsInChildren<Renderer>(true), DeskTarget.Recorder, rb, 0.02f);
+                Log("ROOMS recorder: button=" + (office.RecButton != null) + " lamp=" + (office.RecLight != null) + " tape=" + (office.TapeIn != null)
+                    + " reels=" + (office.ReelL != null && office.ReelR != null) + " cassettes=" + office.Cassettes.Length);
+            }
             if (props.TryGetValue("lamp", out g)) office.LampGlow = RendererUnder(g.transform, "Glow");
             if (props.TryGetValue("photo", out g)) office.Photo = RendererUnder(g.transform, "Photo");
             if (props.TryGetValue("clock", out g)) MakeClock(g, rb);
@@ -862,6 +893,8 @@ namespace BirimizKovulacak.EditorTools
             {
                 var cs = RendererUnder(g.transform, "CorkSurface");
                 if (cs != null && Mat("M_RmCorkNotes") != null) cs.sharedMaterial = Mat("M_RmCorkNotes");
+                office.CorkSurface = cs;
+                MakeTarget(g, g.GetComponentsInChildren<Renderer>(true), DeskTarget.Board, rb, 0.02f);
             }
             office.PhotoMats = Enumerable.Range(0, 6).Select(i => Mat("M_RmPhoto" + i)).Where(m => m != null).ToArray();
             office.PlayerColors = Enumerable.Range(0, 6).Select(i => Mat("M_PlayerColor" + i)).ToArray();
@@ -941,7 +974,68 @@ namespace BirimizKovulacak.EditorTools
             var room = (JObject)o["room"];
             float rx0 = (float)room["x0"], rx1 = (float)room["x1"], rz0 = (float)room["z0"], rz1 = (float)room["z1"], rh = (float)room["h"];
             RoomProbe(root, new Vector3((rx0 + rx1) / 2, 1.3f, (rz0 + rz1) / 2), new Vector3(rx1 - rx0, rh, rz1 - rz0), rb);
+            BuildOfficeWalk(office, o, rx0, rx1, rz0, rz1);
+            BuildDoorLamp(root, office, o, rb);
             return office;
+        }
+
+        /// <summary>v5: walking data from the layout ("walk": eye height, body radius, stand spot, chair, footprints).</summary>
+        static void BuildOfficeWalk(OfficeRoom office, JObject o, float x0, float x1, float z0, float z1)
+        {
+            office.RoomMin = new Vector2(x0, z0);
+            office.RoomMax = new Vector2(x1, z1);
+            var w = o["walk"] as JObject;
+            if (w == null) { Log("ROOMS office layout has no walk data (run Blender build_rooms.py)"); return; }
+            office.StandEye = (float)w["eye"];
+            office.WalkRadius = (float)w["radius"];
+            office.StandSpot = new Vector2((float)w["stand"][0], (float)w["stand"][1]);
+            office.ChairBack = new Vector3((float)w["chairBack"][0], 0f, (float)w["chairBack"][1]);
+            office.ChairBackYaw = (float)w["chairBackYaw"];
+            office.ChairRadius = (float)w["chairRadius"];
+            var rects = new List<Vector4>();
+            var yaws = new List<float>();
+            foreach (JObject r in (JArray)w["rects"])
+            {
+                rects.Add(new Vector4((float)r["c"][0], (float)r["c"][1], (float)r["h"][0], (float)r["h"][1]));
+                yaws.Add((float)r["r"]);
+            }
+            var circles = new List<Vector3>();
+            foreach (JObject c in (JArray)w["circles"]) circles.Add(new Vector3((float)c["c"][0], (float)c["c"][1], (float)c["r"]));
+            office.WalkRects = rects.ToArray();
+            office.WalkRectYaw = yaws.ToArray();
+            office.WalkCircles = circles.ToArray();
+            Log("ROOMS office walk: " + rects.Count + " rects, " + circles.Count + " circles, room " + office.RoomMin + ".." + office.RoomMax);
+        }
+
+        /// <summary>v5: "TOPLANTI" lamp over the inside of the office door (lights up before a meeting).</summary>
+        static void BuildDoorLamp(Transform root, OfficeRoom office, JObject o, RoomBuild rb)
+        {
+            var w = o["walk"] as JObject;
+            if (w == null || w["doorLamp"] == null) return;
+            var p = RV(w["doorLamp"]);
+            var lamp = new GameObject("DoorLamp").transform;
+            lamp.SetParent(root, false);
+            lamp.localPosition = new Vector3(p.x - 0.03f, p.y, p.z);
+            lamp.localRotation = Quaternion.Euler(0f, 90f, 0f); // front (-z local) faces into the room (-x)
+            var housing = Cube(lamp, "Housing", new Vector3(0f, 0f, 0.012f), new Vector3(0.34f, 0.1f, 0.05f), Mat("M_RmWalnutDark"));
+            housing.GetComponent<Renderer>().shadowCastingMode = ShadowCastingMode.Off;
+            var glass = Cube(lamp, "Glass", new Vector3(0f, 0f, -0.016f), new Vector3(0.3f, 0.075f, 0.012f), Mat("M_RmDoorLampOff"));
+            glass.GetComponent<Renderer>().shadowCastingMode = ShadowCastingMode.Off;
+            office.DoorLamp = glass.GetComponent<Renderer>();
+            office.DoorLampOff = Mat("M_RmDoorLampOff");
+            office.DoorLampOn = Mat("M_RmDoorLampOn");
+            var font = rb.Fonts != null ? rb.Fonts.TmpTitle ?? rb.Fonts.Tmp : null;
+            office.DoorLabel = Label3D(lamp, "DoorLabel", new Vector3(0f, -0.002f, -0.0235f), new Vector3(0f, 0f, 0f), new Vector2(0.27f, 0.06f), font, Hex("#2A0A06"), "TOPLANTI", 0.5f);
+            var light = new GameObject("DoorLight").AddComponent<Light>();
+            light.transform.SetParent(lamp, false);
+            light.transform.localPosition = new Vector3(0f, -0.05f, -0.22f);
+            light.type = LightType.Point;
+            light.color = Hex("#FF6A44");
+            light.range = 1.8f;
+            light.intensity = 0f;
+            light.shadows = LightShadows.None;
+            light.enabled = false;
+            office.DoorLight = light;
         }
 
         // ================================================================== meeting

@@ -8,6 +8,9 @@ namespace BirimizKovulacak.Game
     /// The v3 world: implements <see cref="IRoomPresenter"/> over the rooms scene (one private office personalised for
     /// the local player, one meeting room) and registers itself in <see cref="Rooms.Presenter"/>. Callers drive the
     /// place (EnterOffice / EnterMeeting) and the camera mode; the world only raises click events.
+    /// v5 office: the player starts seated; WASD stands up and walks (<see cref="OfficeWalker"/>, local only), the
+    /// crosshair hovers desk objects within reach and E / left click uses them; the computer, the phone and the cork
+    /// board have their own camera poses (the computer and the phone sit you back down).
     /// Built by Editor/ProjectBuilder.Rooms.cs (scene Rooms.unity). Runs after default scripts so it sees the
     /// cursor lock UIRoot decided this frame.
     /// </summary>
@@ -21,12 +24,16 @@ namespace BirimizKovulacak.Game
         public GameObject OfficeRoot, MeetingRoot;
         public RoomClock[] Clocks = new RoomClock[0];
         public Material HoverMat;
-        public float OfficeReach = 3.2f, MeetingReach = 6f;
+        public float OfficeReach = 2.4f, MeetingReach = 6f;
 
         /// <summary>Optional: let the world lock/unlock the cursor itself (UIRoot normally owns it).</summary>
         public static bool ManageCursor;
         /// <summary>Test harness: show the crosshair and allow hover/click while the cursor is free.</summary>
         public static bool ForceLookInput;
+        /// <summary>Test harness / screenshots: walk input (strafe, forward) used instead of the keyboard.</summary>
+        public static Vector2? ScriptedMove;
+        /// <summary>False while something else owns the keyboard (text field focused, menus): no walking.</summary>
+        public static bool AllowWalk = true;
 
         public static RoomsPresenter Instance { get; private set; }
 
@@ -36,10 +43,16 @@ namespace BirimizKovulacak.Game
         PovMode _mode = PovMode.Office;
         bool _entered;
         RoomTarget _hover;
+        readonly RaycastHit[] _hits = new RaycastHit[16];
         Color _hoverBase;
         int _localSlot = -1;
         Vector3 _meetEye;
         Quaternion _meetRot = Quaternion.identity;
+        // v5 office presence: seated at the desk, or standing and walking
+        bool _seated = true;
+        readonly OfficeWalker _walker = new OfficeWalker();
+        float _stepNext, _bobPhase, _bobAmp;
+        int _stepFoot;
         // cutscene pose (scripted camera)
         bool _hasCutscene;
         Vector3 _cutPos;
@@ -49,6 +62,9 @@ namespace BirimizKovulacak.Game
         public PovMode Mode => _mode;
         public Camera PovCamera => Rig != null ? Rig.Cam : null;
         public bool InMeeting => _place == Place.Meeting;
+        /// <summary>Office: seated at the desk (false = standing / walking).</summary>
+        public bool Seated => _seated;
+        public OfficeWalker Walker => _walker;
 
         void Awake()
         {
@@ -92,11 +108,38 @@ namespace BirimizKovulacak.Game
             Office.Enter(localSlot, colorIndex, playerName);
             if (switched)
             {
-                Rig.SetLimits(Office.YawLimit, Office.PitchUp, Office.PitchDown);
-                Rig.SetLook(0f, Office.EyePitch);
+                SitDown(false);
                 Rig.Snap();
                 if (Lighting != null) Lighting.RefreshProbes();
             }
+        }
+
+        // ------------------------------------------------------------------ v5: standing and sitting
+
+        /// <summary>Get up from the desk chair (the chair rolls back); the view keeps its direction.</summary>
+        public void StandUp()
+        {
+            if (!_seated || _place != Place.Office) return;
+            _seated = false;
+            float yaw = (Office.Eye != null ? Office.Eye.eulerAngles.y : 0f) + Rig.Yaw;
+            float pitch = Rig.Pitch;
+            Office.SetStanding(true);
+            _walker.Place(Office.StandSpot, Office);
+            Rig.SetLimits(100000f, 70f, 72f);
+            Rig.SetLook(Mathf.Repeat(yaw + 180f, 360f) - 180f, Mathf.Clamp(pitch, -20f, 45f));
+            Rig.BeginTransition();
+            _stepNext = _walker.Travelled + 0.35f;
+        }
+
+        /// <summary>Sit back down at the desk, facing the monitor.</summary>
+        public void SitDown(bool transition = true)
+        {
+            bool was = _seated;
+            _seated = true;
+            Office.SetStanding(false);
+            Rig.SetLimits(Office.YawLimit, Office.PitchUp, Office.PitchDown);
+            if (!was || !transition) Rig.SetLook(0f, Office.EyePitch);
+            if (!was && transition) Rig.BeginTransition();
         }
 
         public void EnterMeeting(int localSlot, IReadOnlyList<MeetingSeatInfo> seats, string managerProfileId)
@@ -125,7 +168,11 @@ namespace BirimizKovulacak.Game
         public void SetPovMode(PovMode mode)
         {
             if (mode == _mode) return;
+            var old = _mode;
             _mode = mode;
+            // the computer and the phone are used from the chair: coming back from them you sit at the desk
+            if (_place == Place.Office && (mode == PovMode.Monitor || mode == PovMode.Phone)) SitDown(false);
+            if (_place == Place.Office && mode == PovMode.Office && (old == PovMode.Monitor || old == PovMode.Phone)) Rig.SetLook(0f, Office.EyePitch);
             if (Rig != null) Rig.BeginTransition();
             SetHover(null);
         }
@@ -162,7 +209,7 @@ namespace BirimizKovulacak.Game
         {
             rect = default;
             Renderer r = framing == PovMode.Monitor ? Office.Screen : framing == PovMode.Phone ? (Office.Phone != null ? Office.Phone.GetComponentInChildren<Renderer>() : null)
-                : framing == PovMode.MeetingProjector ? Meeting.Canvas : null;
+                : framing == PovMode.MeetingProjector ? Meeting.Canvas : framing == PovMode.Board ? Office.CorkSurface : null;
             var cam = PovCamera;
             if (r == null || cam == null) return false;
             var b = r.bounds;
@@ -181,11 +228,12 @@ namespace BirimizKovulacak.Game
         /// <summary>Look direction relative to the seat (test harness / scripted moments).</summary>
         public void SetLook(float yaw, float pitch) { if (Rig != null) Rig.SetLook(yaw, pitch); }
 
-        /// <summary>Turn the seated head toward a world point (test harness / scripted moments).</summary>
+        /// <summary>Turn the head toward a world point (test harness / scripted moments).</summary>
         public void AimAt(Vector3 world)
         {
             Vector3 eye; float baseYaw;
             if (_place == Place.Meeting) { eye = _meetEye; baseYaw = _meetRot.eulerAngles.y; }
+            else if (!_seated) { eye = Office.transform.TransformPoint(new Vector3(_walker.Position.x, Office.StandEye, _walker.Position.y)); baseYaw = 0f; }
             else { eye = Office.Eye != null ? Office.Eye.position : Vector3.up * 1.24f; baseYaw = Office.Eye != null ? Office.Eye.eulerAngles.y : 0f; }
             Vector3 d = world - eye;
             float yaw = Mathf.DeltaAngle(baseYaw, Mathf.Atan2(d.x, d.z) * Mathf.Rad2Deg);
@@ -195,6 +243,25 @@ namespace BirimizKovulacak.Game
 
         /// <summary>Raise the click for whatever is under the crosshair (test harness).</summary>
         public void ClickHovered() { Click(); }
+
+        /// <summary>A new match in the office: seated at the desk facing the monitor, no blend.</summary>
+        public void ResetOffice()
+        {
+            if (_place != Place.Office) return;
+            _seated = false;
+            SitDown(false);
+            Rig.Snap();
+        }
+
+        /// <summary>Test harness / screenshots: stand at an office spot (x, z) looking along yaw/pitch.</summary>
+        public void StandAt(Vector2 spot, float yaw, float pitch)
+        {
+            if (_place != Place.Office) return;
+            if (_seated) StandUp();
+            _walker.Place(spot, Office);
+            Rig.SetLook(yaw, pitch);
+            Rig.Snap();
+        }
 
         // ------------------------------------------------------------------ frame
 
@@ -209,8 +276,10 @@ namespace BirimizKovulacak.Game
                 Cursor.lockState = lockIt ? CursorLockMode.Locked : CursorLockMode.None;
                 Cursor.visible = !lockIt;
             }
-            bool inputOk = LookMode && (Cursor.lockState == CursorLockMode.Locked || ForceLookInput);
+            bool locked = Cursor.lockState == CursorLockMode.Locked;
+            bool inputOk = LookMode && (locked || ForceLookInput);
             Rig.UpdateLook(LookMode);
+            if (_place == Place.Office) Walk(inputOk && (locked || ScriptedMove.HasValue) && _mode == PovMode.Office, dt);
             Vector3 pos; Quaternion rot; float fov;
             TargetPose(out pos, out rot, out fov);
             Rig.Apply(pos, rot, fov, dt);
@@ -223,14 +292,58 @@ namespace BirimizKovulacak.Game
             {
                 Meeting.Tick(cam != null ? cam.transform.position : _meetEye, dt);
             }
-            UpdateHover(inputOk && !Rig.Transitioning);
-            if (inputOk && _hover != null && Mouse.current != null && Mouse.current.leftButton.wasPressedThisFrame && Cursor.lockState == CursorLockMode.Locked) Click();
+            UpdateHover(inputOk && (!Rig.Transitioning || !_seated));
+            if (inputOk && _hover != null && (locked || ForceLookInput) && UsePressed()) Click();
             Rig.SetCrosshair(_entered && LookMode && (ForceLookInput || !Cursor.visible), _hover != null, dt);
             if (HoverMat != null && _hover != null)
             {
                 var c = _hoverBase * (0.78f + 0.22f * Mathf.Sin(Time.time * 6f));
                 c.a = 1f;
                 HoverMat.SetColor("_BaseColor", c);
+            }
+        }
+
+        /// <summary>E or a left click (only while the cursor is locked: a free cursor belongs to the UI).</summary>
+        static bool UsePressed()
+        {
+            if (!AllowWalk) return false;
+            bool click = Mouse.current != null && Mouse.current.leftButton.wasPressedThisFrame && Cursor.lockState == CursorLockMode.Locked;
+            bool e = GameInput.Interact != null && GameInput.Interact.WasPressedThisFrame();
+            return click || e;
+        }
+
+        /// <summary>WASD: the first key press stands you up, then you walk (local only).</summary>
+        void Walk(bool allowed, float dt)
+        {
+            Vector2 input = Vector2.zero;
+            if (allowed && (AllowWalk || ScriptedMove.HasValue))
+            {
+                if (ScriptedMove.HasValue) input = ScriptedMove.Value;
+                else if (GameInput.Move != null) input = GameInput.Move.ReadValue<Vector2>();
+            }
+            if (_seated)
+            {
+                if (input.sqrMagnitude > 0.04f) StandUp();
+                _bobAmp = 0f;
+                return;
+            }
+            Vector2? tether = null;
+            if (Office.HandsetUp && Office.Phone != null)
+            {
+                var ph = Office.transform.InverseTransformPoint(Office.Phone.position);
+                tether = new Vector2(ph.x, ph.z);
+                // answered from across the room: you go back to the desk (the cord does not reach)
+                if ((_walker.Position - tether.Value).magnitude > _walker.CordReach + 0.05f) { SitDown(); return; }
+            }
+            float yaw = Rig.Yaw;
+            _walker.Step(input, yaw, dt, Office, tether);
+            float speed = _walker.Velocity.magnitude;
+            _bobAmp = Mathf.MoveTowards(_bobAmp, Mathf.Clamp01(speed / Mathf.Max(0.1f, _walker.Speed)), dt * 4f);
+            _bobPhase = _walker.Travelled * Mathf.PI / 0.62f;
+            if (_walker.Travelled >= _stepNext)
+            {
+                _stepNext = _walker.Travelled + 0.62f;
+                if (speed > 0.4f) Sfx.Play(_stepFoot++ % 2 == 0 ? "step_a" : "step_b", 0.32f);
             }
         }
 
@@ -247,17 +360,23 @@ namespace BirimizKovulacak.Game
                     if (Frame(Office.Screen, 0.92f, framingFov, out pos, out rot)) { fov = framingFov; return; }
                     break;
                 case PovMode.Phone:
-                    if (Office.Phone != null)
+                    if (Office.Phone != null && Office.Eye != null)
                     {
-                        var ph = Office.Phone;
-                        Vector3 c = ph.TransformPoint(new Vector3(0f, 0.05f, 0f));
-                        Vector3 back = Vector3.ProjectOnPlane(-ph.forward, Vector3.up).normalized;
-                        Vector3 dir = (back * 0.62f + Vector3.up * 0.78f).normalized;
-                        pos = c + dir * 0.5f;
-                        rot = Quaternion.LookRotation(c - pos, Vector3.up);
-                        fov = framingFov;
+                        // v5: from the chair, turned toward the phone; the phone sits right of centre so the phone
+                        // panel (left half of the screen) does not cover it, the lifted handset is at your ear
+                        Vector3 eye = Office.Eye.position;
+                        Vector3 c = Office.Phone.TransformPoint(new Vector3(0f, 0.05f, 0f));
+                        Vector3 d = c - eye;
+                        float yaw = Mathf.Atan2(d.x, d.z) * Mathf.Rad2Deg - 15f;
+                        float pitch = -Mathf.Atan2(d.y, new Vector2(d.x, d.z).magnitude) * Mathf.Rad2Deg - 3f;
+                        pos = eye + Breath();
+                        rot = Quaternion.Euler(0f, yaw, 0f) * Quaternion.Euler(pitch, 0f, 0f);
+                        fov = 54f;
                         return;
                     }
+                    break;
+                case PovMode.Board:
+                    if (Frame(Office.CorkSurface, 0.9f, framingFov, out pos, out rot)) { fov = framingFov; return; }
                     break;
                 case PovMode.MeetingProjector:
                     if (Frame(Meeting.Canvas, 0.94f, framingFov, out pos, out rot)) { fov = framingFov; return; }
@@ -270,6 +389,16 @@ namespace BirimizKovulacak.Game
             {
                 pos = _meetEye + Breath();
                 rot = Quaternion.Euler(0f, _meetRot.eulerAngles.y + Rig.Yaw, 0f) * Quaternion.Euler(Rig.Pitch, 0f, 0f);
+            }
+            else if (!_seated)
+            {
+                // standing: the walker's spot at eye height, a very subtle step bob
+                var w = _walker.Position;
+                float bobY = Mathf.Abs(Mathf.Sin(_bobPhase)) * 0.012f * _bobAmp - 0.006f * _bobAmp;
+                float bobX = Mathf.Sin(_bobPhase) * 0.004f * _bobAmp;
+                Quaternion yawRot = Quaternion.Euler(0f, Rig.Yaw, 0f);
+                pos = Office.transform.TransformPoint(new Vector3(w.x, Office.StandEye + bobY, w.y)) + yawRot * new Vector3(bobX, 0f, 0f) + Breath();
+                rot = Office.transform.rotation * yawRot * Quaternion.Euler(Rig.Pitch, 0f, 0f);
             }
             else
             {
@@ -344,21 +473,40 @@ namespace BirimizKovulacak.Game
             {
                 var ray = cam.ViewportPointToRay(new Vector3(0.5f, 0.5f, 0f));
                 float reach = _place == Place.Office ? OfficeReach : MeetingReach;
-                if (Physics.Raycast(ray, out var info, reach, Physics.DefaultRaycastLayers, QueryTriggerInteraction.Collide))
+                // nearest usable target along the ray (the seated chair's box must not hide the desk below it)
+                int n = Physics.RaycastNonAlloc(ray, _hits, reach, Physics.DefaultRaycastLayers, QueryTriggerInteraction.Collide);
+                float best = float.MaxValue;
+                for (int i = 0; i < n; i++)
                 {
+                    var info = _hits[i];
+                    if (info.distance >= best) continue;
                     var t = info.collider.GetComponentInParent<RoomTarget>();
-                    if (t != null)
+                    if (t == null) continue;
+                    bool ok = false;
+                    if (_place == Place.Office) ok = OfficeTargetOk(t.Desk);
+                    else if (_place == Place.Meeting && t.Seat >= 0)
                     {
-                        if (_place == Place.Office && t.Desk != DeskTarget.None) hit = t;
-                        else if (_place == Place.Meeting && t.Seat >= 0)
-                        {
-                            int slot = Meeting.SlotAtSeat(t.Seat);
-                            if (slot >= 0 && slot != _localSlot) hit = t;
-                        }
+                        int slot = Meeting.SlotAtSeat(t.Seat);
+                        ok = slot >= 0 && slot != _localSlot;
                     }
+                    if (!ok) continue;
+                    best = info.distance;
+                    hit = t;
                 }
             }
             SetHover(hit);
+        }
+
+        /// <summary>Things you can use in the office (the window is only scenery; the chair only while standing).</summary>
+        bool OfficeTargetOk(DeskTarget d)
+        {
+            switch (d)
+            {
+                case DeskTarget.None:
+                case DeskTarget.Window: return false;
+                case DeskTarget.Chair: return !_seated;
+                default: return true;
+            }
         }
 
         void SetHover(RoomTarget t)
@@ -377,8 +525,10 @@ namespace BirimizKovulacak.Game
             if (_hover == null) return;
             if (_place == Place.Office && _hover.Desk != DeskTarget.None)
             {
-                Office.Clicked(_hover.Desk);
-                Rooms.RaiseDeskClicked(_hover.Desk);
+                var desk = _hover.Desk;
+                Office.Clicked(desk);
+                if (desk == DeskTarget.Chair) SitDown();
+                Rooms.RaiseDeskClicked(desk);
             }
             else if (_place == Place.Meeting && _hover.Seat >= 0)
             {
