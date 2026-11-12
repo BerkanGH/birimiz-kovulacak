@@ -105,7 +105,7 @@ namespace BirimizKovulacak.Game
             sb.Append(Loc.Language).Append('|').Append(lc.MySlot).Append('|').Append(v.WeekId).Append('|').Append((int)v.Phase).Append('|').Append(v.Day);
             foreach (var p in v.Players)
                 sb.Append('|').Append(p.Id).Append(p.Name).Append(p.ColorIndex).Append(',').Append(p.Blame).Append(p.Candidate ? 'C' : '-').Append(p.Fired ? 'F' : '-')
-                  .Append(p.Connected ? 'o' : 'x').Append(v.Features.VoteOpen && p.Voted ? 'v' : '-');
+                  .Append(p.Connected ? 'o' : 'x').Append(v.Features.VoteOpen && BallotDrops.InBox(v, p) ? 'v' : '-');
             var mt = v.Meeting;
             if (mt != null)
             {
@@ -172,7 +172,8 @@ namespace BirimizKovulacak.Game
                     Ink(PlayText.T("players.candidate"), UiKit.StampFont, "wb-stamp", "wb-stamp-cand").AddTo(row);
                     if (v.Phase < LinePhase.Results) Ink(PlayText.T("players.sealed"), UiKit.StampFont, "wb-stamp", "wb-stamp-sealed").AddTo(row);
                 }
-                if (v.Features.VoteOpen && p.Voted && !p.Fired) Ink(PlayText.T("meeting.board.voted"), hand, "wb-voted").AddTo(row);
+                // v5 step 3b: "pusula attı" for every paper in the box (a blank one in the final too)
+                if (v.Features.VoteOpen && BallotDrops.InBox(v, p)) Ink(PlayText.T("meeting.board.voted"), hand, "wb-voted").AddTo(row);
             }
             Side(lc, v, hand);
         }

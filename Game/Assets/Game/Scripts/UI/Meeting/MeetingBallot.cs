@@ -15,7 +15,8 @@ namespace BirimizKovulacak.Game
     /// table, and the votes are sent at that moment. Until time runs out you can take a fresh paper and vote again (it
     /// replaces the one in the box). The final vote has an explicit "Boş oy (çekimser)" row; the suç and crisis votes
     /// have none (an empty ballot counts against yourself, same rules as before). Others only see a paper going into the
-    /// box. Near the end of the vote a filled-in paper you have not dropped yet is dropped for you.
+    /// box. Near the end of the vote a filled-in paper you have not dropped yet is dropped for you. Step 3b: a small pencil
+    /// draws each new X.
     /// The same layout is drawn into the paper's texture (what folds and flies) and, interactive, laid over it.
     /// </summary>
     public sealed class MeetingBallot
@@ -40,6 +41,9 @@ namespace BirimizKovulacak.Game
         bool _droppedThisRound, _autoDone;
         string _flash;
         float _flashUntil;
+        // v5 step 3b: the pencil draws the newest X (the column and name just marked)
+        int _penCol = -1, _penTarget = int.MinValue;
+        float _penAt = -10f;
 
         public bool IsOpen => _open;
 
@@ -144,7 +148,7 @@ namespace BirimizKovulacak.Game
             if (!Options(lc, v).Contains(slot)) { _ui.Toast(F("meeting.paper.not_option", Name(slot)), "of-toast-warn", 3f); Sfx.Play("deny", 0.5f); return false; }
             int col = Array.IndexOf(_marks, -1);
             if (col < 0) col = 0;
-            if (Array.IndexOf(_marks, slot) < 0 || v.Phase != LinePhase.MeetingVote) _marks[col] = slot;
+            if (Array.IndexOf(_marks, slot) < 0 || v.Phase != LinePhase.MeetingVote) { _marks[col] = slot; Pen(col, slot); }
             Sfx.Play("pencil", 0.6f);
             if (!_open) Open();
             return true;
@@ -164,8 +168,33 @@ namespace BirimizKovulacak.Game
         {
             if (col < 0 || col >= _marks.Length) return;
             _marks[col] = _marks[col] == target ? -1 : target;
+            if (_marks[col] == target) Pen(col, target);
             Sfx.Play("pencil", 0.55f);
             _flash = null;
+        }
+
+        void Pen(int col, int target) { _penCol = col; _penTarget = target; _penAt = Time.unscaledTime; }
+
+        /// <summary>The X of the box just marked, drawn by a pencil: the cross is revealed left to right in two strokes
+        /// while the pencil's tip runs along them (0.35 s), then the pencil lifts away.</summary>
+        static void DrawX(VisualElement box)
+        {
+            var clip = Box("mt-paper-xclip").NoPick().AddTo(box);
+            Hand("X", "mt-paper-x", "mt-paper-x-drawn").NoPick().AddTo(clip);
+            var pen = Box("mt-paper-pen").NoPick().AddTo(box);
+            Box("mt-paper-pen-tip").NoPick().AddTo(pen);
+            clip.style.width = 0;
+            UiMotion.Tween(box, 0.38f, t =>
+            {
+                clip.style.width = Length.Percent(100f * t);
+                // the tip zigzags down one stroke and up the other
+                float x = 6f + 40f * t, y = t < 0.5f ? 6f + 80f * t : 46f - 80f * (t - 0.5f);
+                pen.style.left = x; pen.style.top = y - 62f;
+            }, UiMotion.Ease.Linear, () =>
+            {
+                clip.style.width = Length.Percent(100f);
+                UiMotion.Tween(pen, 0.2f, u => { pen.style.opacity = 1f - u; pen.style.translate = new Translate(12f * u, -18f * u); }, UiMotion.Ease.OutCubic, () => pen.RemoveFromHierarchy());
+            });
         }
 
         /// <summary>E with the paper up: fold and drop it when it is filled in.</summary>
@@ -199,6 +228,7 @@ namespace BirimizKovulacak.Game
             }
             _lastCast = (int[])_marks.Clone();
             _droppedThisRound = true;
+            BallotDrops.Dropped(v, lc.MySlot);
             for (int i = 0; i < _marks.Length; i++) _marks[i] = -1;
             _open = false;
             _overlay.Show(false);
@@ -370,7 +400,8 @@ namespace BirimizKovulacak.Game
                 }
                 else box = Box("mt-paper-box").NoPick();
                 box.AddTo(row);
-                if (on) Hand("X", "mt-paper-x").NoPick().AddTo(box);
+                if (on && live && col == _penCol && target == _penTarget && Time.unscaledTime - _penAt < 0.3f) { _penAt = -10f; DrawX(box); }
+                else if (on) Hand("X", "mt-paper-x").NoPick().AddTo(box);
             }
         }
 

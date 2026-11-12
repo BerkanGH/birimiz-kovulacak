@@ -1,27 +1,26 @@
-/* v5 meeting room layer, step 3a (MeetingUi.cs, MeetingSlide.cs, MeetingFolder.cs, MeetingBallot.cs, MeetingBoard.cs).
+/* v5 meeting room layer, steps 3a and 3b (MeetingUi.cs, MeetingSlide.cs, MeetingFolder.cs, MeetingBallot.cs, MeetingBoard.cs;
+   the projector has its own sheet: projector.uss).
    Logical 1920x1080 (scaled). Shares the office strip, toasts and prompt (office.uss) and the play blocks (play.uss).
    Palette: paper #F4EFE3, ink navy #1F2A44, stamp red #D2382F, HR teal #3BB9B0, marker yellow #FFE066. */
 
 .mt-screen { color: rgb(31, 42, 68); font-size: 20px; }
 
-/* ---------------------------------------------------------------- the public card (3b: the projector) */
-.mt-slide { position: absolute; left: 26px; bottom: 26px; width: 520px; max-height: 46%; background-color: rgba(23, 31, 52, 0.86);
-    border-radius: 16px; border-width: 2px; border-color: rgba(244, 239, 227, 0.18); padding: 0 0 8px 0; overflow: hidden; }
-.mt-slide-head { flex-direction: row; align-items: center; padding: 8px 16px 6px 16px; background-color: rgba(244, 239, 227, 0.08);
-    border-bottom-width: 1px; border-color: rgba(244, 239, 227, 0.14); }
-.mt-slide-lamp { width: 10px; height: 10px; border-radius: 5px; background-color: rgb(169, 220, 235); margin-right: 10px; }
-.mt-slide-kicker { font-size: 15px; color: rgb(169, 220, 235); letter-spacing: 2px; }
-.mt-slide-scroll { flex-shrink: 1; }
-.mt-slide-body { padding: 8px 16px 4px 16px; }
-.mt-slide .pl-text { font-size: 16px; white-space: normal; margin: 0; }
-.mt-slide .pl-focus-text { font-size: 19px; white-space: normal; margin: 0 0 4px 0; }
-.mt-slide .pl-sub { font-size: 16px; margin-top: 4px; }
-.mt-slide-results { left: 50%; top: 120px; bottom: auto; translate: -50% 0; width: 1080px; max-height: 80%; background-color: rgba(23, 31, 52, 0.94); }
-.mt-slide-results .pl-focus-text { font-size: 22px; }
-.mt-slide-results .pl-text { font-size: 19px; }
-
-/* ---------------------------------------------------------------- cassette deck while a leak plays (3b: the projector) */
-.mt-tape { position: absolute; right: 26px; bottom: 26px; width: 600px; }
+/* ---------------------------------------------------------------- step 3b: what stays on screen of the public card */
+/* the results bar (MeetingSlide.cs): my place and the buttons; the ceremony itself is on the projector */
+.mt-results { position: absolute; left: 50%; bottom: 22px; translate: -50% 0; max-width: 1600px; align-items: center;
+    background-color: rgba(23, 31, 52, 0.9); border-radius: 18px; border-width: 2px; border-color: rgba(244, 239, 227, 0.2); padding: 10px 18px 4px 18px; }
+.mt-results-line { font-size: 22px; color: rgb(255, 224, 102); margin: 0 0 6px 0; -unity-text-align: middle-center; white-space: normal; }
+.mt-results-buttons { flex-direction: row; justify-content: center; }
+.mt-results .pl-wrap { justify-content: center; }
+.mt-results .pl-btn { margin: 0 6px 8px 6px; }
+.mt-results-reveal { border-color: rgb(255, 224, 102); }
+.mt-results-abandoned { bottom: auto; top: 42%; }
+/* back from the projector zoom; "on the projector" while something happens there out of view */
+.mt-pj-back { bottom: 64px; }
+.mt-pj-hint { position: absolute; left: 26px; bottom: 76px; flex-direction: row; align-items: center; padding: 7px 16px 7px 12px;
+    border-radius: 16px; background-color: rgba(23, 31, 52, 0.84); border-width: 2px; border-color: rgba(255, 224, 102, 0.75); }
+.mt-pj-hint-lamp { width: 12px; height: 12px; border-radius: 6px; background-color: rgb(255, 90, 70); margin-right: 10px; }
+.mt-pj-hint-text { font-size: 19px; color: rgb(244, 239, 227); }
 
 /* ---------------------------------------------------------------- a colleague's name tag under the crosshair */
 .mt-name { position: absolute; top: 56%; left: 50%; translate: -50% 0; align-items: center; background-color: rgba(23, 31, 52, 0.72);
@@ -94,6 +93,12 @@
     align-items: center; justify-content: center; background-color: rgba(255, 255, 255, 0.5); padding: 0; }
 .mt-paper-box:hover { background-color: rgba(255, 224, 102, 0.55); border-color: rgb(210, 140, 30); }
 .mt-paper-x { font-size: 62px; color: rgb(54, 58, 74); margin: -6px 0 0 0; padding: 0; -unity-text-align: middle-center; rotate: -6deg; }
+/* step 3b: the pencil draws the newest X (MeetingBallot.DrawX) */
+.mt-paper-xclip { position: absolute; left: 0; top: 0; bottom: 0; overflow: hidden; align-items: flex-start; justify-content: center; }
+.mt-paper-x-drawn { width: 46px; }
+.mt-paper-pen { position: absolute; width: 12px; height: 66px; background-color: rgb(244, 196, 48); border-radius: 3px; border-width: 2px;
+    border-color: rgb(120, 84, 20); rotate: 28deg; transform-origin: 50% 100%; }
+.mt-paper-pen-tip { position: absolute; bottom: -10px; left: 1px; width: 6px; height: 12px; background-color: rgb(232, 196, 150); border-radius: 0 0 3px 3px; }
 .mt-paper-foot { position: absolute; left: 40px; right: 40px; bottom: 22px; }
 .mt-paper-cast { font-size: 20px; color: rgb(36, 120, 74); border-width: 3px; border-color: rgba(36, 120, 74, 0.8); border-radius: 8px;
     padding: 3px 10px; align-self: flex-start; rotate: -2deg; margin-bottom: 6px; white-space: normal; }

@@ -4,8 +4,8 @@ namespace BirimizKovulacak.Game
 {
     /// <summary>
     /// v5 meeting room sentences ("v5.meeting.*" keys): the one-line "Şimdi: …" hint of the strip (the same decisions as
-    /// the old meeting screen's focus card, pointing at the folder, the ballot paper or the whiteboard), the use prompts
-    /// and the name tag line. Names stay in "Label: Name" positions (no Turkish suffixes on names).
+    /// the old meeting screen's focus card, pointing at the folder, the ballot paper, the whiteboard or the projector), the
+    /// use prompts and the name tag line. Names stay in "Label: Name" positions (no Turkish suffixes on names).
     /// </summary>
     public static class MeetingText
     {
@@ -23,7 +23,7 @@ namespace BirimizKovulacak.Game
         public static string Now(LineClient lc, LineView v, bool cast, out bool todo)
         {
             todo = false;
-            string e = Key(GameInput.Interact), q = Key(GameInput.Computer);
+            string e = Key(GameInput.Interact), q = Key(GameInput.Computer), tab = Key(GameInput.Phone);
             var mt = v.Meeting;
             var fv = v.Final;
             var meP = lc.Player(lc.MySlot);
@@ -32,7 +32,7 @@ namespace BirimizKovulacak.Game
                 case LinePhase.MeetingDossier:
                 case LinePhase.MeetingDiscussion:
                     if (mt != null && mt.FailedTasks.Count == 0) return F("meeting.now.clean", q);
-                    return F(v.Features.InvestigationOpen || PlayBlocks.LeakableCount(v) > 0 ? "meeting.now.discuss_actions" : "meeting.now.discuss", q);
+                    return F(v.Features.InvestigationOpen || PlayBlocks.LeakableCount(v) > 0 ? "meeting.now.discuss_actions" : "meeting.now.discuss", q, tab);
                 case LinePhase.MeetingVote:
                 case LinePhase.CrisisVote:
                 case LinePhase.FinalVote:
@@ -51,12 +51,12 @@ namespace BirimizKovulacak.Game
                     return F("meeting.now.final", q);
                 case LinePhase.FinalDefense:
                     if (fv != null && fv.Defender == lc.MySlot) { todo = true; return T("meeting.now.defend_me"); }
-                    return fv != null && fv.Defender >= 0 ? F("meeting.now.defend", PlayText.Name(fv.Defender)) : PlayText.Hint(v.Phase);
+                    return fv != null && fv.Defender >= 0 ? F("meeting.now.defend", PlayText.Name(fv.Defender), tab) : PlayText.Hint(v.Phase);
                 case LinePhase.FinalVerdict:
                     if (fv != null && fv.Firings.Count > 0) return F("meeting.now.fired_desk", PlayText.Name(fv.Firings[fv.Firings.Count - 1].Player), fv.Firings[fv.Firings.Count - 1].Desk);
                     return PlayText.Hint(v.Phase);
                 case LinePhase.Results:
-                    return T("meeting.now.results");
+                    return F("meeting.now.results", tab, q);
                 default:
                     return PlayText.Hint(v.Phase);
             }
@@ -70,6 +70,7 @@ namespace BirimizKovulacak.Game
                 case MeetingTarget.Folder: return T("meeting.use.folder");
                 case MeetingTarget.Ballot: return T("meeting.use.ballot");
                 case MeetingTarget.Board: return T("meeting.use.board");
+                case MeetingTarget.Projector: return T("meeting.use.projector");
                 default: return "";
             }
         }
@@ -83,7 +84,8 @@ namespace BirimizKovulacak.Game
             else if (p.Candidate) sb.Append(" · ").Append(T("players.candidate"));
             if (p.IsBot) sb.Append(" · ").Append(T("players.bot"));
             if (!p.Connected) sb.Append(" · ").Append(T("players.offline"));
-            if (v.Features.VoteOpen && !p.Fired) sb.Append(" · ").Append(T(p.Voted ? "meeting.name.voted" : "meeting.name.voting"));
+            // v5 step 3b: a paper in the box (a blank one in the final too), never what is on it
+            if (v.Features.VoteOpen && !p.Fired) sb.Append(" · ").Append(T(BallotDrops.InBox(v, p) ? "meeting.name.voted" : "meeting.name.voting"));
             return sb.ToString();
         }
     }

@@ -7,7 +7,8 @@ namespace BirimizKovulacak.Game
     /// A UI Toolkit panel rendered into a texture that replaces the material of a surface in the room (the cork board's
     /// suç tahtası, the Weekend Shift roster). The panel never takes the mouse; its material is a copy of the surface's
     /// own (same shader and smoothness) with the render texture as base map. <see cref="Release"/> restores the
-    /// original material and frees the texture.
+    /// original material and frees the texture. <see cref="CreateOffscreen"/> (v5 step 3b, the projector) only renders
+    /// the texture; the caller decides where it shows.
     /// </summary>
     public sealed class WorldPanel
     {
@@ -32,6 +33,25 @@ namespace BirimizKovulacak.Game
             Release();
             _surface = surface;
             _orig = baseMat != null ? baseMat : surface.sharedMaterial;
+            Build(like, w, h, clear, name);
+            _mat = new Material(_orig) { name = "M_" + name + "Live" };
+            if (_mat.HasProperty("_BaseMap")) _mat.SetTexture("_BaseMap", _rt);
+            if (_mat.HasProperty("_BaseColor")) _mat.SetColor("_BaseColor", Color.white);
+            _mat.mainTexture = _rt;
+            surface.sharedMaterial = _mat;
+            return Root;
+        }
+
+        /// <summary>Only the panel and its render texture (<see cref="Texture"/>); no surface material is touched.</summary>
+        public VisualElement CreateOffscreen(PanelSettings like, int w, int h, Color clear, string name)
+        {
+            Release();
+            Build(like, w, h, clear, name);
+            return Root;
+        }
+
+        void Build(PanelSettings like, int w, int h, Color clear, string name)
+        {
             _rt = new RenderTexture(w, h, 24, RenderTextureFormat.ARGB32, RenderTextureReadWrite.sRGB)
             {
                 name = name + "RT", useMipMap = true, autoGenerateMips = true, filterMode = FilterMode.Trilinear, anisoLevel = 4,
@@ -58,12 +78,6 @@ namespace BirimizKovulacak.Game
             var sheet = Resources.Load<StyleSheet>("ui/styles/office");
             if (sheet != null) Root.styleSheets.Add(sheet);
             Root.style.width = w; Root.style.height = h;
-            _mat = new Material(_orig) { name = "M_" + name + "Live" };
-            if (_mat.HasProperty("_BaseMap")) _mat.SetTexture("_BaseMap", _rt);
-            if (_mat.HasProperty("_BaseColor")) _mat.SetColor("_BaseColor", Color.white);
-            _mat.mainTexture = _rt;
-            surface.sharedMaterial = _mat;
-            return Root;
         }
 
         /// <summary>Puts the live material back if something else restored the surface's own.</summary>

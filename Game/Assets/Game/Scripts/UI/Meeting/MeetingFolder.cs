@@ -11,7 +11,8 @@ namespace BirimizKovulacak.Game
     /// the folder comes up to the camera, its cover flips open and this tablet UI is laid exactly over the tablet screen.
     /// Tabs: <b>Eylemler</b> (Soruştur, Kaydı sızdır — your own moves in the meeting), <b>Sohbet</b> (meeting chat and private
     /// texts, one thread), <b>Havale</b> (send prim; sealed for candidates), <b>Dosya</b> (the meeting's public record,
-    /// earlier firings and, in the results, every vote and transfer), <b>Kurallar</b>. Esc / E puts it down.
+    /// earlier firings; in the results the full reveal of step 3b, <see cref="MeetingReveal"/>: every balance, who robbed
+    /// whom, every vote per round, desk openings, transfers, task choices), <b>Kurallar</b>. Esc / E puts it down.
     /// Content comes from <see cref="PlayBlocks"/>; every action is a <see cref="LineClient.Send"/>.
     /// </summary>
     public sealed class MeetingFolder
@@ -33,6 +34,7 @@ namespace BirimizKovulacak.Game
         Tab _tab;
         bool _open, _dirty = true, _scrollBottom;
         int _rulesPage, _seenChat;
+        string _revealTab = MeetingReveal.TabSummary;
         float _alpha;
 
         public bool IsOpen => _open;
@@ -120,11 +122,19 @@ namespace BirimizKovulacak.Game
 
         public void FocusField() { if (_tab == Tab.Chat) _field.Focus(); }
         public void MarkDirty() { _dirty = true; }
-        public void ResetWeek() { _seenChat = 0; _rulesPage = 0; _tab = Tab.Actions; _dirty = true; }
+        public void ResetWeek() { _seenChat = 0; _rulesPage = 0; _tab = Tab.Actions; _revealTab = MeetingReveal.TabSummary; _dirty = true; }
+
+        /// <summary>v5 step 3b: the results' full reveal on one of its tabs (<see cref="MeetingReveal"/> tab ids).</summary>
+        public void ShowReveal(string tab)
+        {
+            if (!string.IsNullOrEmpty(tab)) _revealTab = tab;
+            SetTab(Tab.Dossier);
+        }
 
         /// <summary>The tab that has something for you right now (opening the folder lands there).</summary>
         public static Tab Suggested(LineView v)
         {
+            if (v.Phase == LinePhase.Results) return Tab.Dossier;
             if (ActionsAvailable(v)) return Tab.Actions;
             return Tab.Chat;
         }
@@ -164,7 +174,9 @@ namespace BirimizKovulacak.Game
             if (!_open) return;
             _clock.SetText(UiKit.Clock(Math.Max(0, v.PhaseEndTime - now)));
             _prim.SetText(F("header.my_prim", v.Mine.Prim));
-            _title.SetText(T("meeting.folder.title." + Ids[(int)_tab]));
+            string titleKey = "meeting.folder.title." + Ids[(int)_tab];
+            if (_tab == Tab.Dossier && v.Phase == LinePhase.Results) titleKey = "meeting.folder.title.reveal";
+            _title.SetText(T(titleKey));
             if (dirty || _dirty)
             {
                 _dirty = false;
@@ -217,7 +229,10 @@ namespace BirimizKovulacak.Game
                 case Tab.Actions: BuildActions(p, lc, v, now); break;
                 case Tab.Chat: BuildChat(p, lc); break;
                 case Tab.Transfer: PlayBlocks.BuildTransfer(p, lc, v, _st, false); break;
-                case Tab.Dossier: BuildDossier(p, lc, v, now); break;
+                case Tab.Dossier:
+                    if (v.Phase == LinePhase.Results) MeetingReveal.Build(p, lc, v, _revealTab, t => { _revealTab = t; _dirty = true; _scroll.scrollOffset = Vector2.zero; });
+                    else BuildDossier(p, lc, v, now);
+                    break;
                 case Tab.Rules: BuildRules(p); break;
             }
         }
@@ -298,12 +313,6 @@ namespace BirimizKovulacak.Game
             bool any = false;
             if (v.Final != null) { PlayBlocks.BuildFinalInfo(p, lc, v); any = true; }
             if (v.Meeting != null) { PlayBlocks.BuildMeetingInfo(p, lc, v, now); any = true; }
-            if (v.Phase == LinePhase.Results && v.Results != null)
-            {
-                Head(p, T("meeting.folder.all_votes"));
-                PlayBlocks.BuildBallots(p, v.Results);
-                any = true;
-            }
             if (!any) Line(p, T("common.none"), "pl-dim");
         }
 

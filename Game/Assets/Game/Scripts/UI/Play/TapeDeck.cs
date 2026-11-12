@@ -169,6 +169,14 @@ namespace BirimizKovulacak.Game
 
         readonly Label _labelCaller, _labelCallee;
 
+        /// <summary>v5 step 3b (the projector): "Sarı ↔ Yeşil" on the cassette label (the two arrows of the title font
+        /// overlap into one double arrow); the badges below still say who called whom.</summary>
+        public void UseMutualArrow()
+        {
+            _calleeArrow.text = "←→";
+            _calleeArrow.AddToClassList("tape-label-arrow-both");
+        }
+
         static VisualElement ArtReel(VisualElement deck, float cx, float cy)
         {
             var reel = Box("tape-reel", "tape-reel-art", "tape-reel-abs").NoPick().AddTo(deck);

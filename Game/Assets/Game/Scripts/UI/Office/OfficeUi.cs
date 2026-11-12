@@ -240,7 +240,13 @@ namespace BirimizKovulacak.Game
         void OnPhase(LinePhase from, LinePhase to)
         {
             if (Detached()) return;
-            if (to == LinePhase.None) { CloseFocus(false); _pendingPhaseToast = null; _pendingPartnerToast = null; _hintTask = -1; _objects.Reset(); return; }
+            if (to == LinePhase.None)
+            {
+                // the match closed: nothing of it stays on screen (v5 step 3b: also the toasts, e.g. the partner card)
+                CloseFocus(false); _pendingPhaseToast = null; _pendingPartnerToast = null; _hintTask = -1; _objects.Reset();
+                _toastStack.Clear();
+                return;
+            }
             var lc = LineClient.I;
             var v = lc != null ? lc.View : null;
             if (v == null || !LineClient.IsCallsPhase(to)) return;

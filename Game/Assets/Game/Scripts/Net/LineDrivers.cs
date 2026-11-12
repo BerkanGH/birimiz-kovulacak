@@ -79,7 +79,9 @@ namespace BirimizKovulacak.Game
     /// views a player sees: the desk, the computer on the task app, the phone panel (a call is usually running with
     /// -calltest), the cork board and a standing view; step 2: the task's object (the Petty Cash box while choosing and
     /// in its break, the Weekend Shift roster while choosing and at the reveal) and the drawer; meeting phases (step 3a)
-    /// capture the meeting room: the seat view, the folder, the whiteboard zoom, the ballot paper and the ballot box.
+    /// capture the meeting room: the seat view, the folder, the whiteboard zoom, the ballot paper and the ballot box;
+    /// step 3b: the projector (dossier, votes, crisis, defence), the defender, the desk opening and its payout on the
+    /// table, the results ceremony and the folder's full reveal.
     /// </summary>
     public sealed class LineScreenshotRecorder : MonoBehaviour
     {
@@ -117,6 +119,26 @@ namespace BirimizKovulacak.Game
             if (Meeting != null) Meeting.CloseAll();
             var box = World != null && World.Meeting != null ? World.Meeting.BallotBox : null;
             if (box != null) World.AimAt(box.position + Vector3.up * 0.1f);
+        }
+
+        /// <summary>Meeting room: turned toward the projector from the seat (step 3b: every seat can turn to it).</summary>
+        static void ProjectorFromSeat()
+        {
+            if (Meeting != null) Meeting.CloseAll();
+            float y, p;
+            if (World != null && World.TryGetProjectorLook(out y, out p)) World.SetLook(y, p);
+        }
+
+        /// <summary>Meeting room: the defender (on their feet, in the spotlight), or the table when I am the defender.</summary>
+        static void DefenderView()
+        {
+            if (Meeting != null) Meeting.CloseAll();
+            var v = LineClient.I != null ? LineClient.I.View : null;
+            var room = World != null ? World.Meeting : null;
+            int d = v != null && v.Final != null ? v.Final.Defender : -1;
+            Vector3 head;
+            if (room != null && d >= 0 && d != LineClient.I.MySlot && room.SeatHead(d, out head)) World.AimAt(head + Vector3.down * 0.2f);
+            else World?.SetLook(0f, 8f);
         }
 
         /// <summary>The object that plays the task (step 2): its view, or the computer's task app for Client Bonus.</summary>
@@ -158,24 +180,32 @@ namespace BirimizKovulacak.Game
                         new ShotSpec(30f, "desk", () => Desk(24f, 22f)),
                         new ShotSpec(52f, "board", () => Office?.OpenBoard()),
                     };
-                // v5 step 3a: the meeting room (seated look, the folder, the whiteboard, the ballot and the box)
-                case LinePhase.MeetingDossier: return new[] { new ShotSpec(5f, "room", () => Seat(0f, 6f)) };
+                // v5 step 3a: the meeting room (seated look, the folder, the whiteboard, the ballot and the box); step 3b: the
+                // projector (the dossier, the defence, the desk opening and the results), the defender on their feet, the payout
+                case LinePhase.MeetingDossier: return new[] { new ShotSpec(5f, "room", () => Seat(0f, 6f)), new ShotSpec(9f, "projector", () => Meeting?.OpenProjector()) };
                 case LinePhase.MeetingDiscussion:
                     return new[]
                     {
                         new ShotSpec(4f, "room", () => Seat(-20f, 4f)), new ShotSpec(10f, "folder", () => Meeting?.OpenFolder(MeetingFolder.Tab.Actions)),
-                        new ShotSpec(16f, "board", () => Meeting?.OpenBoard()),
+                        new ShotSpec(16f, "board", () => Meeting?.OpenBoard()), new ShotSpec(26f, "projector", () => Meeting?.OpenProjector()),
+                        new ShotSpec(38f, "projector_seat", ProjectorFromSeat),
                     };
                 case LinePhase.MeetingVote:
                 case LinePhase.CrisisVote:
                 case LinePhase.FinalVote:
-                    return new[] { new ShotSpec(3f, "ballot", () => { Seat(0f, 6f); Meeting?.OpenBallot(); }), new ShotSpec(9f, "box", BoxView) };
+                    return new[] { new ShotSpec(3f, "ballot", () => { Seat(0f, 6f); Meeting?.OpenBallot(); }), new ShotSpec(9f, "box", BoxView), new ShotSpec(15f, "projector", () => Meeting?.OpenProjector()) };
                 case LinePhase.MeetingVerdict: return new[] { new ShotSpec(3f, "board", () => Meeting?.OpenBoard()) };
-                case LinePhase.CrisisVerdict: return new[] { new ShotSpec(3f, "board", () => Meeting?.OpenBoard()) };
-                case LinePhase.FinalDiscussion: return new[] { new ShotSpec(5f, "room", () => Seat(15f, 4f)), new ShotSpec(11f, "folder", () => Meeting?.OpenFolder(MeetingFolder.Tab.Chat)) };
-                case LinePhase.FinalDefense: return new[] { new ShotSpec(5f, "room", () => Seat(0f, 5f)) };
-                case LinePhase.FinalVerdict: return new[] { new ShotSpec(3f, "room", () => Seat(0f, 5f)) };
-                case LinePhase.Results: return new[] { new ShotSpec(5f, null, null) };
+                case LinePhase.CrisisVerdict: return new[] { new ShotSpec(0.5f, "projector", () => Meeting?.OpenProjector()), new ShotSpec(3.6f, "board", () => Meeting?.OpenBoard()) };
+                case LinePhase.FinalDiscussion: return new[] { new ShotSpec(5f, "room", () => Seat(15f, 4f)), new ShotSpec(11f, "folder", () => Meeting?.OpenFolder(MeetingFolder.Tab.Chat)), new ShotSpec(22f, "projector", () => Meeting?.OpenProjector()) };
+                case LinePhase.FinalDefense: return new[] { new ShotSpec(4f, "room", DefenderView), new ShotSpec(9f, "projector", () => Meeting?.OpenProjector()) };
+                // the desk opening runs by itself: the camera is on the projector for the count, then back at the table
+                case LinePhase.FinalVerdict: return new[] { new ShotSpec(2.4f, "projector", null), new ShotSpec(6.6f, "payout", null), new ShotSpec(9.0f, "payout_end", null) };
+                case LinePhase.Results:
+                    return new[]
+                    {
+                        new ShotSpec(16f, "projector", null), new ShotSpec(26f, "reveal", () => Meeting?.OpenReveal(MeetingReveal.TabSummary)),
+                        new ShotSpec(34f, "robbed", () => Meeting?.OpenReveal(MeetingReveal.TabRobbed)),
+                    };
                 default: return null;
             }
         }
@@ -234,7 +264,7 @@ namespace BirimizKovulacak.Game
         /// <summary>The room on screen right now (changes in the dark middle of a fade).</summary>
         public static Place ShownPlace { get; private set; }
 
-        int _officeKey = -1, _meetingKey = -1, _firedShown = -2;
+        int _officeKey = -1, _meetingKey = -1, _firedShown = -2, _paidOut;
         bool _switching, _closed, _bound;
         double _boxRound = double.NaN;
 
@@ -249,6 +279,7 @@ namespace BirimizKovulacak.Game
             if (rooms == null || lc == null) return;
             if (!_bound) { _bound = true; lc.PhaseChanged += (from, to) => { if (to == LinePhase.None) _closed = true; }; }
             var v = lc.View;
+            RevealMemory.Observe(v);
             if (v == null || _closed)
             {
                 // the week closed (lobby; a new mock scenario may already have a view in the same frame)
@@ -334,10 +365,12 @@ namespace BirimizKovulacak.Game
                 _meetingKey = key;
                 _officeKey = -1;
                 _firedShown = -2;
+                _paidOut = 0;
                 _seats.Clear();
                 foreach (var p in v.Players) _seats.Add(new MeetingSeatInfo { Slot = p.Id, ColorIndex = p.ColorIndex, Name = p.Name, Connected = p.Connected });
                 rooms.EnterMeeting(me, _seats, "");
                 rooms.SetPovMode(PovMode.Meeting);
+                if (RoomsPresenter.Instance != null && RoomsPresenter.Instance.Meeting != null) RoomsPresenter.Instance.Meeting.ClearPayouts();
             }
             var voice = VoiceSystem.Instance;
             foreach (var p in v.Players)
@@ -360,11 +393,38 @@ namespace BirimizKovulacak.Game
                 if (fresh) _boxRound = v.PhaseStartTime;
                 room.SetBallotBox(box, fresh);
             }
-            // The room shows one fired avatar: the latest firing.
+            // The room shows one fired avatar: the latest firing. v5 step 3b: during its desk opening only after the count
+            // (the projector counts the drawer first; then the fired colleague takes the box)
             int fired = -1;
-            if (v.Final != null && v.Final.Firings.Count > 0) fired = v.Final.Firings[v.Final.Firings.Count - 1].Player;
+            if (v.Final != null && v.Final.Firings.Count > 0)
+            {
+                int n = v.Final.Firings.Count;
+                if (!DeskOpening.BoxShown(v, lc.Now)) n--;
+                if (n > 0) fired = v.Final.Firings[n - 1].Player;
+            }
             if (fired != _firedShown) { _firedShown = fired; rooms.SetFired(fired); }
+            if (room != null) Payouts(room, lc, v);
             rooms.SetTimeOfDay(v.Day >= 2 ? 1f : 0.9f);
+        }
+
+        /// <summary>v5 step 3b: each firing's desk is paid out on the table once: the bundles appear at the fired colleague's
+        /// place after the count, then the shares slide to the voters (DeskOpening timeline). Firings that happened before
+        /// this client saw them (a late join) lie where they ended up.</summary>
+        void Payouts(MeetingRoom room, LineClient lc, LineView v)
+        {
+            if (v.Final == null) return;
+            var firings = v.Final.Firings;
+            while (_paidOut < firings.Count)
+            {
+                var f = firings[_paidOut];
+                bool current = _paidOut == firings.Count - 1 && v.Phase == LinePhase.FinalVerdict;
+                float k = DeskOpening.Scale(v);
+                float elapsed = current ? (float)(lc.Now - v.PhaseStartTime) : float.MaxValue;
+                bool skip = !current || elapsed > (DeskOpening.SlideAt + DeskOpening.SlideTime) * k;
+                room.StartPayout(f.Player, f.Desk, f.Recipients, f.Share, DeskOpening.PileAt * k - elapsed, DeskOpening.SlideAt * k - elapsed,
+                    Mathf.Max(0.35f, DeskOpening.SlideTime * k), skip);
+                _paidOut++;
+            }
         }
 
         static PhoneLineState PhoneState(LineView v)

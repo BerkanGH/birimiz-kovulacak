@@ -202,7 +202,8 @@ namespace BirimizKovulacak.Game
             _pause.Tick(); _settings.Tick(); _howTo.Tick(); _confirm.Tick(); _status.Tick(); _intro.Tick(); _moment.Tick();
 
             var rooms = Rooms.Presenter;
-            bool lookMode = rooms != null && (rooms.Mode == PovMode.Office || rooms.Mode == PovMode.Meeting || rooms.Mode == PovMode.Board || rooms.Mode == PovMode.Drawer || rooms.Mode == PovMode.MeetingBoard);
+            bool lookMode = rooms != null && (rooms.Mode == PovMode.Office || rooms.Mode == PovMode.Meeting || rooms.Mode == PovMode.Board || rooms.Mode == PovMode.Drawer
+                                              || rooms.Mode == PovMode.MeetingBoard || rooms.Mode == PovMode.MeetingProjector);
             bool wantsCursor = overlay || (office ? _office.WantsCursor : meeting ? _meeting.WantsCursor : _play.WantsCursor) || !lookMode;
             BlocksGameplay = wantsCursor;
             bool wantLock = !wantsCursor && Application.isFocused && !LaunchArgs.Current.Bot && !LineMockDriver.Active;

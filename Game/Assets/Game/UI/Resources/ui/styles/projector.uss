@@ -1,0 +1,143 @@
+/* v5 step 3b: the meeting room projector (MeetingProjector.cs), a 1280 x 720 panel rendered onto the screen at the head of
+   the table. Same template as the default slide (green bands, gold rule, cream body, navy ink, stamp red). Sizes are for
+   reading from the far seats: titles 56-64 px, lines 34-40 px, nothing under 24 px. */
+
+.pj-root { width: 1280px; height: 720px; background-color: rgb(244, 239, 227); color: rgb(31, 42, 68); overflow: hidden; }
+.pj-head { position: absolute; left: 0; right: 0; top: 0; height: 96px; background-color: rgb(47, 107, 79); flex-direction: row;
+    align-items: center; padding: 0 44px; border-bottom-width: 7px; border-color: rgb(201, 162, 58); }
+.pj-kicker { font-size: 38px; color: rgb(244, 239, 227); letter-spacing: 2px; flex-grow: 1; flex-shrink: 1; white-space: nowrap; overflow: hidden; margin: 0; }
+.pj-clock { font-size: 52px; color: rgb(255, 224, 102); margin: 0 0 0 24px; }
+.pj-foot { position: absolute; left: 0; right: 0; bottom: 0; height: 50px; background-color: rgb(47, 107, 79); flex-direction: row;
+    align-items: center; padding: 0 40px; }
+.pj-foot-text { font-size: 25px; color: rgb(214, 230, 218); margin: 0; }
+.pj-dots { flex-direction: row; align-items: center; }
+.pj-dot { width: 16px; height: 16px; border-radius: 8px; background-color: rgba(244, 239, 227, 0.32); margin: 0 6px; }
+.pj-dot-on { background-color: rgb(255, 224, 102); width: 34px; }
+.pj-body { position: absolute; left: 0; right: 0; top: 103px; bottom: 50px; padding: 20px 56px 14px 56px; }
+.pj-content { flex-grow: 1; }
+
+/* ---------------------------------------------------------------- text */
+.pj-title { font-size: 60px; color: rgb(31, 42, 68); margin: 0 0 6px 0; white-space: normal; }
+.pj-title-bad { color: rgb(200, 52, 44); }
+.pj-line { font-size: 38px; color: rgb(31, 42, 68); margin: 4px 0 0 0; white-space: normal; }
+.pj-big { font-size: 46px; color: rgb(31, 42, 68); margin: 4px 0 0 0; white-space: normal; }
+.pj-small { font-size: 29px; color: rgb(86, 94, 116); margin: 6px 0 0 0; white-space: normal; }
+.pj-bad { color: rgb(200, 52, 44); }
+.pj-good { color: rgb(36, 120, 74); }
+.pj-warn { color: rgb(196, 102, 18); }
+.pj-dim { color: rgb(120, 126, 146); }
+.pj-row { flex-direction: row; align-items: center; }
+.pj-wrap { flex-direction: row; flex-wrap: wrap; align-items: center; }
+.pj-col { flex-direction: column; }
+.pj-grow { flex-grow: 1; flex-shrink: 1; }
+.pj-rule { height: 4px; background-color: rgba(31, 42, 68, 0.75); margin: 10px 0 12px 0; }
+
+/* ---------------------------------------------------------------- stamps and faces */
+.pj-stamp { font-size: 46px; color: rgb(200, 52, 44); border-width: 5px; border-color: rgb(200, 52, 44); border-radius: 6px;
+    padding: 0 14px; rotate: -5deg; align-self: flex-start; margin: 0; }
+.pj-stamp-navy { color: rgb(31, 42, 68); border-color: rgb(31, 42, 68); rotate: 3deg; }
+.pj-stamp-orange { color: rgb(196, 102, 18); border-color: rgb(196, 102, 18); }
+.pj-stamp-green { color: rgb(36, 120, 74); border-color: rgb(36, 120, 74); }
+.pj-stamp-small { font-size: 30px; border-width: 4px; padding: 0 9px; }
+.pj-face { width: 120px; height: 120px; border-radius: 60px; border-width: 7px; background-color: rgb(250, 247, 238);
+    -unity-background-scale-mode: scale-to-fit; align-items: center; justify-content: center; flex-shrink: 0; }
+.pj-face-xl { width: 210px; height: 210px; border-radius: 105px; border-width: 9px; }
+.pj-face-l { width: 160px; height: 160px; border-radius: 80px; border-width: 8px; }
+.pj-face-s { width: 72px; height: 72px; border-radius: 36px; border-width: 5px; }
+.pj-face-xs { width: 46px; height: 46px; border-radius: 23px; border-width: 4px; }
+.pj-face-initial { font-size: 48px; color: rgb(255, 255, 255); margin: 0; }
+.pj-face-dim { opacity: 0.45; }
+.pj-person { align-items: center; margin: 0 22px 0 0; }
+.pj-person-name { font-size: 36px; color: rgb(31, 42, 68); margin: 4px 0 0 0; }
+.pj-chip { flex-direction: row; align-items: center; background-color: rgba(31, 42, 68, 0.08); border-radius: 40px;
+    padding: 6px 22px 6px 6px; margin: 0 14px 12px 0; }
+.pj-chip-text { font-size: 36px; color: rgb(31, 42, 68); margin: 0 0 0 12px; }
+.pj-chip-me { background-color: rgba(255, 224, 102, 0.75); }
+.pj-chip-good { background-color: rgba(36, 120, 74, 0.16); }
+.pj-chip-bad { background-color: rgba(200, 52, 44, 0.14); }
+
+/* ---------------------------------------------------------------- dossier deck */
+.pj-entry { flex-grow: 1; justify-content: center; }
+.pj-entry-text { font-size: 52px; color: rgb(31, 42, 68); white-space: normal; margin: 20px 0 22px 0; }
+.pj-task { flex-direction: row; align-items: center; margin: 6px 0; }
+.pj-task-x { font-size: 54px; color: rgb(200, 52, 44); margin: 0 18px 0 0; }
+.pj-task-name { font-size: 48px; color: rgb(31, 42, 68); margin: 0; }
+.pj-shift { flex-direction: row; align-items: center; margin: 1px 0; height: 54px; }
+.pj-shift-name { font-size: 33px; color: rgb(31, 42, 68); width: 230px; margin: 0 0 0 14px; white-space: nowrap; }
+.pj-shift-from { font-size: 33px; color: rgb(120, 126, 146); width: 56px; -unity-text-align: middle-right; margin: 0; }
+.pj-shift-arrow { font-size: 32px; color: rgb(120, 126, 146); width: 54px; -unity-text-align: middle-center; margin: 0; }
+.pj-shift-to { font-size: 37px; color: rgb(200, 52, 44); width: 64px; margin: 0 10px 0 0; }
+
+/* ---------------------------------------------------------------- vote */
+.pj-voters { flex-direction: row; flex-wrap: wrap; margin-top: 10px; }
+.pj-voter { width: 180px; align-items: center; margin: 0 14px 10px 0; opacity: 0.55; }
+.pj-voter-in { opacity: 1; }
+.pj-paper { width: 64px; height: 84px; background-color: rgb(255, 255, 255); border-width: 4px; border-color: rgba(31, 42, 68, 0.35);
+    border-radius: 4px; margin-bottom: 4px; align-items: center; justify-content: center; }
+.pj-voter-in .pj-paper { background-color: rgb(250, 240, 204); border-color: rgb(36, 120, 74); rotate: -4deg; }
+.pj-paper-mark { font-size: 44px; color: rgb(36, 120, 74); margin: 0; opacity: 0; }
+.pj-voter-in .pj-paper-mark { opacity: 1; }
+.pj-voter-name { font-size: 30px; margin: 0; }
+.pj-count { font-size: 50px; color: rgb(31, 42, 68); margin: 4px 0 0 0; }
+
+/* ---------------------------------------------------------------- defence */
+.pj-spot { width: 300px; height: 300px; border-radius: 150px; background-color: rgba(255, 224, 102, 0.55); align-items: center;
+    justify-content: center; margin-right: 44px; }
+.pj-timer { font-size: 110px; color: rgb(31, 42, 68); margin: 0; }
+.pj-timer-low { color: rgb(200, 52, 44); }
+.pj-order { margin-left: 24px; width: 400px; flex-shrink: 0; }
+.pj-order-row { flex-direction: row; align-items: center; margin: 6px 0; opacity: 0.6; }
+.pj-order-now { opacity: 1; background-color: rgba(255, 224, 102, 0.6); border-radius: 44px; padding-right: 22px; }
+.pj-order-name { font-size: 38px; margin: 0 14px; white-space: nowrap; }
+.pj-order-state { font-size: 28px; color: rgb(86, 94, 116); margin: 0; white-space: nowrap; }
+.pj-bars { flex-direction: row; align-items: flex-end; height: 50px; margin-left: 14px; }
+.pj-bar { width: 12px; height: 10px; background-color: rgb(36, 120, 74); border-radius: 4px; margin-right: 6px; }
+
+/* ---------------------------------------------------------------- desk opening */
+.pj-desk { width: 640px; height: 236px; overflow: hidden; }
+.pj-drawer { position: absolute; left: 40px; width: 560px; top: 30px; height: 204px; }
+.pj-tray { flex-grow: 1; background-color: rgb(86, 58, 38); border-width: 12px; border-color: rgb(166, 116, 72); border-bottom-width: 0;
+    border-top-left-radius: 8px; border-top-right-radius: 8px; padding: 10px 14px; flex-direction: row; flex-wrap: wrap; align-content: flex-start; }
+.pj-drawer-front { height: 36px; background-color: rgb(176, 124, 78); border-width: 4px; border-color: rgb(31, 42, 68);
+    border-bottom-left-radius: 8px; border-bottom-right-radius: 8px; align-items: center; justify-content: center; }
+.pj-handle { width: 130px; height: 13px; border-radius: 7px; background-color: rgb(214, 170, 60); border-width: 3px; border-color: rgb(31, 42, 68); }
+.pj-desktop { position: absolute; left: 0; right: 0; top: 0; height: 52px; background-color: rgb(120, 80, 50); border-width: 5px;
+    border-color: rgb(31, 42, 68); border-top-left-radius: 14px; border-top-right-radius: 14px; }
+.pj-bundle { width: 92px; height: 40px; margin: 4px 5px; background-color: rgb(120, 178, 128); border-radius: 5px; border-width: 3px;
+    border-color: rgb(46, 96, 64); }
+.pj-band { position: absolute; left: 35px; width: 16px; top: -3px; bottom: -3px; background-color: rgb(222, 178, 64); }
+.pj-note { width: 92px; height: 16px; margin: 4px 5px; background-color: rgb(150, 198, 154); border-radius: 3px; border-width: 2px;
+    border-color: rgb(46, 96, 64); }
+.pj-more { font-size: 32px; color: rgb(244, 239, 227); margin: 8px 6px; }
+.pj-counter { font-size: 74px; color: rgb(31, 42, 68); margin: 0; }
+.pj-counter-done { color: rgb(200, 52, 44); }
+.pj-desk-stamp { position: absolute; right: 24px; top: 56px; font-size: 68px; border-width: 7px; rotate: -9deg; opacity: 0; }
+
+/* ---------------------------------------------------------------- results */
+.pj-winner { width: 360px; align-items: center; margin-right: 36px; }
+.pj-winner-stamp { width: 350px; height: 130px; -unity-background-scale-mode: scale-to-fit; margin-top: -40px; rotate: -6deg; opacity: 0; }
+.pj-winner-name { font-size: 64px; color: rgb(31, 42, 68); margin: 2px 0 0 0; -unity-text-align: middle-center; white-space: normal; }
+.pj-winner-prim { font-size: 46px; color: rgb(36, 120, 74); margin: 0; }
+.pj-rank { flex-direction: row; align-items: center; height: 64px; border-bottom-width: 2px; border-color: rgba(31, 42, 68, 0.15); opacity: 0; }
+.pj-rank-win { background-color: rgba(255, 224, 102, 0.55); border-radius: 10px; }
+.pj-rank-n { font-size: 38px; width: 60px; color: rgb(86, 94, 116); margin: 0; }
+.pj-rank-name { font-size: 38px; color: rgb(31, 42, 68); width: 250px; flex-shrink: 0; margin: 0 0 0 14px; white-space: nowrap; overflow: hidden; }
+.pj-rank-tagcol { width: 130px; flex-shrink: 0; align-items: flex-start; justify-content: center; }
+.pj-rank-prim { font-size: 40px; color: rgb(31, 42, 68); width: 150px; -unity-text-align: middle-right; margin: 0 18px 0 0; }
+.pj-rank-blame { font-size: 27px; color: rgb(120, 126, 146); width: 100px; margin: 0; }
+.pj-rank-tag { font-size: 25px; border-width: 3px; padding: 0 8px; margin: 0; }
+
+/* ---------------------------------------------------------------- the leaked recording (TapeDeck on the projector) */
+.pj-tape { position: absolute; left: 0; right: 0; top: 103px; bottom: 50px; align-items: center; justify-content: center; }
+.pj-tape .tape-person { width: 210px; }
+.pj-tape .badge-xl { width: 130px; height: 130px; border-width: 8px; }
+.pj-tape .tape-person-name { font-size: 40px; }
+.pj-tape .tape-person-role { font-size: 26px; }
+.pj-tape .tape-label-text { font-size: 50px; }
+.pj-tape .tape-label-arrow { font-size: 44px; }
+.pj-tape .tape-label-clock { font-size: 28px; }
+.pj-tape .tape-deck { width: 600px; height: 300px; }
+.pj-tape .tape-wave { width: 1120px; height: 96px; }
+.pj-tape .tape-status { font-size: 34px; margin-top: 6px; }
+.pj-tape .tape-stamp { right: -60px; top: -40px; width: 260px; height: 88px; }
+.tape-label-arrow-both { letter-spacing: -22px; }
