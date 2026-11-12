@@ -6,12 +6,23 @@ using UnityEngine;
 
 namespace BirimizKovulacak.Game
 {
-    /// <summary>Automated player for a network client (-bot): feeds its own view to the v5 <see cref="LineBot"/> and sends what it decides.</summary>
+    /// <summary>
+    /// Automated player for a network client (-bot): feeds its own view to the v5 <see cref="LineBot"/> and sends what it
+    /// decides; its <see cref="LineBotTalker"/> (docs/V5_BOT_TALK.md) makes and answers calls, says its lines to the other
+    /// end of the call (through the host), posts meeting chat lines and pays what it promised. Its talk log (who lied) is
+    /// written to the match log when the results are public.
+    /// </summary>
     public sealed class LineBotDriver : MonoBehaviour
     {
         LineBot _bot;
+        LineBotTalker _talker;
+        readonly BotTalkOutput _talk = new BotTalkOutput();
         int _week = -1;
         float _next;
+
+        void OnEnable() { BotSpeech.AskReceived += OnAsk; }
+        void OnDisable() { BotSpeech.AskReceived -= OnAsk; }
+        void OnAsk(BotAsk a) { if (_talker != null) _talker.Hear(a); }
 
         void Update()
         {
@@ -21,10 +32,12 @@ namespace BirimizKovulacak.Game
             if (_week != v.WeekId || _bot == null)
             {
                 _week = v.WeekId;
-                _bot = new LineBot(lc.MySlot, LaunchArgs.Current.Seed * 131 + lc.MySlot * 7 + v.WeekId * 1009, LaunchArgs.Current.BotPolicy)
-                {
-                    ThinkSeconds = HostLineController.BotThinkSeconds,
-                };
+                var policy = LaunchArgs.Current.PolicyFor(lc.MySlot, false);
+                int seed = LaunchArgs.Current.Seed * 131 + lc.MySlot * 7 + v.WeekId * 1009;
+                _bot = new LineBot(lc.MySlot, seed, policy) { ThinkSeconds = HostLineController.BotThinkSeconds };
+                // -calltest owns the calls of Intro and the crisis calls (it records and leaks one)
+                _talker = new LineBotTalker(lc.MySlot, seed * 17 + 3, policy, _bot) { QuietCallPhases = LaunchArgs.Current.CallTest };
+                MatchLog.Write("bottalk policy seat=" + lc.MySlot + " policy=" + policy + " week=" + v.WeekId);
             }
             if (Time.unscaledTime < _next) return;
             _next = Time.unscaledTime + 0.25f;
@@ -33,26 +46,39 @@ namespace BirimizKovulacak.Game
             try { a = _bot.Next(v, lc.Config, lc.Now); }
             catch (System.Exception e) { Debug.LogException(e); return; }
             if (a != null) lc.Send(a.Verb, a.Target, a.A, a.B, a.C, a.Text);
+            Talk(lc, v);
         }
 
-        // ---- -calltest: exercise calls, the recorder and leaks (LineBot itself never calls; Phase 3 adds that).
+        void Talk(LineClient lc, LineView v)
+        {
+            _talk.Clear();
+            try { _talker.Tick(v, lc.Config, lc.Now, lc.Messages, _talk); }
+            catch (System.Exception e) { Debug.LogException(e); return; }
+            foreach (var x in _talk.Actions) lc.Send(x.Verb, x.Target, x.A, x.B, x.C, x.Text);
+            foreach (var l in _talk.Lines) BotSpeech.SendLine(v.WeekId, l);
+            foreach (var q in _talk.Asks) BotSpeech.SendAsk(v.WeekId, q);
+            foreach (var line in _talk.Log) MatchLog.Write(line);
+        }
+
+        // ---- -calltest: exercise calls, the recorder and leaks (the talker places no calls of its own in these phases).
         double _phaseKey = double.NaN;
         bool _called, _recordAsked, _hungUp, _leakAsked;
 
         /// <summary>
         /// Test hook for automated runs: in Intro and CrisisCalls the connected players pair up by seat order (1st calls
-        /// 2nd, 3rd calls 4th, ...); callees answer; a caller records its first call and leaks it in meeting 1's
-        /// discussion. Returns true when it sent something this tick.
+        /// 2nd, 3rd calls 4th, ...); callees answer at once (in those two phases); a caller records its first call and leaks
+        /// it in meeting 1's discussion. Returns true when it sent something this tick.
         /// </summary>
         bool CallTest(LineClient lc, LineView v)
         {
             if (v.PhaseStartTime != _phaseKey) { _phaseKey = v.PhaseStartTime; _called = _hungUp = _leakAsked = false; }
             var m = v.Mine;
             var ph = m.Phone;
-            if (ph.Status == CallStatus.Ringing) { lc.Send(LineVerb.Answer); return true; }
             double now = lc.Now, len = v.PhaseEndTime - v.PhaseStartTime, elapsed = now - v.PhaseStartTime;
             if (v.Phase == LinePhase.Intro || v.Phase == LinePhase.CrisisCalls)
             {
+                // (the test's own calls are answered at once; in other phases the bot's talker answers after 1-3 rings)
+                if (ph.Status == CallStatus.Ringing) { lc.Send(LineVerb.Answer); return true; }
                 var order = new List<int>();
                 foreach (var p in v.Players) if (p.Connected) order.Add(p.Id);
                 order.Sort();
@@ -374,7 +400,7 @@ namespace BirimizKovulacak.Game
             }
             var voice = VoiceSystem.Instance;
             foreach (var p in v.Players)
-                rooms.SetSpeaking(p.Id, MockSpeech != null ? MockSpeech(p.Id) : voice != null ? voice.GetSpeechLevel(p.Id) : 0f);
+                rooms.SetSpeaking(p.Id, Mathf.Max(MockSpeech != null ? MockSpeech(p.Id) : voice != null ? voice.GetSpeechLevel(p.Id) : 0f, BotSpeech.Level(p.Id)));
             rooms.SetSpotlight(v.Phase == LinePhase.FinalDefense && v.Final != null ? v.Final.Defender : -1);
             // v5 step 3a: shared gaze (send mine, turn the colleagues' heads) and the ballot box for the votes
             var room = RoomsPresenter.Instance != null ? RoomsPresenter.Instance.Meeting : null;

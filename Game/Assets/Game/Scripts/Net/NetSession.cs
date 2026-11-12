@@ -27,6 +27,7 @@ namespace BirimizKovulacak.Game
             LineClient.RematchTransport = want => SetRematchRpc(want);
             LineClient.TelemetryConsentTransport = (consent, id) => SetTelemetryConsentRpc(consent, id ?? "");
             MeetingGaze.Transport = (yaw, pitch) => GazeRpc(unchecked((byte)yaw), unchecked((byte)pitch));
+            BotSpeech.Transport = packet => BotTalkRpc(packet);
             LineClient.Clock = () => NetworkManager != null && NetworkManager.IsListening ? NetworkManager.ServerTime.Time : Time.realtimeSinceStartupAsDouble;
             if (IsServer)
             {
@@ -47,6 +48,7 @@ namespace BirimizKovulacak.Game
                 LineClient.TelemetryConsentTransport = null;
                 MeetingGaze.Transport = null;
                 MeetingGaze.Clear();
+                BotSpeech.Transport = null;
             }
         }
 
@@ -66,6 +68,28 @@ namespace BirimizKovulacak.Game
         void GazeAllRpc(byte[] packet)
         {
             Safe(() => MeetingGaze.Apply(packet), "gaze");
+        }
+
+        // ---------------------------------------------------------------- v5 bot talk (presentation only)
+
+        /// <summary>A bot's phone line, or a question to a bot (docs/V5_BOT_TALK.md); the host forwards it to the other end of the call.</summary>
+        [Rpc(SendTo.Server, RequireOwnership = false)]
+        void BotTalkRpc(byte[] packet, RpcParams rpcParams = default)
+        {
+            LineHost?.OnBotTalk(rpcParams.Receive.SenderClientId, packet);
+        }
+
+        /// <summary>Host: a bot talk packet for one client (the host's own client gets it directly).</summary>
+        public void SendBotTalk(ulong clientId, byte[] packet)
+        {
+            if (NetworkManager != null && clientId == NetworkManager.LocalClientId) { Safe(() => BotSpeech.Receive(packet), "bottalk"); return; }
+            BotTalkToRpc(packet, RpcTarget.Single(clientId, RpcTargetUse.Temp));
+        }
+
+        [Rpc(SendTo.SpecifiedInParams, InvokePermission = RpcInvokePermission.Server)]
+        void BotTalkToRpc(byte[] packet, RpcParams rpcParams)
+        {
+            Safe(() => BotSpeech.Receive(packet), "bottalk");
         }
 
         // ---------------------------------------------------------------- client -> host

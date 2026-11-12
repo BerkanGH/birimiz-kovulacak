@@ -41,6 +41,10 @@ namespace BirimizKovulacak.Game
             public bool IsHost;
             public LineBot Bot;
             public LineView BotView;
+            /// <summary>v5 bot talk: the bot's phone calls, answers, chat lines and promised prim (docs/V5_BOT_TALK.md).</summary>
+            public LineBotTalker Talker;
+            /// <summary>Request ids for the bot's and its talker's actions (one increasing sequence per seat).</summary>
+            public uint BotRequest;
             /// <summary>"Play again" pressed on the last results screen.</summary>
             public bool WantsRematch;
             /// <summary>Analytics consent of the seat's player (0 unknown, 1 denied, 2 local, 3 cloud) and pseudonymous id.</summary>
@@ -375,7 +379,7 @@ namespace BirimizKovulacak.Game
         {
             if (WeekRunning || slot < 0 || slot >= SlotCount || !_slots[slot].Virtual) return;
             var s = _slots[slot];
-            s.Occupied = false; s.Virtual = false; s.Connected = false; s.Ready = false; s.Name = ""; s.Bot = null; s.BotView = null;
+            s.Occupied = false; s.Virtual = false; s.Connected = false; s.Ready = false; s.Name = ""; s.Bot = null; s.BotView = null; s.Talker = null;
             HostTelemetryBridge.SeatReleased(slot);
             BroadcastLobby();
         }
@@ -494,6 +498,7 @@ namespace BirimizKovulacak.Game
                 HostTelemetryBridge.RematchStarted(_lastMatchId, returning, rematchRequests, LaunchArgs.Current.AutoStart);
             }
             ConfigJson = GameConfig.ToJson(config);
+            _botConfig = _engine.Config;
             for (int i = 0; i < SlotCount; i++)
             {
                 var s = _slots[i];
@@ -501,7 +506,14 @@ namespace BirimizKovulacak.Game
                 s.MessagesSent = 0;
                 s.MessagesDirty = false;
                 if (!s.Occupied) continue;
-                if (s.Virtual) { s.Bot = new LineBot(i, setup.Seed * 31 + i, LaunchArgs.Current.BotPolicy) { ThinkSeconds = BotThinkSeconds }; s.BotView = null; }
+                if (s.Virtual)
+                {
+                    var policy = LaunchArgs.Current.PolicyFor(i, true);
+                    s.Bot = new LineBot(i, setup.Seed * 31 + i, policy) { ThinkSeconds = BotThinkSeconds };
+                    s.Talker = new LineBotTalker(i, setup.Seed * 17 + i, policy, s.Bot);
+                    s.BotView = null;
+                    s.BotRequest = 0;
+                }
                 else if (s.Connected && _session != null)
                     _session.SendLineWelcome(s.ClientId, new LineWelcome { Slot = i, ReconnectToken = s.Token, WeekId = _weekId }, ConfigJson);
                 if (!s.Connected) _engine.SetConnected(i, false, Now);
@@ -545,7 +557,7 @@ namespace BirimizKovulacak.Game
                 var s = _slots[i];
                 if (s.Occupied && !s.Virtual && !s.Connected && !_pendingApprovals.ContainsValue(i)) { s.Occupied = false; s.Name = ""; }
                 if (!s.Virtual && !s.IsHost) s.Ready = false;
-                s.Bot = null; s.BotView = null;
+                s.Bot = null; s.BotView = null; s.Talker = null;
             }
             BroadcastLobby();
         }
@@ -652,6 +664,9 @@ namespace BirimizKovulacak.Game
             }
         }
 
+        LineConfig _botConfig;
+        readonly BotTalkOutput _talk = new BotTalkOutput();
+
         void TickBots(double now)
         {
             foreach (var s in _slots)
@@ -661,10 +676,73 @@ namespace BirimizKovulacak.Game
                 {
                     s.BotView = _engine.BuildView(s.Index, now);
                     var a = s.Bot.Next(s.BotView, _engine.Config, now);
-                    if (a != null) _engine.Apply(s.Index, a, now);
+                    if (a != null) _engine.Apply(s.Index, BotAction(s, a), now);
+                    if (s.Talker != null) Talk(s, now, a != null);
                 }
                 catch (Exception e) { Debug.LogException(e); HostTelemetryBridge.TechnicalFailure("engine_exception", e); }
             }
+        }
+
+        /// <summary>The bot's and its talker's actions share one increasing request id sequence per seat.</summary>
+        static LineAction BotAction(Slot s, LineAction a)
+        {
+            return new LineAction(a.WeekId, ++s.BotRequest, a.Verb, a.Target, a.A, a.B, a.C, a.Text);
+        }
+
+        /// <summary>v5 bot talk (docs/V5_BOT_TALK.md): the host's bot talks after it acts (calls, answers, chat, payments);
+        /// its phone lines go to the human at the other end, a question to another of the host's bots goes straight to it.</summary>
+        void Talk(Slot s, double now, bool acted)
+        {
+            var view = acted ? _engine.BuildView(s.Index, now) : s.BotView;
+            _talk.Clear();
+            s.Talker.Tick(view, _botConfig ?? _engine.Config, now, _engine.MessagesFor(s.Index, s.Talker.MessagesSeen), _talk);
+            foreach (var a in _talk.Actions) _engine.Apply(s.Index, BotAction(s, a), now);
+            foreach (var l in _talk.Lines) DeliverTalk(l.Listener, BotSpeech.PackLine(_weekId, l));
+            foreach (var q in _talk.Asks)
+            {
+                var to = q.To >= 0 && q.To < SlotCount ? _slots[q.To] : null;
+                if (to != null && to.Virtual) { if (to.Talker != null) to.Talker.Hear(q); }
+                else DeliverTalk(q.To, BotSpeech.PackAsk(_weekId, q));
+            }
+            foreach (var line in _talk.Log) MatchLog.Write(line);
+        }
+
+        /// <summary>A bot talk packet to a person's (or a -bot process's) client.</summary>
+        void DeliverTalk(int slot, byte[] packet)
+        {
+            if (slot < 0 || slot >= SlotCount || _session == null) return;
+            var t = _slots[slot];
+            if (!t.Occupied || t.Virtual || !t.Connected) return;
+            try { _session.SendBotTalk(t.ClientId, packet); }
+            catch (Exception e) { Debug.LogException(e); }
+        }
+
+        /// <summary>
+        /// A client's bot talk packet (a -bot process's phone line or question, or a person's question button): forwarded
+        /// only between the two ends of a call (connected, or the callee turning it down), never to anyone else.
+        /// </summary>
+        public void OnBotTalk(ulong clientId, byte[] packet)
+        {
+            int slot, week, from, to;
+            bool ask;
+            if (_engine == null || !_clientSlot.TryGetValue(clientId, out slot)) return;
+            if (!BotSpeech.Peek(packet, out week, out from, out to, out ask) || from != slot || week != (_weekId & 0xFF) || to == from) return;
+            int partner = _engine.CallPartner(from);
+            if (partner != to)
+            {
+                LineView v;
+                try { v = _engine.BuildView(from, Now); }
+                catch (Exception e) { Debug.LogException(e); return; }
+                if (v.Mine.Phone.Other != to || v.Mine.Phone.Status == CallStatus.Idle) return;
+            }
+            var target = _slots[to];
+            if (target.Virtual)
+            {
+                BotAsk q;
+                if (ask && target.Talker != null && BotSpeech.TryAsk(packet, out q)) target.Talker.Hear(q);
+                return;
+            }
+            DeliverTalk(to, packet);
         }
 
         /// <summary>Drops the match's call audio, stops a running tape and forgets the scheduled picks (match start, lobby).</summary>

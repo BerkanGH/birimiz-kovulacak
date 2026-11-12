@@ -11,6 +11,10 @@ Phase grammar (docs/V5_ENGINE_SPEC.md section 3):
     CrisisCalls CrisisVote CrisisVerdict
     FinalDiscussion FinalDefense (FinalVote [FinalVote] FinalVerdict) x firings (1 for 3-4 players, 2 for 5-6; a tie adds one revote)
     Results
+
+v5 bot talk (docs/V5_BOT_TALK.md): each bot logs at Results "bottalk line ... policy=P ... truthful=yes|no",
+"bottalk check ... ok=yes|no" (every claim compared with the results) and "bottalk summary ...". The script adds them up
+per policy and fails when an Honest bot lied or a claim's truth flag did not match the results. Runs without bots pass.
 """
 import glob
 import os
@@ -38,6 +42,47 @@ def describe(seq):
     votes = counts.get("MeetingVote", 0)
     return "meetings=%d meeting2=%s meetingVotes=%d finalVotes=%d firings=%d" % (
         counts.get("MeetingDossier", 0), meeting2, votes, counts.get("FinalVote", 0), counts.get("FinalVerdict", 0))
+
+
+SUMMARY = re.compile(r"bottalk summary seat=(\d+) policy=(\w+) lines=(\d+) truthful=(\d+) lies=(\d+) calls=(\d+) answered=(\d+) "
+                     r"refused=(\d+) answers=(\d+) chat=(\d+) paid=(\d+) broken=(\d+) checks=(\d+) mismatches=(\d+)")
+FIELDS = ["lines", "truthful", "lies", "calls", "answered", "refused", "answers", "chat", "paid", "broken", "checks", "mismatches"]
+
+
+def bot_talk(logs):
+    """Bot talk totals per policy; False when an Honest line was a lie or a claim did not match the results."""
+    per = {}
+    bad = []
+    phone = chat = 0
+    for path in logs:
+        text = open(path, encoding="utf-8", errors="replace").read()
+        for m in SUMMARY.finditer(text):
+            row = per.setdefault(m.group(2), dict((f, 0) for f in FIELDS + ["bots"]))
+            row["bots"] += 1
+            for i, f in enumerate(FIELDS):
+                row[f] += int(m.group(3 + i))
+        for m in re.finditer(r"bottalk line [^\r\n]*", text):
+            line = m.group(0)
+            if "policy=Honest" in line and "truthful=no" in line:
+                bad.append(os.path.basename(path) + ": " + line[:180])
+            if "via=phone" in line:
+                phone += 1
+            elif "via=chat" in line:
+                chat += 1
+        for m in re.finditer(r"bottalk check [^\r\n]* ok=no", text):
+            bad.append(os.path.basename(path) + ": " + m.group(0)[:180])
+    if not per:
+        print("bot talk: none logged")
+        return True
+    for policy in sorted(per):
+        r = per[policy]
+        print("bot talk %-6s bots=%d lines=%d (truthful %d, lies %d) calls=%d answered=%d refused=%d answers=%d chat=%d paid=%d broken=%d checks=%d mismatches=%d"
+              % (policy, r["bots"], r["lines"], r["truthful"], r["lies"], r["calls"], r["answered"], r["refused"], r["answers"], r["chat"],
+                 r["paid"], r["broken"], r["checks"], r["mismatches"]))
+    print("bot talk: %d phone lines, %d chat lines" % (phone, chat))
+    for b in bad[:10]:
+        print("   BOT TALK PROBLEM:", b)
+    return not bad
 
 
 def main(run):
@@ -84,6 +129,8 @@ def main(run):
         if len(hashes) != 1 or len(per_log) != len(logs):
             ok = False
             print("   MISMATCH: not every process received the same result")
+    if not bot_talk(logs):
+        ok = False
     print("PASS" if ok and results else "FAIL")
     return 0 if ok and results else 1
 

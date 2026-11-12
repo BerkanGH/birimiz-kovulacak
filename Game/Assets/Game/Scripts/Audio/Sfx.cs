@@ -131,6 +131,59 @@ namespace BirimizKovulacak.Game
 
         public static void StopLoop(string key) { LoopAt(key, null, Vector3.zero); }
 
+        // ------------------------------------------------------------------ v5 bot talk: the bots' mumble
+
+        readonly AudioSource[] _voices = new AudioSource[4];
+        readonly float[] _voiceStop = new float[4];
+        readonly int[] _voiceOwner = { -1, -1, -1, -1 };
+        int _nextVoice;
+
+        /// <summary>
+        /// A bot says a line: <paramref name="seconds"/> of babble at <paramref name="pitch"/> (its own voice), flat on the
+        /// phone or from its seat in the meeting room (<paramref name="at"/>). A new line from the same bot replaces its last.
+        /// </summary>
+        public static void Mumble(float seconds, float pitch, int owner, Vector3? at)
+        {
+            if (_i == null) return;
+            AudioClip c;
+            if (!_i._clips.TryGetValue("mumble_" + ((owner % 4 + 4) % 4), out c)) return;
+            int slot = -1;
+            for (int i = 0; i < _i._voices.Length; i++) if (_i._voiceOwner[i] == owner && _i._voices[i] != null && _i._voices[i].isPlaying) slot = i;
+            if (slot < 0) { slot = _i._nextVoice; _i._nextVoice = (_i._nextVoice + 1) % _i._voices.Length; }
+            var src = _i._voices[slot];
+            if (src == null)
+            {
+                var go = new GameObject("Voice_" + slot);
+                go.transform.SetParent(_i.transform);
+                src = _i._voices[slot] = go.AddComponent<AudioSource>();
+                src.playOnAwake = false;
+                src.loop = false;
+            }
+            Configure3D(src, at.HasValue ? 0.8f : 0f);
+            if (at.HasValue) src.transform.position = at.Value;
+            src.pitch = pitch;
+            src.volume = 0.5f * EffectsVolume;
+            src.clip = c;
+            src.time = 0f;
+            src.Play();
+            _i._voiceOwner[slot] = owner;
+            _i._voiceStop[slot] = Time.unscaledTime + Mathf.Min(seconds, c.length / Mathf.Max(0.5f, pitch) - 0.05f);
+        }
+
+        void Update()
+        {
+            float now = Time.unscaledTime;
+            for (int i = 0; i < _voices.Length; i++)
+            {
+                var src = _voices[i];
+                if (src == null || !src.isPlaying) continue;
+                // a short fade at the end of the line instead of a click
+                float left = _voiceStop[i] - now;
+                if (left <= 0f) { src.Stop(); _voiceOwner[i] = -1; }
+                else if (left < 0.12f) src.volume = 0.5f * EffectsVolume * (left / 0.12f);
+            }
+        }
+
         // ------------------------------------------------------------------ synthesis
 
         void Build()
@@ -163,6 +216,8 @@ namespace BirimizKovulacak.Game
             Add("rec_clunk", SfxSynth.RecClunk());
             Add("busy", SfxSynth.Busy());
             Add("offhook", SfxSynth.OffHook());
+            // v5 bot talk: four babble takes (each bot plays one at its own pitch)
+            for (int m = 0; m < 4; m++) Add("mumble_" + m, SfxSynth.Mumble(m));
             // v5 step 2: the Petty Cash box, the roster pencil, the drawer
             Add("lid_open", SfxSynth.Lid(true));
             Add("lid_close", SfxSynth.Lid(false));

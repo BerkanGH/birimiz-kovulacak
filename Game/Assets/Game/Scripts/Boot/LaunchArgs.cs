@@ -30,6 +30,10 @@ namespace BirimizKovulacak.Game
         public int ExpectPlayers = 4;
         /// <summary>Policy of host-side bot seats and of this process's -bot driver (honest, greedy, mixed; default mixed).</summary>
         public BirimizKovulacak.Core.LineBotPolicy BotPolicy = BirimizKovulacak.Core.LineBotPolicy.Mixed;
+        /// <summary>-botpolicy rotate: Honest, Greedy, Mixed by seat (seat % 3); also the default of the lobby's bots.</summary>
+        public bool BotPolicyRotate;
+        /// <summary>-botpolicy was given (honest / greedy / mixed / rotate).</summary>
+        public bool BotPolicyGiven;
         public string VoiceTest;
         /// <summary>-calltest: -bot players call each other, record one call and leak it (LineBotDriver.CallTest).</summary>
         public bool CallTest;
@@ -66,7 +70,12 @@ namespace BirimizKovulacak.Game
                     case "-droprejoin": a.DropRejoin = next != "0"; i++; break;
                     case "-dropdowntime": a.DropDowntime = float.Parse(next, CultureInfo.InvariantCulture); i++; break;
                     case "-expectplayers": a.ExpectPlayers = int.Parse(next, CultureInfo.InvariantCulture); i++; break;
-                    case "-botpolicy": a.BotPolicy = ParsePolicy(next); i++; break;
+                    case "-botpolicy":
+                        a.BotPolicyGiven = true;
+                        a.BotPolicyRotate = (next ?? "").ToLowerInvariant() == "rotate";
+                        a.BotPolicy = ParsePolicy(next);
+                        i++;
+                        break;
                     case "-playtestgroup": a.PlaytestGroup = next; i++; break;
                     case "-calltest": a.CallTest = true; break;
                     case "-voicetest":
@@ -86,6 +95,16 @@ namespace BirimizKovulacak.Game
                 case "greedy": return BirimizKovulacak.Core.LineBotPolicy.Greedy;
                 default: return BirimizKovulacak.Core.LineBotPolicy.Mixed;
             }
+        }
+
+        /// <summary>
+        /// The policy of a bot seat. v5 bot talk: the lobby's bots (host side) rotate Honest / Greedy / Mixed by seat unless
+        /// -botpolicy says otherwise, so a solo test meets all three; an automated -bot process keeps -botpolicy (default mixed).
+        /// </summary>
+        public BirimizKovulacak.Core.LineBotPolicy PolicyFor(int slot, bool lobbyBot)
+        {
+            if (BotPolicyRotate || (lobbyBot && !BotPolicyGiven)) return (BirimizKovulacak.Core.LineBotPolicy)(((slot % 3) + 3) % 3);
+            return BotPolicy;
         }
 
         public static void Initialize()

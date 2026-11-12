@@ -511,5 +511,53 @@ namespace BirimizKovulacak.Game
             }
             return Normalize(LoopCrossfade(d, 0.2f), 0.3f);
         }
+
+        /// <summary>
+        /// v5 bot talk: a bean-like babble (~3.3 s, cut to the line's length): quick voiced syllables with a pitch glide and
+        /// a vowel colour (two formant bumps over the harmonics), a short gap now and then between "words". Played at a
+        /// per-colleague pitch, so every bot has its own voice.
+        /// </summary>
+        public static float[] Mumble(int variant)
+        {
+            var rnd = new System.Random(4100 + variant * 37);
+            float total = 3.3f;
+            var d = new float[N(total)];
+            float[] f1 = { 700f, 420f, 320f, 560f, 360f }, f2 = { 1200f, 2000f, 850f, 1750f, 2300f };
+            float t = 0.02f;
+            double ph = 0;
+            while (t < total - 0.18f)
+            {
+                float syl = 0.075f + (float)rnd.NextDouble() * 0.085f;
+                int v = rnd.Next(f1.Length);
+                float a = 235f * (0.88f + 0.28f * (float)rnd.NextDouble());
+                float b = a * (0.82f + 0.32f * (float)rnd.NextDouble());
+                int s0 = N(t), len = N(syl);
+                float c1 = f1[v], c2 = f2[v];
+                for (int i = 0; i < len && s0 + i < d.Length; i++)
+                {
+                    float u = i / (float)len;
+                    float f0 = Mathf.Lerp(a, b, u);
+                    ph += f0 / Rate;
+                    float env = Mathf.Sin(Mathf.PI * Mathf.Min(1f, u * 1.1f));
+                    env *= env;
+                    float x = 0f;
+                    for (int h = 1; h <= 9; h++)
+                    {
+                        float fh = f0 * h;
+                        float w = Bump(fh, c1) + 0.55f * Bump(fh, c2) + (h == 1 ? 0.35f : 0f);
+                        x += (float)Math.Sin(TwoPi * (ph * h - Math.Floor(ph * h))) * w;
+                    }
+                    d[s0 + i] += x * env * 0.16f;
+                }
+                t += syl + (rnd.NextDouble() < 0.16 ? 0.1f + (float)rnd.NextDouble() * 0.06f : 0.012f);
+            }
+            return Normalize(d, 0.5f);
+        }
+
+        static float Bump(float f, float centre)
+        {
+            float x = (f - centre) / (centre * 0.32f);
+            return Mathf.Exp(-x * x);
+        }
     }
 }
