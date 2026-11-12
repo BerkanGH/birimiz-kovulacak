@@ -338,10 +338,81 @@ namespace BirimizKovulacak.Game
             p.SetLook(-40f, 2f);
             yield return Shot("meeting_morning_light", 1.4f);
 
+            // ---------------------------------------------------------------- v5 step 3a: gaze, whiteboards, folder, ballot, box
+            yield return Step3a(p, rooms, names);
+
             WriteMemory();
             yield return new WaitForSeconds(0.5f);
             Debug.Log("[SceneTest] done, " + _n + " shots");
             Application.Quit(0);
+        }
+
+        IEnumerator Step3a(RoomsPresenter p, IRoomPresenter rooms, string[] names)
+        {
+            var mr = p.Meeting;
+            var six = new List<MeetingSeatInfo>();
+            for (int i = 0; i < 6; i++) six.Add(new MeetingSeatInfo { Slot = i, ColorIndex = i, Name = names[i], Connected = true });
+            rooms.EnterMeeting(0, six, "paragoz");
+            rooms.SetPovMode(PovMode.Meeting);
+            rooms.SetTimeOfDay(0.9f);
+            p.SetLook(0f, 6f);
+            float y, pt;
+            for (int i = 1; i < 6; i++) if (mr.GazeAngles(i, 0, out y, out pt)) mr.SetGaze(i, y, pt, 30f);
+            yield return Shot("s3a_gaze_everyone_at_you", 1.6f);
+            if (mr.GazeAngles(1, 4, out y, out pt)) mr.SetGaze(1, y, pt, 30f);
+            if (mr.GazeAngles(3, 5, out y, out pt)) mr.SetGaze(3, y, pt, 30f);
+            mr.SetGaze(5, 0f, 34f, 30f); // looking down at the folder
+            if (mr.GazeAngles(2, 3, out y, out pt)) mr.SetGaze(2, y, pt, 30f);
+            yield return Shot("s3a_gaze_mixed", 1.4f);
+            float t0 = Time.time;
+            while (Time.time - t0 < 1.4f) { rooms.SetSpeaking(3, 0.55f + 0.4f * Mathf.Abs(Mathf.Sin(Time.time * 7f))); yield return null; }
+            yield return Shot("s3a_talking_squash", 0.0f);
+            mr.ClearGaze();
+            var board = mr.BoardFor(0);
+            if (board != null) p.AimAt(board.bounds.center);
+            yield return Shot("s3a_board_from_seat", 1.0f);
+            Debug.Log("[SceneTest] hovered meeting " + Rooms.HoveredMeeting);
+            rooms.SetPovMode(PovMode.MeetingBoard);
+            yield return Shot("s3a_board_zoom", 1.4f);
+            rooms.SetPovMode(PovMode.Meeting);
+            rooms.EnterMeeting(1, six, "paragoz");
+            board = mr.BoardFor(1);
+            if (board != null) p.AimAt(board.bounds.center);
+            yield return Shot("s3a_board_stand_right_row", 1.4f);
+            rooms.SetPovMode(PovMode.MeetingBoard);
+            yield return Shot("s3a_board_stand_zoom", 1.4f);
+            rooms.SetPovMode(PovMode.Meeting);
+            rooms.EnterMeeting(0, six, "paragoz");
+            p.SetLook(0f, 6f);
+            var seat = mr.Seats[mr.LocalSeat];
+            if (seat.Folder != null) p.AimAt(seat.Folder.position + Vector3.up * 0.02f);
+            yield return Shot("s3a_folder_on_table", 1.2f);
+            Debug.Log("[SceneTest] hovered meeting " + Rooms.HoveredMeeting);
+            p.SetLook(0f, 6f);
+            mr.SetFolderHeld(true);
+            yield return Shot("s3a_folder_lifting", 0.25f);
+            yield return Shot("s3a_folder_held", 1.0f);
+            mr.SetFolderHeld(false);
+            yield return new WaitForSeconds(0.6f);
+            mr.SetBallotBox(true, true);
+            mr.SetBallot(true);
+            yield return new WaitForSeconds(0.8f);
+            if (seat.BallotSpot != null) p.AimAt(seat.BallotSpot.position);
+            yield return Shot("s3a_ballot_on_table", 0.8f);
+            Debug.Log("[SceneTest] hovered meeting " + Rooms.HoveredMeeting);
+            p.SetLook(0f, 6f);
+            mr.SetBallotHeld(true);
+            yield return Shot("s3a_ballot_held", 1.1f);
+            mr.DropBallot();
+            yield return Shot("s3a_ballot_folding", 0.22f);
+            yield return Shot("s3a_ballot_flying", 0.35f);
+            yield return new WaitForSeconds(0.8f);
+            for (int i = 1; i < 6; i++) { mr.OtherDrop(i); yield return new WaitForSeconds(0.25f); }
+            p.AimAt(mr.BallotBox.position + Vector3.up * 0.1f);
+            yield return Shot("s3a_box_pile_" + mr.PileCount, 1.6f);
+            mr.SetBallot(false);
+            mr.SetBallotBox(false);
+            yield return Shot("s3a_box_gone", 0.6f);
         }
 
         static Vector3 SeatHead(RoomsPresenter p, int slot)

@@ -173,25 +173,7 @@ namespace BirimizKovulacak.Game
                 v.Mine.Phone.Status = CallStatus.Connected; v.Mine.Phone.CallId = 9; v.Mine.Phone.Since = LineMock.Now - 41;
                 Show(v);
             }).Do(1.0f, () => OfficeUi.I?.OpenComputer(OfficeComputer.App.Task), true));
-            LineMock.Register("v5.meeting", () => new LineMockScenario().Do(0f, () =>
-            {
-                var v = LineMock.BaseView(LinePhase.MeetingDiscussion, 5);
-                v.Meeting = LineMock.MeetingView(0, -1);
-                v.Mine.InvestigationTargets.Add(1);
-                v.Mine.Recorded.Add(new LineRecordedCallView { CallId = 3, Other = 1, Start = LineMock.Now - 200 });
-                Show(v);
-            }));
-            LineMock.Register("v5.meeting_vote", () => new LineMockScenario().Do(0f, () =>
-            {
-                var v = LineMock.BaseView(LinePhase.MeetingVote, 5);
-                v.Meeting = LineMock.MeetingView(0, 2);
-                v.Meeting.Recordings[0].PlayAt = LineMock.Now - 2; // the leak is playing while the ballots are open
-                v.Mine.Ballots.Add(3); v.Mine.Ballots.Add(-1);
-                v.Mine.InvestigationUsed = true;
-                v.Mine.Recorded.Add(new LineRecordedCallView { CallId = 3, Other = 1, Start = LineMock.Now - 200, Leaked = true });
-                v.Players[1].Voted = true; v.Players[3].Voted = true;
-                Show(v);
-            }));
+            // the meeting room itself (step 3a) has its own scenarios: Dev/MeetingMock.cs, "v5.meeting*"
             LineMock.Register("v5.crisis_vote", () => new LineMockScenario().Do(0f, () =>
             {
                 var v = LineMock.BaseView(LinePhase.CrisisVote, 6, 2);
@@ -267,10 +249,10 @@ namespace BirimizKovulacak.Game
             LineMock.Register("v5.results", () => new LineMockScenario().Do(0f, () => Show(Results(4))));
             LineMock.Register("v5.results_tabs", () => new LineMockScenario()
                 .Do(0f, () => Show(Results(6)))
-                .Do(0.2f, () => PlayUi.MockResultsTab = "choices", true)
-                .Do(0.4f, () => PlayUi.MockResultsTab = "transfers", true)
-                .Do(0.6f, () => PlayUi.MockResultsTab = "firings", true)
-                .Do(0.8f, () => PlayUi.MockResultsTab = "incidents", true));
+                .Do(0.2f, () => PlayUi.MockResultsTab = MeetingSlide.MockResultsTab = "choices", true)
+                .Do(0.4f, () => PlayUi.MockResultsTab = MeetingSlide.MockResultsTab = "transfers", true)
+                .Do(0.6f, () => PlayUi.MockResultsTab = MeetingSlide.MockResultsTab = "firings", true)
+                .Do(0.8f, () => PlayUi.MockResultsTab = MeetingSlide.MockResultsTab = "incidents", true));
             LineMock.Register("v5.howto", () =>
             {
                 var s = new LineMockScenario();
@@ -497,6 +479,9 @@ namespace BirimizKovulacak.Game
         {
             // every scenario starts from the same shell: no how-to overlay, the start language (English samples switch it)
             HowToPlayScreen.Close();
+            LineWorldDriver.MockSpeech = null;
+            MeetingGaze.Clear();
+            OfficeUi.MockHint = false;
             if (Loc.Language != _lang)
             {
                 Loc.Load(_lang);
