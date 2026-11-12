@@ -13,7 +13,7 @@ RmMeetingTable            1684
 RmFolder                  1520
 RmPlant                   1496
 RmFileCabinet             1448
-RmBallotBox               1424
+RmBallotBox               1448
 RmClock                   1292
 RmMonitor                 1266
 RmHandL                   1248

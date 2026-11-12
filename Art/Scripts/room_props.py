@@ -1283,8 +1283,8 @@ def rm_folder(c):
 def rm_ballot_box(c):
     """v5 clear acrylic ballot box for the table centre, 0.30 x 0.22 x 0.24. Graphite edge frame (12 bars), clear
     panels (M_RmGlassCup), a graphite floor, a solid graphite lid with a black-trimmed slot (0.16 x 0.014) across the
-    middle, a cream label plate on the front panel (BallotLabel = centre of its front face; the runtime writes on it)
-    and a red security seal hanging off the front lid edge. BallotSlot (driven) = slot centre on the lid top
+    middle, cream label plates on the front and the back panel (BallotLabel / BallotLabelBack = centre of their outer
+    faces; the runtime writes on them) and a red security seal hanging off the front lid edge. BallotSlot (driven) = slot centre on the lid top
     (z 0.24); BallotPile (driven) = centre of the inside floor (z 0.0105). Pivot: bottom centre, front toward -Y."""
     r = root("RmBallotBox", c)
     w, d, hb, b, lt = 0.30, 0.22, 0.224, 0.011, 0.016
@@ -1315,12 +1315,17 @@ def rm_ballot_box(c):
               hb - 0.004, hb + lt + 0.0008, c, "M_RmBlack", r)
     bk.empty("BallotSlot", c, (0, 0, hb + lt), r)
     bk.empty("BallotPile", c, (0, 0, floor_top), r)
-    # label plate on the front panel, near the top, in a thin graphite holder
+    # label plates on the front and the back panel, near the top, in thin graphite holders (v5 step 3b: the box stands
+    # across the table, so each row of seats reads one of them)
     front = -(d / 2 - b / 2) - pt / 2          # front panel's outer face
+    back = (d / 2 - b / 2) + pt / 2            # back panel's outer face
     lz = hb - b - 0.008 - 0.0175
     B("LabelHolder", (0.126, 0.0008, 0.041), c, g, r, (0, front - 0.0004, lz))
     B("Label", (0.12, 0.0012, 0.035), c, "M_RmLabel", r, (0, front - 0.0008 - 0.0006, lz))
     bk.empty("BallotLabel", c, (0, front - 0.0014, lz), r)
+    B("LabelHolderBack", (0.126, 0.0008, 0.041), c, g, r, (0, back + 0.0004, lz))
+    B("LabelBack", (0.12, 0.0012, 0.035), c, "M_RmLabel", r, (0, back + 0.0008 + 0.0006, lz))
+    bk.empty("BallotLabelBack", c, (0, back + 0.0014, lz), r)
     # security seal: a hasp on the lid's front edge, a staple on the top rail, a red strap through both and its tag
     sx0 = 0.098
     lid_front = -(d / 2 + 0.004)

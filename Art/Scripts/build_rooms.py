@@ -162,7 +162,8 @@ MEETING_PROPS = [
     # v5 step 3a: a mobile whiteboard in front of the window wall between the windows, facing the right-hand seats,
     # and the ballot box on the table centre (the seat padfolios + pencils are placed per seat by the Unity builder)
     ("whiteboard2", "RmWhiteboardStand", (-1.98, 0.0, -0.2), -90),
-    ("ballotbox", "RmBallotBox", (0.0, 0.75, -0.2), 0),
+    # v5 step 3b: turned across the table, its front label faces the left row and the back label the right row
+    ("ballotbox", "RmBallotBox", (0.0, 0.75, -0.2), 90),
     ("sideboard", "RmSideboard", (-0.9, 0.0, -2.74), 180),
     ("traycups", "RmTrayCups", (-1.35, 0.76, -2.72), 180),
     ("sideplant", "RmSmallPlant", (-0.35, 0.76, -2.76), 0),
