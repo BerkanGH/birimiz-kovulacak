@@ -50,7 +50,10 @@ namespace BirimizKovulacak.Game
         uint _rng = 2463534242u;
         Vector3 _look;
         bool _hasLook;
-        float _headYaw, _headYawVel;
+        float _headYaw, _headYawVel, _headPitch, _headPitchVel;
+        bool _gaze;
+        float _gazeYaw, _gazePitch, _squash, _phase;
+        Vector3 _modelScale = Vector3.one;
         Quaternion _modelRootBase = Quaternion.identity;
         Material[][] _normalMats, _hoverMats;
         bool _hover;
@@ -59,9 +62,10 @@ namespace BirimizKovulacak.Game
         {
             _idleHash = Animator.StringToHash(IdleState);
             _talkHash = Animator.StringToHash(TalkState);
-            if (ModelRoot != null) _modelRootBase = ModelRoot.localRotation;
+            if (ModelRoot != null) { _modelRootBase = ModelRoot.localRotation; _modelScale = ModelRoot.localScale; }
             _rng ^= (uint)(System.Threading.Interlocked.Increment(ref s_seed) * 2654435761u);
             if (_rng == 0) _rng = 1;
+            _phase = Rand() * 6.28f;
             _nextBlink = Time.time + 0.5f + Rand() * 3f;
             if (Anim != null)
             {
@@ -127,8 +131,12 @@ namespace BirimizKovulacak.Game
         public void SetAway(bool away) { _away = away; }
         public void SetSpotlit(bool on) { _spot = on; }
 
-        public void LookAt(Vector3 world) { _look = world; _hasLook = true; }
-        public void ClearLook() { _hasLook = false; }
+        public void LookAt(Vector3 world) { _look = world; _hasLook = true; _gaze = false; }
+        public void ClearLook() { _hasLook = false; _gaze = false; }
+
+        /// <summary>v5 step 3a shared gaze: the head turns to where the player looks (degrees relative to the seat,
+        /// yaw right +, pitch down +), smoothly; the body follows a little.</summary>
+        public void SetGaze(float yaw, float pitch) { _gaze = true; _gazeYaw = yaw; _gazePitch = pitch; _hasLook = false; }
 
         public void SetHover(bool on)
         {
@@ -270,17 +278,36 @@ namespace BirimizKovulacak.Game
 
         void LateUpdate()
         {
-            float want = 0f;
-            if (_hasLook && Head != null)
+            float want = 0f, wantPitch = 0f;
+            if (_gaze)
+            {
+                want = Mathf.Clamp(_gazeYaw, -70f, 70f);
+                wantPitch = Mathf.Clamp(_gazePitch, -30f, 40f);
+            }
+            else if (_hasLook && Head != null)
             {
                 Vector3 d = transform.InverseTransformDirection(_look - Head.position);
-                d.y = 0f;
-                if (d.sqrMagnitude > 1e-4f) want = Mathf.Clamp(Mathf.Atan2(d.x, d.z) * Mathf.Rad2Deg, -70f, 70f);
+                float flat = new Vector2(d.x, d.z).magnitude;
+                if (flat > 1e-3f)
+                {
+                    want = Mathf.Clamp(Mathf.Atan2(d.x, d.z) * Mathf.Rad2Deg, -70f, 70f);
+                    wantPitch = Mathf.Clamp(-Mathf.Atan2(d.y, flat) * Mathf.Rad2Deg, -30f, 40f);
+                }
             }
-            if (_fired) want *= 0.3f;
+            if (_fired) { want *= 0.3f; wantPitch = 18f; }
             _headYaw = Mathf.SmoothDamp(_headYaw, want, ref _headYawVel, 0.3f);
-            if (Head != null) Head.rotation = Quaternion.AngleAxis(_headYaw * 0.7f, transform.up) * Head.rotation;
-            if (ModelRoot != null) ModelRoot.localRotation = Quaternion.Euler(0f, _headYaw * 0.3f, 0f) * _modelRootBase;
+            _headPitch = Mathf.SmoothDamp(_headPitch, wantPitch, ref _headPitchVel, 0.3f);
+            if (Head != null)
+                Head.rotation = Quaternion.AngleAxis(_headYaw * 0.7f, transform.up) * Quaternion.AngleAxis(_headPitch * 0.55f, transform.right) * Head.rotation;
+            if (ModelRoot != null)
+            {
+                ModelRoot.localRotation = Quaternion.Euler(_headPitch * 0.12f, _headYaw * 0.3f, 0f) * _modelRootBase;
+                // talking: a little squash and bob with the voice level (code-driven on top of the SitTalk clip)
+                float k = Mathf.MoveTowards(_squash, _talking && !_fired ? Mathf.Clamp01(0.35f + _talkLevel) : 0f, Time.deltaTime * 6f);
+                _squash = k;
+                float s = k > 0.001f ? Mathf.Sin(Time.time * 15f + _phase) * 0.035f * k : 0f;
+                ModelRoot.localScale = new Vector3(_modelScale.x * (1f - s * 0.5f), _modelScale.y * (1f + s), _modelScale.z * (1f - s * 0.5f));
+            }
         }
     }
 }

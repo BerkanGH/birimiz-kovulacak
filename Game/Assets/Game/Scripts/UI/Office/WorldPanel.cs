@@ -21,6 +21,8 @@ namespace BirimizKovulacak.Game
         public Renderer Surface => _surface;
         public Material Original => _orig;
         public RenderTexture Texture => _rt;
+        /// <summary>The surface's live material (the render texture as base map); other surfaces may show it too.</summary>
+        public Material LiveMaterial => _mat;
         public bool Live => Root != null;
 
         /// <summary>Builds the panel (w x h pixels) for <paramref name="surface"/>; <paramref name="baseMat"/> is the material

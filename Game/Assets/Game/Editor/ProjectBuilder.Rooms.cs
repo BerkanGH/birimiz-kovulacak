@@ -1162,11 +1162,33 @@ namespace BirimizKovulacak.EditorTools
             meeting.DefaultSlideTr = AssetDatabase.LoadAssetAtPath<Texture2D>(RoomsTexDir + "/SlideTr.png");
             meeting.DefaultSlideEn = AssetDatabase.LoadAssetAtPath<Texture2D>(RoomsTexDir + "/SlideEn.png");
             if (Mat("M_RmCanvasUnlit") != null) { Mat("M_RmCanvasUnlit").SetTexture("_BaseMap", meeting.DefaultSlideTr); EditorUtility.SetDirty(Mat("M_RmCanvasUnlit")); }
-            if (props.TryGetValue("whiteboard", out g))
+            // v5 step 3a: two whiteboards (the wall one faces the left row, the one on wheels the right row); the UI draws
+            // the suç tahtası into both surfaces; E on either zooms in
+            var boards = new List<Renderer>();
+            foreach (var id in new[] { "whiteboard", "whiteboard2" })
             {
+                if (!props.TryGetValue(id, out g)) continue;
                 var ws = RendererUnder(g.transform, "BoardSurface");
                 if (ws != null && Mat("M_RmWhiteboardDoodles") != null) ws.sharedMaterial = Mat("M_RmWhiteboardDoodles");
+                if (ws != null) { boards.Add(ws); ws.shadowCastingMode = ShadowCastingMode.Off; }
+                MakeTarget(g, g.GetComponentsInChildren<Renderer>(true), DeskTarget.None, rb, 0.02f).Meet = MeetingTarget.Board;
             }
+            meeting.Boards = boards.ToArray();
+            var tfont = rb.Fonts != null ? rb.Fonts.TmpTitle ?? rb.Fonts.Tmp : null;
+            if (props.TryGetValue("ballotbox", out g))
+            {
+                meeting.BallotBox = g.transform;
+                meeting.BallotSlot = FindDeep(g.transform, "BallotSlot");
+                meeting.BallotPile = FindDeep(g.transform, "BallotPile");
+                var lab = FindDeep(g.transform, "BallotLabel");
+                Vector3 lp = lab != null ? g.transform.InverseTransformPoint(lab.position) : new Vector3(0f, 0.1875f, -0.1074f);
+                meeting.BallotLabel = Label3D(g.transform, "Label", lp + new Vector3(0f, 0f, -0.0016f), Vector3.zero, new Vector2(0.11f, 0.028f), tfont, Hex("#1F2A44"), "OY SANDIĞI", 0.5f);
+            }
+            var pencil = RoomProp(root, "RmPencil", Vector3.zero, 0, "PencilTemplate", rb);
+            foreach (var r in pencil.GetComponentsInChildren<Renderer>(true)) r.shadowCastingMode = ShadowCastingMode.Off;
+            pencil.SetActive(false);
+            meeting.PencilTemplate = pencil;
+            meeting.PaperMat = Mat("M_Paper");
             // projector beam: lens -> canvas corners
             GameObject proj;
             if (props.TryGetValue("projector", out proj) && meeting.Canvas != null)
@@ -1183,9 +1205,27 @@ namespace BirimizKovulacak.EditorTools
                 var chair = RoomProp(anchor, "RmMeetingChair", Vector3.zero, 0, "Chair", rb);
                 var items = new GameObject("Items");
                 items.transform.SetParent(anchor, false);
-                RoomProp(items.transform, "RmNotepad", new Vector3(-0.06f, 0.75f, 0.56f), 6f, "Notepad", rb);
-                RoomProp(items.transform, "RmGlass", new Vector3(0.24f, 0.75f, 0.5f), 0f, "Glass", rb);
-                seats.Add(new MeetingRoom.SeatRig { Anchor = anchor, ChairFabric = RendererUnder(chair.transform, "Fabric"), Items = items });
+                // v5 step 3a: everyone's folder (tablet) in front of them; only the local one is a target
+                var folder = RoomProp(items.transform, "RmFolder", new Vector3(0f, 0.75f, 0.56f), 0f, "Folder", rb);
+                // the ballot paper lies beside the folder on the side toward the middle of the table (the end seats sit
+                // where the table rounds off), the glass on the other side
+                Vector3 toMiddle = root.TransformPoint(new Vector3(0f, 0f, -0.15f)) - anchor.position;
+                float side = Vector3.Dot(anchor.right, toMiddle) >= 0f ? 1f : -1f;
+                RoomProp(items.transform, "RmGlass", new Vector3(-0.24f * side, 0.75f, 0.5f), 0f, "Glass", rb);
+                var screen = RendererUnder(folder.transform, "TabletScreen");
+                if (screen != null) screen.shadowCastingMode = ShadowCastingMode.Off;
+                var ft = MakeTarget(folder, folder.GetComponentsInChildren<Renderer>(true), DeskTarget.None, rb, 0.02f);
+                ft.Meet = MeetingTarget.Folder;
+                var ballotSpot = new GameObject("BallotSpot").transform;
+                ballotSpot.SetParent(items.transform, false);
+                ballotSpot.localPosition = new Vector3(0.27f * side, 0.751f, 0.5f);
+                ballotSpot.localRotation = Quaternion.Euler(0f, -7f * side, 0f);
+                seats.Add(new MeetingRoom.SeatRig
+                {
+                    Anchor = anchor, ChairFabric = RendererUnder(chair.transform, "Fabric"), Items = items,
+                    Folder = folder.transform, FolderCover = FindDeep(folder.transform, "FolderCover"), FolderScreen = screen,
+                    FolderCollider = folder.GetComponent<Collider>(), BallotSpot = ballotSpot,
+                });
                 si++;
             }
             meeting.Seats = seats.ToArray();

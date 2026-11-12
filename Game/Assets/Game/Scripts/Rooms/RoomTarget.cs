@@ -12,6 +12,8 @@ namespace BirimizKovulacak.Game
         public DeskTarget Desk = DeskTarget.None;
         /// <summary>Meeting seat index (0..5); the meeting room maps it to the player's slot. -1 = not a seat.</summary>
         public int Seat = -1;
+        /// <summary>v5 step 3a: a meeting object (the local folder, the ballot paper, a whiteboard).</summary>
+        public MeetingTarget Meet = MeetingTarget.None;
         public Renderer[] Overlays = new Renderer[0];
         public SeatedBean Bean;
 

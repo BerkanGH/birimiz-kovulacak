@@ -26,6 +26,7 @@ namespace BirimizKovulacak.Game
             LineClient.MessageResyncTransport = seq => RequestMessagesRpc(seq);
             LineClient.RematchTransport = want => SetRematchRpc(want);
             LineClient.TelemetryConsentTransport = (consent, id) => SetTelemetryConsentRpc(consent, id ?? "");
+            MeetingGaze.Transport = (yaw, pitch) => GazeRpc(unchecked((byte)yaw), unchecked((byte)pitch));
             LineClient.Clock = () => NetworkManager != null && NetworkManager.IsListening ? NetworkManager.ServerTime.Time : Time.realtimeSinceStartupAsDouble;
             if (IsServer)
             {
@@ -44,7 +45,27 @@ namespace BirimizKovulacak.Game
                 LineClient.MessageResyncTransport = null;
                 LineClient.RematchTransport = null;
                 LineClient.TelemetryConsentTransport = null;
+                MeetingGaze.Transport = null;
+                MeetingGaze.Clear();
             }
+        }
+
+        // ---------------------------------------------------------------- v5 step 3a: shared gaze (presentation only)
+
+        /// <summary>Where I look at the meeting table (degrees relative to my seat); unreliable, ~8 Hz.</summary>
+        [Rpc(SendTo.Server, InvokePermission = RpcInvokePermission.Everyone, Delivery = RpcDelivery.Unreliable)]
+        void GazeRpc(byte yaw, byte pitch, RpcParams rpcParams = default)
+        {
+            LineHost?.OnGaze(rpcParams.Receive.SenderClientId, unchecked((sbyte)yaw), unchecked((sbyte)pitch));
+        }
+
+        /// <summary>Everyone's gaze (humans and the host's bots), packed by <see cref="MeetingGaze.Pack"/>.</summary>
+        public void BroadcastGaze(byte[] packet) { GazeAllRpc(packet); }
+
+        [Rpc(SendTo.ClientsAndHost, InvokePermission = RpcInvokePermission.Server, Delivery = RpcDelivery.Unreliable)]
+        void GazeAllRpc(byte[] packet)
+        {
+            Safe(() => MeetingGaze.Apply(packet), "gaze");
         }
 
         // ---------------------------------------------------------------- client -> host

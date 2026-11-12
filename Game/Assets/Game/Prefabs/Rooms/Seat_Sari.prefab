@@ -816,6 +816,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: BirimizKovulacak.Game::BirimizKovulacak.Game.RoomTarget
   Desk: 0
   Seat: -1
+  Meet: 0
   Overlays: []
   Bean: {fileID: 8556010423086859725}
 --- !u!1 &5678916838986968315

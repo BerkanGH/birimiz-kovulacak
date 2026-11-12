@@ -35,7 +35,13 @@ namespace BirimizKovulacak.Game
         Roster,
         /// <summary>v5 step 2: looking into the open desk drawer (the prim stack); no mouse-look.</summary>
         Drawer,
+        /// <summary>v5 step 3a: meeting camera framed on the whiteboard across the table (suç tahtası); no mouse-look.</summary>
+        MeetingBoard,
     }
+
+    /// <summary>v5 step 3a: things you can use at the meeting table besides your colleagues: your folder (tablet), the ballot
+    /// paper in front of you during a vote, the whiteboard across the table.</summary>
+    public enum MeetingTarget { None, Folder, Ballot, Board }
 
     public enum MonitorState { Normal, Alert, Offline, Coffee, Off }
 
@@ -93,9 +99,14 @@ namespace BirimizKovulacak.Game
         public static DeskTarget Hovered;
         /// <summary>Seat under the crosshair in the meeting, -1 if none.</summary>
         public static int HoveredSeat = -1;
+        /// <summary>v5 step 3a: meeting object under the crosshair (folder, ballot paper, whiteboard), None if nothing.</summary>
+        public static MeetingTarget HoveredMeeting;
+        /// <summary>v5 step 3a: raised when the local player uses a meeting object (E / left click).</summary>
+        public static event Action<MeetingTarget> MeetingClicked;
 
         public static void RaiseDeskClicked(DeskTarget t) { DeskClicked?.Invoke(t); }
         public static void RaiseSeatClicked(int slot) { SeatClicked?.Invoke(slot); }
+        public static void RaiseMeetingClicked(MeetingTarget t) { MeetingClicked?.Invoke(t); }
 
         /// <summary>PlayerPrefs keys the world reads (the settings UI writes them).</summary>
         public const string PrefSensitivity = "pov.sensitivity", PrefInvertY = "pov.invert_y", PrefFov = "pov.fov";

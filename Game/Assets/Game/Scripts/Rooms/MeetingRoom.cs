@@ -9,8 +9,11 @@ namespace BirimizKovulacak.Game
     /// the manager standing at the head beside the projector screen, talk animation from voice levels, reactions,
     /// the defense spotlight, the fired player with a cardboard box. Characters are instantiated from the
     /// Seat_*/Boss_* prefabs on <see cref="Enter"/> and reused while the look does not change.
+    /// v5 step 3a: shared gaze (each colleague's head follows where their player looks, <see cref="SetGaze"/>; without
+    /// fresh gaze the old automatic glances), the folder, the ballot paper, the ballot box and the whiteboards
+    /// (MeetingRoom.Props.cs).
     /// </summary>
-    public sealed class MeetingRoom : MonoBehaviour
+    public sealed partial class MeetingRoom : MonoBehaviour
     {
         [Serializable]
         public sealed class SeatRig
@@ -18,6 +21,12 @@ namespace BirimizKovulacak.Game
             public Transform Anchor;
             public Renderer ChairFabric;
             public GameObject Items;
+            /// <summary>v5 step 3a: the seat's folder (closed on the table), its cover hinge and the tablet screen.</summary>
+            public Transform Folder, FolderCover;
+            public Renderer FolderScreen;
+            public Collider FolderCollider;
+            /// <summary>Where the ballot paper lies during a vote (y up, z away from the sitter).</summary>
+            public Transform BallotSpot;
         }
 
         public SeatRig[] Seats = new SeatRig[0];
@@ -81,6 +90,7 @@ namespace BirimizKovulacak.Game
             if (Spot != null) Spot.enabled = false;
             if (SpotCone != null) SpotCone.enabled = false;
             if (FiredBox != null) FiredBox.SetActive(false);
+            InitProps();
         }
 
         // ------------------------------------------------------------------ seats
@@ -158,6 +168,8 @@ namespace BirimizKovulacak.Game
             _fired = -1;
             _spot = -1;
             if (FiredBox != null) FiredBox.SetActive(false);
+            ClearGaze();
+            SeatsChanged();
         }
 
         /// <summary>Slot sitting at a seat index, -1 if empty.</summary>
@@ -207,6 +219,61 @@ namespace BirimizKovulacak.Game
         }
 
         public void SetManagerTalking(bool talking) { _managerTalking = talking; }
+
+        readonly float[] _gazeYaw = new float[MaxSlots], _gazePitch = new float[MaxSlots], _gazeUntil = new float[MaxSlots];
+
+        /// <summary>v5 step 3a: where a seated colleague looks (degrees relative to their seat: yaw right +, pitch down +).
+        /// Valid for <paramref name="hold"/> seconds; without fresh gaze the head goes back to the automatic glances.</summary>
+        public void SetGaze(int slot, float yaw, float pitch, float hold = 1.6f)
+        {
+            if (slot < 0 || slot >= MaxSlots) return;
+            _gazeYaw[slot] = yaw; _gazePitch[slot] = pitch; _gazeUntil[slot] = Time.time + hold;
+        }
+
+        public void ClearGaze() { for (int i = 0; i < MaxSlots; i++) _gazeUntil[i] = 0f; }
+
+        /// <summary>Speaker right now (loudest recent voice), -1 if nobody talks.</summary>
+        public int Speaker
+        {
+            get
+            {
+                int speaker = -1;
+                float best = 0.05f, now = Time.time;
+                for (int i = 0; i < MaxSlots; i++)
+                    if (now < _talkUntil[i] && _level[i] + 0.1f > best) { best = _level[i] + 0.1f; speaker = i; }
+                return speaker;
+            }
+        }
+
+        /// <summary>Head point of a seat for gaze maths: the same on every client (seat anchor, fixed height).</summary>
+        public bool SeatHead(int slot, out Vector3 head)
+        {
+            var a = SeatAnchorOfSlot(slot);
+            head = Vector3.zero;
+            if (a == null) return false;
+            head = a.position + Vector3.up * EyeUp + a.forward * EyeForward;
+            return true;
+        }
+
+        /// <summary>Yaw/pitch (relative to <paramref name="from"/>'s seat) that looks at <paramref name="to"/>'s head.</summary>
+        public bool GazeAngles(int from, int to, out float yaw, out float pitch)
+        {
+            yaw = 0f; pitch = 8f;
+            var a = SeatAnchorOfSlot(from);
+            Vector3 eye, head;
+            if (a == null || !SeatHead(from, out eye) || !SeatHead(to, out head)) return false;
+            return AnglesTo(a, eye, head, out yaw, out pitch);
+        }
+
+        /// <summary>Yaw/pitch (relative to a seat anchor) toward a world point.</summary>
+        public static bool AnglesTo(Transform anchor, Vector3 eye, Vector3 target, out float yaw, out float pitch)
+        {
+            Vector3 d = anchor.InverseTransformDirection(target - eye);
+            float flat = new Vector2(d.x, d.z).magnitude;
+            yaw = Mathf.Atan2(d.x, d.z) * Mathf.Rad2Deg;
+            pitch = flat > 1e-4f ? -Mathf.Atan2(d.y, flat) * Mathf.Rad2Deg : 0f;
+            return true;
+        }
 
         public void SetSpotlight(int slot) { _spot = slot; }
 
@@ -281,6 +348,8 @@ namespace BirimizKovulacak.Game
                 bool talking = slot >= 0 && now < _talkUntil[slot];
                 b.SetTalking(talking, slot >= 0 ? _level[slot] : 0f);
                 b.SetSpotlit(slot == _spot && slot >= 0);
+                // shared gaze: the player (or the host's bot) decides where this head looks
+                if (slot >= 0 && now < _gazeUntil[slot]) { b.SetGaze(_gazeYaw[slot], _gazePitch[slot]); continue; }
                 if (hasFocus && focusSlot != slot) { b.LookAt(focus); continue; }
                 // nobody has the floor: mostly face the table, now and then glance at the manager, at you or at a neighbour
                 if (now >= _glanceUntil[s])

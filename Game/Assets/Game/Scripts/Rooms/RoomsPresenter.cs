@@ -34,6 +34,8 @@ namespace BirimizKovulacak.Game
         public static Vector2? ScriptedMove;
         /// <summary>False while something else owns the keyboard (text field focused, menus): no walking.</summary>
         public static bool AllowWalk = true;
+        /// <summary>The UI used this frame's E (closed the folder, dropped the ballot): the world must not use it again.</summary>
+        public static int UseConsumedFrame = -1;
 
         public static RoomsPresenter Instance { get; private set; }
 
@@ -226,6 +228,20 @@ namespace BirimizKovulacak.Game
             return true;
         }
 
+        /// <summary>v5 step 3a shared gaze: where the local camera looks relative to the meeting seat (yaw right +,
+        /// pitch down +); false outside the meeting room.</summary>
+        public bool TryGetMeetingLook(out float yaw, out float pitch)
+        {
+            yaw = 0f; pitch = 0f;
+            var cam = PovCamera;
+            if (_place != Place.Meeting || cam == null) return false;
+            Vector3 f = Quaternion.Inverse(_meetRot) * cam.transform.forward;
+            float flat = new Vector2(f.x, f.z).magnitude;
+            yaw = Mathf.Atan2(f.x, f.z) * Mathf.Rad2Deg;
+            pitch = flat > 1e-4f ? -Mathf.Atan2(f.y, flat) * Mathf.Rad2Deg : 0f;
+            return true;
+        }
+
         /// <summary>Look direction relative to the seat (test harness / scripted moments).</summary>
         public void SetLook(float yaw, float pitch) { if (Rig != null) Rig.SetLook(yaw, pitch); }
 
@@ -292,6 +308,7 @@ namespace BirimizKovulacak.Game
             else
             {
                 Meeting.Tick(cam != null ? cam.transform.position : _meetEye, dt);
+                Meeting.TickProps(cam, dt);
             }
             // no hover while the camera eases (also: the E that closed the board must not reopen it)
             UpdateHover(inputOk && !Rig.Transitioning);
@@ -308,7 +325,7 @@ namespace BirimizKovulacak.Game
         /// <summary>E or a left click (only while the cursor is locked: a free cursor belongs to the UI).</summary>
         static bool UsePressed()
         {
-            if (!AllowWalk) return false;
+            if (!AllowWalk || Time.frameCount == UseConsumedFrame) return false;
             bool click = Mouse.current != null && Mouse.current.leftButton.wasPressedThisFrame && Cursor.lockState == CursorLockMode.Locked;
             bool e = GameInput.Interact != null && GameInput.Interact.WasPressedThisFrame();
             return click || e;
@@ -355,7 +372,7 @@ namespace BirimizKovulacak.Game
             float framingFov = 38f;
             var mode = _mode;
             if (_place == Place.Meeting && (mode == PovMode.Office || mode == PovMode.Monitor || mode == PovMode.Phone)) mode = PovMode.Meeting;
-            if (_place == Place.Office && mode == PovMode.Meeting || _place == Place.Office && mode == PovMode.MeetingProjector) mode = PovMode.Office;
+            if (_place == Place.Office && (mode == PovMode.Meeting || mode == PovMode.MeetingProjector || mode == PovMode.MeetingBoard)) mode = PovMode.Office;
             switch (mode)
             {
                 case PovMode.Monitor:
@@ -391,6 +408,10 @@ namespace BirimizKovulacak.Game
                     break;
                 case PovMode.MeetingProjector:
                     if (Frame(Meeting.Canvas, 0.94f, framingFov, out pos, out rot)) { fov = framingFov; return; }
+                    break;
+                case PovMode.MeetingBoard:
+                    // v5 step 3a: the whiteboard across the table (the heads in front of it stay in the lower edge)
+                    if (Frame(Meeting.BoardFor(_localSlot), 0.9f, framingFov, out pos, out rot)) { fov = framingFov; pos += Breath() * 0.5f; return; }
                     break;
                 case PovMode.Cutscene:
                     if (CutscenePose(out pos, out rot, out fov)) return;
@@ -542,6 +563,7 @@ namespace BirimizKovulacak.Game
                     if (t == null) continue;
                     bool ok = false;
                     if (_place == Place.Office) ok = OfficeTargetOk(t.Desk);
+                    else if (_place == Place.Meeting && t.Meet != MeetingTarget.None) ok = MeetingTargetOk(t.Meet);
                     else if (_place == Place.Meeting && t.Seat >= 0)
                     {
                         int slot = Meeting.SlotAtSeat(t.Seat);
@@ -553,6 +575,18 @@ namespace BirimizKovulacak.Game
                 }
             }
             SetHover(hit);
+        }
+
+        /// <summary>v5 step 3a: the folder while it lies on the table, the ballot paper while it lies there, the whiteboards.</summary>
+        bool MeetingTargetOk(MeetingTarget m)
+        {
+            switch (m)
+            {
+                case MeetingTarget.Folder: return !Meeting.FolderHeld && Meeting.FolderProgress < 0.05f;
+                case MeetingTarget.Ballot: return Meeting.BallotShown && !Meeting.BallotHeld && !Meeting.BallotDropping;
+                case MeetingTarget.Board: return true;
+                default: return false;
+            }
         }
 
         /// <summary>Things you can use in the office (the window is only scenery; the chair only while standing).</summary>
@@ -574,7 +608,8 @@ namespace BirimizKovulacak.Game
             _hover = t;
             if (_hover != null) _hover.SetHover(true);
             Rooms.Hovered = t != null && _place == Place.Office ? t.Desk : DeskTarget.None;
-            Rooms.HoveredSeat = t != null && _place == Place.Meeting ? Meeting.SlotAtSeat(t.Seat) : -1;
+            Rooms.HoveredSeat = t != null && _place == Place.Meeting && t.Meet == MeetingTarget.None ? Meeting.SlotAtSeat(t.Seat) : -1;
+            Rooms.HoveredMeeting = t != null && _place == Place.Meeting ? t.Meet : MeetingTarget.None;
             if (t == null && HoverMat != null) HoverMat.SetColor("_BaseColor", _hoverBase);
         }
 
@@ -588,6 +623,7 @@ namespace BirimizKovulacak.Game
                 if (desk == DeskTarget.Chair) SitDown();
                 Rooms.RaiseDeskClicked(desk);
             }
+            else if (_place == Place.Meeting && _hover.Meet != MeetingTarget.None) Rooms.RaiseMeetingClicked(_hover.Meet);
             else if (_place == Place.Meeting && _hover.Seat >= 0)
             {
                 int slot = Meeting.SlotAtSeat(_hover.Seat);

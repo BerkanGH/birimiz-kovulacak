@@ -634,6 +634,7 @@ namespace BirimizKovulacak.Game
                 RouteEvents(events);
             }
             PushMessages();
+            TickGaze();
 
             bool changed = _engine.StateVersion != _lastSentVersion;
             if ((changed && now - _lastViewSend >= ViewInterval) || now - _lastHeartbeat >= HeartbeatInterval) SendViewsToAll();
@@ -735,6 +736,55 @@ namespace BirimizKovulacak.Game
                 HostTelemetryBridge.RecordingStarted(_engine, reported, chosen, info, now);
                 break; // one per frame; the next waits until this tape has finished
             }
+        }
+
+        // ================================================================ v5 step 3a: shared gaze (presentation only)
+
+        readonly sbyte[] _gazeYaw = new sbyte[SlotCount], _gazePitch = new sbyte[SlotCount];
+        readonly float[] _gazeAt = new float[SlotCount];
+        readonly BotGazer[] _botGaze = new BotGazer[SlotCount];
+        readonly List<int> _gazeSlots = new List<int>();
+        readonly List<sbyte> _gazeY = new List<sbyte>(), _gazeP = new List<sbyte>();
+        float _nextGaze;
+
+        /// <summary>A client's look direction at the meeting table (never enters the engine, logs or analytics).</summary>
+        public void OnGaze(ulong clientId, sbyte yaw, sbyte pitch)
+        {
+            int slot;
+            if (!_clientSlot.TryGetValue(clientId, out slot) || slot < 0 || slot >= SlotCount) return;
+            _gazeYaw[slot] = yaw; _gazePitch[slot] = pitch; _gazeAt[slot] = Time.unscaledTime;
+        }
+
+        /// <summary>~8 Hz in the meeting room: the host's bots pick where to look, then everyone's fresh gaze goes out in one packet.</summary>
+        void TickGaze()
+        {
+            if (_engine == null || _session == null) return;
+            float now = Time.unscaledTime;
+            if (now < _nextGaze) return;
+            _nextGaze = now + MeetingGaze.Interval;
+            var phase = _engine.Phase;
+            if (!LineClient.IsMeetingPhase(phase) && phase != LinePhase.Results) return;
+            var room = RoomsPresenter.Instance != null && RoomsPresenter.Instance.InMeeting ? RoomsPresenter.Instance.Meeting : null;
+            var view = LineClient.I != null ? LineClient.I.View : null;
+            _gazeSlots.Clear(); _gazeY.Clear(); _gazeP.Clear();
+            for (int i = 0; i < SlotCount; i++)
+            {
+                var s = _slots[i];
+                if (!s.Occupied) continue;
+                if (s.Virtual)
+                {
+                    if (room == null || view == null) continue;
+                    if (_botGaze[i] == null) _botGaze[i] = new BotGazer(i, _matchSeed + 1);
+                    float y, p;
+                    if (!_botGaze[i].Next(view, room, now, out y, out p)) continue;
+                    _gazeYaw[i] = MeetingGaze.Quantise(y, 90); _gazePitch[i] = MeetingGaze.Quantise(p, 60); _gazeAt[i] = now;
+                }
+                if (now - _gazeAt[i] > 1.5f || _gazeAt[i] <= 0f) continue;
+                _gazeSlots.Add(i); _gazeY.Add(_gazeYaw[i]); _gazeP.Add(_gazePitch[i]);
+            }
+            if (_gazeSlots.Count == 0) return;
+            try { _session.BroadcastGaze(MeetingGaze.Pack(_gazeSlots, _gazeY, _gazeP)); }
+            catch (Exception e) { Debug.LogException(e); }
         }
 
         void RouteEvents(List<LineEvent> events)
