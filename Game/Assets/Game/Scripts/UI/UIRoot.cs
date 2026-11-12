@@ -9,7 +9,8 @@ namespace BirimizKovulacak.Game
     /// Owns screen visibility, Esc routing and the cursor policy: menu / lobby screens keep the cursor free; during a
     /// week the cursor is locked only while the player looks around the room (no computer, phone or overlay open).
     /// v5: in the office the <see cref="OfficeUi"/> layer is shown (HUD strip, desk objects), in the meeting room the
-    /// <see cref="PlayUi"/> screen; which one follows <see cref="LineWorldDriver.ShownPlace"/> (switched under a fade).
+    /// <see cref="MeetingUi"/> layer (step 3a; <see cref="PlayUi"/> only without the rooms scene); which one follows
+    /// <see cref="LineWorldDriver.ShownPlace"/> (switched under a fade).
     /// </summary>
     [RequireComponent(typeof(UIDocument))]
     public sealed class UIRoot : MonoBehaviour
@@ -37,6 +38,7 @@ namespace BirimizKovulacak.Game
         MomentMarker _moment;
         PlayUi _play;
         OfficeUi _office;
+        MeetingUi _meeting;
         bool _built, _rebuildPending;
         readonly System.Collections.Generic.List<VisualElement> _screenElements = new System.Collections.Generic.List<VisualElement>();
 
@@ -112,6 +114,7 @@ namespace BirimizKovulacak.Game
             _menu = new MainMenuScreen(_root);
             _play = new PlayUi(_root);
             _office = new OfficeUi(_root);
+            _meeting = new MeetingUi(_root);
             _pause = new PauseMenu(_root);
             _howTo = new HowToPlayScreen(_root);
             _settings = new SettingsScreen(_root);
@@ -137,6 +140,7 @@ namespace BirimizKovulacak.Game
             // ---- no week running: main menu or lobby
             _play.SetVisible(false);
             _office.SetVisible(false);
+            _meeting.SetVisible(false);
             RoomsPresenter.AllowWalk = false;
             bool online = conn != null && (conn.Current == ConnectionManager.State.Hosting || conn.Current == ConnectionManager.State.Connected || conn.Current == ConnectionManager.State.Reconnecting || conn.Current == ConnectionManager.State.Connecting);
             online |= LineClient.I != null && LineClient.I.Lobby != null; // lobby (also the UI mock)
@@ -171,8 +175,10 @@ namespace BirimizKovulacak.Game
         /// <summary>Match running: the office layer or the meeting screen over the first-person rooms.</summary>
         void UpdateWeek(LineView v)
         {
-            // v5: the office layer while the player is in their own office (the meeting screen elsewhere / without rooms)
+            // v5: the office layer in the player's own office, the meeting room layer at the meeting table (step 3a); the old
+            // one-window play screen only without the rooms scene
             bool office = Rooms.Presenter != null && LineWorldDriver.ShownPlace == LineWorldDriver.Place.Office;
+            bool meeting = Rooms.Presenter != null && LineWorldDriver.ShownPlace == LineWorldDriver.Place.Meeting;
             if (GameInput.Pause != null && GameInput.Pause.WasPressedThisFrame())
             {
                 if (Modal.CloseTop()) { }
@@ -180,21 +186,24 @@ namespace BirimizKovulacak.Game
                 else if (_settings.Visible) _settings.Hide();
                 else if (_howTo.Visible) _howTo.Hide();
                 else if (!_pause.Visible && office && _office.Back()) { } // Esc first puts down what you hold
+                else if (!_pause.Visible && meeting && _meeting.Back()) { }
                 else _pause.Toggle();
             }
             bool overlay = _pause.Visible || _settings.Visible || _howTo.Visible || Modal.AnyOpen || _intro.Visible;
             OverlayOpen = overlay;
             _menu.SetVisible(false); _lobby.SetVisible(false);
-            _play.SetVisible(!office);
+            _play.SetVisible(!office && !meeting);
             _office.SetVisible(office);
+            _meeting.SetVisible(meeting);
 
             _play.Tick();
             _office.Tick();
+            _meeting.Tick();
             _pause.Tick(); _settings.Tick(); _howTo.Tick(); _confirm.Tick(); _status.Tick(); _intro.Tick(); _moment.Tick();
 
             var rooms = Rooms.Presenter;
-            bool lookMode = rooms != null && (rooms.Mode == PovMode.Office || rooms.Mode == PovMode.Meeting || rooms.Mode == PovMode.Board || rooms.Mode == PovMode.Drawer);
-            bool wantsCursor = overlay || (office ? _office.WantsCursor : _play.WantsCursor) || !lookMode;
+            bool lookMode = rooms != null && (rooms.Mode == PovMode.Office || rooms.Mode == PovMode.Meeting || rooms.Mode == PovMode.Board || rooms.Mode == PovMode.Drawer || rooms.Mode == PovMode.MeetingBoard);
+            bool wantsCursor = overlay || (office ? _office.WantsCursor : meeting ? _meeting.WantsCursor : _play.WantsCursor) || !lookMode;
             BlocksGameplay = wantsCursor;
             bool wantLock = !wantsCursor && Application.isFocused && !LaunchArgs.Current.Bot && !LineMockDriver.Active;
             UnityEngine.Cursor.lockState = wantLock ? CursorLockMode.Locked : CursorLockMode.None;

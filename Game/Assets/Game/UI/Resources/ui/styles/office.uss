@@ -293,3 +293,11 @@
 .rs-stamp-text { font-size: 44px; letter-spacing: 2px; }
 .rs-stamp-ok .rs-stamp-text { color: rgba(36, 120, 74, 0.9); }
 .rs-stamp-bad .rs-stamp-text { color: rgba(210, 56, 47, 0.92); }
+
+/* ---------------------------------------------------------------- v5 step 3a: partner call (pair / trio tasks) */
+.of-toast-partner { background-color: rgb(226, 244, 236); }
+.of-toast-partner .of-toast-bar { background-color: rgb(59, 185, 176); }
+.of-toast-partner .of-toast-text { font-size: 20px; -unity-font-style: bold; }
+.ph-contact-partner { background-color: rgb(226, 244, 236); border-color: rgba(59, 185, 176, 0.75); }
+.ph-contact-sel { border-color: rgb(31, 42, 68); border-width: 3px; border-left-width: 8px; }
+.ph-face .pl-tag-partner { background-color: rgb(30, 130, 122); }

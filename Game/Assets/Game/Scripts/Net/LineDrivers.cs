@@ -78,8 +78,8 @@ namespace BirimizKovulacak.Game
     /// Saves screenshots at key moments of each match (automation: -screenshots). Office phases capture the office
     /// views a player sees: the desk, the computer on the task app, the phone panel (a call is usually running with
     /// -calltest), the cork board and a standing view; step 2: the task's object (the Petty Cash box while choosing and
-    /// in its break, the Weekend Shift roster while choosing and at the reveal) and the drawer; meeting phases capture
-    /// the meeting screen.
+    /// in its break, the Weekend Shift roster while choosing and at the reveal) and the drawer; meeting phases (step 3a)
+    /// capture the meeting room: the seat view, the folder, the whiteboard zoom, the ballot paper and the ballot box.
     /// </summary>
     public sealed class LineScreenshotRecorder : MonoBehaviour
     {
@@ -100,6 +100,23 @@ namespace BirimizKovulacak.Game
         {
             if (Office != null) Office.CloseFocus();
             if (World != null) { World.SitDown(false); World.SetLook(yaw, pitch); }
+        }
+
+        static MeetingUi Meeting => MeetingUi.I;
+
+        /// <summary>Meeting room: nothing held, looking around from the seat.</summary>
+        static void Seat(float yaw, float pitch)
+        {
+            if (Meeting != null) Meeting.CloseAll();
+            if (World != null) World.SetLook(yaw, pitch);
+        }
+
+        /// <summary>Meeting room: the ballot box with the papers dropped so far.</summary>
+        static void BoxView()
+        {
+            if (Meeting != null) Meeting.CloseAll();
+            var box = World != null && World.Meeting != null ? World.Meeting.BallotBox : null;
+            if (box != null) World.AimAt(box.position + Vector3.up * 0.1f);
         }
 
         /// <summary>The object that plays the task (step 2): its view, or the computer's task app for Client Bonus.</summary>
@@ -141,16 +158,23 @@ namespace BirimizKovulacak.Game
                         new ShotSpec(30f, "desk", () => Desk(24f, 22f)),
                         new ShotSpec(52f, "board", () => Office?.OpenBoard()),
                     };
-                case LinePhase.MeetingDossier: return new[] { new ShotSpec(6f, null, null) };
-                case LinePhase.MeetingDiscussion: return new[] { new ShotSpec(10f, null, null) };
-                case LinePhase.MeetingVote: return new[] { new ShotSpec(8f, null, null) };
-                case LinePhase.MeetingVerdict: return new[] { new ShotSpec(3f, null, null) };
-                case LinePhase.CrisisVote: return new[] { new ShotSpec(8f, null, null) };
-                case LinePhase.CrisisVerdict: return new[] { new ShotSpec(3f, null, null) };
-                case LinePhase.FinalDiscussion: return new[] { new ShotSpec(8f, null, null) };
-                case LinePhase.FinalDefense: return new[] { new ShotSpec(6f, null, null) };
-                case LinePhase.FinalVote: return new[] { new ShotSpec(8f, null, null) };
-                case LinePhase.FinalVerdict: return new[] { new ShotSpec(4f, null, null) };
+                // v5 step 3a: the meeting room (seated look, the folder, the whiteboard, the ballot and the box)
+                case LinePhase.MeetingDossier: return new[] { new ShotSpec(5f, "room", () => Seat(0f, 6f)) };
+                case LinePhase.MeetingDiscussion:
+                    return new[]
+                    {
+                        new ShotSpec(4f, "room", () => Seat(-20f, 4f)), new ShotSpec(10f, "folder", () => Meeting?.OpenFolder(MeetingFolder.Tab.Actions)),
+                        new ShotSpec(16f, "board", () => Meeting?.OpenBoard()),
+                    };
+                case LinePhase.MeetingVote:
+                case LinePhase.CrisisVote:
+                case LinePhase.FinalVote:
+                    return new[] { new ShotSpec(3f, "ballot", () => { Seat(0f, 6f); Meeting?.OpenBallot(); }), new ShotSpec(9f, "box", BoxView) };
+                case LinePhase.MeetingVerdict: return new[] { new ShotSpec(3f, "board", () => Meeting?.OpenBoard()) };
+                case LinePhase.CrisisVerdict: return new[] { new ShotSpec(3f, "board", () => Meeting?.OpenBoard()) };
+                case LinePhase.FinalDiscussion: return new[] { new ShotSpec(5f, "room", () => Seat(15f, 4f)), new ShotSpec(11f, "folder", () => Meeting?.OpenFolder(MeetingFolder.Tab.Chat)) };
+                case LinePhase.FinalDefense: return new[] { new ShotSpec(5f, "room", () => Seat(0f, 5f)) };
+                case LinePhase.FinalVerdict: return new[] { new ShotSpec(3f, "room", () => Seat(0f, 5f)) };
                 case LinePhase.Results: return new[] { new ShotSpec(5f, null, null) };
                 default: return null;
             }
@@ -212,6 +236,10 @@ namespace BirimizKovulacak.Game
 
         int _officeKey = -1, _meetingKey = -1, _firedShown = -2;
         bool _switching, _closed, _bound;
+        double _boxRound = double.NaN;
+
+        /// <summary>UI mocks: voice level per slot instead of the voice system (talk animation in screenshots).</summary>
+        public static System.Func<int, float> MockSpeech;
         readonly List<MeetingSeatInfo> _seats = new List<MeetingSeatInfo>();
 
         void Update()
@@ -225,7 +253,7 @@ namespace BirimizKovulacak.Game
             {
                 // the week closed (lobby; a new mock scenario may already have a view in the same frame)
                 _closed = false;
-                _officeKey = _meetingKey = -1; _firedShown = -2;
+                _officeKey = _meetingKey = -1; _firedShown = -2; _boxRound = double.NaN;
                 if (ShownPlace != Place.None) { ShownPlace = Place.None; ScreenFade.To(0f, 0f); }
                 if (v == null) return;
             }
@@ -313,8 +341,25 @@ namespace BirimizKovulacak.Game
             }
             var voice = VoiceSystem.Instance;
             foreach (var p in v.Players)
-                rooms.SetSpeaking(p.Id, voice != null ? voice.GetSpeechLevel(p.Id) : 0f);
+                rooms.SetSpeaking(p.Id, MockSpeech != null ? MockSpeech(p.Id) : voice != null ? voice.GetSpeechLevel(p.Id) : 0f);
             rooms.SetSpotlight(v.Phase == LinePhase.FinalDefense && v.Final != null ? v.Final.Defender : -1);
+            // v5 step 3a: shared gaze (send mine, turn the colleagues' heads) and the ballot box for the votes
+            var room = RoomsPresenter.Instance != null ? RoomsPresenter.Instance.Meeting : null;
+            if (room != null)
+            {
+                MeetingGaze.TickLocal(lc, v);
+                foreach (var p in v.Players)
+                {
+                    float gy, gp;
+                    if (p.Id != me && MeetingGaze.TryGet(p.Id, out gy, out gp)) room.SetGaze(p.Id, gy, gp, 0.4f);
+                }
+                bool box = v.Phase == LinePhase.MeetingVote || v.Phase == LinePhase.CrisisVote || v.Phase == LinePhase.FinalVote
+                           || v.Phase == LinePhase.MeetingVerdict || v.Phase == LinePhase.CrisisVerdict;
+                // a new vote (also the final's revote / second round) starts with an empty box
+                bool fresh = box && v.PhaseStartTime != _boxRound && (v.Phase == LinePhase.MeetingVote || v.Phase == LinePhase.CrisisVote || v.Phase == LinePhase.FinalVote);
+                if (fresh) _boxRound = v.PhaseStartTime;
+                room.SetBallotBox(box, fresh);
+            }
             // The room shows one fired avatar: the latest firing.
             int fired = -1;
             if (v.Final != null && v.Final.Firings.Count > 0) fired = v.Final.Firings[v.Final.Firings.Count - 1].Player;

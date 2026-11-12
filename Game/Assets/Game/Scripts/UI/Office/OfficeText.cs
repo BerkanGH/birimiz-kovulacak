@@ -85,6 +85,21 @@ namespace BirimizKovulacak.Game
             }
         }
 
+        static readonly System.Collections.Generic.List<int> NoPartners = new System.Collections.Generic.List<int>();
+
+        /// <summary>v5 step 3a: my partners in a pair / trio task (Client Bonus, Petty Cash) while it runs, its reveal and its
+        /// break (seat order); empty otherwise (Weekend Shift is everyone's task).</summary>
+        public static System.Collections.Generic.List<int> Partners(LineClient lc, LineView v)
+        {
+            var t = v != null ? v.Task : null;
+            if (t == null || lc == null || (t.Kind != TaskKind.ClientBonus && t.Kind != TaskKind.PettyCash)) return NoPartners;
+            if (v.Phase != LinePhase.TaskPlay && v.Phase != LinePhase.TaskReveal && v.Phase != LinePhase.Break) return NoPartners;
+            var list = new System.Collections.Generic.List<int>();
+            foreach (int id in t.Group) if (id != lc.MySlot) list.Add(id);
+            list.Sort();
+            return list;
+        }
+
         /// <summary>The hotkey that does the same from anywhere (shown next to the prompt), or null.</summary>
         public static string Hotkey(DeskTarget d)
         {

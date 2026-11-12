@@ -31,7 +31,7 @@ namespace BirimizKovulacak.Game
         readonly OfficeObjects _objects;
         readonly CorkBoard _board = new CorkBoard();
         readonly PlayState _st = new PlayState();
-        readonly List<KeyValuePair<VisualElement, float>> _toastList = new List<KeyValuePair<VisualElement, float>>();
+        readonly ToastStack _toastStack;
         Focus _focus;
         bool _bound, _dirty = true, _ringLoop, _backLoop;
         int _week = int.MinValue, _tapeCount = -1;
@@ -100,7 +100,8 @@ namespace BirimizKovulacak.Game
             _mic.Show(false);
 
             // ---- toasts (top right, under the strip)
-            _toasts = Box("of-toasts").NoPick().AddTo(Root);
+            _toastStack = new ToastStack(Root);
+            _toasts = _toastStack.Host;
 
             // ---- use prompt under the crosshair, board hint
             _prompt = Box("of-prompt").NoPick().AddTo(Root);
@@ -239,7 +240,7 @@ namespace BirimizKovulacak.Game
         void OnPhase(LinePhase from, LinePhase to)
         {
             if (Detached()) return;
-            if (to == LinePhase.None) { CloseFocus(false); _pendingPhaseToast = null; _objects.Reset(); return; }
+            if (to == LinePhase.None) { CloseFocus(false); _pendingPhaseToast = null; _pendingPartnerToast = null; _hintTask = -1; _objects.Reset(); return; }
             var lc = LineClient.I;
             var v = lc != null ? lc.View : null;
             if (v == null || !LineClient.IsCallsPhase(to)) return;
@@ -249,9 +250,61 @@ namespace BirimizKovulacak.Game
             if (to == LinePhase.Intro) return; // the strip says it
             _pendingPhaseToast = PlayText.PhaseTitle(v);
             if (_focus == Focus.Computer) _computer.MarkDirty();
+            // v5 step 3a: a pair / trio task starts: who your partner is and how to call them
+            var partners = OfficeText.Partners(lc, v);
+            if (to == LinePhase.TaskPlay && partners.Count > 0)
+            {
+                var names = new System.Text.StringBuilder();
+                foreach (int id in partners)
+                {
+                    if (names.Length > 0) names.Append(", ");
+                    names.Append(Name(id));
+                    var pl = lc.Player(id);
+                    if (pl != null && pl.IsBot) names.Append(" (").Append(T("players.bot")).Append(')');
+                }
+                _pendingPartnerToast = F(partners.Count > 1 ? "office.partner.toast_many" : "office.partner.toast", names.ToString(), OfficeText.Key(GameInput.Phone));
+            }
         }
 
-        string _pendingPhaseToast;
+        string _pendingPhaseToast, _pendingPartnerToast;
+        int _hintTask = -1;
+        bool _hintThisMatch;
+        /// <summary>UI mocks: show the partner-call hint whatever the matches-played counter says.</summary>
+        public static bool MockHint;
+        const string PrefMatches = "v5.matches_played";
+
+        /// <summary>The partner-call hint is for a player's first three matches (PlayerPrefs counter, not counted for
+        /// UI mocks and automated players).</summary>
+        void CountMatch(LineView v)
+        {
+            if (LineMockDriver.Active || LaunchArgs.Current.Bot) { _hintThisMatch = false; return; }
+            // once per match (a language switch rebuilds this screen)
+            string key = v.MatchId + "#" + v.WeekId;
+            if (key == s_countedMatch) { _hintThisMatch = s_hintThisMatch; return; }
+            s_countedMatch = key;
+            int played = PlayerPrefs.GetInt(PrefMatches, 0);
+            _hintThisMatch = s_hintThisMatch = played < 3;
+            PlayerPrefs.SetInt(PrefMatches, played + 1);
+            PlayerPrefs.Save();
+        }
+
+        static string s_countedMatch;
+        static bool s_hintThisMatch;
+
+        /// <summary>15 s into a pair task without having called anyone: "you can call your partner and bargain (Tab)".</summary>
+        void PartnerHint(LineClient lc, LineView v, double now)
+        {
+            if (!(_hintThisMatch || MockHint) || v.Phase != LinePhase.TaskPlay || v.Task == null || _hintTask == v.Task.Number) return;
+            if (now - v.PhaseStartTime < 15.0 || v.Mine.Phone.Status != CallStatus.Idle) return;
+            var partners = OfficeText.Partners(lc, v);
+            bool human = false;
+            foreach (int id in partners) { var pl = lc.Player(id); if (pl != null && pl.Connected && !pl.IsBot) human = true; }
+            if (!human) return;
+            foreach (var c in v.Mine.CallLog) if (c.Outgoing && c.Start >= v.PhaseStartTime - 0.5) { _hintTask = v.Task.Number; return; }
+            _hintTask = v.Task.Number;
+            Toast(F("office.partner.hint", OfficeText.Key(GameInput.Phone)), "of-toast-partner", 9f);
+            Sfx.Play("toast", 0.5f);
+        }
 
         // ------------------------------------------------------------------ desk objects
 
@@ -286,10 +339,16 @@ namespace BirimizKovulacak.Game
             var rooms = RoomsPresenter.Instance;
             if (rooms == null || rooms.InMeeting) return;
             if (_focus == Focus.Computer) _computer.Close();
-            bool idle = LineClient.I != null && LineClient.I.View != null && LineClient.I.View.Mine.Phone.Status == CallStatus.Idle;
+            var lc = LineClient.I;
+            var v = lc != null ? lc.View : null;
+            bool idle = v != null && v.Mine.Phone.Status == CallStatus.Idle;
+            // v5 step 3a: the task partner is preselected (E / Enter calls them); never an automatic call
+            int select = -1;
+            if (idle && v.Features.CallsOpen)
+                foreach (int id in OfficeText.Partners(lc, v)) { var pl = lc.Player(id); if (pl != null && pl.Connected) { select = id; break; } }
             _focus = Focus.Phone;
             rooms.SetPovMode(PovMode.Phone);
-            _phone.Open();
+            _phone.Open(select);
             if (idle) Sfx.Play("offhook", 0.7f);
         }
 
@@ -391,6 +450,8 @@ namespace BirimizKovulacak.Game
                 _computer.ResetWeek();
                 _lastRecording = false;
                 _dirty = true;
+                _hintTask = -1;
+                CountMatch(v);
             }
             double now = lc.Now;
             float dt = Time.unscaledDeltaTime;
@@ -418,6 +479,12 @@ namespace BirimizKovulacak.Game
                 Sfx.Play("phase", 0.5f);
                 _pendingPhaseToast = null;
             }
+            if (_pendingPartnerToast != null && _pendingPhaseToast == null && ScreenFade.Alpha < 0.5f)
+            {
+                Toast(_pendingPartnerToast, "of-toast-partner", 8f);
+                _pendingPartnerToast = null;
+            }
+            PartnerHint(lc, v, now);
             // the box can vanish under the open card (Petty Cash is over): nothing left to look at
             var office = RoomsPresenter.Instance != null ? RoomsPresenter.Instance.Office : null;
             if (_focus == Focus.CashBox && office != null && !office.CashBoxShown) CloseFocus();
@@ -438,6 +505,15 @@ namespace BirimizKovulacak.Game
                 if (ph.Status == CallStatus.Ringing) lc.Send(LineVerb.Decline);
                 else if (ph.Status == CallStatus.Connected || ph.Status == CallStatus.Dialing) lc.Send(LineVerb.HangUp);
                 else if (_focus == Focus.Phone) CloseFocus();
+            }
+            if (_focus == Focus.Phone)
+            {
+                // the selected contact (the task partner first): E or Enter calls, ↑ / ↓ choose
+                var kb = UnityEngine.InputSystem.Keyboard.current;
+                bool enter = kb != null && (kb.enterKey.wasPressedThisFrame || kb.numpadEnterKey.wasPressedThisFrame);
+                if (Pressed(GameInput.Interact) || enter) _phone.CallSelected(v);
+                if (kb != null && kb.upArrowKey.wasPressedThisFrame) _phone.MoveSelection(-1);
+                if (kb != null && kb.downArrowKey.wasPressedThisFrame) _phone.MoveSelection(1);
             }
             if (_focus == Focus.Board && Pressed(GameInput.Interact)) CloseFocus();
             else if ((_focus == Focus.CashBox || _focus == Focus.Roster || _focus == Focus.Drawer) && Pressed(GameInput.Interact)) _objects.Primary(_focus, lc, v);
@@ -621,45 +697,8 @@ namespace BirimizKovulacak.Game
 
         // ------------------------------------------------------------------ toasts
 
-        public void Toast(string text, string kind = null, float seconds = 5f)
-        {
-            if (string.IsNullOrEmpty(text)) return;
-            // the same message still on screen: keep that one up a little longer instead of stacking a copy
-            string key = text + "|" + kind;
-            for (int i = 0; i < _toastList.Count; i++)
-            {
-                var old = _toastList[i];
-                if (!(old.Key.userData is string k) || k != key) continue;
-                _toastList[i] = new KeyValuePair<VisualElement, float>(old.Key, Mathf.Max(old.Value, Time.unscaledTime + seconds));
-                old.Key.style.opacity = 1f;
-                UiMotion.Pulse(old.Key, 0.04f, 0.2f);
-                return;
-            }
-            var el = Box("of-toast").NoPick();
-            el.userData = key;
-            if (!string.IsNullOrEmpty(kind)) el.AddToClassList(kind);
-            Box("of-toast-bar").NoPick().AddTo(el);
-            Text(text, "of-toast-text").NoPick().AddTo(el);
-            _toasts.Insert(0, el);
-            _toastList.Add(new KeyValuePair<VisualElement, float>(el, Time.unscaledTime + seconds));
-            UiMotion.SlideIn(el, new Vector2(60f, 0f), 0.25f, 0f, UiMotion.Ease.OutCubic);
-            while (_toastList.Count > 4)
-            {
-                _toastList[0].Key.RemoveFromHierarchy();
-                _toastList.RemoveAt(0);
-            }
-        }
+        public void Toast(string text, string kind = null, float seconds = 5f) { _toastStack.Show(text, kind, seconds); }
 
-        void TickToasts()
-        {
-            float now = Time.unscaledTime;
-            for (int i = _toastList.Count - 1; i >= 0; i--)
-            {
-                var t = _toastList[i];
-                float left = t.Value - now;
-                if (left <= 0f) { t.Key.RemoveFromHierarchy(); _toastList.RemoveAt(i); continue; }
-                if (left < 0.35f) t.Key.style.opacity = left / 0.35f;
-            }
-        }
+        void TickToasts() { _toastStack.Tick(); }
     }
 }

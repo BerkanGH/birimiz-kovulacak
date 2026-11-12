@@ -1,11 +1,12 @@
-"""Localisation check for the v5 play UI (UI/Play: PlayUi, PlayText, PlayBlocks, TapeDeck; UI/Office: the office layer).
+"""Localisation check for the v5 play UI (UI/Play: PlayUi, PlayText, PlayBlocks, TapeDeck; UI/Office: the office layer;
+UI/Meeting: the meeting room layer).
 
     python -I Tools/scripts/loc_check.py            # check, exit code 1 on problems
 
 Checks (Game/Assets/StreamingAssets/Localization):
   * tr.v5.json / en.v5.json are JSON objects of strings with identical key sets and no empty values;
   * every {0}.. placeholder of a key appears in both languages;
-  * every key literal used by UI/Play and UI/Office (PlayText.T/F prefix "v5.", Loc.T/F literals) resolves in both languages
+  * every key literal used by UI/Play, UI/Office and UI/Meeting (PlayText.T/F prefix "v5.", Loc.T/F literals) resolves in both languages
     (merged like Loc.Load: <lang>.json + every <lang>.<area>.json);
   * enum-derived families exist for every enum value: phase./hint. (LinePhase), fail. (LineFailure), verb. (LineVerb),
     decision./fire.decision. (FiringDecision), blame. (BlameReason), phone.log_missed. (CallEndReason),
@@ -19,7 +20,7 @@ import sys
 
 ROOT = os.path.abspath(os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", ".."))
 LOC = os.path.join(ROOT, "Game", "Assets", "StreamingAssets", "Localization")
-PLAY = [os.path.join(ROOT, "Game", "Assets", "Game", "Scripts", "UI", d) for d in ("Play", "Office")]
+PLAY = [os.path.join(ROOT, "Game", "Assets", "Game", "Scripts", "UI", d) for d in ("Play", "Office", "Meeting")]
 ENUMS = os.path.join(ROOT, "Game", "Assets", "Game", "Core", "Line", "Contracts", "LineEnums.cs")
 EMPTY_OK = {"v5.hint.None"}
 TASK_IDS = ["client_bonus", "petty_cash", "weekend_shift"]

@@ -1,0 +1,130 @@
+/* v5 meeting room layer, step 3a (MeetingUi.cs, MeetingSlide.cs, MeetingFolder.cs, MeetingBallot.cs, MeetingBoard.cs).
+   Logical 1920x1080 (scaled). Shares the office strip, toasts and prompt (office.uss) and the play blocks (play.uss).
+   Palette: paper #F4EFE3, ink navy #1F2A44, stamp red #D2382F, HR teal #3BB9B0, marker yellow #FFE066. */
+
+.mt-screen { color: rgb(31, 42, 68); font-size: 20px; }
+
+/* ---------------------------------------------------------------- the public card (3b: the projector) */
+.mt-slide { position: absolute; left: 26px; bottom: 26px; width: 520px; max-height: 46%; background-color: rgba(23, 31, 52, 0.86);
+    border-radius: 16px; border-width: 2px; border-color: rgba(244, 239, 227, 0.18); padding: 0 0 8px 0; overflow: hidden; }
+.mt-slide-head { flex-direction: row; align-items: center; padding: 8px 16px 6px 16px; background-color: rgba(244, 239, 227, 0.08);
+    border-bottom-width: 1px; border-color: rgba(244, 239, 227, 0.14); }
+.mt-slide-lamp { width: 10px; height: 10px; border-radius: 5px; background-color: rgb(169, 220, 235); margin-right: 10px; }
+.mt-slide-kicker { font-size: 15px; color: rgb(169, 220, 235); letter-spacing: 2px; }
+.mt-slide-scroll { flex-shrink: 1; }
+.mt-slide-body { padding: 8px 16px 4px 16px; }
+.mt-slide .pl-text { font-size: 16px; white-space: normal; margin: 0; }
+.mt-slide .pl-focus-text { font-size: 19px; white-space: normal; margin: 0 0 4px 0; }
+.mt-slide .pl-sub { font-size: 16px; margin-top: 4px; }
+.mt-slide-results { left: 50%; top: 120px; bottom: auto; translate: -50% 0; width: 1080px; max-height: 80%; background-color: rgba(23, 31, 52, 0.94); }
+.mt-slide-results .pl-focus-text { font-size: 22px; }
+.mt-slide-results .pl-text { font-size: 19px; }
+
+/* ---------------------------------------------------------------- cassette deck while a leak plays (3b: the projector) */
+.mt-tape { position: absolute; right: 26px; bottom: 26px; width: 600px; }
+
+/* ---------------------------------------------------------------- a colleague's name tag under the crosshair */
+.mt-name { position: absolute; top: 56%; left: 50%; translate: -50% 0; align-items: center; background-color: rgba(23, 31, 52, 0.72);
+    border-radius: 14px; padding: 2px 16px 5px 16px; }
+.mt-name-text { font-size: 28px; }
+.mt-name-info { font-size: 17px; color: rgb(220, 226, 240); }
+.mt-name-act { font-size: 16px; color: rgb(255, 224, 102); margin-top: 1px; }
+
+/* ---------------------------------------------------------------- the folder's tablet (laid over the tablet screen) */
+.mt-tablet { overflow: hidden; border-radius: 8px; background-color: rgb(250, 247, 238); flex-direction: column; color: rgb(31, 42, 68); }
+.mt-tabs { flex-direction: row; align-items: center; height: 62px; flex-shrink: 0; background-color: rgb(31, 42, 68); padding: 0 10px 0 14px; }
+.mt-tabs-brand { font-size: 19px; color: rgb(255, 224, 102); letter-spacing: 2px; margin-right: 14px; }
+.mt-tab { background-color: rgba(0, 0, 0, 0); border-width: 0; border-radius: 12px; padding: 7px 16px; margin: 0 4px 0 0; flex-shrink: 0; }
+.mt-tab-text { font-size: 19px; color: rgb(244, 239, 227); white-space: nowrap; }
+.mt-tab:hover { background-color: rgba(244, 239, 227, 0.14); }
+.mt-tab-on { background-color: rgb(255, 224, 102); }
+.mt-tab-on .mt-tab-text { color: rgb(31, 42, 68); }
+.mt-tab-on:hover { background-color: rgb(255, 230, 128); }
+.mt-tab-badge { position: absolute; top: -4px; right: -6px; background-color: rgb(210, 56, 47); color: rgb(255, 255, 255); border-radius: 11px;
+    min-width: 22px; height: 22px; font-size: 13px; -unity-text-align: middle-center; padding: 0 5px; border-width: 2px; border-color: rgb(31, 42, 68); }
+.mt-tabs-prim { font-size: 18px; color: rgb(255, 224, 102); margin-right: 14px; }
+.mt-tabs-clock { font-size: 25px; color: rgb(255, 224, 102); margin-right: 12px; }
+.mt-tablet-title { font-size: 15px; color: rgb(107, 111, 128); letter-spacing: 2px; padding: 8px 22px 0 22px; flex-shrink: 0; }
+.mt-tablet-body { flex-grow: 1; flex-shrink: 1; }
+.mt-tablet-section { padding: 6px 22px 16px 22px; }
+.mt-tablet-foot { font-size: 14px; color: rgb(107, 111, 128); -unity-text-align: middle-center; padding: 3px 0 5px 0; flex-shrink: 0;
+    border-top-width: 1px; border-color: rgba(31, 42, 68, 0.12); }
+.mt-compose { flex-shrink: 0; }
+.mt-card { margin-bottom: 12px; padding: 10px 16px 12px 16px; }
+.mt-rec { align-items: center; margin-top: 4px; }
+.mt-msg-chat { border-color: rgba(59, 185, 176, 0.6); }
+.mt-tablet .pl-title { color: rgb(31, 42, 68); }
+.mt-tablet .pl-sub { color: rgb(31, 42, 68); }
+.mt-tablet .pl-text { color: rgb(46, 56, 82); white-space: normal; font-size: 19px; }
+.mt-tablet .pl-dim { color: rgb(110, 116, 136); }
+.mt-tablet .pl-good { color: rgb(36, 120, 74); }
+.mt-tablet .pl-bad { color: rgb(190, 50, 42); }
+.mt-tablet .pl-warn { color: rgb(184, 104, 20); }
+.mt-tablet .pl-private { color: rgb(86, 64, 160); }
+.mt-tablet .pl-amount { color: rgb(31, 42, 68); }
+.mt-tablet .pl-focus { background-color: rgb(255, 250, 235); border-color: rgba(31, 42, 68, 0.3); }
+.mt-tablet .pl-focus-todo { border-color: rgb(232, 140, 40); background-color: rgb(255, 243, 222); }
+.mt-tablet .pl-focus-kicker { color: rgb(150, 90, 30); }
+.mt-tablet .pl-focus-text { color: rgb(31, 42, 68); white-space: normal; font-size: 21px; }
+.mt-tablet .pl-chip { background-color: rgba(31, 42, 68, 0.1); color: rgb(31, 42, 68); }
+.mt-tablet .pl-chip-bad { background-color: rgba(210, 56, 47, 0.2); }
+.mt-tablet .pl-chip-warn { background-color: rgba(232, 140, 40, 0.25); }
+.mt-tablet .pl-tag { background-color: rgba(31, 42, 68, 0.8); }
+.mt-tablet .pl-fire { background-color: rgba(210, 56, 47, 0.08); }
+.mt-tablet .pl-fire-title { color: rgb(190, 50, 42); }
+.mt-tablet .pl-fire-desk { color: rgb(150, 90, 30); }
+
+/* ---------------------------------------------------------------- the ballot paper (592 x 840; texture and overlay) */
+.mt-paper { width: 592px; height: 840px; background-color: rgb(251, 248, 240); padding: 34px 40px 26px 40px; color: rgb(31, 42, 68); }
+.mt-paper-live { border-width: 0; }
+.mt-paper-title { font-size: 54px; color: rgb(31, 42, 68); -unity-text-align: middle-center; letter-spacing: 4px; margin: 0; }
+.mt-paper-sub { font-size: 22px; color: rgb(110, 116, 136); -unity-text-align: middle-center; margin-top: -4px; }
+.mt-paper-rule { height: 3px; background-color: rgba(31, 42, 68, 0.75); margin: 12px 0 10px 0; }
+.mt-paper-how { font-size: 21px; color: rgb(70, 78, 100); white-space: normal; margin-bottom: 8px; }
+.mt-paper-cols { flex-direction: row; justify-content: flex-end; margin-top: 2px; }
+.mt-paper-col { width: 64px; font-size: 18px; color: rgb(110, 116, 136); -unity-text-align: middle-center; margin-left: 12px; }
+.mt-paper-rows { margin-top: 2px; }
+.mt-paper-row { flex-direction: row; align-items: center; height: 72px; border-bottom-width: 2px; border-color: rgba(70, 120, 190, 0.38); }
+.mt-paper-row-abstain { border-top-width: 2px; border-top-color: rgba(31, 42, 68, 0.5); margin-top: 6px; }
+.mt-paper-row-abstain .mt-paper-name { color: rgb(110, 116, 136); }
+.mt-paper-dot { width: 18px; height: 18px; border-radius: 9px; margin-right: 14px; border-width: 2px; border-color: rgba(31, 42, 68, 0.35); }
+.mt-paper-dot-none { background-color: rgba(0, 0, 0, 0); }
+.mt-paper-name { font-size: 42px; color: rgb(31, 42, 68); flex-grow: 1; flex-shrink: 1; margin: 0; padding: 0; white-space: nowrap; overflow: hidden; }
+.mt-paper-box { width: 52px; height: 52px; border-width: 3px; border-color: rgb(31, 42, 68); border-radius: 4px; margin: 0 6px 0 18px;
+    align-items: center; justify-content: center; background-color: rgba(255, 255, 255, 0.5); padding: 0; }
+.mt-paper-box:hover { background-color: rgba(255, 224, 102, 0.55); border-color: rgb(210, 140, 30); }
+.mt-paper-x { font-size: 62px; color: rgb(54, 58, 74); margin: -6px 0 0 0; padding: 0; -unity-text-align: middle-center; rotate: -6deg; }
+.mt-paper-foot { position: absolute; left: 40px; right: 40px; bottom: 22px; }
+.mt-paper-cast { font-size: 20px; color: rgb(36, 120, 74); border-width: 3px; border-color: rgba(36, 120, 74, 0.8); border-radius: 8px;
+    padding: 3px 10px; align-self: flex-start; rotate: -2deg; margin-bottom: 6px; white-space: normal; }
+.mt-paper-foot .oc-buttons .pl-btn { margin-right: 10px; }
+
+/* ---------------------------------------------------------------- whiteboard (1024 x 512, marker on white) */
+.wb-root { background-color: rgb(250, 250, 246); }
+.wb-title { font-size: 48px; color: rgb(31, 42, 68); margin: 0; padding: 0; }
+.wb-underline { background-color: rgba(200, 52, 44, 0.85); border-radius: 2px; rotate: -0.6deg; }
+.wb-row { flex-direction: row; align-items: center; }
+.wb-dot { width: 26px; height: 26px; border-radius: 13px; margin-right: 12px; border-width: 2px; border-color: rgba(31, 42, 68, 0.4); }
+.wb-name { font-size: 42px; width: 190px; margin: 0; padding: 0; white-space: nowrap; overflow: hidden; }
+.wb-me { font-size: 28px; color: rgb(200, 52, 44); margin: 0 8px 0 -8px; rotate: 6deg; }
+.wb-struck { opacity: 0.55; }
+.wb-tally { flex-direction: row; align-items: center; width: 200px; height: 46px; }
+.wb-group { flex-direction: row; align-items: center; margin-right: 12px; height: 44px; }
+.wb-bar { width: 5px; height: 38px; background-color: rgb(200, 52, 44); border-radius: 2px; margin-right: 6px; }
+.wb-slash { position: absolute; left: -6px; top: 18px; width: 50px; height: 5px; background-color: rgb(200, 52, 44); border-radius: 2px; rotate: -24deg; }
+.wb-num { font-size: 44px; color: rgb(70, 78, 100); width: 52px; margin: 0; padding: 0; -unity-text-align: middle-left; }
+.wb-num-on { color: rgb(200, 52, 44); }
+.wb-plus { font-size: 32px; color: rgb(214, 110, 20); margin: 0 8px 0 0; padding: 0; }
+.wb-stamp { font-size: 22px; border-width: 3px; border-radius: 4px; padding: 0 6px; margin: 0 6px 0 0; rotate: -3deg; }
+.wb-stamp-cand { color: rgb(214, 110, 20); border-color: rgb(214, 110, 20); }
+.wb-stamp-sealed { color: rgb(31, 42, 68); border-color: rgb(31, 42, 68); rotate: 2deg; }
+.wb-stamp-fired { color: rgb(200, 52, 44); border-color: rgb(200, 52, 44); }
+.wb-voted { font-size: 26px; color: rgb(36, 120, 74); margin: 0; padding: 0; }
+.wb-side { padding-left: 18px; border-left-width: 3px; border-color: rgba(47, 95, 180, 0.55); }
+.wb-side-head { font-size: 36px; color: rgb(47, 95, 180); margin: 0 0 6px 0; padding: 0; white-space: normal; }
+.wb-side-sub { font-size: 28px; color: rgb(70, 78, 100); margin: 4px 0 0 0; padding: 0; }
+.wb-side-line { font-size: 34px; color: rgb(31, 42, 68); margin: 0; padding: 0; white-space: normal; }
+.wb-side-bad { color: rgb(200, 52, 44); }
+.wb-side-good { color: rgb(36, 120, 74); }
+.wb-side-hot { -unity-font-style: bold; }
+.wb-side-note { font-size: 28px; color: rgb(70, 78, 100); margin-top: 10px; padding: 0; white-space: normal; }

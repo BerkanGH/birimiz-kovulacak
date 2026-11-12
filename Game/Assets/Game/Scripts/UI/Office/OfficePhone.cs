@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using BirimizKovulacak.Core;
 using UnityEngine;
 using UnityEngine.UIElements;
@@ -11,6 +12,9 @@ namespace BirimizKovulacak.Game
     /// public line board (each colleague with colour and status: available / on the phone with whom and how long /
     /// ringing / offline, and a Call button), the call actions (answer, decline, hang up, record) and missed calls
     /// with a call-back button. Shown on the left half of the screen; the 3D phone stays visible on the right.
+    /// v5 step 3a (partner call): during a pair / trio task (Client Bonus, Petty Cash) the task partners are pinned at
+    /// the top and marked ORTAK; Tab opens the phone with the first partner selected and E (or Enter) calls the selected
+    /// contact (↑ / ↓ change it). Nothing is called automatically: whom to call stays the player's choice.
     /// </summary>
     public sealed class OfficePhone
     {
@@ -20,8 +24,12 @@ namespace BirimizKovulacak.Game
         readonly Label _lcd1, _lcd2, _lcdTime, _footer;
         readonly PlaySection _contacts, _actions, _missed;
         bool _open, _dirty = true;
+        int _selected = -1;
+        readonly List<int> _order = new List<int>();
 
         public bool IsOpen => _open;
+        /// <summary>The contact E / Enter calls (-1 none).</summary>
+        public int Selected => _selected;
 
         public OfficePhone(OfficeUi ui, VisualElement parent)
         {
@@ -50,8 +58,10 @@ namespace BirimizKovulacak.Game
             Root.Show(false);
         }
 
-        public void Open()
+        /// <summary>Handset up; <paramref name="select"/> preselects a contact (the task partner) for E / Enter.</summary>
+        public void Open(int select = -1)
         {
+            if (select >= 0) { _selected = select; _dirty = true; }
             if (_open) return;
             _open = true;
             _dirty = true;
@@ -69,6 +79,29 @@ namespace BirimizKovulacak.Game
         }
 
         public void MarkDirty() { _dirty = true; }
+
+        /// <summary>E / Enter: call the selected contact (when the line is free and calls are open).</summary>
+        public void CallSelected(LineView v)
+        {
+            if (_selected < 0 || v == null) return;
+            if (!v.Features.CallsOpen || v.Mine.Phone.Status != CallStatus.Idle) return;
+            LinePlayerView pl = null;
+            foreach (var x in v.Players) if (x.Id == _selected) pl = x;
+            if (pl == null || !pl.Connected) { Sfx.Play("deny", 0.5f); return; }
+            Sfx.Play("tip_dial", 0.6f);
+            Send(LineVerb.Call, _selected);
+        }
+
+        /// <summary>↑ / ↓: move the selection through the contacts (partners first).</summary>
+        public void MoveSelection(int d)
+        {
+            if (_order.Count == 0) return;
+            int i = _order.IndexOf(_selected);
+            i = i < 0 ? 0 : (i + d + _order.Count) % _order.Count;
+            _selected = _order[i];
+            _dirty = true;
+            Sfx.Play("click", 0.35f);
+        }
 
         public void Tick(LineClient lc, LineView v, double now, bool dirty, bool live)
         {
@@ -114,6 +147,12 @@ namespace BirimizKovulacak.Game
                 default:
                     l1 = T(v.Features.CallsOpen ? "office.phone.lcd_idle" : "office.phone.lcd_closed");
                     l2 = T(v.Features.CallsOpen ? "office.phone.lcd_idle_hint" : "phone.closed");
+                    if (v.Features.CallsOpen && _selected >= 0)
+                    {
+                        bool partner = OfficeText.Partners(lc, v).Contains(_selected);
+                        l1 = F(partner ? "office.phone.lcd_partner" : "office.phone.lcd_selected", Name(_selected));
+                        l2 = F("office.phone.lcd_call_hint", OfficeText.Key(GameInput.Interact));
+                    }
                     break;
             }
             _lcd1.SetText(Loc.Upper(l1));
@@ -160,20 +199,30 @@ namespace BirimizKovulacak.Game
             var f = v.Features;
             var mine = v.Mine.Phone;
             int me = lc.MySlot;
-            foreach (var pl in v.Players)
+            // task partners first (pinned, ORTAK), then everyone else in seat order
+            var partners = OfficeText.Partners(lc, v);
+            var list = new List<LinePlayerView>();
+            foreach (int pid in partners) foreach (var pl in v.Players) if (pl.Id == pid) list.Add(pl);
+            foreach (var pl in v.Players) if (pl.Id != me && !partners.Contains(pl.Id)) list.Add(pl);
+            _order.Clear();
+            foreach (var pl in list) _order.Add(pl.Id);
+            if (_selected >= 0 && !_order.Contains(_selected)) _selected = -1;
+            foreach (var pl in list)
             {
-                if (pl.Id == me) continue;
                 int id = pl.Id;
-                var row = Box("ph-contact").AddTo(p);
+                bool partner = partners.Contains(id);
+                bool sel = id == _selected && mine.Status == CallStatus.Idle && f.CallsOpen;
+                var row = Box("ph-contact", partner ? "ph-contact-partner" : null, sel ? "ph-contact-sel" : null).AddTo(p);
                 var dot = Box("ph-dot").AddTo(row);
                 dot.style.backgroundColor = PlayerColor(pl.ColorIndex);
                 var names = Box("ph-contact-names").AddTo(row);
                 var top = Box("pl-row").AddTo(names);
                 Bold(pl.Name, "ph-name").AddTo(top);
+                if (partner) Tag(top, T("office.phone.partner_tag"), "pl-tag-partner");
                 if (pl.IsBot) Tag(top, T("players.bot"));
                 Live(names, "st" + id, now, (l, t) => ContactStatus(l, id, t), "ph-status");
                 bool can = f.CallsOpen && mine.Status == CallStatus.Idle && pl.Connected;
-                var b = Btn(T("act.call"), () => { Sfx.Play("tip_dial", 0.6f); Send(LineVerb.Call, id); }, "ph-call", pl.IsBot ? "pl-dimbtn" : null).AddTo(row);
+                var b = Btn(sel ? F("office.phone.call_key", OfficeText.Key(GameInput.Interact)) : T("act.call"), () => { Sfx.Play("tip_dial", 0.6f); Send(LineVerb.Call, id); }, "ph-call", pl.IsBot ? "pl-dimbtn" : null, sel ? "pl-primary" : null).AddTo(row);
                 b.SetEnabled(can);
             }
         }

@@ -5,6 +5,7 @@ using BirimizKovulacak.Core;
 using UnityEngine;
 using UnityEngine.UIElements;
 using static BirimizKovulacak.Game.PlayKit;
+using static BirimizKovulacak.Game.PlayBlocks;
 
 namespace BirimizKovulacak.Game
 {
@@ -386,7 +387,7 @@ namespace BirimizKovulacak.Game
             else
             {
                 Big(card, T(mt.Index == 0 ? "focus.meeting1" : "focus.meeting2"));
-                Line(card, F("meeting.failed", Join(mt.FailedTasks)), "pl-bad");
+                Line(card, F("meeting.failed", JoinTasks(mt.FailedTasks)), "pl-bad");
                 Line(card, T("focus.meeting_vote_next"));
             }
             bool investigate = v.Features.InvestigationOpen && !m.InvestigationUsed && m.InvestigationTargets.Count > 0;
@@ -402,25 +403,6 @@ namespace BirimizKovulacak.Game
                 }
             LeakButtons(row, v);
             if (investigate) Line(card, F("investigate.rules", c.InvestigationCost, c.InvestigationGuiltyBlame, c.InvestigationRefund, c.InvestigationFalseBlame), "pl-dim");
-        }
-
-        static int LeakableCount(LineView v)
-        {
-            if (!v.Features.LeakOpen || !v.Features.RecordingsEnabled) return 0;
-            int n = 0;
-            foreach (var r in v.Mine.Recorded) if (!r.Leaked) n++;
-            return n;
-        }
-
-        static void LeakButtons(VisualElement row, LineView v)
-        {
-            if (LeakableCount(v) == 0) return;
-            foreach (var r in v.Mine.Recorded)
-            {
-                if (r.Leaked) continue;
-                int callId = r.CallId;
-                Btn(F("focus.leak_btn", Name(r.Other)), () => Send(LineVerb.Leak, a: callId), "pl-danger", "pl-big").AddTo(row);
-            }
         }
 
         int FocusVote(VisualElement card, LineClient lc, LineView v, double now)
@@ -535,27 +517,6 @@ namespace BirimizKovulacak.Game
             else Line(card, T("focus.next_results"), "pl-dim");
         }
 
-        /// <summary>Desk reveal: who was fired, how much was on the desk, who voted for them and what each got, what burned.</summary>
-        static void BuildFiringCard(VisualElement p, LineFiringView f, int me, bool big)
-        {
-            var card = Box("pl-fire").AddTo(p);
-            if (!big) card.AddToClassList("pl-fire-small");
-            Title(F("fire.title", Name(f.Player)), "pl-fire-title").AddTo(card);
-            Bold(F("fire.desk", f.Desk), "pl-fire-desk").AddTo(card);
-            Line(card, F("fire.decision." + f.Decision, f.Votes));
-            if (f.Recipients.Count > 0)
-            {
-                Line(card, F("fire.voters", f.Share));
-                var row = Wrap(card);
-                foreach (int id in f.Recipients) Bold(F("fire.chip", Name(id), f.Share), "pl-chip", id == me ? "pl-chip-me" : null).AddTo(row);
-                if (f.Removed > 0) Line(card, F("fire.burned", f.Removed), "pl-dim");
-            }
-            else Line(card, F("fire.nobody", f.Desk), "pl-dim");
-            if (me == f.Player) Line(card, T("fire.you_fired"), "pl-bad");
-            else if (f.Recipients.Contains(me)) Line(card, F("fire.you_got", f.Share), "pl-good");
-            else if (me >= 0 && big) Line(card, T("fire.you_none"), "pl-dim");
-        }
-
         void FocusResults(VisualElement card, LineClient lc, LineView v)
         {
             var r = v.Results;
@@ -592,19 +553,6 @@ namespace BirimizKovulacak.Game
                     mine.Winner ? "pl-good" : mine.Fired ? "pl-bad" : null);
         }
 
-        /// <summary>Winners first, then the rest by prim, fired players last.</summary>
-        static List<LineWeekPlayerResult> SortedResults(LineWeekResult r)
-        {
-            var players = new List<LineWeekPlayerResult>(r.Players);
-            players.Sort((a, b) =>
-            {
-                if (a.Fired != b.Fired) return a.Fired ? 1 : -1;
-                if (a.Winner != b.Winner) return a.Winner ? -1 : 1;
-                return b.Prim != a.Prim ? b.Prim.CompareTo(a.Prim) : a.Player.CompareTo(b.Player);
-            });
-            return players;
-        }
-
         // ---- secondary information (centre, below the focus card)
 
         void BuildContent(VisualElement p, LineClient lc, LineView v, double now)
@@ -619,106 +567,8 @@ namespace BirimizKovulacak.Game
                 case LinePhase.Results: BuildResultDetails(p, lc, v); return;
                 case LinePhase.Abandoned: return;
             }
-            if (v.Final != null) BuildFinal(p, lc, v);
-            if (v.Meeting != null && (LineClient.IsMeetingPhase(v.Phase) || v.Phase == LinePhase.CrisisCalls)) BuildMeeting(p, lc, v, now);
-        }
-
-        void BuildMeeting(VisualElement p, LineClient lc, LineView v, double now)
-        {
-            var mt = v.Meeting;
-            var m = v.Mine;
-            if (mt.Index < 2)
-            {
-                Head(p, F("meeting.title", mt.Index + 1));
-                if (v.Phase != LinePhase.MeetingDossier && v.Phase != LinePhase.MeetingDiscussion)
-                    Line(p, mt.FailedTasks.Count > 0 ? F("meeting.failed", Join(mt.FailedTasks)) : T("meeting.no_failures"), mt.FailedTasks.Count > 0 ? "pl-bad" : "pl-good");
-                if (mt.VoteableCount >= 0) Line(p, mt.VoteableCount > 0 ? F("meeting.voteable", mt.VoteableCount) : T("meeting.no_vote"));
-                if (mt.Roster.Count > 0) Line(p, F("meeting.roster", PlayText.Names(mt.Roster)));
-            }
-            if (mt.Dossier.Count > 0)
-            {
-                Sub(p, T(mt.Index < 2 ? "meeting.dossier" : "meeting.final_dossier"));
-                foreach (var e in mt.Dossier) Line(p, "• " + PlayText.Dossier(e), e.Kind == DossierKind.Investigation || e.Kind == DossierKind.Leak ? "pl-warn" : null);
-            }
-            if (mt.BlameGained.Exists(g => g.Amount > 0) && v.Phase != LinePhase.MeetingVerdict)
-            {
-                Sub(p, T("meeting.blame_gained"));
-                foreach (var g in mt.BlameGained) if (g.Amount > 0) Line(p, Name(g.Player) + ": " + F("meeting.blame_plus", g.Amount));
-            }
-            // leaked recordings, with a live countdown / state
-            if (mt.Recordings.Count > 0)
-            {
-                Sub(p, T("leak.list"));
-                foreach (var r in mt.Recordings)
-                {
-                    var pick = r;
-                    string head = F("leak.line", r.Index + 1, Name(r.Leaker), Name(r.Caller), Name(r.Callee)) + " · ";
-                    Live(p, "leak" + r.Index + ":" + r.PlayAt + ":" + r.Played + ":" + r.Empty, now, t => head + LeakState(pick, t));
-                }
-            }
-            // my recordings (leak buttons are in the focus card)
-            if (v.Features.RecordingsEnabled && m.Recorded.Count > 0)
-            {
-                Sub(p, T(v.Features.LeakOpen ? "leak.mine" : "leak.mine_closed"));
-                foreach (var r in m.Recorded)
-                {
-                    string other = Name(r.Other), state = r.Leaked ? " · " + T("leak.leaked") : "";
-                    double start = r.Start;
-                    Live(p, "rec" + r.CallId + ":" + r.Leaked, now, t => F("leak.recorded", other, UiKit.Clock(Math.Max(0, t - start))) + state, r.Leaked ? "pl-dim" : null);
-                }
-            }
-            else if (v.Features.LeakOpen && v.Features.RecordingsEnabled) Line(p, T("leak.none"), "pl-dim");
-            if (v.Features.InvestigationOpen && (m.InvestigationUsed || m.InvestigationTargets.Count == 0))
-            {
-                Sub(p, T("investigate.title"));
-                Line(p, T(m.InvestigationUsed ? "investigate.used" : "investigate.none"), "pl-dim");
-            }
-            else if (v.Features.InvestigationOpen && m.Prim < lc.Config.InvestigationCost) Line(p, F("investigate.poor", m.Prim), "pl-bad");
-        }
-
-        static string LeakState(LineRecordingPick r, double now)
-        {
-            if (r.Played) return T("leak.played");
-            if (r.Empty) return T("leak.empty");
-            if (now < r.PlayAt) return F("leak.queued", Math.Max(1, (int)Math.Ceiling(r.PlayAt - now)));
-            if (now < r.PlayAt + Math.Max(1f, r.Seconds) + 1) return T("leak.playing");
-            return T("leak.played");
-        }
-
-        static string Join(List<TaskKind> tasks)
-        {
-            var sb = new StringBuilder();
-            foreach (var t in tasks) { if (sb.Length > 0) sb.Append(", "); sb.Append(PlayText.Task(t)); }
-            return sb.ToString();
-        }
-
-        void BuildFinal(VisualElement p, LineClient lc, LineView v)
-        {
-            var fv = v.Final;
-            if (fv.Crisis.Count > 0 && v.Phase != LinePhase.CrisisVerdict)
-            {
-                Sub(p, T("crisis.result"));
-                foreach (var g in fv.Crisis) Line(p, Name(g.Player) + ": " + F("meeting.blame_plus", g.Amount));
-            }
-            if (fv.Candidates.Count > 0)
-            {
-                Sub(p, F("final.candidates", fv.FiringsTotal));
-                foreach (int id in fv.DefenseOrder)
-                {
-                    var pl = lc.Player(id);
-                    string line = Name(id) + " · " + F("players.blame", pl != null ? pl.Blame : 0);
-                    if (pl != null && pl.Fired) line += " · " + T("players.fired");
-                    Line(p, line, pl != null && pl.Fired ? "pl-dim" : null);
-                }
-                Line(p, T("focus.sealed_note"), "pl-dim");
-            }
-            // earlier firings (the latest one is the focus card in FinalVerdict)
-            int shown = v.Phase == LinePhase.FinalVerdict ? fv.Firings.Count - 1 : fv.Firings.Count;
-            if (shown > 0)
-            {
-                Sub(p, T("final.firings"));
-                for (int i = 0; i < shown; i++) BuildFiringCard(p, fv.Firings[i], lc.MySlot, false);
-            }
+            if (v.Final != null) BuildFinalInfo(p, lc, v);
+            if (v.Meeting != null && (LineClient.IsMeetingPhase(v.Phase) || v.Phase == LinePhase.CrisisCalls)) BuildMeetingInfo(p, lc, v, now);
         }
 
         void BuildResultDetails(VisualElement p, LineClient lc, LineView v)
@@ -769,27 +619,6 @@ namespace BirimizKovulacak.Game
         void Tab(VisualElement row, string id, string label)
         {
             Btn(label, () => { _resultsTab = id; _dirty = true; }, _resultsTab == id ? "pl-on" : null).AddTo(row);
-        }
-
-        /// <summary>Every vote, grouped (meeting 1, meeting 2, crisis, firing 1, …), one line per voter.</summary>
-        static void BuildBallots(VisualElement p, LineWeekResult r)
-        {
-            if (r.Ballots.Count == 0) { Line(p, T("common.none"), "pl-dim"); return; }
-            string group = null;
-            int voter = int.MinValue;
-            var sb = new StringBuilder();
-            Action flush = () => { if (sb.Length > 0) { Line(p, sb.ToString()); sb.Length = 0; } };
-            foreach (var b in r.Ballots)
-            {
-                string g = b.Kind == BallotKind.Meeting ? F("results.ballots_meeting", b.Round + 1)
-                    : b.Kind == BallotKind.Crisis ? T("results.ballots_crisis")
-                    : F(b.Revote ? "results.ballots_final_revote" : "results.ballots_final", b.Round + 1);
-                if (g != group) { flush(); group = g; voter = int.MinValue; Sub(p, g); }
-                string target = b.SelfAssigned ? Name(b.Target) + " " + T("results.self_assigned") : b.Target >= 0 ? Name(b.Target) : T("results.abstain");
-                if (b.Voter != voter) { flush(); voter = b.Voter; sb.Append(Name(b.Voter)).Append(" → ").Append(target); }
-                else sb.Append(", ").Append(target);
-            }
-            flush();
         }
 
         // ---- right column
