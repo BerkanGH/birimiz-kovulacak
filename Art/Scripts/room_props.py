@@ -32,9 +32,12 @@ DRIVEN_ROOMS = {
     "RecButton", "RecLight", "TapeIn", "ReelL", "ReelR", "Cassette0", "Cassette1", "Cassette2",
     # v5 task objects: the Petty Cash box, the Weekend Shift roster
     "CashLid", "AlarmButton", "CashSeal", "RosterSheet", "RosterPen",
+    # v5 step 3a meeting room: the seat padfolio (tablet), the ballot box
+    "TabletScreen", "FolderCover", "BallotSlot", "BallotPile",
 }
 # Meshes that carry their own 0..1 UVs (never box-projected): driven surfaces and the banknote props.
-OWN_UV = {"Screen", "CorkSurface", "Photo", "Canvas", "BoardSurface", "RosterSheet", "RmBillBody", "RmBundleBody"}
+OWN_UV = {"Screen", "CorkSurface", "Photo", "Canvas", "BoardSurface", "RosterSheet", "RmBillBody", "RmBundleBody",
+          "TabletScreen"}
 
 
 def room_prop(fn):
@@ -1169,6 +1172,224 @@ def rm_box(c):
         leaf("Leaf", 0.12, 0.05, c, "M_RmLeafBright", r, (-0.1, 0.03, h + 0.05), rotation=(R(30), 0, k * 1.25), bend=0.3, seg=4)
     bk.lathe("Mug", [(0, 0), (0.042, 0), (0.045, 0.1), (0.04, 0.1), (0.0, 0.01)], c, "M_Ceramic", r, (0.1, -0.04, h - 0.05), segments=14)
     B("Frame", (0.12, 0.02, 0.15), c, "M_RmWalnut", r, (0.05, 0.08, h + 0.02)).rotation_euler = (R(-20), 0, R(10))
+    return r
+
+
+# ================================================================================================ v5 step 3a: meeting room
+
+def front_round_pts(w, y0, y1, r, seg=5):
+    """Rectangle x in [-w/2, w/2], y in [y0, y1] with only the two front (-Y) corners rounded (the back edge meets a
+    spine or a hinge)."""
+    pts = [(w / 2, y1), (-w / 2, y1)]
+    for cx, a0 in ((-w / 2 + r, 180), (w / 2 - r, 270)):
+        for i in range(seg + 1):
+            a = R(a0 + 90 * i / seg)
+            pts.append((cx + r * math.cos(a), y0 + r + r * math.sin(a)))
+    return pts
+
+
+def stitches(name, pts, z, coll, mat, parent=None, dash=0.006, gap=0.0038, width=0.0012, down=False):
+    """Dashed stitching along a closed XY outline at height z: one flat quad per stitch, facing +Z (or -Z with
+    down=True, for the underside of a cover). A few hundred triangles instead of a solid piping strip."""
+    n = len(pts)
+    segs, total = [], 0.0
+    for i in range(n):
+        a = Vector((pts[i][0], pts[i][1], z))
+        b2 = Vector((pts[(i + 1) % n][0], pts[(i + 1) % n][1], z))
+        ln = (b2 - a).length
+        if ln > 1e-7:
+            segs.append((a, b2, total, ln))
+            total += ln
+
+    def at(s):
+        s = s % total
+        for a, b2, s0, ln in segs:
+            if s <= s0 + ln:
+                return a.lerp(b2, (s - s0) / ln)
+        return segs[-1][1].copy()
+    count = max(4, int(total / (dash + gap)))
+    step = total / count
+    bm = bmesh.new()
+    for k in range(count):
+        p0, p1 = at(k * step), at(k * step + step * dash / (dash + gap))
+        d = p1 - p0
+        if d.length < 1e-6:
+            continue
+        d.normalize()
+        nrm = Vector((-d.y, d.x, 0.0)) * (width / 2)
+        quad = [p0 - nrm, p1 - nrm, p1 + nrm, p0 + nrm]
+        if down:
+            quad.reverse()
+        bm.faces.new([bm.verts.new(v) for v in quad])
+    return bk.mesh_obj(name, bm, coll, mat, parent)
+
+
+@room_prop
+def rm_folder(c):
+    """v5 meeting seat padfolio: a navy leather folio lying closed on the table in front of each seat, with a tablet
+    inside. Landscape 0.33 x 0.24, 0.021 high (0.0223 at the badge); pivot: bottom centre, the near edge (the sitter)
+    toward -Y, the rounded spine along the far edge (+Y).
+    Base (merged): back cover, the spine roll (radius 0.0105), the tablet (graphite bezel 0.29 x 0.205 x 0.008) held by
+    four leather corner straps.
+    TabletScreen (driven, own 0..1 UVs, M_RmTabletScreen): 0.262 x 0.172 quad facing +Z on the tablet, centred at
+    (0, -0.00525, 0.0134); u along +X, v along +Y (v = 0 at the near edge: a texture reads upright for the sitter).
+    FolderCover (driven): the front cover (stitching, brass badge, tan lining). Its pivot is the hinge = the spine's
+    axis (0, 0.1095, 0.0105), along X; closed, its lining is 2 mm above the screen. In Unity a positive rotation
+    about its local X lifts the near edge and flips the cover up and over the far edge (like CashLid); at 180 it lies
+    flat on the table behind the folder, lining up."""
+    r = root("RmFolder", c)
+    w, d = 0.33, 0.24
+    tb, tc = 0.005, 0.005             # back cover / front cover leather
+    ht = 0.021                         # closed height (cover top); the badge stands ~1.5 mm above
+    rs = ht / 2                        # spine roll radius
+    ya = d / 2 - rs                    # spine axis (= the hinge) y
+    rr = 0.014                         # front corner radius
+    tw, td, tt = 0.29, 0.205, 0.008    # tablet
+    sw, sh = 0.262, 0.172              # screen
+    yc = (-d / 2 + ya) / 2             # centre of the inner area
+    # back cover + spine roll
+    slab("BackCover", front_round_pts(w, -d / 2, ya, rr, 4), tb, c, "M_RmFolio", r, (0, 0, 0), bevel=0.0015, bevel_seg=1)
+    CY("Spine", rs, w, c, "M_RmFolio", r, (0, ya, rs), rotation=(0, R(90), 0), segments=18, cap_bevel=0.0015)
+    inset = 0.007
+    stitches("BackStitch", [(x, y + (ya - d / 2) / 2) for x, y in rrect_pts(w - 2 * inset, ya + d / 2 - 2 * inset, 0.006, 3)],
+             tb + 0.0003, c, "M_RmFolioStitch", r)
+    # tablet + screen + camera dot
+    slab("Tablet", rrect_pts(tw, td, 0.012, 4), tt, c, "M_RmBezel", r, (0, yc, tb), bevel=0.0015, bevel_seg=1)
+    uv_plane("TabletScreen", sw, sh, c, "M_RmTabletScreen", r, (0, yc, tb + tt + 0.0004), facing="+Z")
+    CY("CamDot", 0.0018, 0.0006, c, "M_RmBlack", r, (0, yc + td / 2 - 0.008, tb + tt + 0.0002), segments=10)
+    # four leather corner straps over the tablet's corners (stop 0.5 mm short of the screen)
+    leg, out = 0.03, 0.002
+    strap_top = tb + tt + 0.0013
+    for sx in (-1, 1):
+        for sy in (-1, 1):
+            cx, cy = sx * (tw / 2 + out), yc + sy * (td / 2 + out)
+            slab("Strap", [(cx, cy), (cx - sx * leg, cy), (cx, cy - sy * leg)], strap_top - tb, c, "M_RmFolio", r, (0, 0, tb))
+    # front cover: hinged on the spine axis; closed it lies 1.1 mm above the straps (2 mm above the screen)
+    cov = bk.empty("FolderCover", c, (0, ya, rs), r)
+    shape = [(x, y - ya) for x, y in front_round_pts(w, -d / 2, ya, rr, 4)]
+    slab("Cover", shape, tc, c, "M_RmFolio", cov, (0, 0, rs - tc), bevel=0.0015, bevel_seg=1)
+    ci = 0.008
+    ring = [(x, y - (ya + d / 2) / 2) for x, y in rrect_pts(w - 2 * ci, ya + d / 2 - 2 * ci, 0.006, 3)]
+    stitches("CoverStitch", ring, rs + 0.0003, c, "M_RmFolioStitch", cov)
+    slab("Badge", rrect_pts(0.038, 0.014, 0.003, 3), 0.0012, c, "M_RmBrass", cov, (0, -d / 2 - ya + 0.034, rs - 0.0002), bevel=0.0004)
+    B("BadgeLine", (0.026, 0.0016, 0.0004), c, "M_RmWalnutDark", cov, (0, -d / 2 - ya + 0.034, rs + 0.0011))
+    lining = [(x, y - ya) for x, y in front_round_pts(w - 0.006, -d / 2 + 0.003, ya, rr - 0.003, 4)]
+    slab("Lining", lining, 0.0006, c, "M_RmFolioLining", cov, (0, 0, rs - tc - 0.0006))
+    stitches("LiningStitch", ring, rs - tc - 0.0009, c, "M_RmFolioStitch", cov, down=True)
+    return r
+
+
+@room_prop
+def rm_ballot_box(c):
+    """v5 clear acrylic ballot box for the table centre, 0.30 x 0.22 x 0.24. Graphite edge frame (12 bars), clear
+    panels (M_RmGlassCup), a graphite floor, a solid graphite lid with a black-trimmed slot (0.16 x 0.014) across the
+    middle, a cream label plate on the front panel (BallotLabel = centre of its front face; the runtime writes on it)
+    and a red security seal hanging off the front lid edge. BallotSlot (driven) = slot centre on the lid top
+    (z 0.24); BallotPile (driven) = centre of the inside floor (z 0.0105). Pivot: bottom centre, front toward -Y."""
+    r = root("RmBallotBox", c)
+    w, d, hb, b, lt = 0.30, 0.22, 0.224, 0.011, 0.016
+    g = "M_RmGraphite"
+    for sx in (-1, 1):
+        for sy in (-1, 1):
+            B("Post", (b, b, hb), c, g, r, (sx * (w / 2 - b / 2), sy * (d / 2 - b / 2), hb / 2), bevel=0.0012, segments=1)
+    for z in (b / 2, hb - b / 2):
+        for sy in (-1, 1):
+            B("RailX", (w - 2 * b + 0.002, b, b), c, g, r, (0, sy * (d / 2 - b / 2), z), bevel=0.0012, segments=1)
+        for sx in (-1, 1):
+            B("RailY", (b, d - 2 * b + 0.002, b), c, g, r, (sx * (w / 2 - b / 2), 0, z), bevel=0.0012, segments=1)
+    # clear panels in the frame's mid plane, a graphite floor just under the bottom rails' top
+    pt = 0.003
+    for sy in (-1, 1):
+        B("PanelY", (w - b, pt, hb - b), c, "M_RmGlassCup", r, (0, sy * (d / 2 - b / 2), hb / 2))
+    for sx in (-1, 1):
+        B("PanelX", (pt, d - b, hb - b), c, "M_RmGlassCup", r, (sx * (w / 2 - b / 2), 0, hb / 2))
+    floor_top = b - 0.0005
+    B("Floor", (w - b, d - b, floor_top - 0.0025), c, g, r, (0, 0, (floor_top + 0.0025) / 2))
+    # lid with the slot hole, the black slot trim (its inner walls are the slot's black inside)
+    slot_w, slot_d = 0.16, 0.014
+    trim = 0.003
+    lid = ring_slab("Lid", rrect_pts(w + 0.008, d + 0.008, 0.005, 3), rrect_pts(slot_w + 2 * trim, slot_d + 2 * trim, 0.005, 3),
+                    hb, hb + lt, c, g, r)
+    bk.add_bevel(lid, 0.0015, 1, 30)
+    ring_slab("SlotTrim", rrect_pts(slot_w + 2 * trim, slot_d + 2 * trim, 0.005, 3), rrect_pts(slot_w, slot_d, 0.003, 3),
+              hb - 0.004, hb + lt + 0.0008, c, "M_RmBlack", r)
+    bk.empty("BallotSlot", c, (0, 0, hb + lt), r)
+    bk.empty("BallotPile", c, (0, 0, floor_top), r)
+    # label plate on the front panel, near the top, in a thin graphite holder
+    front = -(d / 2 - b / 2) - pt / 2          # front panel's outer face
+    lz = hb - b - 0.008 - 0.0175
+    B("LabelHolder", (0.126, 0.0008, 0.041), c, g, r, (0, front - 0.0004, lz))
+    B("Label", (0.12, 0.0012, 0.035), c, "M_RmLabel", r, (0, front - 0.0008 - 0.0006, lz))
+    bk.empty("BallotLabel", c, (0, front - 0.0014, lz), r)
+    # security seal: a hasp on the lid's front edge, a staple on the top rail, a red strap through both and its tag
+    sx0 = 0.098
+    lid_front = -(d / 2 + 0.004)
+    B("Hasp", (0.014, 0.004, 0.011), c, g, r, (sx0, lid_front - 0.002, hb + 0.0065), bevel=0.0008, segments=1)
+    B("Staple", (0.014, 0.004, 0.008), c, g, r, (sx0, -d / 2 - 0.002, hb - 0.006), bevel=0.0008, segments=1)
+    cable("SealStrap", [(sx0 - 0.003, lid_front - 0.0045, hb + 0.007), (sx0 - 0.003, lid_front - 0.006, hb - 0.004),
+                        (sx0 - 0.001, lid_front - 0.006, hb - 0.018), (sx0, lid_front - 0.0055, hb - 0.03)], 0.0011, c, "M_RmSeal", r, segments=6)
+    B("SealLock", (0.008, 0.005, 0.01), c, "M_RmSeal", r, (sx0 - 0.003, lid_front - 0.0055, hb - 0.004), bevel=0.001, segments=1)
+    tag = slab("SealTag", rrect_pts(0.022, 0.04, 0.004, 3), 0.0016, c, "M_RmSeal", r, (sx0, lid_front - 0.0063, hb - 0.05),
+               rotation=(R(90), 0, 0), bevel=0.0005)
+    B("SealNumber", (0.016, 0.0006, 0.007), c, "M_RmLabel", r, (sx0, lid_front - 0.0082, hb - 0.056))
+    CY("SealHole", 0.0022, 0.0006, c, "M_RmBlack", r, (sx0, lid_front - 0.0082, hb - 0.035), rotation=(R(90), 0, 0), segments=8)
+    return r
+
+
+@room_prop
+def rm_pencil(c):
+    """v5 a yellow hexagonal pencil (like RosterPen): lead, sharpened wood cone, yellow body, brass ferrule, pink
+    eraser. 0.15 m long; pivot at the TIP, body along +Z (Unity +Y); the runtime lays it down. The hexagon's
+    circumradius is 4.2 mm (a flat face lies 3.64 mm from the axis; the ferrule is 4.5 mm round)."""
+    r = root("RmPencil", c)
+    CY("Lead", 0.0004, 0.004, c, "M_RmBlack", r, (0, 0, 0.002), segments=6, radius_top=0.0016)
+    CY("Wood", 0.0016, 0.012, c, "M_RmOakLight", r, (0, 0, 0.01), segments=6, radius_top=0.0042)
+    CY("Body", 0.0042, 0.11, c, "M_DuckYellow", r, (0, 0, 0.071), segments=6, smooth=False)
+    CY("Ferrule", 0.0045, 0.012, c, "M_RmBrass", r, (0, 0, 0.132), segments=12)
+    for z in (0.1285, 0.1355):
+        CY("FerruleRib", 0.0047, 0.0012, c, "M_RmBrass", r, (0, 0, z), segments=12)
+    CY("Eraser", 0.0041, 0.012, c, "M_RmEraser", r, (0, 0, 0.144), segments=12, cap_bevel=0.0014)
+    return r
+
+
+@room_prop
+def rm_whiteboard_stand(c):
+    """v5 mobile whiteboard on wheels (meeting room, in front of the window wall). The board of RmWhiteboard (frame
+    1.65 x 0.85, BoardSurface 1.6 x 0.8 with own UVs facing -Y, marker tray with three markers and an eraser), centred
+    at 1.62 m between two graphite posts on T-feet with four casters. Pivot: floor centre; the board faces -Y and is
+    centred on the posts' plane (y = 0)."""
+    r = root("RmWhiteboardStand", c)
+    w, h, zc = 1.6, 0.8, 1.62
+    fy = 0.0125                                    # frame back face (frame from y=+0.0125 to -0.0125)
+    g = "M_RmGraphite"
+    vslab("Frame", w + 0.05, h + 0.05, 0.025, 0.01, c, "M_Metal", r, (0, fy, zc - (h + 0.05) / 2), bevel=0.004)
+    uv_plane("BoardSurface", w, h, c, "M_RmWhiteboard", r, (0, fy - 0.0262, zc))
+    B("BoardBack", (w, 0.0012, h), c, "M_RmWhiteboard", r, (0, fy + 0.0007, zc))
+    B("Tray", (0.8, 0.07, 0.02), c, "M_Metal", r, (0, fy - 0.06, zc - h / 2 - 0.035), bevel=0.004)
+    for i, m in enumerate(("M_PlasticRed", "M_PlasticBlue", "M_RmBlack")):
+        CY("Marker", 0.009, 0.12, c, m, r, (-0.25 + i * 0.09, fy - 0.065, zc - h / 2 - 0.015), rotation=(0, R(90), R(4 * i)), segments=8)
+    B("Eraser", (0.12, 0.05, 0.035), c, g, r, (0.2, fy - 0.065, zc - h / 2 - 0.008), bevel=0.008)
+    px, pr = w / 2 + 0.025 + 0.035, 0.016          # post axis x, post radius
+    top, foot_z0, foot_h = 2.1, 0.064, 0.032
+    for sx in (-1, 1):
+        x = sx * px
+        CY("Post", pr, top - foot_z0, c, g, r, (x, 0, (top + foot_z0) / 2), segments=14)
+        CY("PostCap", pr + 0.002, 0.016, c, "M_RmBlack", r, (x, 0, top + 0.006), segments=14, cap_bevel=0.004)
+        CY("Collar", pr + 0.006, 0.05, c, g, r, (x, 0, foot_z0 + foot_h + 0.025), segments=14, cap_bevel=0.003)
+        # the board hangs on a pivot bolt with a black tension knob on the outside of each post
+        CY("Clamp", pr + 0.005, 0.05, c, g, r, (x, 0, zc), segments=14, cap_bevel=0.003)
+        CY("Bolt", 0.007, 0.03, c, "M_Metal", r, (sx * (w / 2 + 0.025 + 0.012), 0, zc), rotation=(0, R(90), 0), segments=10)
+        CY("Knob", 0.02, 0.022, c, "M_RmBlack", r, (sx * (px + pr + 0.005 + 0.010), 0, zc), rotation=(0, R(90), 0), segments=16, cap_bevel=0.004)
+        # T-foot along Y with two casters
+        B("Foot", (0.05, 0.5, foot_h), c, g, r, (x, 0, foot_z0 + foot_h / 2), bevel=0.006)
+        for sy in (-1, 1):
+            y = sy * 0.215
+            CY("Swivel", 0.017, 0.008, c, g, r, (x, y, foot_z0 - 0.004), segments=12)
+            for k in (-1, 1):
+                B("Fork", (0.004, 0.034, 0.034), c, g, r, (x + k * 0.0135, y + 0.006, 0.043))
+            CY("Wheel", 0.026, 0.02, c, "M_RmBlack", r, (x, y + 0.01, 0.026), rotation=(0, R(90), 0), segments=16)
+            CY("Hub", 0.009, 0.0232, c, "M_Metal", r, (x, y + 0.01, 0.026), rotation=(0, R(90), 0), segments=10)
+    CY("CrossBar", 0.013, 2 * px, c, g, r, (0, 0, 0.36), rotation=(0, R(90), 0), segments=12)
     return r
 
 

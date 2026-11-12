@@ -157,8 +157,12 @@ MEETING_PROPS = [
     ("speakerphone", "RmSpeakerphone", (0.0, 0.75, -0.75), 0),
     ("screen", "RmProjectorScreen", (-0.25, 1.32, 3.0), 0),
     ("projector", "RmProjector", (-0.25, 2.9, 0.45), 180),
-    ("whiteboard", "RmWhiteboard", (2.3, 1.45, -0.35), 90),
+    ("whiteboard", "RmWhiteboard", (2.3, 1.62, -0.35), 90),
     ("clock", "RmClock", (2.3, 2.3, 1.55), 90),
+    # v5 step 3a: a mobile whiteboard in front of the window wall between the windows, facing the right-hand seats,
+    # and the ballot box on the table centre (the seat padfolios + pencils are placed per seat by the Unity builder)
+    ("whiteboard2", "RmWhiteboardStand", (-1.98, 0.0, -0.2), -90),
+    ("ballotbox", "RmBallotBox", (0.0, 0.75, -0.2), 0),
     ("sideboard", "RmSideboard", (-0.9, 0.0, -2.74), 180),
     ("traycups", "RmTrayCups", (-1.35, 0.76, -2.72), 180),
     ("sideplant", "RmSmallPlant", (-0.35, 0.76, -2.76), 0),
@@ -170,12 +174,15 @@ MEETING_PROPS = [
 ]
 MEETING_ANCHORS = {
     "manager": (0.95, 0.0, 2.15), "managerYaw": 205.0,
-    "eyeUp": 1.24, "eyeForward": 0.06, "yawLimit": 110.0, "pitchUp": 40.0, "pitchDown": 55.0,
+    "eyeUp": 1.24, "eyeForward": 0.06,
+    # v5 step 3a: seated free look of about 110 degrees in total (docs/V5_INTERACTION.md §3), pitch limited
+    "yawLimit": 55.0, "pitchUp": 30.0, "pitchDown": 50.0,
     "seatItemInset": 0.6,
 }
 MEETING_DECALS = [
     {"id": "portrait", "p": (-0.9, 1.7, -3.0), "r": 180, "size": (0.52, 0.68), "variants": ["portrait_manager"]},
-    {"id": "mission", "p": (-2.3, 1.55, -0.2), "r": -90, "size": (0.4, 0.56), "variants": ["poster_mission"]},
+    # v5: moved past the second window (the whiteboard stand stands in front of the pier between the windows)
+    {"id": "mission", "p": (-2.3, 1.7, 2.45), "r": -90, "size": (0.4, 0.56), "variants": ["poster_mission"]},
     {"id": "kpi", "p": (2.3, 1.6, 1.85), "r": 90, "size": (0.6, 0.45), "variants": ["poster_kpi"]},
 ]
 MEETING_LIGHTS = [

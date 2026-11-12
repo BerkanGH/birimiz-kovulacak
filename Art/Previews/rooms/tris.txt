@@ -2,6 +2,7 @@ RmLowBookcase             5408
 RmShelf                   4296
 RmCashBox                 3808
 RmRecorder                3740
+RmWhiteboardStand         3050
 RmPhone                   2668
 RmChair                   2360
 RmMeetingShell            2316
@@ -9,8 +10,10 @@ RmMeetingChair            1932
 RmDrawerUnit              1908
 RmOfficeShell             1704
 RmMeetingTable            1684
+RmFolder                  1520
 RmPlant                   1496
 RmFileCabinet             1448
+RmBallotBox               1424
 RmClock                   1292
 RmMonitor                 1266
 RmHandL                   1248
@@ -38,6 +41,7 @@ RmProjector                500
 RmCactus                   488
 RmBox                      388
 RmPendantBar               368
+RmPencil                   332
 RmBundle                   308
 RmPhotoFrame               298
 RmCorkBoard                286

@@ -8,6 +8,7 @@ from mathutils import Euler, Vector
 
 import bk_common as bk
 import build_rooms as br
+import map_kit
 
 R = math.radians
 
@@ -74,10 +75,45 @@ def bean(p, color, origin, yaw):
     b = bk.sphere("Bean", 0.33, c, None, None, loc, scale=(1, 1, 1.75), segments=20, rings=12)
     b.data.materials.append(m)
     f = Vector((math.sin(R(yaw)), math.cos(R(yaw)), 0))
+    out = [b]
     for sx in (-1, 1):
         side = Vector((f.y, -f.x, 0)) * 0.11 * sx
         e = bk.sphere("Eye", 0.06, c, None, None, loc + f * 0.3 + side + Vector((0, 0, 0.22)), segments=10, rings=6)
         e.data.materials.append(bk.mat("M_Eye"))
+        out.append(e)
+    return out
+
+
+def seat_point(s, lx, ly, lz, origin):
+    """Unity point at seat-local (x right, y up, z forward) of a meeting seat."""
+    yw = R(s["yaw"])
+    return (s["p"][0] + math.cos(yw) * lx + math.sin(yw) * lz + origin[0], ly + origin[1],
+            s["p"][2] - math.sin(yw) * lx + math.cos(yw) * lz + origin[2])
+
+
+def seat_eye(s, origin):
+    return seat_point(s, 0.0, 1.24, 0.06, origin)
+
+
+def decal_cards(decals, origin, coll):
+    """Preview stand-ins for the wall decals (first variant's image when it exists), 4 mm off the wall."""
+    ddir = os.path.join(bk.ROOT, "Game", "Assets", "Game", "Art", "Textures", "Rooms", "Decals")
+    for dc in decals:
+        m = bpy.data.materials.new("Decal_" + dc["id"])
+        m.use_nodes = True
+        bsdf = m.node_tree.nodes["Principled BSDF"]
+        bsdf.inputs["Roughness"].default_value = 0.8
+        img = os.path.join(ddir, dc["variants"][0] + ".png")
+        if os.path.exists(img):
+            tn = m.node_tree.nodes.new("ShaderNodeTexImage")
+            tn.image = bpy.data.images.load(img)
+            m.node_tree.links.new(tn.outputs["Color"], bsdf.inputs["Base Color"])
+        q = map_kit.uv_plane("Decal_" + dc["id"], dc["size"][0], dc["size"][1], coll, None)
+        q.data.materials.append(m)
+        yw = R(dc["r"])
+        p = dc["p"]
+        q.location = u2b((p[0] + origin[0] - math.sin(yw) * 0.004, p[1] + origin[1], p[2] + origin[2] - math.cos(yw) * 0.004))
+        q.rotation_euler = (0, 0, -yw)
 
 
 def setup(res, fast):
@@ -158,10 +194,17 @@ def render_all(roots, fast=False):
         if model:
             instance(lib, model, p, yaw, mo, coll=inst_c)
     colors = ["#2F8FDE", "#F6CF55", "#F06B88", "#3C9A6C", "#F4853C", "#A872D0"]
+    beans = {}
     for i, s in enumerate(br.SEATS):
         instance(lib, "RmMeetingChair", s["p"], s["yaw"], mo, coll=inst_c)
         if i != 2:
-            bean(s["p"], colors[i], mo, s["yaw"])
+            beans[i] = bean(s["p"], colors[i], mo, s["yaw"])
+        # v5 step 3a (preview only; the Unity builder places these per seat): the padfolio and a pencil beside it
+        instance(lib, "RmFolder", seat_point(s, 0.07, 0.75, 0.53, (0, 0, 0)), s["yaw"], mo, coll=inst_c)
+        pen = instance(lib, "RmPencil", seat_point(s, 0.27, 0.7542, 0.46, (0, 0, 0)), s["yaw"], mo, coll=inst_c)
+        if pen is not None:
+            pen.rotation_euler = (R(-90), 0, -R(s["yaw"] + 10))
+    decal_cards(br.MEETING_DECALS, mo, inst_c)
     for l in br.MEETING_LIGHTS:
         light(l, mo)
     sun = bpy.data.lights.new("Sun", "SUN")
@@ -196,6 +239,24 @@ def render_all(roots, fast=False):
     for name, eye, yaw, pitch in shots:
         cam = camera("Cam_" + name, eye, yaw, pitch)
         render(os.path.join(out, name + ".png"), cam)
+    # v5 step 3a: the ballot box's front (label, seal) up close from the table foot, the whiteboard stand from the
+    # right-hand seat 3 (its bean hidden), and the
+    # camera seat's padfolio + pencil, closed and with FolderCover flipped open (180 degrees)
+    s2, s3 = br.SEATS[2], br.SEATS[3]
+    extra = [("meeting_ballot_close", (-0.33 + mo[0], 1.08, -0.72 + mo[2]), 32, 19, []),
+             ("meeting_stand", seat_eye(s3, mo), s3["yaw"], -5, beans.get(3, [])),
+             ("meeting_folder_close", seat_eye(s2, mo), s2["yaw"], 44, [])]
+    for name, eye, yaw, pitch, hide in extra:
+        for o in hide:
+            o.hide_render = True
+        render(os.path.join(out, name + ".png"), camera("Cam_" + name, eye, yaw, pitch))
+        for o in hide:
+            o.hide_render = False
+    cover = bpy.data.objects.get("FolderCover")
+    if cover is not None:
+        cover.rotation_euler = (R(-180), 0, 0)
+        render(os.path.join(out, "meeting_folder_open.png"), camera("Cam_meeting_folder_open", seat_eye(s2, mo), s2["yaw"], 44))
+        cover.rotation_euler = (0, 0, 0)
     plan(out)
     print("ROOM_PREVIEWS_DONE", out)
 

@@ -75,6 +75,10 @@
     "M_RmBillPaper":     { "color": "#B7D9AF", "smooth": 0.1 },
     "M_RmBillBand":      { "color": "#D9A441", "smooth": 0.2 },
     "M_RmEraser":        { "color": "#E8908A", "smooth": 0.15 },
-    "M_RmAlarmOn":       { "color": "#FF4A3A", "smooth": 0.7, "emit": 0.85 }
+    "M_RmAlarmOn":       { "color": "#FF4A3A", "smooth": 0.7, "emit": 0.85 },
+    "M_RmFolio":         { "color": "#2E3446", "smooth": 0.42 },
+    "M_RmFolioLining":   { "color": "#8E6C4B", "smooth": 0.1 },
+    "M_RmFolioStitch":   { "color": "#D9C69E", "smooth": 0.2 },
+    "M_RmTabletScreen":  { "color": "#182238", "smooth": 0.9 }
   }
 }

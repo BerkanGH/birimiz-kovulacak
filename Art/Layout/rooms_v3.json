@@ -810,7 +810,7 @@
     "model": "RmWhiteboard",
     "p": [
      2.3,
-     1.45,
+     1.62,
      -0.35
     ],
     "r": 90
@@ -824,6 +824,26 @@
      1.55
     ],
     "r": 90
+   },
+   {
+    "id": "whiteboard2",
+    "model": "RmWhiteboardStand",
+    "p": [
+     -1.98,
+     0.0,
+     -0.2
+    ],
+    "r": -90
+   },
+   {
+    "id": "ballotbox",
+    "model": "RmBallotBox",
+    "p": [
+     0.0,
+     0.75,
+     -0.2
+    ],
+    "r": 0
    },
    {
     "id": "sideboard",
@@ -965,9 +985,9 @@
    "managerYaw": 205.0,
    "eyeUp": 1.24,
    "eyeForward": 0.06,
-   "yawLimit": 110.0,
-   "pitchUp": 40.0,
-   "pitchDown": 55.0,
+   "yawLimit": 55.0,
+   "pitchUp": 30.0,
+   "pitchDown": 50.0,
    "seatItemInset": 0.6
   },
   "decals": [
@@ -991,8 +1011,8 @@
     "id": "mission",
     "p": [
      -2.3,
-     1.55,
-     -0.2
+     1.7,
+     2.45
     ],
     "r": -90,
     "size": [
