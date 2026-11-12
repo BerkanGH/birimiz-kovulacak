@@ -657,9 +657,9 @@ namespace BirimizKovulacak.Core
                 var opener = Opener(v, talk.Reason, ph.Other);
                 if (opener != null) talk.Queue.Add(new Due { At = now + 0.8 * k, Line = opener });
             }
-            if (talk.OtherIsBot)
             {
-                // bot to bot: each side asks one of the context's questions, the other answers
+                // each side asks one of the context's questions and the other answers (a -bot player is not flagged as a
+                // bot by the engine, so this is sent to anyone: a person's client ignores it)
                 var set = Askable(v);
                 int n = LineBotLines.Questions(set).Count;
                 if (n > 0)
@@ -1149,11 +1149,11 @@ namespace BirimizKovulacak.Core
                 int had;
                 chatsBy.TryGetValue(m.From, out had);
                 chatsBy[m.From] = had + 1;
-                var from = P(v, m.From);
                 bool accuses = false;
                 string key;
                 List<int> args;
-                if (from != null && from.IsBot && LineBotLines.TryParse(m.Text, out key, out args))
+                // (a -bot player is not flagged as a bot by the engine: any colleague's token is a bot line)
+                if (LineBotLines.TryParse(m.Text, out key, out args))
                     accuses = args.Count > 0 && args[0] == Seat && (key.StartsWith("bot.meet.victim", StringComparison.Ordinal) || key.StartsWith("bot.meet.witness", StringComparison.Ordinal)
                               || key.StartsWith("bot.meet.deflect", StringComparison.Ordinal) || key.StartsWith("bot.meet.accused", StringComparison.Ordinal));
                 else if (me != null) accuses = Mentions(m.Text, me.Name);

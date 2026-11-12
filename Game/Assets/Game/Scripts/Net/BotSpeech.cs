@@ -126,6 +126,7 @@ namespace BirimizKovulacak.Game
         /// <summary>A bot line for my phone (network, or a UI mock).</summary>
         public static void Hear(int from, string key, List<int> args)
         {
+            if (from >= 0 && from < 8) _talkers.Add(from);
             var e = new Entry { Speaker = from, Key = key, Args = args ?? new List<int>(), At = Time.unscaledTime, Other = from };
             Add(e);
             Speak(from, Text(key, e.Args), null);
@@ -158,7 +159,13 @@ namespace BirimizKovulacak.Game
             Version++;
         }
 
-        public static void ClearTranscript() { if (_transcript.Count > 0) { _transcript.Clear(); Version++; } }
+        public static void ClearTranscript() { _talkers.Clear(); if (_transcript.Count > 0) { _transcript.Clear(); Version++; } }
+
+        static readonly HashSet<int> _talkers = new HashSet<int>();
+
+        /// <summary>This colleague talks in bot lines (it said one to me this match): an automated -bot player joins like a
+        /// person, so the engine's bot flag alone does not tell.</summary>
+        public static bool Talks(int slot) { return _talkers.Contains(slot); }
 
         /// <summary>Seconds since the last line (a refusal stays on the phone for a moment after the call is gone).</summary>
         public static float LastAge => _transcript.Count == 0 ? float.MaxValue : Time.unscaledTime - _transcript[_transcript.Count - 1].At;
@@ -174,13 +181,15 @@ namespace BirimizKovulacak.Game
             return Loc.F("v5." + key, a);
         }
 
-        /// <summary>True when a message is a bot line (only bots' tokens are rendered: a person typing one gets it verbatim).</summary>
+        /// <summary>
+        /// True when a message is a bot line: a well-formed token from a colleague. (An automated -bot player joins like a
+        /// person, so the engine does not flag it as a bot: any sender's token is rendered. Typing one by hand would need the
+        /// invisible marker and only shows a catalogue line.)
+        /// </summary>
         public static bool IsBotLine(LineMessage m, out string key, out List<int> args)
         {
             key = null; args = null;
-            if (m == null || string.IsNullOrEmpty(m.Text) || !m.Text.StartsWith(LineBotLines.TokenPrefix, StringComparison.Ordinal)) return false;
-            var p = LineClient.I != null ? LineClient.I.Player(m.From) : null;
-            if (p == null || !p.IsBot) return false;
+            if (m == null || m.From < 0 || string.IsNullOrEmpty(m.Text) || !m.Text.StartsWith(LineBotLines.TokenPrefix, StringComparison.Ordinal)) return false;
             return LineBotLines.TryParse(m.Text, out key, out args);
         }
 

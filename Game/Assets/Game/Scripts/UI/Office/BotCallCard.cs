@@ -55,7 +55,7 @@ namespace BirimizKovulacak.Game
         {
             if (lc == null || v == null || v.Mine.Phone.Status != CallStatus.Connected) return -1;
             var p = lc.Player(v.Mine.Phone.Other);
-            return p != null && p.IsBot ? p.Id : -1;
+            return p != null && (p.IsBot || BotSpeech.Talks(p.Id)) ? p.Id : -1;
         }
 
         /// <summary>Keys 1 / 2 / 3: ask the bot in my call (false when there is nothing to ask).</summary>
