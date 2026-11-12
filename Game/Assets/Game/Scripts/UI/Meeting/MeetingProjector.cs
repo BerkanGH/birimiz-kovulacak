@@ -54,6 +54,8 @@ namespace BirimizKovulacak.Game
         public static int MockDeckIndex = -1;
 
         public Show Showing => _show;
+        /// <summary>The local camera is zoomed in on the screen: the footer says how to go back (3b polish: no chip over the slide).</summary>
+        public bool Zoomed;
         /// <summary>Something the room watches together is on the screen (a leak, the defence, the desk opening, the results).</summary>
         public bool Live => _show == Show.Tape || _show == Show.Desk || _show == Show.Results || _show == Show.Defense;
         public VisualElement Root => _root;
@@ -149,8 +151,9 @@ namespace BirimizKovulacak.Game
                 if (slide) UiMotion.SlideIn(_content, new Vector2(70f, 0f), 0.32f);
                 else UiMotion.FadeIn(_content, 0.25f);
                 Dots(show == Show.Dossier ? deckCount : 0);
-                _foot.SetText(F("projector.foot", OfficeText.Key(GameInput.Phone), OfficeText.Key(GameInput.Computer)));
             }
+            _foot.SetText(Zoomed ? F("meeting.projector_hint", OfficeText.Key(GameInput.Phone), OfficeText.Key(GameInput.Interact))
+                : F("projector.foot", OfficeText.Key(GameInput.Phone), OfficeText.Key(GameInput.Computer)));
             for (int i = 0; i < _anims.Count; i++) _anims[i](now, dt);
         }
 

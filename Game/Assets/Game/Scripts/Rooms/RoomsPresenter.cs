@@ -36,6 +36,8 @@ namespace BirimizKovulacak.Game
         public static bool AllowWalk = true;
         /// <summary>The UI used this frame's E (closed the folder, dropped the ballot): the world must not use it again.</summary>
         public static int UseConsumedFrame = -1;
+        /// <summary>Fraction of the screen height to keep free under the projector when zoomed in (the results bar).</summary>
+        public static float ProjectorRoomBelow;
 
         public static RoomsPresenter Instance { get; private set; }
 
@@ -421,8 +423,22 @@ namespace BirimizKovulacak.Game
                     if (DrawerPose(out pos, out rot, out fov)) return;
                     break;
                 case PovMode.MeetingProjector:
-                    if (Frame(Meeting.Canvas, 0.94f, framingFov, out pos, out rot)) { fov = framingFov; return; }
+                {
+                    // (3b polish) with room kept below (the results bar) the screen is framed a little smaller and higher
+                    float room = Mathf.Clamp(ProjectorRoomBelow, 0f, 0.3f);
+                    if (Frame(Meeting.Canvas, 0.94f * (1f - room), framingFov, out pos, out rot))
+                    {
+                        if (room > 0f)
+                        {
+                            float d = Vector3.Distance(pos, Meeting.Canvas.bounds.center);
+                            float up = 0.95f - 0.94f * (1f - room); // in half-heights of the view
+                            pos += rot * Vector3.down * (up * d * Mathf.Tan(framingFov * 0.5f * Mathf.Deg2Rad));
+                        }
+                        fov = framingFov;
+                        return;
+                    }
                     break;
+                }
                 case PovMode.MeetingBoard:
                     // v5 step 3a: the whiteboard across the table (the heads in front of it stay in the lower edge)
                     if (Frame(Meeting.BoardFor(_localSlot), 0.9f, framingFov, out pos, out rot)) { fov = framingFov; pos += Breath() * 0.5f; return; }

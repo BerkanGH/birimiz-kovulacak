@@ -133,3 +133,17 @@
 .wb-side-good { color: rgb(36, 120, 74); }
 .wb-side-hot { -unity-font-style: bold; }
 .wb-side-note { font-size: 28px; color: rgb(70, 78, 100); margin-top: 10px; padding: 0; white-space: normal; }
+
+/* ---------------------------------------------------------------- v5 bot talk: a bot's chat line over its head (MeetingSubtitles.cs) */
+.mt-sub { position: absolute; translate: -50% -100%; max-width: 520px; align-items: center; background-color: rgba(252, 248, 238, 0.96);
+    border-radius: 16px; border-width: 3px; border-bottom-width: 5px; border-color: rgb(31, 42, 68); padding: 6px 14px 8px 14px; }
+.mt-sub-who { font-size: 15px; letter-spacing: 1px; margin: 0 0 1px 0; }
+.mt-sub-text { font-size: 20px; color: rgb(31, 42, 68); white-space: normal; -unity-text-align: middle-center; margin: 0; }
+/* the defence: a subtitle over the standing character, in the spotlight's yellow */
+.mt-sub-defence { max-width: 700px; border-color: rgb(255, 214, 90); background-color: rgba(23, 31, 52, 0.92); padding: 10px 20px 12px 20px; }
+.mt-sub-defence .mt-sub-text { font-size: 26px; color: rgb(255, 246, 214); }
+.mt-sub-defence .mt-sub-who { font-size: 17px; }
+/* out of view: at the bottom of the screen like a film subtitle */
+.mt-sub-screen { left: 50%; top: auto; bottom: 110px; translate: -50% 0; }
+/* (3b polish) zoomed on the projector the corner notes start under its header and clock */
+.mt-toasts-zoom { top: 182px; }

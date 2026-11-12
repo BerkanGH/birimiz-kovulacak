@@ -32,6 +32,7 @@ namespace BirimizKovulacak.Game
         readonly MeetingSlide _slide;
         readonly MeetingBoard _board = new MeetingBoard();
         readonly MeetingProjector _projector = new MeetingProjector();
+        readonly MeetingSubtitles _subs;
         readonly PlayState _st = new PlayState();
         bool _bound, _dirty = true, _boardZoom, _projZoom, _projAuto;
         int _week = int.MinValue;
@@ -81,6 +82,8 @@ namespace BirimizKovulacak.Game
             _now = Text("", "of-now").NoPick().AddTo(nowRow);
 
             _toasts = new ToastStack(Root);
+            // v5 bot talk: a bot's chat line over its head (the defence: a subtitle over the standing character)
+            _subs = new MeetingSubtitles(Root);
 
             // ---- push-to-talk
             _mic = Box("of-mic").NoPick().AddTo(Root);
@@ -173,7 +176,11 @@ namespace BirimizKovulacak.Game
             foreach (var m in list)
             {
                 if (m.From == lc.MySlot) continue;
-                string text = m.Text ?? "";
+                string botKey;
+                List<int> botArgs;
+                if (m.Kind == MessageKind.MeetingChat && BotSpeech.IsBotLine(m, out botKey, out botArgs))
+                    _subs.Say(lc, lc.View, m.From, BotSpeech.Text(botKey, botArgs));
+                string text = BotSpeech.MessageText(m);
                 if (text.Length > 70) text = text.Substring(0, 68) + "…";
                 string who = m.Kind == MessageKind.System ? T("msg.system")
                     : m.Kind == MessageKind.MeetingChat ? F("meeting.toast_chat", Name(m.From)) : F("meeting.toast_text", Name(m.From));
@@ -242,6 +249,8 @@ namespace BirimizKovulacak.Game
                 CloseAll(false);
                 _pendingPhaseToast = null;
                 _toasts.Clear();
+                _subs.Clear();
+                BotSpeech.ResetVoices();
                 _projector.Release();
                 BallotDrops.Clear();
                 _autoKey = double.NaN;
@@ -393,6 +402,8 @@ namespace BirimizKovulacak.Game
             double now = lc.Now;
             float dt = Time.unscaledDeltaTime;
             HandleKeys(lc, v);
+            // (3b polish) the results bar sits under the projector: the zoom leaves room for it at the bottom
+            RoomsPresenter.ProjectorRoomBelow = v.Phase == LinePhase.Results ? 0.13f : 0f;
             Ceremony(v, now);
             var rooms = RoomsPresenter.Instance;
             var panel = rooms != null && rooms.Rig != null ? rooms.Rig.Panel : null;
@@ -416,17 +427,21 @@ namespace BirimizKovulacak.Game
             }
             _boardHint.Show(_boardZoom);
             if (_boardZoom) _boardHintText.SetText(F("meeting.board_hint", OfficeText.Key(GameInput.Interact)));
-            _pjBack.Show(_projZoom && v.Phase != LinePhase.Results && v.Phase != LinePhase.Abandoned);
-            if (_projZoom) _pjBackText.SetText(F("meeting.projector_hint", OfficeText.Key(GameInput.Phone), OfficeText.Key(GameInput.Interact)));
+            // (3b polish) zoomed in, the way back is written in the projector's own footer: no chip over the slide
+            _pjBack.Show(false);
+            _projector.Zoomed = _projZoom;
             UpdateProjectorHint(v);
             _strip.Show(!_folder.IsOpen && !_boardZoom && !_projZoom);
+            // zoomed in, the corner notes start under the projector's header (its clock); the phase is in the header itself
+            _toasts.Host.EnableInClassList("mt-toasts-zoom", _projZoom);
             if (_pendingPhaseToast != null && ScreenFade.Alpha < 0.5f)
             {
-                Toast(_pendingPhaseToast, "of-toast-phase", 4f);
+                if (!_projZoom) Toast(_pendingPhaseToast, "of-toast-phase", 4f);
                 Sfx.Play("phase", 0.5f);
                 _pendingPhaseToast = null;
             }
             _toasts.Tick();
+            _subs.Tick(v, Root, _folder.IsOpen || _ballot.IsOpen || _boardZoom || _projZoom);
         }
 
         void HandleKeys(LineClient lc, LineView v)
