@@ -1087,7 +1087,8 @@ namespace BirimizKovulacak.Core
                     if (!pick.Played || pick.Empty || (pick.Caller != Seat && pick.Callee != Seat) || leakReacted.Contains(pick.ChosenCallId)) continue;
                     leakReacted.Add(pick.ChosenCallId);
                     var l = Line(Key("bot.meet.leak"), -1);
-                    chat.Add(new Due { At = Math.Max(now, pick.PlayAt + pick.Seconds) + 1.2 * k, Line = l });
+                    // (both ends of the call react: one after the other)
+                    chat.Add(new Due { At = Math.Max(now, pick.PlayAt + pick.Seconds) + (1.2 + 1.4 * rank) * k, Line = l });
                 }
             // post what is due (rate limit, chat limit, at most `cap` lines per meeting besides private texts)
             chat.Sort((x, y) => x.At.CompareTo(y.At));

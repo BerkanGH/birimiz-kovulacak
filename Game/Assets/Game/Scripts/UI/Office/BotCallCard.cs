@@ -106,7 +106,8 @@ namespace BirimizKovulacak.Game
                 _dot.style.backgroundColor = PlayerColor(lc.ColorOf(who));
             }
             var set = bot >= 0 ? LineBotLines.QuestionSetOf(v) : BotQuestionSet.None;
-            _hint.SetText(bot < 0 ? T("office.botcall.ended") : LineBotLines.Questions(set).Count > 0 ? F("office.botcall.keys", LineBotLines.Questions(set).Count) : "");
+            _hint.SetText(bot < 0 ? (ph.Status == CallStatus.Idle ? T("office.botcall.ended") : "")
+                : LineBotLines.Questions(set).Count > 0 ? F("office.botcall.keys", LineBotLines.Questions(set).Count) : "");
             if (BotSpeech.Version != _version) { _version = BotSpeech.Version; BuildLines(lc, tr, who); }
             Type();
             BuildQuestions(bot, set);
