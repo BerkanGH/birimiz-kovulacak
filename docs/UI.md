@@ -7,7 +7,7 @@ Rules: `docs/V5_ENGINE_SPEC.md` (normative) and `docs/V5_DESIGN.md` (Turkish, ra
 
 During a match the player is either **in their own office** (Intro, tasks, breaks, crisis calls: the diegetic office
 layer of docs/V5_INTERACTION.md step 1) or **in the meeting room** (meetings, crisis vote, final, results: the seated
-meeting room layer of step 3a, below). The old one-window match screen (`PlayUi`) is only the fallback without the rooms
+meeting room layer of steps 3a and 3b, below). The old one-window match screen (`PlayUi`) is only the fallback without the rooms
 scene. Shell screens (menu, lobby, settings, how-to, first-launch flow) are the older shell code, updated for v5 where
 needed.
 
@@ -15,7 +15,7 @@ needed.
 |---|---|
 | `Scripts/UI/Play/PlayUi.cs` | The old one-window match screen (header, players column, focus card, phase details, phone, transfers, events, messages); since step 3a only the fallback without the rooms scene. |
 | `Scripts/UI/Play/PlayText.cs` | Typed data → sentences (`v5.*` keys): phases, tasks, dossier lines, events. |
-| `Scripts/UI/Play/TapeDeck.cs` | Cassette deck shown while a leaked recording plays (compact inside the centre column). |
+| `Scripts/UI/Play/TapeDeck.cs` | Cassette deck shown while a leaked recording plays (on the meeting room projector since step 3b; compact inside the fallback screen's centre column). |
 | `UI/Resources/ui/styles/play.uss` | Styles of the match screen (logical 1920×1080, scaled; same layout at 1600×900). |
 | `StreamingAssets/Localization/tr.v5.json`, `en.v5.json` | Match strings (`v5.*`, `rec.*`). Turkish first; English mirrors it. |
 | `Scripts/UI/SettingsScreen.cs` → `HowToPlayScreen` | "Nasıl oynanır": 11 v5 pages (`howto.N.*` in `tr.json`/`en.json`), numbers formatted from the host's `LineConfig` (else `GameConfig.Line`). `PageGoal`…`PageFinal` constants. |
@@ -33,13 +33,18 @@ needed.
 | `Scripts/UI/Office/OfficeText.cs`, `ScreenFade.cs` | "Şimdi: …" sentence and use prompts; the black fade of office ↔ meeting switches. |
 | `Scripts/UI/Dev/OfficeMock.cs` | Office mocks (`-uimock "v5.office*"`). |
 | `UI/Resources/ui/styles/office.uss` | Office layer, OS, phone and cork board styles. |
-| `Scripts/UI/Meeting/MeetingUi.cs` | Step 3a meeting room layer: the same strip and toasts as the office, the name tag and use prompt, keys, opens the folder / ballot / whiteboard zoom, the public card and the tape deck. |
-| `Scripts/UI/Meeting/MeetingFolder.cs` | The folder's tablet laid over the tablet screen: Eylemler (Soruştur, Kaydı sızdır), Sohbet (meeting chat + texts), Havale, Dosya, Kurallar. |
+| `Scripts/UI/Meeting/MeetingUi.cs` | Meeting room layer: the same strip and toasts as the office, the name tag and use prompt, keys, opens the folder / ballot / whiteboard zoom / projector zoom (3b), drives the projector and the ceremony camera (desk opening, results), the "on the projector" note. |
+| `Scripts/UI/Meeting/MeetingFolder.cs` | The folder's tablet laid over the tablet screen: Eylemler (Soruştur, Kaydı sızdır), Sohbet (meeting chat + texts), Havale, Dosya (in the results: the full reveal), Kurallar. |
 | `Scripts/UI/Meeting/MeetingBallot.cs` | The ballot paper: one layout drawn into the paper's texture (what folds and flies) and laid over it while held; marks, drop (sends the votes), a fresh paper, the auto drop near the end. |
-| `Scripts/UI/Meeting/MeetingBoard.cs`, `MeetingSlide.cs`, `MeetingText.cs` | The live suç tahtası on both whiteboards; the public card (3b: the projector); the "Şimdi" line, prompts and name tags. |
+| `Scripts/UI/Meeting/MeetingBoard.cs`, `MeetingText.cs` | The live suç tahtası on both whiteboards; the "Şimdi" line, prompts and name tags. |
+| `Scripts/UI/Meeting/MeetingProjector.cs` | Step 3b: the projector at the head of the table, a 1280×720 panel rendered onto the screen (`WorldPanel.CreateOffscreen` → `MeetingRoom.SetProjector`): dossier deck, leaked recording (TapeDeck), votes, verdicts, crisis, defence, desk opening, results. |
+| `Scripts/UI/Meeting/MeetingTimeline.cs` | Step 3b: `DeskOpening` (one timeline for the projector count, the box, the payout on the table and the camera) and `BallotDrops` (papers in the box per vote round, from the public VoteCast events). |
+| `Scripts/UI/Meeting/MeetingReveal.cs` | Step 3b: the full reveal in the folder's Dosya tab at Results (balances and their prim log, who robbed whom, every vote, desk openings, transfers, task choices, incidents); `RevealMemory` (this client's own task groups). |
+| `Scripts/UI/Meeting/MeetingSlide.cs` | What is left on screen of the 3a public card: the results bar (my place, Lobiye dön / Tekrar / Çık, the reveal, projector or table) and the abandoned card. |
 | `Scripts/Rooms/MeetingRoom.Props.cs`, `Scripts/Net/MeetingGaze.cs` | World side of step 3a (the folder lift, the paper fold and flight, the ballot box and its pile, the boards); shared gaze (8 Hz presentation packets) and `BotGazer`. |
+| `Scripts/Rooms/MeetingRoom.Stage.cs` | World side of step 3b: the defender stands up (chair rolls back, standing clips, the spotlight follows, the local camera rises), the projector as everyone's point of attention, the desk payout (bundles at the fired colleague's place sliding to the voters). |
 | `Scripts/UI/Office/ToastStack.cs` | The corner notes shared by the office and the meeting room. |
-| `Scripts/UI/Dev/MeetingMock.cs`, `UI/Resources/ui/styles/meeting.uss` | Meeting room mocks (`-uimock "v5.meeting*"`, `"v5.office_partner*"`); meeting room, tablet, paper and whiteboard styles. |
+| `Scripts/UI/Dev/MeetingMock.cs`, `MeetingMock3b.cs`, `UI/Resources/ui/styles/meeting.uss`, `projector.uss` | Meeting room mocks (`-uimock "v5.meeting*"`, `"v5.office_partner*"`); meeting room, tablet, paper, whiteboard, results bar and projector styles. |
 
 **Office (v5 step 1).** Cursor locked, mouse look; WASD stands up from the chair and walks (2 m/s, local only:
 `Scripts/Rooms/OfficeWalker.cs` collides a 0.24 m circle with the walls and the furniture footprints that
@@ -156,13 +161,11 @@ Presentation only: nothing reaches the engine, logs or analytics.
 | Ballot paper | Only during a vote (when you have ballots): a paper (runtime mesh, two halves) and a pencil (`RmPencil`) lie beside the folder. E on it (or E with nothing under the crosshair) brings it up; click the box next to a name (one column per ballot when a meeting has two failed tasks; E on a colleague marks them). "Katla ve kutuya at" (E) sends the votes, folds the paper and drops it into the box; a fresh paper comes back and replaces the vote if dropped. Final vote: an extra "Boş oy (çekimser)" row; suç and crisis votes: none (an empty ballot counts against you, as before). 1.6 s before the end a marked paper you did not drop goes in for you. |
 | Ballot box | `RmBallotBox` drops onto the table centre for each vote and stays for its verdict. Every `VoteCast` event (anyone's, never the content) flies a folded paper from that seat into the slot, rattles the box and adds a paper to the visible pile. |
 
-The strip's "Şimdi" line (`MeetingText.Now`) points at the folder, the paper or the board; toasts: texts and meeting chat
-(when the chat tab is not open), prim received, blame, investigations, leaks, firings, rejections, phase changes. Until
-step 3b the public card (`MeetingSlide`, top left: dossier, vote progress, verdicts, crisis result, defence order with the
-speaker's countdown, the desk reveal, results with the buttons and the detail tabs, centred with the cursor) and the
-cassette deck (bottom left, while a leak plays) stay as cards over the room; their builders write into any element, so 3b
-can render them onto the projector canvas. Keys: mouse look, E use / pick up / mark / drop, Q folder, V push-to-talk,
-Esc put down → menu.
+The strip's "Şimdi" line (`MeetingText.Now`) points at the folder, the paper, the board or the projector; toasts: texts
+and meeting chat (when the chat tab is not open), prim received, blame, investigations, leaks, rejections, phase changes
+(no firing toast since 3b: the desk opening is the moment). In 3a the public information was a card over the room; 3b
+moved it onto the projector (below). Keys: mouse look, E use / pick up / mark / drop / zoom, Q folder, Tab projector
+(again: back), V push-to-talk, Esc put down → menu.
 
 **Partner call (office, step 3a).** When a pair / trio task starts (Client Bonus, Petty Cash) a toast names the partner(s)
 and the key ("Ortağın: Yeşil · Aramak için Tab"). During that task, its reveal and its break the desk phone pins the
@@ -172,16 +175,81 @@ automatically. 15 s into a pair task without an outgoing call (and a human partn
 pazarlık edebilirsin (Tab)" shows once per task, only in the player's first three matches (PlayerPrefs
 `v5.matches_played`; not counted for UI mocks and `-bot`).
 
+**Meeting room (v5 step 3b).** docs/V5_INTERACTION.md §3: the projector, the leaked recording, the defence, the desk
+opening and the results.
+
+*Projector* (`MeetingProjector`). A 1280×720 UI panel rendered into a texture that `MeetingRoom.SetProjector` puts on the
+canvas at the head of the table (the default slide comes back when no match runs). Same template as the default slide:
+green bands with a gold rule, cream body, navy ink, stamp red; titles 56–64 px and lines 34–40 px so it reads from the far
+seats. Header: what is on (Loc.Upper kicker) and the phase clock; footer: "Projektöre bak: Tab · Klasör: Q" and page dots.
+
+| When | On the projector |
+|---|---|
+| Meeting dossier / discussion | A deck: the agenda (failed tasks, the ballots everyone has, the roster), then one slide per dossier entry with a stamp (İHBAR, SORUŞTURMA, SIZINTI, KASA AÇIĞI, …), the sentence and the faces involved with their role (an investigation says its result: "Sarı hepsini almış!" or "haksız soruşturma"), then the leaked recordings and their state. A slide every 6.5 s; a new entry jumps in, stamps itself and stays 9 s. |
+| Final discussion | The candidates with MÜHÜRLÜ stamps, the crisis result (who got the suç, the board shift "6 → 10" with ADAY / MÜHÜRLÜ), the leaks. |
+| A leaked recording (4 s before to 3 s after) | The cassette deck (`TapeDeck`, art `meeting_v3/tape_player`): "Sarı ↔ Yeşil" on the label, the leaker, both faces (the talking one lights up), live waveform and level meter, "Dinletiliyor 0:03 / 0:07"; the audio plays as before. Everyone without a fresh gaze looks at the screen (`MeetingRoom.SetAttentionProjector`); bots too (`BotGazer`). |
+| Votes | What is voted (the candidates for a firing vote, "boş oy verilebilir"), one paper per colleague that turns over when theirs is in the box (`BallotDrops`, never the content), "Kutuda: 3 / 5 pusula"; the second firing vote also shows the first desk ("1. kovma: Pembe · 11 prim · paylaşanlar: …"). |
+| Meeting verdict, crisis verdict | The suç handed out (faces, "+2 suç"); the crisis result with the board shift. |
+| Defence | The defender's face in a spot with a voice meter, "SAVUNUYOR", the name, a big countdown (red under 5 s), the order (konuştu / şimdi konuşuyor / sırada). |
+| Desk opening (`FinalVerdict`) | `DeskOpening` timeline (10 s; shorter verdicts squeeze it): the fired colleague's face and KOVULDU, how it was decided; the drawer slides out from under the desk top (seen from above), the bundles appear one by one while the counter counts "0 → 11 PRİM", the red "11 PRİM" stamp (with the trombone), then the voters' chips "Mavi +5", what burned, "Sen +5 prim aldın". |
+| Results | The ranking by prim revealed from the last place up (prim counting up, KOVULDU stamps), then the winner(s) with the HAFTANIN ELEMANI stamp and a cheer. |
+
+Tab, or E on the screen (a `MeetingTarget.Projector` collider over the frame), frames the screen (`PovMode.MeetingProjector`,
+no mouse-look, the strip hides, "Projektör · Tab / E / Esc: masaya dön"). Every seat can also turn to it: the seated yaw
+stays ±55° except on the projector's side, which opens up to the projector + 12° (`PovCameraRig.SetLimits(min, max, …)`);
+turned more than 40° aside you lean in over the table (up to 0.28 m) to see past the colleague beside you.
+When the projector shows a leak, the defence, the desk opening or the results and less than 60 % of it is on screen, a small
+note bottom left says so ("Projektörde: kayıt dinletiliyor · bak: Tab").
+
+*Defence.* The spotlit defender stands up (`MeetingRoom.Stage`): the chair rolls back 0.55 m and turns a little, the bean
+rises 0.26 m against the table edge (the beans' legs are shorter than the chair is high, so the standing clips would make
+the defender smaller: the seated upper body stays, with the talk gestures while the voice is heard), the spotlight aims at
+the standing head; a local defender's camera rises 0.28 m. Everyone without a fresh gaze looks at the defender; bots do
+92 % of the time; humans keep free look.
+
+*Desk opening and payout.* When a firing's verdict starts (and nothing is in your hands) the camera goes to the projector
+by itself for the count, then back to the table looking at the fired colleague's place (any key takes over;
+`MeetingUi.NoAutoCamera` turns it off). After the count the fired colleague takes the box (`SetFired`), their desk appears
+as bundles of five (`RmBundle`, loose `RmBill`, at most 16 bundles) at their place, and the shares slide to the places of
+the voters (`MeetingRoom.StartPayout`; what cannot be split curls up and burns). The bundles stay on the table until the
+match ends, so in 5–6 player matches the first payout lies on the table during the second vote. A late joiner sees them
+where they ended up.
+
+*Results.* The camera goes to the projector for the ceremony; the cursor is free for the results bar at the bottom
+(`MeetingSlide`: my place, Lobiye dön (host) / Tekrar oynamak istiyorum / Oyundan çık, "Tüm açılış: klasör (Q)",
+"Projektör / Masaya dön (Tab)"). Q opens the folder on Dosya with the full reveal (`MeetingReveal`, tabs): Bakiyeler (every
+prim and its log: start, tasks, cash/whistle, investigation, transfers, desk), Kim kimi soydu (the player's own story in
+first person, "Sarı benden 2 prim aldı ve yine de beni kovdu!", then every Client Bonus robbery and Petty Cash taking; the
+pairs come from this client's own groups or from the payouts when only one pairing fits, else taker and victim are
+listed apart), Bütün oylar, Masa açılışları, Havaleler, Görev seçimleri, Olaylar.
+
+*3a leftovers fixed in 3b.* A blank paper in the final is a vote: the board, the name tags and the projector say "pusula
+attı" for every paper in the box this round (`BallotDrops`, from the VoteCast events and my own drop; the engine still
+reports an abstention as an empty ballot). The ballot box stands across the table with a label plate on both long sides
+(art: `RmBallotBox` back plate, layout yaw 90°). The pencil draws each new X on the held paper. Office toasts are cleared
+when a match closes. The results card under the HUD strip is gone (the results bar sits at the bottom).
+
 Meeting room scenarios (`-uimock "v5.meeting*"`): `v5.meeting_look` (everyone looks at you, a colleague talks, a name
 tag, colleagues looking at each other, looking down at the table), `v5.meeting_board` / `v5.meeting_board_stand` (the
 board from the seat, zoomed, after the crisis with stamps; the right row's board on wheels), `v5.meeting_folder` (prompt,
 Eylemler, Sohbet, Havale, Dosya), `v5.meeting_ballot` (paper on the table, prompt, held, two columns marked, folding,
 flying, the colleagues' papers, a fresh paper with "Kutudaki oyun"), `v5.meeting_final` (final vote with the blank
-row, dropped blank, the defence), `v5.meeting_crisis`, `v5.meeting_en`; office: `v5.office_partner`,
-`v5.office_partner_trio`, `v5.office_partner_hint`. The legacy phase scenarios (`v5.crisis_vote` … `v5.results_tabs`)
-now show the meeting room with the public card. `-scenetest` adds `s3a_*` shots (gaze, talking, both boards and their
+row, dropped blank, the defence), `v5.meeting_crisis`, `v5.meeting_en`; step 3b: `v5.meeting_projector` (from the seat,
+zoomed, deck slides, a new investigation sliding in), `v5.meeting_projector_far` / `_farright` (the far seats of both rows),
+`v5.meeting_projector_final` (candidates, crisis and board shift, verdicts, a vote, the firing vote), `v5.meeting_leak`
+(everyone turns to the screen, the note out of view, zoomed with the waveform), `v5.meeting_defence` (standing defender in
+the spotlight, the projector, me defending), `v5.meeting_reveal` (drawer, count, stamp, back to the table, box, bundles
+sliding, landed), `v5.meeting_reveal6` (first opening and payout, the second vote with the bundles on the table, the
+second opening), `v5.meeting_results` / `_results4` (ceremony, reveal tabs, results bar), `v5.meeting_ballot_pen`, and
+English `v5.meeting_projector_en`, `v5.meeting_leak_en`, `v5.meeting_reveal_en`, `v5.meeting_results_en`; office:
+`v5.office_partner`, `v5.office_partner_trio`, `v5.office_partner_hint`. The legacy phase scenarios (`v5.crisis_vote` … `v5.results_tabs`)
+now show the meeting room with the projector (`v5.results_tabs` opens the folder's reveal tabs). `-scenetest` adds `s3a_*` shots (gaze, talking, both boards and their
 zoom, the folder on the table / lifting / held, the paper on the table / held / folding / flying, the box with a pile,
-the box leaving). Automated matches save `room`, `folder`, `board`, `ballot` and `box` shots of the meeting phases.
+the box leaving) and `s3b_*` shots (the projector from three seats, its hover and zoom, everyone looking at it, the defender
+standing and sitting back, the local defender, the payout pile / sliding / landed, the fired box, a second payout beside
+the first, the ballot box label from both rows). Automated matches save `room`, `folder`, `board`, `ballot` and `box` shots
+of the meeting phases, and since 3b `projector` (dossier, votes, crisis, defence, results), `projector_seat`, the defence
+`room` (aimed at the defender), the desk opening `projector` / `payout` / `payout_end`, and the results `reveal` / `robbed`.
 
 ---
 

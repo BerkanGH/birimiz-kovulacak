@@ -58,8 +58,8 @@ Oturarak oynanır. Fare ile serbest bakılır (sağa sola yaklaşık 110°).
 |---|---|---|
 | Fare | Bak | Bak |
 | WASD | Yürü | — |
-| E / sol tık | Baktığın nesneyi kullan | Klasörü al, pusulada seç |
-| Q / Tab / R | Bilgisayar / telefon / kayıt | — |
+| E / sol tık | Baktığın nesneyi kullan | Klasörü al, pusulada seç, tahtaya / projektöre yakından bak |
+| Q / Tab / R | Bilgisayar / telefon / kayıt | Q: klasör · Tab: projektöre yakından bak (tekrar Tab: masaya dön) |
 | V | Bas-konuş | Bas-konuş |
 | Y / N | Cevapla / reddet | — |
 | Esc | Bırak / menü (Kurallar, Ayarlar) | Bırak / menü |
@@ -75,7 +75,7 @@ Oturarak oynanır. Fare ile serbest bakılır (sağa sola yaklaşık 110°).
    yazan etiket. Bilgisayardaki Görev uygulaması bu iki görev ve ihbar için tek düğmeyle nesneye götürür. Ayrıntılar
    `UI.md` (v5 → Task objects).
 3. **Toplantı:** Bakış ve paylaşılan bakış yönü, projektör, beyaz tahta, klasör, pusula ve kutu, savunma, masa açılışı.
-   İki parçaya bölündü:
+   İki parçaya bölündü; ikisi de uygulandı, adım 3 bitti:
    - *3a, uygulandı (`feature/v5-integration`):* toplantı odasında oturarak bakış (sağa sola yaklaşık 55°, toplam
      ~110°), herkesin karakteri kendi renginde, bakınca isim etiketi, konuşanın konuşma animasyonu, paylaşılan bakış
      yönü (8 Hz, sadece sunum; botlar konuşana, en çok suçu olana ya da masaya bakar), iki beyaz tahtada canlı suç
@@ -83,10 +83,25 @@ Oturarak oynanır. Fare ile serbest bakılır (sağa sola yaklaşık 110°).
      mesajlar, havale, dosya, kurallar), oylamada kâğıt ve kalem (isim işaretlenir, kâğıt katlanıp masadaki kutuya
      atılır, süre bitene kadar yeni kâğıtla değiştirilir; finalde boş oy satırı), kutuya düşen her kâğıt herkese görünür
      (içeriği değil). Ofiste ortak arama: ikili/üçlü görevde ortak rehberin başında, Tab ile seçili açılır, E/Enter
-     arar; ilk üç maçta 15 sn sonra ipucu. Ayrıntılar `UI.md` (Meeting room). Projektörün işi (dosya, kararlar, savunma
-     sırası, masa açılışı, sonuçlar) ve kasetçalar şimdilik odanın üstünde kart olarak duruyor.
-   - *3b, sırada:* projektör slaytları (dosya: başarısız görevler, ihbarlar, soruşturmalar), sızan kaydın projektörde
-     çalınması, savunmada ayağa kalkma ve spot, masa açılışı projektörde, sonuçlar projektörde ve ayrıntılar klasörde.
+     arar; ilk üç maçta 15 sn sonra ipucu. Ayrıntılar `UI.md` (Meeting room). Projektörün işi 3b'ye kadar odanın üstünde
+     kart olarak durdu.
+   - *3b, uygulandı (`feature/v5-integration`):* projektör odanın ortak ekranı (3a'daki kartın yerini aldı). Tartışmada
+     dosya slaytları: gündem (başarısız görevler, oy sayısı), sonra her kayıt için bir slayt (ihbar, soruşturma ve sonucu,
+     sızıntı, kasa açığı, nöbet); slaytlar ~6,5 sn'de bir döner, yeni bir kayıt kayarak gelir ve daha uzun kalır. Finalde
+     adaylar (MÜHÜRLÜ) ve Kriz sonucu (suçu kim aldı, suç tahtası nasıl değişti). Oylamada kutudaki pusulalar (kimin attığı,
+     içeriği değil), hükümde dağıtılan suç. Her koltuk projektöre dönebilir (o tarafta bakış ~55° yerine projektöre kadar);
+     Tab ya da ekrana E yakından gösterir. Sızan kayıt projektörde: kasetçalar, canlı dalga formu, "Sarı ↔ Yeşil", süre;
+     ses eskisi gibi. Kayıt çalarken herkes (botlar da) projektöre bakar. Savunmada savunan ayağa kalkar (sandalyesi geri
+     kayar, spot başını izler; savunan sensen kamera yükselir), botların başı ona döner; projektörde konuşan, kalan süre,
+     sıra ve ses göstergesi. Masa açılışı (her kovmadan sonra, 5–6 kişide ikinci oylamadan önce): kamera kendiliğinden
+     projektöre gider, kovulanın çekmecesi açılır, desteler sayılır ("11 PRİM" mührü), kimin paylaştığı; sonra kamera masaya
+     döner, kovulan kutusunu alır, desteler onun yerinde belirir ve paylar oy verenlerin önüne kayar (bölünemeyen yanar);
+     desteler maç sonuna kadar masada kalır. Sonuçlarda projektörde tören (sıralama alttan yukarı, kazanana "HAFTANIN
+     ELEMANI" mührü); klasörün Dosya sekmesinde tam açılış: bakiyeler ve nereden geldiği, kim kimi soydu ("Sarı benden 2
+     prim aldı ve yine de beni kovdu!"), bütün oylar, masa açılışları, havaleler, görev seçimleri, olaylar. Ekranda yalnızca
+     sonuç çubuğu (lobiye dön, tekrar oyna, çık, açılış, projektör/masa) ve projektörde bir şey olurken görüş dışındaysa
+     küçük bir not kalır. Ayrıca: finalde boş pusula da "pusula attı" sayılır (sunum), sandık kartı iki sıradan da okunur,
+     kalem X'i çizer, maç kapanınca ofis bildirimleri temizlenir. Ayrıntılar `UI.md` (Meeting room).
 4. **Sonra, ayrı karar:** Yüz yüze görüşme için ortak mola alanı (kayda girmez ama herkes görür). Oyun testinden sonra.
 
 Her adımdan sonra oyun derlenir ve botlarla doğrulanır; kullanıcı oyuna girip dener, sonra bir sonraki adıma geçilir.
