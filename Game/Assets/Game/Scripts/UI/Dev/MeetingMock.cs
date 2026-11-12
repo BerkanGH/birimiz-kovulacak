@@ -92,37 +92,41 @@ namespace BirimizKovulacak.Game
 
         // ------------------------------------------------------------------ helpers
 
-        static RoomsPresenter Presenter() { return RoomsPresenter.Instance; }
-        static MeetingRoom Room() { return RoomsPresenter.Instance != null ? RoomsPresenter.Instance.Meeting : null; }
+        internal static RoomsPresenter Presenter() { return RoomsPresenter.Instance; }
+        internal static MeetingRoom Room() { return RoomsPresenter.Instance != null ? RoomsPresenter.Instance.Meeting : null; }
 
-        static void Reset()
+        internal static void Reset()
         {
             RoomsPresenter.ForceLookInput = true;
             LineWorldDriver.MockSpeech = null;
             MeetingGaze.Clear();
+            MeetingProjector.MockDeckIndex = -1;
             _start = double.NaN;
         }
+
+        /// <summary>The next <see cref="Show"/> starts a new phase now (a second desk opening is a new FinalVerdict).</summary>
+        internal static void Fresh() { _start = double.NaN; }
 
         static void OfficeLook() { RoomsPresenter.ForceLookInput = true; LineWorldDriver.MockSpeech = null; _start = double.NaN; }
         static void OfficeAim(float yaw, float pitch) { if (Presenter() != null) { Presenter().SitDown(false); Presenter().SetLook(yaw, pitch); } }
 
-        static void Aim(float yaw, float pitch) { if (Presenter() != null) Presenter().SetLook(yaw, pitch); }
-        static void AimAt(Vector3 p) { if (Presenter() != null) Presenter().AimAt(p); }
+        internal static void Aim(float yaw, float pitch) { if (Presenter() != null) Presenter().SetLook(yaw, pitch); }
+        internal static void AimAt(Vector3 p) { if (Presenter() != null) Presenter().AimAt(p); }
 
-        static void AimAtSlot(int slot)
+        internal static void AimAtSlot(int slot)
         {
             Vector3 head;
             if (Room() != null && Room().SeatHead(slot, out head)) AimAt(head + Vector3.down * 0.12f);
         }
 
-        static void AimAtBoard()
+        internal static void AimAtBoard()
         {
             var lc = LineClient.I;
             var b = Room() != null && lc != null ? Room().BoardFor(lc.MySlot) : null;
             if (b != null) AimAt(b.bounds.center);
         }
 
-        static Vector3 PaperSpot()
+        internal static Vector3 PaperSpot()
         {
             var r = Room();
             int s = r != null ? r.LocalSeat : -1;
@@ -131,21 +135,21 @@ namespace BirimizKovulacak.Game
         }
 
         /// <summary>A colleague looks somewhere (degrees relative to their seat), held for the whole scenario.</summary>
-        static void Gaze(int slot, float yaw, float pitch) { MeetingGaze.Set(slot, yaw, pitch, 60f); }
+        internal static void Gaze(int slot, float yaw, float pitch) { MeetingGaze.Set(slot, yaw, pitch, 60f); }
 
-        static void GazeAt(int from, int to)
+        internal static void GazeAt(int from, int to)
         {
             float y, p;
             if (Room() != null && Room().GazeAngles(from, to, out y, out p)) Gaze(from, y, p);
         }
 
-        static void Speak(int slot)
+        internal static void Speak(int slot)
         {
             if (slot < 0) { LineWorldDriver.MockSpeech = null; return; }
             LineWorldDriver.MockSpeech = id => id == slot ? 0.55f + 0.4f * Mathf.Abs(Mathf.Sin(Time.time * 7f)) : 0f;
         }
 
-        static LineView Discussion(int players)
+        internal static LineView Discussion(int players)
         {
             var v = LineMock.BaseView(LinePhase.MeetingDiscussion, players, 0, 44);
             v.Meeting = LineMock.MeetingView(0, -1);
@@ -156,7 +160,7 @@ namespace BirimizKovulacak.Game
             return v;
         }
 
-        static LineView Vote(int players, int a, int b)
+        internal static LineView Vote(int players, int a, int b)
         {
             var v = LineMock.BaseView(LinePhase.MeetingVote, players, 0, 18);
             v.Meeting = LineMock.MeetingView(0, 2);
@@ -169,7 +173,7 @@ namespace BirimizKovulacak.Game
             return v;
         }
 
-        static LineFinalView Final(int[] candidates, int firings)
+        internal static LineFinalView Final(int[] candidates, int firings)
         {
             var f = new LineFinalView { FiringsTotal = firings };
             f.Candidates.AddRange(candidates);
@@ -179,7 +183,7 @@ namespace BirimizKovulacak.Game
             return f;
         }
 
-        static void Candidates(LineView v)
+        internal static void Candidates(LineView v)
         {
             foreach (var p in v.Players)
             {
@@ -188,7 +192,7 @@ namespace BirimizKovulacak.Game
             }
         }
 
-        static LineView FinalVote(int players)
+        internal static LineView FinalVote(int players)
         {
             var v = LineMock.BaseView(LinePhase.FinalVote, players, 2, 20);
             foreach (var p in v.Players) p.Blame = new[] { 3, 8, 11, 7, 2, 1 }[p.Id];
@@ -200,7 +204,7 @@ namespace BirimizKovulacak.Game
             return v;
         }
 
-        static LineView Defense(int players)
+        internal static LineView Defense(int players)
         {
             var v = LineMock.BaseView(LinePhase.FinalDefense, players, 2, 26);
             foreach (var p in v.Players) p.Blame = new[] { 3, 8, 11, 7, 2, 1 }[p.Id];
@@ -211,7 +215,7 @@ namespace BirimizKovulacak.Game
             return v;
         }
 
-        static LineView CrisisVote(int players)
+        internal static LineView CrisisVote(int players)
         {
             var v = LineMock.BaseView(LinePhase.CrisisVote, players, 2, 22);
             foreach (var p in v.Players) p.Blame = new[] { 3, 5, 6, 4, 2, 1 }[p.Id];
@@ -222,7 +226,7 @@ namespace BirimizKovulacak.Game
             return v;
         }
 
-        static LineView CrisisVerdict(int players)
+        internal static LineView CrisisVerdict(int players)
         {
             var v = LineMock.BaseView(LinePhase.CrisisVerdict, players, 2, 8);
             foreach (var p in v.Players) p.Blame = new[] { 3, 5, 10, 7, 2, 1 }[p.Id];
@@ -253,7 +257,7 @@ namespace BirimizKovulacak.Game
 
         /// <summary>Applies the view; a later view of the same phase keeps the phase's start time (same vote round, the
         /// papers stay in the box).</summary>
-        static void Show(LineView v)
+        internal static void Show(LineView v)
         {
             if (!double.IsNaN(_start) && v.Phase == _startPhase) v.PhaseStartTime = _start;
             else { _start = v.PhaseStartTime; _startPhase = v.Phase; }
@@ -275,7 +279,7 @@ namespace BirimizKovulacak.Game
             if (v != null) LineMock.SyncMessageSeq(v);
         }
 
-        static void English()
+        internal static void English()
         {
             Loc.Load("en");
             if (UIRoot.I != null) UIRoot.I.Rebuild();

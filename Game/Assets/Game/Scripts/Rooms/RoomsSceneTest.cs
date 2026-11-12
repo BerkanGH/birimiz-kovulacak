@@ -341,6 +341,9 @@ namespace BirimizKovulacak.Game
             // ---------------------------------------------------------------- v5 step 3a: gaze, whiteboards, folder, ballot, box
             yield return Step3a(p, rooms, names);
 
+            // ---------------------------------------------------------------- v5 step 3b: projector, defence, payout, box label
+            yield return Step3b(p, rooms, names);
+
             WriteMemory();
             yield return new WaitForSeconds(0.5f);
             Debug.Log("[SceneTest] done, " + _n + " shots");
@@ -413,6 +416,71 @@ namespace BirimizKovulacak.Game
             mr.SetBallot(false);
             mr.SetBallotBox(false);
             yield return Shot("s3a_box_gone", 0.6f);
+        }
+
+        IEnumerator Step3b(RoomsPresenter p, IRoomPresenter rooms, string[] names)
+        {
+            var mr = p.Meeting;
+            var six = new List<MeetingSeatInfo>();
+            for (int i = 0; i < 6; i++) six.Add(new MeetingSeatInfo { Slot = i, ColorIndex = i, Name = names[i], Connected = true });
+            float y, pt;
+            // every seat can turn to the projector (the far seats of both rows, then the near one)
+            foreach (int seat in new[] { 4, 5, 0 })
+            {
+                rooms.EnterMeeting(seat, six, "paragoz");
+                rooms.SetPovMode(PovMode.Meeting);
+                if (p.TryGetProjectorLook(out y, out pt)) p.SetLook(y, pt);
+                Debug.Log("[SceneTest] seat " + seat + " projector yaw " + y.ToString("F0") + " pitch " + pt.ToString("F0"));
+                yield return Shot("s3b_projector_from_seat" + seat, 1.2f);
+            }
+            p.AimAt(mr.ProjectorPoint);
+            yield return Shot("s3b_projector_hover", 0.8f);
+            Debug.Log("[SceneTest] hovered meeting " + Rooms.HoveredMeeting);
+            rooms.SetPovMode(PovMode.MeetingProjector);
+            yield return Shot("s3b_projector_zoom", 1.4f);
+            rooms.SetPovMode(PovMode.Meeting);
+            // a leak plays: everyone without a gaze looks at the screen
+            p.SetLook(0f, 6f);
+            mr.SetAttentionProjector(true);
+            yield return Shot("s3b_attention_projector", 1.4f);
+            mr.SetAttentionProjector(false);
+            // the defender stands up in the spotlight; then the local player defends (the camera rises)
+            rooms.SetSpotlight(3);
+            float t0 = Time.time;
+            while (Time.time - t0 < 1.4f) { rooms.SetSpeaking(3, 0.55f + 0.4f * Mathf.Abs(Mathf.Sin(Time.time * 7f))); yield return null; }
+            yield return Shot("s3b_defender_standing", 0.0f);
+            p.AimAt(SeatHead(p, 3) + Vector3.down * 0.4f);
+            yield return Shot("s3b_defender_standing_close", 0.8f);
+            rooms.SetSpotlight(-1);
+            yield return Shot("s3b_defender_sits_back", 1.2f);
+            rooms.SetSpotlight(0);
+            p.SetLook(0f, 10f);
+            yield return Shot("s3b_local_defender_standing", 1.6f);
+            rooms.SetSpotlight(-1);
+            yield return new WaitForSeconds(0.8f);
+            // the desk payout: 23 prim at Elif's place, 7 each slides to three voters, 2 burn
+            p.SetLook(8f, 26f);
+            mr.StartPayout(3, 23, new List<int> { 0, 1, 4 }, 7, 0.2f, 1.0f, 1.2f, false);
+            yield return Shot("s3b_payout_pile", 0.55f);
+            yield return Shot("s3b_payout_sliding", 0.6f);
+            yield return Shot("s3b_payout_landed", 1.8f);
+            rooms.SetFired(3);
+            yield return Shot("s3b_fired_box", 1.0f);
+            // a second payout lands beside the first one
+            mr.StartPayout(5, 6, new List<int> { 0, 1 }, 3, 0f, 0.3f, 0.8f, false);
+            yield return Shot("s3b_payout_second", 2.0f);
+            Debug.Log("[SceneTest] payout piles " + mr.PayoutPiles + " moving " + mr.PayoutsMoving);
+            rooms.SetFired(-1);
+            mr.ClearPayouts();
+            // the ballot box label reads from both rows
+            mr.SetBallotBox(true, true);
+            yield return new WaitForSeconds(0.6f);
+            p.AimAt(mr.BallotBox.position + Vector3.up * 0.12f);
+            yield return Shot("s3b_box_label_left_row", 0.8f);
+            rooms.EnterMeeting(1, six, "paragoz");
+            p.AimAt(mr.BallotBox.position + Vector3.up * 0.12f);
+            yield return Shot("s3b_box_label_right_row", 1.0f);
+            mr.SetBallotBox(false);
         }
 
         static Vector3 SeatHead(RoomsPresenter p, int slot)
