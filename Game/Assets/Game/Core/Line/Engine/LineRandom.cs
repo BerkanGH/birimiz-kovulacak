@@ -8,6 +8,8 @@ namespace BirimizKovulacak.Core
     {
         private ulong state;
         internal LineRandom(int seed) { state = unchecked((ulong)(long)seed); }
+        /// <summary>An independent copy at the same position (read-only previews: drawing from it leaves this one unchanged).</summary>
+        internal LineRandom Copy() { var r = new LineRandom(0); r.state = state; return r; }
         internal ulong Next()
         {
             unchecked
