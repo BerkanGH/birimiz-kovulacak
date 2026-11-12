@@ -1063,7 +1063,7 @@ namespace BirimizKovulacak.Core
             {
                 situationPlanned = true;
                 var l = Situation(v, seg);
-                if (l != null) chat.Add(new Due { At = v.PhaseStartTime + len * (0.1 + 0.13 * rank + 0.06 * U("sit" + seg)), Line = l });
+                if (l != null) chat.Add(new Due { At = v.PhaseStartTime + len * (0.08 + 0.12 * rank + 0.05 * U("sit" + seg)), Line = l });
             }
             // the defence: my turn on my feet (a subtitle over my character for everyone)
             if (!defended && v.Phase == LinePhase.FinalDefense && v.Final != null && v.Final.Defender == Seat)
@@ -1128,11 +1128,12 @@ namespace BirimizKovulacak.Core
             return from + (2.0 + 1.6 * BotRank(v)) * k;
         }
 
-        /// <summary>My index among the bot seats (spreads the bots' lines over the discussion).</summary>
+        /// <summary>My place in seat order (spreads the bots' lines over the discussion; a -bot player is not flagged as a
+        /// bot by the engine, so every seat counts).</summary>
         int BotRank(LineView v)
         {
             int rank = 0;
-            foreach (var p in v.Players) if (p.IsBot && p.Id < Seat) rank++;
+            foreach (var p in v.Players) if (p.Id < Seat) rank++;
             return rank;
         }
 
