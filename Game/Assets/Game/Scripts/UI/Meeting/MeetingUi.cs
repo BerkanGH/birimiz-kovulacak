@@ -81,9 +81,9 @@ namespace BirimizKovulacak.Game
             Bold(T("office.now_label"), "of-now-label").NoPick().AddTo(nowRow);
             _now = Text("", "of-now").NoPick().AddTo(nowRow);
 
-            _toasts = new ToastStack(Root);
-            // v5 bot talk: a bot's chat line over its head (the defence: a subtitle over the standing character)
+            // v5 bot talk: a bot's chat line over its head (the defence: a subtitle over the standing character); under the toasts
             _subs = new MeetingSubtitles(Root);
+            _toasts = new ToastStack(Root);
 
             // ---- push-to-talk
             _mic = Box("of-mic").NoPick().AddTo(Root);
@@ -178,8 +178,10 @@ namespace BirimizKovulacak.Game
                 if (m.From == lc.MySlot) continue;
                 string botKey;
                 List<int> botArgs;
-                if (m.Kind == MessageKind.MeetingChat && BotSpeech.IsBotLine(m, out botKey, out botArgs))
-                    _subs.Say(lc, lc.View, m.From, BotSpeech.Text(botKey, botArgs));
+                // a bot's line shown over its head needs no corner note as well
+                bool seen = m.Kind == MessageKind.MeetingChat && BotSpeech.IsBotLine(m, out botKey, out botArgs)
+                            && _subs.Say(lc, lc.View, m.From, BotSpeech.Text(botKey, botArgs)) && !_folder.IsOpen && !_ballot.IsOpen && !_boardZoom && !_projZoom;
+                if (seen) { Sfx.Play("email_ding", 0.3f); continue; }
                 string text = BotSpeech.MessageText(m);
                 if (text.Length > 70) text = text.Substring(0, 68) + "…";
                 string who = m.Kind == MessageKind.System ? T("msg.system")
@@ -491,11 +493,12 @@ namespace BirimizKovulacak.Game
         {
             bool ceremony = v.Phase == LinePhase.FinalVerdict || v.Phase == LinePhase.Results;
             if (!ceremony) { _projAuto = false; return; }
-            if (v.PhaseStartTime != _autoKey)
+            // (decided once the room is there: arriving straight into a ceremony, the first frames have no room yet)
+            if (v.PhaseStartTime != _autoKey && RoomsPresenter.Instance != null && RoomsPresenter.Instance.InMeeting)
             {
                 _autoKey = v.PhaseStartTime;
                 bool late = v.Phase == LinePhase.FinalVerdict && DeskOpening.Time(v, now) > DeskOpening.PileAt - 0.5f;
-                if (!late && !NoAutoCamera && !_folder.IsOpen && !_ballot.IsOpen && RoomsPresenter.Instance != null && RoomsPresenter.Instance.InMeeting)
+                if (!late && !NoAutoCamera && !_folder.IsOpen && !_ballot.IsOpen)
                 {
                     OpenProjector();
                     _projAuto = true;

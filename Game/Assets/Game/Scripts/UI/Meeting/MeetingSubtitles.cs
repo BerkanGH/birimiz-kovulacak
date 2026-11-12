@@ -34,10 +34,11 @@ namespace BirimizKovulacak.Game
             }
         }
 
-        /// <summary>A bot said <paramref name="text"/> in the meeting chat.</summary>
-        public void Say(LineClient lc, LineView v, int slot, string text)
+        /// <summary>A bot said <paramref name="text"/> in the meeting chat. True when the bubble is on screen (its head is in
+        /// view, or it is the defence subtitle, which always shows).</summary>
+        public bool Say(LineClient lc, LineView v, int slot, string text)
         {
-            if (slot < 0 || slot >= Slots || lc == null || v == null) return;
+            if (slot < 0 || slot >= Slots || lc == null || v == null) return false;
             bool defence = v.Phase == LinePhase.FinalDefense && v.Final != null && v.Final.Defender == slot;
             _defence[slot] = defence;
             _full[slot] = text ?? "";
@@ -54,6 +55,11 @@ namespace BirimizKovulacak.Game
             var room = RoomsPresenter.Instance != null ? RoomsPresenter.Instance.Meeting : null;
             Vector3? at = room != null && room.TryGetHead(slot, Vector3.zero, out head) ? head : (Vector3?)null;
             BotSpeech.Speak(slot, text, at);
+            if (defence) return true;
+            var cam = RoomsPresenter.Instance != null ? RoomsPresenter.Instance.PovCamera : null;
+            if (cam == null || !at.HasValue) return false;
+            var sp = cam.WorldToScreenPoint(at.Value);
+            return sp.z > 0.2f && sp.x > Screen.width * 0.04f && sp.x < Screen.width * 0.96f && sp.y > Screen.height * 0.12f && sp.y < Screen.height * 0.98f;
         }
 
         public void Clear()
