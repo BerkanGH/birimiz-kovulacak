@@ -6,13 +6,14 @@ Rules: `docs/V5_ENGINE_SPEC.md` (normative) and `docs/V5_DESIGN.md` (Turkish, ra
 "History" line describes the v2–v4 UI, which no longer exists in code.
 
 During a match the player is either **in their own office** (Intro, tasks, breaks, crisis calls: the diegetic office
-layer of docs/V5_INTERACTION.md step 1) or **in the meeting room** (meetings, crisis vote, final, results: one UI Toolkit
-screen built in code over the first-person room; step 3 will replace it). Shell screens (menu, lobby, settings,
-how-to, first-launch flow) are the older shell code, updated for v5 where needed.
+layer of docs/V5_INTERACTION.md step 1) or **in the meeting room** (meetings, crisis vote, final, results: the seated
+meeting room layer of step 3a, below). The old one-window match screen (`PlayUi`) is only the fallback without the rooms
+scene. Shell screens (menu, lobby, settings, how-to, first-launch flow) are the older shell code, updated for v5 where
+needed.
 
 | File (under `Game/Assets/Game/`) | What |
 |---|---|
-| `Scripts/UI/Play/PlayUi.cs` | The match screen: header, players column, focus card, phase details, phone, transfers, events, messages. |
+| `Scripts/UI/Play/PlayUi.cs` | The old one-window match screen (header, players column, focus card, phase details, phone, transfers, events, messages); since step 3a only the fallback without the rooms scene. |
 | `Scripts/UI/Play/PlayText.cs` | Typed data → sentences (`v5.*` keys): phases, tasks, dossier lines, events. |
 | `Scripts/UI/Play/TapeDeck.cs` | Cassette deck shown while a leaked recording plays (compact inside the centre column). |
 | `UI/Resources/ui/styles/play.uss` | Styles of the match screen (logical 1920×1080, scaled; same layout at 1600×900). |
@@ -21,7 +22,7 @@ how-to, first-launch flow) are the older shell code, updated for v5 where needed
 | `Scripts/UI/ShellOverlays.cs` | First-launch flow (language, consent, 3 intro cards in `*.privacy.json`), moment marker. |
 | `Scripts/UI/MenuScreens.cs`, `UIRoot.cs` | Menu, lobby, pause (how-to button in all three); layers, Esc routing, cursor. |
 | `Scripts/UI/Dev/LineMock.cs` | UI mocks: hand-made `LineView`s pushed into `LineClient` (`-uimock "v5.*"`). |
-| `Scripts/UI/Play/PlayKit.cs`, `PlayBlocks.cs` | Shared by the meeting screen and the office: play-styled buttons, live labels, the content-diffed `PlaySection`; the task card, rules, intro, transfer, messages and call-log blocks (no rule text is duplicated). |
+| `Scripts/UI/Play/PlayKit.cs`, `PlayBlocks.cs` | Shared by the meeting room, the office and the fallback screen: play-styled buttons, live labels, the content-diffed `PlaySection`; the task card, rules, intro, transfer, messages and call-log blocks, the meeting / final info, the desk-reveal card, the results ballots (no rule text is duplicated). |
 | `Scripts/UI/Office/OfficeUi.cs` | Office layer: thin HUD strip, toasts, incoming-call card, call pill, use prompt, hotkeys; opens the desk objects and drives the office camera. |
 | `Scripts/UI/Office/OfficeComputer.cs` | "KOVA OS" laid exactly over the monitor screen: apps Görev, Havale, Mesajlar, Arama geçmişi, Kurallar; sticky note with the "Şimdi" hint; taskbar. |
 | `Scripts/UI/Office/OfficePhone.cs` | Desk phone face (left half; the 3D phone and the lifted handset stay visible): LCD, contacts = line board, call actions, missed calls. |
@@ -32,6 +33,13 @@ how-to, first-launch flow) are the older shell code, updated for v5 where needed
 | `Scripts/UI/Office/OfficeText.cs`, `ScreenFade.cs` | "Şimdi: …" sentence and use prompts; the black fade of office ↔ meeting switches. |
 | `Scripts/UI/Dev/OfficeMock.cs` | Office mocks (`-uimock "v5.office*"`). |
 | `UI/Resources/ui/styles/office.uss` | Office layer, OS, phone and cork board styles. |
+| `Scripts/UI/Meeting/MeetingUi.cs` | Step 3a meeting room layer: the same strip and toasts as the office, the name tag and use prompt, keys, opens the folder / ballot / whiteboard zoom, the public card and the tape deck. |
+| `Scripts/UI/Meeting/MeetingFolder.cs` | The folder's tablet laid over the tablet screen: Eylemler (Soruştur, Kaydı sızdır), Sohbet (meeting chat + texts), Havale, Dosya, Kurallar. |
+| `Scripts/UI/Meeting/MeetingBallot.cs` | The ballot paper: one layout drawn into the paper's texture (what folds and flies) and laid over it while held; marks, drop (sends the votes), a fresh paper, the auto drop near the end. |
+| `Scripts/UI/Meeting/MeetingBoard.cs`, `MeetingSlide.cs`, `MeetingText.cs` | The live suç tahtası on both whiteboards; the public card (3b: the projector); the "Şimdi" line, prompts and name tags. |
+| `Scripts/Rooms/MeetingRoom.Props.cs`, `Scripts/Net/MeetingGaze.cs` | World side of step 3a (the folder lift, the paper fold and flight, the ballot box and its pile, the boards); shared gaze (8 Hz presentation packets) and `BotGazer`. |
+| `Scripts/UI/Office/ToastStack.cs` | The corner notes shared by the office and the meeting room. |
+| `Scripts/UI/Dev/MeetingMock.cs`, `UI/Resources/ui/styles/meeting.uss` | Meeting room mocks (`-uimock "v5.meeting*"`, `"v5.office_partner*"`); meeting room, tablet, paper and whiteboard styles. |
 
 **Office (v5 step 1).** Cursor locked, mouse look; WASD stands up from the chair and walks (2 m/s, local only:
 `Scripts/Rooms/OfficeWalker.cs` collides a 0.24 m circle with the walls and the furniture footprints that
@@ -122,11 +130,58 @@ looking sharply right and left from the chair). The room itself: `-scenetest` (n
 standing, walking into the desk, the door lamp, the board zoom, and step 2: the cash box states and the mitten, the
 roster pencil, the drawer stacks, the hands looking aside, nameplates "MAVİ / YEŞİL / IŞIK").
 
-Scenarios: `v5.task`, `v5.task_shift`, `v5.reveal` (witness; all three open the office computer), `v5.meeting`, `v5.meeting_vote` (leak playing over the
-ballots), `v5.crisis_vote`, `v5.crisis_verdict`, `v5.sealed` (I am a candidate), `v5.defense`, `v5.final` (second
+Scenarios: `v5.task`, `v5.task_shift`, `v5.reveal` (witness; all three open the office computer), `v5.crisis_vote`, `v5.crisis_verdict`, `v5.sealed` (I am a candidate), `v5.defense`, `v5.final` (second
 firing vote), `v5.verdict`, `v5.verdict_tie`, `v5.results`, `v5.results_tabs`, `v5.howto` (all pages), `v5.en_task`,
 `v5.en_verdict`. Automated matches (`Tools/run_local4.ps1 -Bots`) also save one screenshot per phase per slot under
 `<run>/shots`.
+
+**Meeting room (v5 step 3a).** docs/V5_INTERACTION.md §3. Meetings, the crisis vote, the final and the results are played
+seated at the meeting table (the door lamp and the black fade of step 1 lead there). Mouse look about ±55° yaw, 30° up,
+50° down (`MEETING_ANCHORS` in `build_rooms.py`). Every colleague's bean sits in their colour; looking at one shows a name
+tag (name in their colour, suç, ADAY / KOVULDU / BOT, "oy verdi" during a vote, what E does). The current speaker (voice
+level from `VoiceSystem.GetSpeechLevel`) plays the SitTalk clip with mouth flaps plus a code-driven squash and bob.
+
+*Shared gaze ([KARAR] 4).* `MeetingGaze` sends my look (yaw/pitch relative to my seat, whole degrees, `sbyte`) to the host
+at 8 Hz, unreliable, only when it changed or once a second (`NetSession.GazeRpc`); the host adds its bots (`BotGazer`:
+the defender during the defence, else mostly the speaker, sometimes the colleague with the most suç or someone else,
+sometimes the table, with drift) and sends everyone one packet (`GazeAllRpc`, `[n][slot, yaw, pitch]…`). Each client turns
+the heads (`MeetingRoom.SetGaze` → `SeatedBean.SetGaze`, head 70 % / body 30 %, smoothed); without fresh gaze the old
+automatic glances. Holding the folder or the paper sends "looking down". Automated players (`-bot`) look like a bot.
+Presentation only: nothing reaches the engine, logs or analytics.
+
+| Object | What |
+|---|---|
+| Whiteboards | The live suç tahtası (`MeetingBoard`, one 1024×512 texture on both boards): rows in seat order with tally marks and the number, ADAY / MÜHÜRLÜ / KOVULDU, "oy verdi", "+N" after a verdict; on the right the meeting's failed tasks or the candidates and the defence order. The wall board faces the left row, the board on wheels (`RmWhiteboardStand`) the right row. E zooms in (`PovMode.MeetingBoard`), E / Esc back. |
+| Folder (tablet) | `RmFolder` in front of every seat; only yours is a target. E (or Q, or E with nothing under the crosshair outside a vote) lifts it to the camera and flips the cover open; the tablet UI is laid over the screen (`MeetingFolder`). Tabs: Eylemler (Soruştur with the rules and its cost, Kaydı sızdır per recorded call), Sohbet (meeting chat and texts in one thread; E on a colleague opens it addressed to them), Havale, Dosya (dossier, leaks, candidates, earlier firings; every vote in the results), Kurallar. Esc / E puts it down. |
+| Ballot paper | Only during a vote (when you have ballots): a paper (runtime mesh, two halves) and a pencil (`RmPencil`) lie beside the folder. E on it (or E with nothing under the crosshair) brings it up; click the box next to a name (one column per ballot when a meeting has two failed tasks; E on a colleague marks them). "Katla ve kutuya at" (E) sends the votes, folds the paper and drops it into the box; a fresh paper comes back and replaces the vote if dropped. Final vote: an extra "Boş oy (çekimser)" row; suç and crisis votes: none (an empty ballot counts against you, as before). 1.6 s before the end a marked paper you did not drop goes in for you. |
+| Ballot box | `RmBallotBox` drops onto the table centre for each vote and stays for its verdict. Every `VoteCast` event (anyone's, never the content) flies a folded paper from that seat into the slot, rattles the box and adds a paper to the visible pile. |
+
+The strip's "Şimdi" line (`MeetingText.Now`) points at the folder, the paper or the board; toasts: texts and meeting chat
+(when the chat tab is not open), prim received, blame, investigations, leaks, firings, rejections, phase changes. Until
+step 3b the public card (`MeetingSlide`, top left: dossier, vote progress, verdicts, crisis result, defence order with the
+speaker's countdown, the desk reveal, results with the buttons and the detail tabs, centred with the cursor) and the
+cassette deck (bottom left, while a leak plays) stay as cards over the room; their builders write into any element, so 3b
+can render them onto the projector canvas. Keys: mouse look, E use / pick up / mark / drop, Q folder, V push-to-talk,
+Esc put down → menu.
+
+**Partner call (office, step 3a).** When a pair / trio task starts (Client Bonus, Petty Cash) a toast names the partner(s)
+and the key ("Ortağın: Yeşil · Aramak için Tab"). During that task, its reveal and its break the desk phone pins the
+partners at the top of the contacts with an ORTAK tag; Tab opens the phone with the first partner selected (LCD:
+"Ortağın: YEŞİL", "E / Enter: ara"); E or Enter calls the selected contact, ↑ / ↓ change it. Nothing is called
+automatically. 15 s into a pair task without an outgoing call (and a human partner) the hint "İpucu: Ortağını arayıp
+pazarlık edebilirsin (Tab)" shows once per task, only in the player's first three matches (PlayerPrefs
+`v5.matches_played`; not counted for UI mocks and `-bot`).
+
+Meeting room scenarios (`-uimock "v5.meeting*"`): `v5.meeting_look` (everyone looks at you, a colleague talks, a name
+tag, colleagues looking at each other, looking down at the table), `v5.meeting_board` / `v5.meeting_board_stand` (the
+board from the seat, zoomed, after the crisis with stamps; the right row's board on wheels), `v5.meeting_folder` (prompt,
+Eylemler, Sohbet, Havale, Dosya), `v5.meeting_ballot` (paper on the table, prompt, held, two columns marked, folding,
+flying, the colleagues' papers, a fresh paper with "Kutudaki oyun"), `v5.meeting_final` (final vote with the blank
+row, dropped blank, the defence), `v5.meeting_crisis`, `v5.meeting_en`; office: `v5.office_partner`,
+`v5.office_partner_trio`, `v5.office_partner_hint`. The legacy phase scenarios (`v5.crisis_vote` … `v5.results_tabs`)
+now show the meeting room with the public card. `-scenetest` adds `s3a_*` shots (gaze, talking, both boards and their
+zoom, the folder on the table / lifting / held, the paper on the table / held / folding / flying, the box with a pile,
+the box leaving). Automated matches save `room`, `folder`, `board`, `ballot` and `box` shots of the meeting phases.
 
 ---
 

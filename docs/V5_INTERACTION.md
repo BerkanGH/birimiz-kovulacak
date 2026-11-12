@@ -75,6 +75,18 @@ Oturarak oynanır. Fare ile serbest bakılır (sağa sola yaklaşık 110°).
    yazan etiket. Bilgisayardaki Görev uygulaması bu iki görev ve ihbar için tek düğmeyle nesneye götürür. Ayrıntılar
    `UI.md` (v5 → Task objects).
 3. **Toplantı:** Bakış ve paylaşılan bakış yönü, projektör, beyaz tahta, klasör, pusula ve kutu, savunma, masa açılışı.
+   İki parçaya bölündü:
+   - *3a, uygulandı (`feature/v5-integration`):* toplantı odasında oturarak bakış (sağa sola yaklaşık 55°, toplam
+     ~110°), herkesin karakteri kendi renginde, bakınca isim etiketi, konuşanın konuşma animasyonu, paylaşılan bakış
+     yönü (8 Hz, sadece sunum; botlar konuşana, en çok suçu olana ya da masaya bakar), iki beyaz tahtada canlı suç
+     tahtası (sağ sıra için tekerlekli tahta; E ile yakınlaşır), önündeki klasör (E: Soruştur, Kaydı sızdır, sohbet,
+     mesajlar, havale, dosya, kurallar), oylamada kâğıt ve kalem (isim işaretlenir, kâğıt katlanıp masadaki kutuya
+     atılır, süre bitene kadar yeni kâğıtla değiştirilir; finalde boş oy satırı), kutuya düşen her kâğıt herkese görünür
+     (içeriği değil). Ofiste ortak arama: ikili/üçlü görevde ortak rehberin başında, Tab ile seçili açılır, E/Enter
+     arar; ilk üç maçta 15 sn sonra ipucu. Ayrıntılar `UI.md` (Meeting room). Projektörün işi (dosya, kararlar, savunma
+     sırası, masa açılışı, sonuçlar) ve kasetçalar şimdilik odanın üstünde kart olarak duruyor.
+   - *3b, sırada:* projektör slaytları (dosya: başarısız görevler, ihbarlar, soruşturmalar), sızan kaydın projektörde
+     çalınması, savunmada ayağa kalkma ve spot, masa açılışı projektörde, sonuçlar projektörde ve ayrıntılar klasörde.
 4. **Sonra, ayrı karar:** Yüz yüze görüşme için ortak mola alanı (kayda girmez ama herkes görür). Oyun testinden sonra.
 
 Her adımdan sonra oyun derlenir ve botlarla doğrulanır; kullanıcı oyuna girip dener, sonra bir sonraki adıma geçilir.
