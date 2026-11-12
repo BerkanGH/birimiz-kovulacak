@@ -339,7 +339,7 @@ namespace BirimizKovulacak.Game
                 string who = m.Kind == MessageKind.System ? T("msg.system") : mine ? F("msg.text_to", Name(m.To)) : Name(m.From);
                 var head = Bold(who, "os-msg-who").AddTo(bubble);
                 if (!mine && m.Kind != MessageKind.System) head.style.color = PlayerColor(lc.ColorOf(m.From)) * 0.8f + new Color(0f, 0f, 0f, 0.2f);
-                Text(m.Text, "os-msg-text").AddTo(bubble);
+                Text(BotSpeech.MessageText(m), "os-msg-text").AddTo(bubble);
             }
         }
 

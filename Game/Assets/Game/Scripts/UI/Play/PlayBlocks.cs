@@ -431,7 +431,7 @@ namespace BirimizKovulacak.Game
                 else if (msg.Kind == MessageKind.System) who = T("msg.system");
                 else if (msg.From == me) who = F("msg.text_to", Name(msg.To));
                 else who = F("msg.text_from", Name(msg.From));
-                Line(p, who + " " + msg.Text, msg.Kind == MessageKind.MeetingChat ? null : "pl-private");
+                Line(p, who + " " + BotSpeech.MessageText(msg), msg.Kind == MessageKind.MeetingChat ? null : "pl-private");
             }
         }
 

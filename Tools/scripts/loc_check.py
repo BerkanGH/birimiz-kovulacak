@@ -10,7 +10,9 @@ Checks (Game/Assets/StreamingAssets/Localization):
     (merged like Loc.Load: <lang>.json + every <lang>.<area>.json);
   * enum-derived families exist for every enum value: phase./hint. (LinePhase), fail. (LineFailure), verb. (LineVerb),
     decision./fire.decision. (FiringDecision), blame. (BlameReason), phone.log_missed. (CallEndReason),
-    task.<id>.name/choice.0/choice.1, vote.todo.<vote phase>.
+    task.<id>.name/choice.0/choice.1, vote.todo.<vote phase>;
+  * v5 bot talk: every line key of LineBotLines (Core/Line/Engine/LineBotTalk.cs) exists in both languages with exactly
+    the placeholders its argument signature gives ({0}.. one per argument).
 """
 import glob
 import json
@@ -22,6 +24,7 @@ ROOT = os.path.abspath(os.path.join(os.path.dirname(os.path.abspath(__file__)), 
 LOC = os.path.join(ROOT, "Game", "Assets", "StreamingAssets", "Localization")
 PLAY = [os.path.join(ROOT, "Game", "Assets", "Game", "Scripts", "UI", d) for d in ("Play", "Office", "Meeting")]
 ENUMS = os.path.join(ROOT, "Game", "Assets", "Game", "Core", "Line", "Contracts", "LineEnums.cs")
+BOT_LINES = os.path.join(ROOT, "Game", "Assets", "Game", "Core", "Line", "Engine", "LineBotTalk.cs")
 EMPTY_OK = {"v5.hint.None"}
 TASK_IDS = ["client_bonus", "petty_cash", "weekend_shift"]
 # office keys built from an enum / id: office.use.<DeskTarget>, office.app.<app id>, office.task_where.<task id>,
@@ -107,9 +110,21 @@ def main():
             k = "v5.task.%s.%s" % (t, suffix)
             if k not in tr or k not in en:
                 problems.append("missing task key: " + k)
+    # v5 bot talk: the line catalogue (key -> argument signature)
+    bot = re.findall(r'\{\s*"(bot\.[a-z0-9_.]+)",\s*"([pn]*)"\s*\}', open(BOT_LINES, encoding="utf-8").read())
+    if len(bot) < 50:
+        problems.append("bot line catalogue not found (%d keys)" % len(bot))
+    for key, sig in bot:
+        k = "v5." + key
+        want = set("{%d}" % i for i in range(len(sig)))
+        for lang, table in (("tr", tr), ("en", en)):
+            if k not in table:
+                problems.append("missing bot line (%s): %s" % (lang, k))
+            elif set(re.findall(r"\{\d+\}", table[k])) != want:
+                problems.append("bot line placeholders (%s): %s needs %s" % (lang, k, sorted(want)))
     for p in problems:
         print("FAIL", p)
-    print("loc_check: %d keys per language, %d used literals, %s" % (len(tr), len(used), "OK" if not problems else "%d problem(s)" % len(problems)))
+    print("loc_check: %d keys per language, %d used literals, %d bot lines, %s" % (len(tr), len(used), len(bot), "OK" if not problems else "%d problem(s)" % len(problems)))
     return 1 if problems else 0
 
 

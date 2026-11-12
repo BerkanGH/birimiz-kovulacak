@@ -15,6 +15,8 @@ namespace BirimizKovulacak.Game
     /// v5 step 3a (partner call): during a pair / trio task (Client Bonus, Petty Cash) the task partners are pinned at
     /// the top and marked ORTAK; Tab opens the phone with the first partner selected and E (or Enter) calls the selected
     /// contact (↑ / ↓ change it). Nothing is called automatically: whom to call stays the player's choice.
+    /// v5 bot talk: bots answer (or turn you down) and call you; with a bot on the line the LCD gives the 1 / 2 / 3 keys and
+    /// <see cref="BotCallCard"/> shows its lines beside the phone.
     /// </summary>
     public sealed class OfficePhone
     {
@@ -139,7 +141,11 @@ namespace BirimizKovulacak.Game
                 case CallStatus.Connected:
                     l1 = F("office.phone.lcd_connected", Name(ph.Other));
                     rec = PlayBlocks.RecordingCurrentCall(v);
-                    l2 = rec ? T("office.phone.lcd_recording")
+                    // v5 bot talk: a bot answers in text (the bubble beside the phone): the keys to ask it
+                    int asks = BotCallCard.BotInCall(lc, v) >= 0 ? LineBotLines.Questions(LineBotLines.QuestionSetOf(v)).Count : -1;
+                    l2 = asks > 0 ? F("office.phone.lcd_bot_hint", asks, OfficeText.Key(GameInput.HangUp))
+                        : asks == 0 ? F("office.phone.lcd_bot_hint_none", OfficeText.Key(GameInput.HangUp))
+                        : rec ? T("office.phone.lcd_recording")
                         : v.Features.RecordingsEnabled && v.Mine.RecorderUsesLeft > 0 ? F("office.phone.lcd_connected_hint", OfficeText.Key(GameInput.Record), OfficeText.Key(GameInput.HangUp))
                         : F("office.phone.lcd_connected_hint_norec", OfficeText.Key(GameInput.HangUp));
                     time = UiKit.Clock(Math.Max(0, now - ph.Since));
@@ -222,7 +228,7 @@ namespace BirimizKovulacak.Game
                 if (pl.IsBot) Tag(top, T("players.bot"));
                 Live(names, "st" + id, now, (l, t) => ContactStatus(l, id, t), "ph-status");
                 bool can = f.CallsOpen && mine.Status == CallStatus.Idle && pl.Connected;
-                var b = Btn(sel ? F("office.phone.call_key", OfficeText.Key(GameInput.Interact)) : T("act.call"), () => { Sfx.Play("tip_dial", 0.6f); Send(LineVerb.Call, id); }, "ph-call", pl.IsBot ? "pl-dimbtn" : null, sel ? "pl-primary" : null).AddTo(row);
+                var b = Btn(sel ? F("office.phone.call_key", OfficeText.Key(GameInput.Interact)) : T("act.call"), () => { Sfx.Play("tip_dial", 0.6f); Send(LineVerb.Call, id); }, "ph-call", sel ? "pl-primary" : null).AddTo(row);
                 b.SetEnabled(can);
             }
         }
@@ -250,7 +256,7 @@ namespace BirimizKovulacak.Game
                 text = T(call.Caller == id ? (me ? "office.phone.st_calling_you" : "office.phone.st_calling") : "office.phone.st_ringing");
                 cls = "ph-st-busy";
             }
-            else if (pl.IsBot) { text = T("office.phone.st_bot"); cls = "ph-st-off"; }
+            else if (pl.IsBot) { text = T("office.phone.st_bot"); cls = "ph-st-free"; }
             else { text = T("office.phone.st_free"); cls = "ph-st-free"; }
             l.SetText(text);
             l.EnableInClassList("ph-st-off", cls == "ph-st-off");

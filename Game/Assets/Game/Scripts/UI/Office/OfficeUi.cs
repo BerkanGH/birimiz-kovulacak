@@ -29,6 +29,7 @@ namespace BirimizKovulacak.Game
         readonly OfficeComputer _computer;
         readonly OfficePhone _phone;
         readonly OfficeObjects _objects;
+        readonly BotCallCard _botCard;
         readonly CorkBoard _board = new CorkBoard();
         readonly PlayState _st = new PlayState();
         readonly ToastStack _toastStack;
@@ -92,6 +93,8 @@ namespace BirimizKovulacak.Game
             _ringTime = Bold("", "of-ring-time").NoPick().AddTo(ringTop);
             _ringHint = Bold("", "of-ring-hint").NoPick().AddTo(_ring);
             _ring.Show(false);
+            // ---- v5 bot talk: the bot's lines and the question buttons while on the phone with a bot
+            _botCard = new BotCallCard(Root);
 
             // ---- mic (push-to-talk held)
             _mic = Box("of-mic").NoPick().AddTo(Root);
@@ -176,7 +179,7 @@ namespace BirimizKovulacak.Game
             foreach (var m in list)
             {
                 if (m.From == lc.MySlot || m.Kind == MessageKind.MeetingChat) continue;
-                string text = m.Text ?? "";
+                string text = BotSpeech.MessageText(m);
                 if (text.Length > 70) text = text.Substring(0, 68) + "…";
                 string who = m.Kind == MessageKind.System ? T("msg.system") : Name(m.From) + ":";
                 Toast(who + " " + text + "  ·  " + F("office.toast_open_messages", OfficeText.Key(GameInput.Computer)), "of-toast-msg", 6f);
@@ -245,6 +248,7 @@ namespace BirimizKovulacak.Game
                 // the match closed: nothing of it stays on screen (v5 step 3b: also the toasts, e.g. the partner card)
                 CloseFocus(false); _pendingPhaseToast = null; _pendingPartnerToast = null; _hintTask = -1; _objects.Reset();
                 _toastStack.Clear();
+                BotSpeech.ClearTranscript();
                 return;
             }
             var lc = LineClient.I;
@@ -476,6 +480,8 @@ namespace BirimizKovulacak.Game
             PlaceComputer(dt);
             _computer.Tick(lc, v, now, dirty, live);
             _phone.Tick(lc, v, now, dirty, live);
+            _botCard.SetPlace(_focus == Focus.Phone ? BotCallCard.Place.Phone : _hudOs ? BotCallCard.Place.Os : BotCallCard.Place.Hud);
+            _botCard.Tick(lc, v, _focus != Focus.Board && _focus != Focus.CashBox && _focus != Focus.Roster);
             _objects.Tick(lc, v, now, dirty, live, _focus);
             _boardHint.Show(_focus == Focus.Board);
             _strip.Show(_focus != Focus.Computer && _focus != Focus.Board);
@@ -520,6 +526,14 @@ namespace BirimizKovulacak.Game
                 if (Pressed(GameInput.Interact) || enter) _phone.CallSelected(v);
                 if (kb != null && kb.upArrowKey.wasPressedThisFrame) _phone.MoveSelection(-1);
                 if (kb != null && kb.downArrowKey.wasPressedThisFrame) _phone.MoveSelection(1);
+            }
+            // v5 bot talk: 1 / 2 / 3 ask the bot in my call (the bubble shows the questions)
+            var keys = UnityEngine.InputSystem.Keyboard.current;
+            if (keys != null && ph.Status == CallStatus.Connected)
+            {
+                if (keys.digit1Key.wasPressedThisFrame || keys.numpad1Key.wasPressedThisFrame) BotCallCard.AskKey(lc, v, 0);
+                if (keys.digit2Key.wasPressedThisFrame || keys.numpad2Key.wasPressedThisFrame) BotCallCard.AskKey(lc, v, 1);
+                if (keys.digit3Key.wasPressedThisFrame || keys.numpad3Key.wasPressedThisFrame) BotCallCard.AskKey(lc, v, 2);
             }
             if (_focus == Focus.Board && Pressed(GameInput.Interact)) CloseFocus();
             else if ((_focus == Focus.CashBox || _focus == Focus.Roster || _focus == Focus.Drawer) && Pressed(GameInput.Interact)) _objects.Primary(_focus, lc, v);
@@ -684,7 +698,7 @@ namespace BirimizKovulacak.Game
             _ring.EnableInClassList("of-ring-os", on);
             if (!on)
             {
-                foreach (var e in new[] { _toasts, _call, _ring })
+                foreach (var e in new[] { _toasts, _call, _ring, _botCard.Root })
                 {
                     e.style.left = StyleKeyword.Null; e.style.top = StyleKeyword.Null; e.style.right = StyleKeyword.Null; e.style.bottom = StyleKeyword.Null;
                 }
@@ -696,6 +710,9 @@ namespace BirimizKovulacak.Game
             float y = r.y + 262f;
             _call.style.left = colX; _call.style.top = y; _call.style.right = StyleKeyword.Auto;
             if (_call.IsShown()) y += 52f;
+            // the bot's speech bubble under the call pill, in the same column
+            _botCard.Root.style.left = colX; _botCard.Root.style.top = y; _botCard.Root.style.right = StyleKeyword.Auto;
+            if (_botCard.Shown) y += Mathf.Max(120f, _botCard.Root.layout.height + 10f);
             _toasts.style.left = colX; _toasts.style.top = y; _toasts.style.right = StyleKeyword.Auto;
             _ring.style.top = StyleKeyword.Auto;
             _ring.style.bottom = Mathf.Max(20f, size.y - r.yMax + 78f);
