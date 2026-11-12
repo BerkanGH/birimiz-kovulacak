@@ -158,13 +158,27 @@ namespace BirimizKovulacak.Game
                 _meetEye = t.TransformPoint(new Vector3(0f, 1.55f, -2.4f));
                 _meetRot = Quaternion.LookRotation(t.forward, Vector3.up);
             }
+            // v5 step 3b: about ±55° each way, and as far as the projector on its side (every seat can turn to it)
+            float pyaw, ppitch, ymin = -Meeting.YawLimit, ymax = Meeting.YawLimit;
+            if (Meeting.ProjectorAngles(localSlot, out pyaw, out ppitch))
+            {
+                if (pyaw > 0f) ymax = Mathf.Max(ymax, Mathf.Min(pyaw + 12f, 100f));
+                else ymin = Mathf.Min(ymin, Mathf.Max(pyaw - 12f, -100f));
+            }
+            Rig.SetLimits(ymin, ymax, Meeting.PitchUp, Meeting.PitchDown);
             if (switched)
             {
-                Rig.SetLimits(Meeting.YawLimit, Meeting.PitchUp, Meeting.PitchDown);
                 Rig.SetLook(0f, 6f);
                 Rig.Snap();
                 if (Lighting != null) Lighting.RefreshProbes();
             }
+        }
+
+        /// <summary>v5 step 3b: turn the seated view toward the projector (and say how far that is).</summary>
+        public bool TryGetProjectorLook(out float yaw, out float pitch)
+        {
+            yaw = 0f; pitch = 0f;
+            return _place == Place.Meeting && Meeting != null && Meeting.ProjectorAngles(_localSlot, out yaw, out pitch);
         }
 
         public void SetPovMode(PovMode mode)
@@ -419,7 +433,14 @@ namespace BirimizKovulacak.Game
             }
             if (_place == Place.Meeting)
             {
-                pos = _meetEye + Breath();
+                // v5 step 3b: the local defender stands up (the eye rises, a step back from the table); turned far to one
+                // side (the projector, the head or the foot of the table) you lean in over the table to see past the
+                // colleague beside you
+                float stand = Meeting != null ? Meeting.LocalStand : 0f;
+                float lean = Mathf.Clamp01((Mathf.Abs(Rig.Yaw) - 40f) / 35f);
+                lean = lean * lean * (3f - 2f * lean) * (1f - stand);
+                pos = _meetEye + Breath() + Vector3.up * (Meeting != null ? Meeting.StandEyeUp * stand : 0f) + (_meetRot * Vector3.forward) * (0.28f * lean - 0.08f * stand)
+                      + Vector3.down * (0.03f * lean);
                 rot = Quaternion.Euler(0f, _meetRot.eulerAngles.y + Rig.Yaw, 0f) * Quaternion.Euler(Rig.Pitch, 0f, 0f);
             }
             else if (!_seated)
@@ -577,14 +598,16 @@ namespace BirimizKovulacak.Game
             SetHover(hit);
         }
 
-        /// <summary>v5 step 3a: the folder while it lies on the table, the ballot paper while it lies there, the whiteboards.</summary>
+        /// <summary>v5 step 3a: the folder while it lies on the table, the ballot paper while it lies there, the whiteboards;
+        /// step 3b: the projector screen.</summary>
         bool MeetingTargetOk(MeetingTarget m)
         {
             switch (m)
             {
                 case MeetingTarget.Folder: return !Meeting.FolderHeld && Meeting.FolderProgress < 0.05f;
                 case MeetingTarget.Ballot: return Meeting.BallotShown && !Meeting.BallotHeld && !Meeting.BallotDropping;
-                case MeetingTarget.Board: return true;
+                case MeetingTarget.Board:
+                case MeetingTarget.Projector: return true;
                 default: return false;
             }
         }

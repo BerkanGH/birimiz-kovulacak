@@ -18,7 +18,7 @@ namespace BirimizKovulacak.Game
         [Header("Step 3a: ballot box, paper, pencil, whiteboards")]
         public Transform BallotBox;
         public Transform BallotSlot, BallotPile;
-        public TextMeshPro BallotLabel;
+        public TextMeshPro BallotLabel, BallotLabelBack;
         public GameObject PencilTemplate;
         /// <summary>Paper material (lit, plain); the front of the ballot paper gets a copy with the ballot texture.</summary>
         public Material PaperMat;
@@ -540,7 +540,12 @@ namespace BirimizKovulacak.Game
         void TickBox(float now, float dt)
         {
             if (BallotBox == null) return;
-            if (BallotLabel != null && _labelLang != Loc.Language) { _labelLang = Loc.Language; BallotLabel.text = Loc.T("v5.meeting.box_label"); }
+            if (BallotLabel != null && _labelLang != Loc.Language)
+            {
+                _labelLang = Loc.Language;
+                BallotLabel.text = Loc.T("v5.meeting.box_label");
+                if (BallotLabelBack != null) BallotLabelBack.text = BallotLabel.text;
+            }
             if (!_boxShown)
             {
                 if (!BallotBox.gameObject.activeSelf) return;
@@ -592,6 +597,7 @@ namespace BirimizKovulacak.Game
             TickBallot(cam, now, dt);
             TickFlyers(now);
             TickBox(now, dt);
+            TickPayouts(now, dt);
         }
 
         static float Ease(float t) { t = Mathf.Clamp01(t); return t * t * (3f - 2f * t); }

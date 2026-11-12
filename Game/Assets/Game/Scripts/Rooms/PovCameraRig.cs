@@ -25,7 +25,7 @@ namespace BirimizKovulacak.Game
         /// <summary>0..1 (with a little overshoot) while blending to a new pose, 1 when settled.</summary>
         public float BlendProgress => _blending ? _p : 1f;
 
-        float _yawLimit = 110f, _pitchUp = 40f, _pitchDown = 60f;
+        float _yawMin = -110f, _yawMax = 110f, _pitchUp = 40f, _pitchDown = 60f;
         float _sens = 1f, _fov = 60f;
         bool _invert;
         float _nextPrefs;
@@ -61,17 +61,20 @@ namespace BirimizKovulacak.Game
             _nextPrefs = Time.unscaledTime + 0.5f;
         }
 
-        public void SetLimits(float yawLimit, float pitchUp, float pitchDown)
+        public void SetLimits(float yawLimit, float pitchUp, float pitchDown) { SetLimits(-yawLimit, yawLimit, pitchUp, pitchDown); }
+
+        /// <summary>v5 step 3b: yaw limits may differ per side (a meeting seat turns further toward the projector).</summary>
+        public void SetLimits(float yawMin, float yawMax, float pitchUp, float pitchDown)
         {
-            _yawLimit = yawLimit; _pitchUp = pitchUp; _pitchDown = pitchDown;
-            Yaw = Mathf.Clamp(Yaw, -_yawLimit, _yawLimit);
+            _yawMin = yawMin; _yawMax = yawMax; _pitchUp = pitchUp; _pitchDown = pitchDown;
+            Yaw = Mathf.Clamp(Yaw, _yawMin, _yawMax);
             Pitch = Mathf.Clamp(Pitch, -_pitchUp, _pitchDown);
         }
 
         /// <summary>Look direction relative to the seat (yaw right +, pitch down +).</summary>
         public void SetLook(float yaw, float pitch)
         {
-            Yaw = Mathf.Clamp(yaw, -_yawLimit, _yawLimit);
+            Yaw = Mathf.Clamp(yaw, _yawMin, _yawMax);
             Pitch = Mathf.Clamp(pitch, -_pitchUp, _pitchDown);
         }
 
@@ -98,9 +101,9 @@ namespace BirimizKovulacak.Game
             Vector2 d = mouse.delta.ReadValue();
             if (d.sqrMagnitude < 1e-6f) return;
             float k = DegreesPerPixel * _sens;
-            Yaw = Mathf.Clamp(Yaw + d.x * k, -_yawLimit, _yawLimit);
+            Yaw = Mathf.Clamp(Yaw + d.x * k, _yawMin, _yawMax);
             // unlimited yaw (standing in the office): keep it in -180..180
-            if (_yawLimit >= 1000f) Yaw = Mathf.Repeat(Yaw + 180f, 360f) - 180f;
+            if (_yawMax >= 1000f) Yaw = Mathf.Repeat(Yaw + 180f, 360f) - 180f;
             Pitch = Mathf.Clamp(Pitch + (_invert ? d.y : -d.y) * k, -_pitchUp, _pitchDown);
         }
 

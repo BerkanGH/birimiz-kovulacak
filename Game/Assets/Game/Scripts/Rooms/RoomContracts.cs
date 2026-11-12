@@ -23,7 +23,7 @@ namespace BirimizKovulacak.Game
         Phone,
         /// <summary>Seated at the meeting table: mouse-look, crosshair, click colleagues.</summary>
         Meeting,
-        /// <summary>Meeting camera framed on the projector screen; cursor free.</summary>
+        /// <summary>Meeting camera framed on the projector screen (v5 step 3b: Tab or E on the screen); no mouse-look.</summary>
         MeetingProjector,
         /// <summary>Scripted camera (warning stamp, firing); no input.</summary>
         Cutscene,
@@ -40,8 +40,8 @@ namespace BirimizKovulacak.Game
     }
 
     /// <summary>v5 step 3a: things you can use at the meeting table besides your colleagues: your folder (tablet), the ballot
-    /// paper in front of you during a vote, the whiteboard across the table.</summary>
-    public enum MeetingTarget { None, Folder, Ballot, Board }
+    /// paper in front of you during a vote, the whiteboard across the table; step 3b: the projector screen (E zooms in).</summary>
+    public enum MeetingTarget { None, Folder, Ballot, Board, Projector }
 
     public enum MonitorState { Normal, Alert, Offline, Coffee, Off }
 

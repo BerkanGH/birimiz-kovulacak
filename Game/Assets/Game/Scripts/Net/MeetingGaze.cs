@@ -106,7 +106,9 @@ namespace BirimizKovulacak.Game
     /// <summary>
     /// Where a bot looks in the meeting room (host side for the host's bots, and for automated test players): the
     /// defender during the defence, else mostly whoever is talking, sometimes the colleague with the most suç (the one
-    /// they suspect) or someone else, sometimes the table — with a little idle drift. Uses public information only.
+    /// they suspect) or someone else, sometimes the table — with a little idle drift. v5 step 3b: the projector while a
+    /// leaked recording plays, while a desk is counted and at the results (then the fired colleague taking the box).
+    /// Uses public information only.
     /// </summary>
     public sealed class BotGazer
     {
@@ -132,12 +134,26 @@ namespace BirimizKovulacak.Game
             if (speaker == Slot) speaker = -1;
             int defender = v.Phase == LinePhase.FinalDefense && v.Final != null ? v.Final.Defender : -1;
             if (defender == Slot) defender = -1;
+            float driftY0 = Mathf.Sin(now * 0.7f + _phase) * 3f + Mathf.Sin(now * 1.9f + _phase * 2f) * 1.2f;
+            float driftP0 = Mathf.Sin(now * 0.5f + _phase) * 2f;
+            // the screen: a leak playing, a desk being counted, the results (glances away now and then)
+            if (WatchesProjector(v) && Mathf.Repeat(now * 0.23f + _phase, 1f) > 0.12f && room.ProjectorAngles(Slot, out yaw, out pitch))
+            {
+                yaw += driftY0 * 0.6f; pitch += driftP0 * 0.6f;
+                return true;
+            }
+            // the fired colleague takes the box: everyone looks
+            var firing = DeskOpening.Current(v);
+            double hostNow = LineClient.I != null ? LineClient.I.Now : 0;
+            if (firing != null && firing.Player != Slot && DeskOpening.BoxShown(v, hostNow) && DeskOpening.Time(v, hostNow) < DeskOpening.PileAt + 0.6f
+                && room.GazeAngles(Slot, firing.Player, out yaw, out pitch))
+                return true;
             bool newSpeaker = speaker >= 0 && speaker != _lastSpeaker;
             _lastSpeaker = speaker;
             if (now >= _until || (newSpeaker && R() < 0.8f) || (defender >= 0 && _target != defender && R() < 0.5f))
             {
                 float r = R();
-                if (defender >= 0 && r < 0.8f) _target = defender;
+                if (defender >= 0 && r < 0.92f) _target = defender;
                 else if (speaker >= 0 && r < 0.75f) _target = speaker;
                 else if (r < 0.88f) _target = Suspect(v);
                 else if (r < 0.95f) _target = Random(v);
@@ -155,6 +171,18 @@ namespace BirimizKovulacak.Game
             yaw = Mathf.Sin(now * 0.31f + _phase) * 14f + driftY;
             pitch = 16f + driftP;
             return true;
+        }
+
+        /// <summary>The projector has the room's attention: a leaked recording plays, a desk is counted, the results.</summary>
+        static bool WatchesProjector(LineView v)
+        {
+            if (v.Phase == LinePhase.Results) return true;
+            double now = LineClient.I != null ? LineClient.I.Now : 0;
+            if (v.Phase == LinePhase.FinalVerdict) return DeskOpening.Time(v, now) < DeskOpening.BoxAt;
+            if (v.Meeting != null)
+                foreach (var p in v.Meeting.Recordings)
+                    if (now >= p.PlayAt - 1 && now < p.PlayAt + Math.Max(1f, p.Seconds) + 1) return true;
+            return false;
         }
 
         /// <summary>The colleague with the most suç (ties broken per bot): the one this bot suspects.</summary>

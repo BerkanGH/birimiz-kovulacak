@@ -27,6 +27,8 @@ namespace BirimizKovulacak.Game
             public Collider FolderCollider;
             /// <summary>Where the ballot paper lies during a vote (y up, z away from the sitter).</summary>
             public Transform BallotSpot;
+            /// <summary>v5 step 3b: the chair (rolls back when its colleague stands up for the defence).</summary>
+            public Transform Chair;
         }
 
         public SeatRig[] Seats = new SeatRig[0];
@@ -91,6 +93,7 @@ namespace BirimizKovulacak.Game
             if (SpotCone != null) SpotCone.enabled = false;
             if (FiredBox != null) FiredBox.SetActive(false);
             InitProps();
+            InitStage();
         }
 
         // ------------------------------------------------------------------ seats
@@ -169,6 +172,8 @@ namespace BirimizKovulacak.Game
             _spot = -1;
             if (FiredBox != null) FiredBox.SetActive(false);
             ClearGaze();
+            ResetStand();
+            ClearPayouts();
             SeatsChanged();
         }
 
@@ -333,8 +338,10 @@ namespace BirimizKovulacak.Game
                 if (now < _talkUntil[i] && _level[i] + 0.1f > best) { best = _level[i] + 0.1f; speaker = i; }
             Vector3 focus = Vector3.zero;
             bool hasFocus = false;
-            int focusSlot = _spot >= 0 ? _spot : (_fired >= 0 ? _fired : speaker);
+            // v5 step 3b: the defender > the projector (a leak, the desk opening, the results) > the fired > the speaker
+            int focusSlot = _spot >= 0 ? _spot : _attentionProjector ? -1 : (_fired >= 0 ? _fired : speaker);
             if (focusSlot >= 0) hasFocus = TryGetHead(focusSlot, localEye, out focus);
+            else if (_attentionProjector) { focus = ProjectorPoint; hasFocus = true; }
             if (!hasFocus && _manager != null && _managerTalking)
             {
                 focus = _manager.Head != null ? _manager.Head.position + Vector3.up * 0.2f : _manager.transform.position + Vector3.up * 1.6f;
@@ -367,10 +374,12 @@ namespace BirimizKovulacak.Game
             if (_manager != null)
             {
                 _manager.SetTalking(_managerTalking, 0.7f);
-                if (_fired >= 0 && TryGetHead(_fired, localEye, out var fh)) _manager.LookAt(fh);
+                if (_attentionProjector && _spot < 0) _manager.LookAt(ProjectorPoint);
+                else if (_fired >= 0 && TryGetHead(_fired, localEye, out var fh)) _manager.LookAt(fh);
                 else if (hasFocus && !_managerTalking) _manager.LookAt(focus);
                 else _manager.LookAt(localEye);
             }
+            TickStand(dt);
             TickSpot(localEye, dt);
         }
 
@@ -384,7 +393,7 @@ namespace BirimizKovulacak.Game
             var a = SeatAnchorOfSlot(_spot);
             if (on && a != null)
             {
-                Vector3 head = a.position + Vector3.up * 1.15f;
+                Vector3 head = a.position + Vector3.up * SpotHeadHeight(_spot);
                 Vector3 lamp = a.position + Vector3.up * 2.75f + a.forward * 0.35f;
                 Spot.transform.SetPositionAndRotation(lamp, Quaternion.LookRotation(head - lamp, a.forward));
                 if (SpotCone != null) SpotCone.transform.SetPositionAndRotation(lamp, Quaternion.LookRotation(head - lamp, a.forward));

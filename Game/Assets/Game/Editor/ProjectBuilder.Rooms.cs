@@ -1158,6 +1158,10 @@ namespace BirimizKovulacak.EditorTools
             {
                 meeting.Canvas = RendererUnder(g.transform, "Canvas");
                 if (meeting.Canvas != null) { meeting.Canvas.sharedMaterial = Mat("M_RmCanvasUnlit"); meeting.Canvas.shadowCastingMode = ShadowCastingMode.Off; }
+                // v5 step 3b: the screen is a target (E zooms in on the projected slides); the hover outlines the frame and
+                // the backing, never the picture itself
+                var frame = g.GetComponentsInChildren<Renderer>(true).Where(r => r != meeting.Canvas).ToList();
+                MakeTarget(g, frame, DeskTarget.None, rb, 0.03f).Meet = MeetingTarget.Projector;
             }
             meeting.DefaultSlideTr = AssetDatabase.LoadAssetAtPath<Texture2D>(RoomsTexDir + "/SlideTr.png");
             meeting.DefaultSlideEn = AssetDatabase.LoadAssetAtPath<Texture2D>(RoomsTexDir + "/SlideEn.png");
@@ -1183,7 +1187,19 @@ namespace BirimizKovulacak.EditorTools
                 var lab = FindDeep(g.transform, "BallotLabel");
                 Vector3 lp = lab != null ? g.transform.InverseTransformPoint(lab.position) : new Vector3(0f, 0.1875f, -0.1074f);
                 meeting.BallotLabel = Label3D(g.transform, "Label", lp + new Vector3(0f, 0f, -0.0016f), Vector3.zero, new Vector2(0.11f, 0.028f), tfont, Hex("#1F2A44"), "OY SANDIĞI", 0.5f);
+                // v5 step 3b: the box stands across the table; the back plate faces the other row of seats
+                var labB = FindDeep(g.transform, "BallotLabelBack");
+                Vector3 lpb = labB != null ? g.transform.InverseTransformPoint(labB.position) : new Vector3(0f, 0.1875f, 0.1074f);
+                meeting.BallotLabelBack = Label3D(g.transform, "LabelBack", lpb + new Vector3(0f, 0f, 0.0016f), new Vector3(0f, 180f, 0f), new Vector2(0.11f, 0.028f), tfont, Hex("#1F2A44"), "OY SANDIĞI", 0.5f);
             }
+            // v5 step 3b: banknote bundles for the desk payout on the table (the office's drawer art)
+            var payBill = RoomProp(root, "RmBill", Vector3.zero, 0, "PayBillTemplate", rb);
+            foreach (var r in payBill.GetComponentsInChildren<Renderer>(true)) r.shadowCastingMode = ShadowCastingMode.Off;
+            payBill.SetActive(false);
+            meeting.BillTemplate = payBill;
+            var payBundle = RoomProp(root, "RmBundle", Vector3.zero, 0, "PayBundleTemplate", rb);
+            payBundle.SetActive(false);
+            meeting.BundleTemplate = payBundle;
             var pencil = RoomProp(root, "RmPencil", Vector3.zero, 0, "PencilTemplate", rb);
             foreach (var r in pencil.GetComponentsInChildren<Renderer>(true)) r.shadowCastingMode = ShadowCastingMode.Off;
             pencil.SetActive(false);
@@ -1222,7 +1238,7 @@ namespace BirimizKovulacak.EditorTools
                 ballotSpot.localRotation = Quaternion.Euler(0f, -7f * side, 0f);
                 seats.Add(new MeetingRoom.SeatRig
                 {
-                    Anchor = anchor, ChairFabric = RendererUnder(chair.transform, "Fabric"), Items = items,
+                    Anchor = anchor, Chair = chair.transform, ChairFabric = RendererUnder(chair.transform, "Fabric"), Items = items,
                     Folder = folder.transform, FolderCover = FindDeep(folder.transform, "FolderCover"), FolderScreen = screen,
                     FolderCollider = folder.GetComponent<Collider>(), BallotSpot = ballotSpot,
                 });

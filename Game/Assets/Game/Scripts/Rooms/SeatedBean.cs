@@ -39,6 +39,7 @@ namespace BirimizKovulacak.Game
 
         int _stateShown;
         int _idleHash, _talkHash;
+        bool _standing;
         bool _talking;
         float _talkLevel;
         MeetingReaction _reaction;
@@ -109,7 +110,7 @@ namespace BirimizKovulacak.Game
 
         public void React(MeetingReaction r)
         {
-            if (r == MeetingReaction.None || _fired) return;
+            if (r == MeetingReaction.None || _fired || _standing) return;
             _reaction = r;
             _reactionUntil = Time.time + ReactionSeconds(r);
             int h = Animator.StringToHash(ReactionState(r));
@@ -129,6 +130,12 @@ namespace BirimizKovulacak.Game
         }
 
         public void SetAway(bool away) { _away = away; }
+
+        /// <summary>v5 step 3b: on its feet (the defence). The meeting room lifts the bean and rolls the chair back: the beans'
+        /// legs are shorter than the chair is high, so the standing clips would make the defender smaller; the seated upper
+        /// body stays (talk gestures while heard) and the whole bean rises.</summary>
+        public void SetStanding(bool standing) { _standing = standing; }
+        public bool Standing => _standing;
         public void SetSpotlit(bool on) { _spot = on; }
 
         public void LookAt(Vector3 world) { _look = world; _hasLook = true; _gaze = false; }
@@ -211,6 +218,13 @@ namespace BirimizKovulacak.Game
             if (_fired) { want = Animator.StringToHash(IsManager ? "Angry" : "SitBox"); face = BeanFace.Sad; }
             else if (reacting) { want = _stateShown; face = IsManager ? (_talking ? BeanFace.Talking : RestFace) : ReactionFace(_reaction); flap = IsManager && _talking; }
             else if (_away) { want = Animator.StringToHash(IsManager ? IdleState : "SitSlump"); face = BeanFace.Asleep; }
+            else if (_standing && !IsManager)
+            {
+                // the defender on their feet: gestures while the voice is heard, nervous while silent
+                want = _talking ? _talkHash : _idleHash;
+                flap = _talking;
+                face = _talking ? BeanFace.Talking : BeanFace.Nervous;
+            }
             else if (_talking)
             {
                 want = _talkHash;
@@ -235,7 +249,7 @@ namespace BirimizKovulacak.Game
                     Anim.CrossFadeInFixedTime(want, 0.25f, 0);
                     _stateShown = want;
                 }
-                Anim.speed = _talking && !reacting && !_fired ? 0.85f + 0.45f * _talkLevel : 1f;
+                Anim.speed = _talking && !reacting && !_fired && !_standing ? 0.85f + 0.45f * _talkLevel : 1f;
             }
             ShowFace(face, flap, now);
         }
