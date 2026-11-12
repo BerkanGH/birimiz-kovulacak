@@ -44,6 +44,10 @@ needed.
 | `Scripts/Rooms/MeetingRoom.Props.cs`, `Scripts/Net/MeetingGaze.cs` | World side of step 3a (the folder lift, the paper fold and flight, the ballot box and its pile, the boards); shared gaze (8 Hz presentation packets) and `BotGazer`. |
 | `Scripts/Rooms/MeetingRoom.Stage.cs` | World side of step 3b: the defender stands up (chair rolls back, standing clips, the spotlight follows, the local camera rises), the projector as everyone's point of attention, the desk payout (bundles at the fired colleague's place sliding to the voters). |
 | `Scripts/UI/Office/ToastStack.cs` | The corner notes shared by the office and the meeting room. |
+| `Scripts/UI/Office/BotCallCard.cs` | v5 bot talk: the bot's speech bubble while on the phone with a bot (typed lines, my questions, keys 1/2/3, "Prim gönder"); beside the phone panel, under the call pill, or in the computer's right column. |
+| `Scripts/UI/Meeting/MeetingSubtitles.cs` | v5 bot talk: a bot's chat line as a bubble over its head; the defending bot's line as a subtitle over its standing character. |
+| `Scripts/Net/BotSpeech.cs` | v5 bot talk, presentation side: phone-line / question packets, my call transcript, bot chat tokens → text in my language, the bots' mumble and talk level. |
+| `Scripts/UI/Dev/BotTalkMock.cs` | Bot talk mocks (`-uimock "v5.office_botcall*"`, `"v5.meeting_botchat*"`). |
 | `Scripts/UI/Dev/MeetingMock.cs`, `MeetingMock3b.cs`, `UI/Resources/ui/styles/meeting.uss`, `projector.uss` | Meeting room mocks (`-uimock "v5.meeting*"`, `"v5.office_partner*"`); meeting room, tablet, paper, whiteboard, results bar and projector styles. |
 
 **Office (v5 step 1).** Cursor locked, mouse look; WASD stands up from the chair and walks (2 m/s, local only:
@@ -250,6 +254,46 @@ standing and sitting back, the local defender, the payout pile / sliding / lande
 the first, the ballot box label from both rows). Automated matches save `room`, `folder`, `board`, `ballot` and `box` shots
 of the meeting phases, and since 3b `projector` (dossier, votes, crisis, defence, results), `projector_seat`, the defence
 `room` (aimed at the defender), the desk opening `projector` / `payout` / `payout_end`, and the results `reveal` / `robbed`.
+
+**Talking to a bot (v5 bot talk).** docs/V5_BOT_TALK.md. Bots are for testing only; they now call, answer (after 1–3
+rings) or turn you down, and talk in text. Calls between people are unchanged (voice only, no buttons).
+
+*On the phone.* In the contacts a bot reads "bot · yazıyla konuşur" and its Ara button is a normal one. With a bot on the
+line the LCD says "Bot yazıyla konuşur · Sor: 1–3 · Kapat: N" and a speech bubble (`BotCallCard`, paper with a navy rim)
+shows the call: the bot's name and colour, its lines typed out (~42 characters a second, the newest in full size, older
+ones grey, my questions on the right in green: "Sen: Ne seçeceksin?"), 2–3 question buttons for the current task or the
+crisis (key cap + text; keys 1 / 2 / 3 or click; Client Bonus / Petty Cash 3, Weekend Shift / crisis 2; none in the
+breaks, where the bot says its own business) and "Prim gönder: 1 / 2 / 3 prim". Each line plays a short babble
+(`SfxSynth.Mumble`, four takes, pitch per colleague's colour). Where it sits: beside the phone panel with a tail toward the
+handset when the phone is up (`.bc-phone`), a compact version under the call pill when it is not (`.bc-hud`, last two
+lines and the buttons), in the computer's right column under the call pill while the computer is open (`.bc-os`). A
+refusal ("Şu an çok yoğunum.") or the bot's goodbye stays 4.5 s after the call ends ("görüşme bitti"). Prim a bot pays
+arrives like any transfer (toast, drawer).
+
+*In the meeting room.* Bot chat lines are a token in the engine's chat (`LineBotLines.Token`); every view of messages
+(toasts, the folder's Sohbet, the computer's Mesajlar, the fallback screen) renders them in the reader's language (any
+sender's well-formed token: an automated `-bot` player joins like a person, so the engine does not flag it). The phone
+bubble shows for a colleague flagged as a bot or one that has said a bot line to me (`BotSpeech.Talks`). A bot's line also comes up as a bubble over its head for 4–7 s (`MeetingSubtitles`, typed out,
+kept on screen; hidden while the folder, the paper or a zoom is up) while the bot mumbles from its seat and plays the talk
+animation (its level feeds `MeetingRoom.SetSpeaking`, so the shared gaze turns to it too); a line whose bubble is on
+screen gets no chat toast (the bubbles sit under the toasts). During the final defence the
+defending bot's line is a subtitle over its standing character (dark with the spotlight's yellow rim, 26 px) until its
+turn ends; out of view it sits at the bottom of the screen like a film subtitle.
+
+*3b polish.* Zoomed on the projector the way back is written in the projector's own footer ("Projektör · Tab / E / Esc:
+masaya dön") instead of a chip over the slide (the chip covered the desk opening's last line); the phase toast is not
+shown while zoomed (the projector's header says the phase) and the corner notes start under the header
+(`.mt-toasts-zoom`), clear of its clock; in the results the zoom frames the screen a little smaller and higher
+(`RoomsPresenter.ProjectorRoomBelow` = 13 % of the height) so the results bar sits under the slide's footer. The
+ceremony camera now decides once the room is there (arriving straight into a desk opening or the results used to skip it).
+
+Scenarios: `v5.office_botcall` (a Greedy bot rings during Client Bonus, its opening lie under the call pill while typing,
+the bubble beside the phone, questions 1 and 3 with its lies, the computer column), `v5.office_botcall_promise` (an Honest
+bot: "Bu sefer ben yazmıyorum… Sen yazarsan sana 1 prim gönderirim.", a question, its goodbye, the reveal and the prim it
+pays), `v5.office_botcall_refuse` (Greedy turns its victim down in the break, Mixed: "Sonra ararım."),
+`v5.office_botcall_crisis` (crisis questions to an Honest bot), `v5.meeting_botchat` (an accusation over a bot's head, the
+made-up counter-accusation, the folder chat), `v5.meeting_botchat_defence` (a bot defending on its feet with its subtitle,
+out of view at the bottom, the final-vote lines), and `_en` variants of the office, promise, meeting and defence scenarios.
 
 ---
 
