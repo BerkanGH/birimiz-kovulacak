@@ -115,6 +115,12 @@ namespace BirimizKovulacak.Game
                 case LineEventType.MissedCall: return F("event.missed_call", Name(e.Actor));
                 case LineEventType.CallBusy: return F("event.busy", Name(e.Target));
                 case LineEventType.Presence: return F(e.A == 1 ? "event.online" : "event.offline", Name(e.Target));
+                // v5 Yaramazlıklar (the meeting room shows them in the world; the fallback screen lists them)
+                case LineEventType.Prank:
+                    return e.Target >= 0 ? F("prank.log.target", e.Actor >= 0 ? Name(e.Actor) : T("prank.someone"), Name(e.Target), T("prank." + LinePranks.Id((PrankKind)e.A) + ".did"))
+                        : F("prank.log.alone", e.Actor >= 0 ? Name(e.Actor) : T("prank.someone"), T("prank." + LinePranks.Id((PrankKind)e.A) + ".did"));
+                case LineEventType.Tutanak: return F("prank.tutanak.who", Name(e.Target), e.B);
+                case LineEventType.Patience: return null;
                 default: return null;
             }
         }

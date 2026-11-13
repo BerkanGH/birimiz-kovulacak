@@ -297,7 +297,7 @@ namespace BirimizKovulacak.Game
         readonly Label _count, _status, _addresses, _consent, _session, _experiments, _rules;
         readonly TextField _group;
         readonly Button _ready, _start, _addBot;
-        readonly Toggle _rec;
+        readonly Toggle _rec, _pranks;
         readonly List<SlotCard> _cards = new List<SlotCard>();
         int _lastHash = int.MinValue;
         float _nextStatus;
@@ -329,6 +329,9 @@ namespace BirimizKovulacak.Game
             _recHost = Box("row").AddTo(_week);
             _rec = new Toggle(Loc.T("lobby.recordings_toggle")).Cls("toggle", "lobby-rec-toggle").AddTo(_recHost);
             _rec.RegisterValueChangedCallback(e => HostLineController.Current?.SetRecordings(e.newValue));
+            // v5 Yaramazlıklar (on by default)
+            _pranks = new Toggle(Loc.T("lobby.pranks_toggle")).Cls("toggle", "lobby-rec-toggle").AddTo(_recHost);
+            _pranks.RegisterValueChangedCallback(e => HostLineController.Current?.SetPranks(e.newValue));
             _consent = Text("", "lobby-consent").AddTo(_week);
 
             // host only: optional playtest group code (a facilitator's pseudonymous group id; never a name)
@@ -350,6 +353,9 @@ namespace BirimizKovulacak.Game
         }
 
         const string GroupPref = "playtest.group_code";
+
+        /// <summary>UI mocks: show the host's controls (the recordings / pranks toggles) without a host.</summary>
+        public static bool MockHost;
 
         /// <summary>
         /// Integration seam (the lead wires it to <c>HostLineController.Current.SetGroupCode(code)</c>); null until then.
@@ -399,7 +405,7 @@ namespace BirimizKovulacak.Game
             var c = LineClient.I;
             var lobby = c != null ? c.Lobby : null;
             var hc = HostLineController.Current;
-            bool isHost = hc != null;
+            bool isHost = hc != null || MockHost;
             if (lobby == null)
             {
                 _status.SetText(Loc.T("lobby.waiting"));
@@ -410,7 +416,7 @@ namespace BirimizKovulacak.Game
                 hash = hash * 31 + (s.Occupied ? 1 : 0) + (s.Ready ? 2 : 0) + (s.Connected ? 4 : 0) + (s.IsBot ? 8 : 0) + (s.IsHost ? 16 : 0) + s.Wins * 64 + (s.Name ?? "").GetHashCode();
             foreach (var s in lobby.Slots) hash = hash * 31 + (s.WantsRematch ? 1 : 0);
             hash = hash * 31 + (lobby.StatusKey ?? "").GetHashCode() + (lobby.Experiments != null ? lobby.Experiments.Count : 0) * 5;
-            hash = hash * 31 + (lobby.RecordingsEnabled ? 3 : 0) + lobby.WeeksPlayed * 131 + c.MySlot * 17 + (isHost ? 1 : 0) + (lobby.WeekRunning ? 5 : 0);
+            hash = hash * 31 + (lobby.RecordingsEnabled ? 3 : 0) + (lobby.PranksEnabled ? 7 : 0) + lobby.WeeksPlayed * 131 + c.MySlot * 17 + (isHost ? 1 : 0) + (lobby.WeekRunning ? 5 : 0);
             if (hash != _lastHash)
             {
                 _lastHash = hash;
@@ -421,14 +427,14 @@ namespace BirimizKovulacak.Game
             {
                 _nextStatus = Time.unscaledTime + 0.25f;
                 string reason = lobby.StatusKey;
-                bool can = isHost && hc.CanStart(out reason);
+                bool can = hc != null && hc.CanStart(out reason);
                 _start.SetEnabled(can);
                 _status.SetText(Loc.T(string.IsNullOrEmpty(reason) ? (can ? "lobby.ready_to_start" : "lobby.waiting") : reason));
                 _status.EnableInClassList("lobby-status-go", can);
                 var cm = ConnectionManager.I;
-                _addresses.SetText(isHost ? Loc.F("lobby.host_addresses", LocalAddresses(), cm != null ? cm.Port : (ushort)7777) : (cm != null && cm.Current == ConnectionManager.State.Connected ? Loc.F("lobby.connected_to", cm.Address) : ""));
+                _addresses.SetText(hc != null ? Loc.F("lobby.host_addresses", LocalAddresses(), cm != null ? cm.Port : (ushort)7777) : (cm != null && cm.Current == ConnectionManager.State.Connected ? Loc.F("lobby.connected_to", cm.Address) : ""));
                 _addresses.Show(!string.IsNullOrEmpty(_addresses.text));
-                if (isHost && LaunchArgs.Current.AutoStart && can) hc.StartWeek();
+                if (hc != null && LaunchArgs.Current.AutoStart && can) hc.StartWeek();
             }
         }
 
@@ -459,7 +465,9 @@ namespace BirimizKovulacak.Game
             _experiments.text = lobby.Experiments != null && lobby.Experiments.Count > 0 ? Loc.F("lobby.experiments", string.Join(", ", lobby.Experiments)) : "";
             _experiments.Show(_experiments.text.Length > 0);
             _rec.SetValueWithoutNotify(lobby.RecordingsEnabled);
-            _consent.text = Loc.T(lobby.RecordingsEnabled ? "lobby.recordings_consent" : "lobby.recordings_off");
+            _pranks.SetValueWithoutNotify(lobby.PranksEnabled);
+            _consent.text = Loc.T(lobby.RecordingsEnabled ? "lobby.recordings_consent" : "lobby.recordings_off")
+                + "\n" + Loc.T(lobby.PranksEnabled ? "lobby.pranks_on" : "lobby.pranks_off");
             _consent.EnableInClassList("lobby-consent-off", !lobby.RecordingsEnabled);
             _start.Show(isHost);
             _ready.Show(!isHost);

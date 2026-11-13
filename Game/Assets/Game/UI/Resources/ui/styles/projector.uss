@@ -141,3 +141,21 @@
 .pj-tape .tape-status { font-size: 34px; margin-top: 6px; }
 .pj-tape .tape-stamp { right: -60px; top: -40px; width: 260px; height: 88px; }
 .tape-label-arrow-both { letter-spacing: -22px; }
+
+/* v5 Yaramazlıklar: the manager's patience in the header corner, the TUTANAK stamp over the slide */
+.pj-patience { flex-direction: row; align-items: center; margin: 0 22px; padding: 5px 14px 5px 6px; border-radius: 40px; background-color: rgba(0, 0, 0, 0.2); }
+.pj-mgr { width: 70px; height: 70px; border-radius: 35px; border-width: 5px; border-color: rgb(110, 200, 130); background-color: rgb(250, 247, 238);
+    -unity-background-scale-mode: scale-and-crop; }
+.pj-mgr-1 { border-color: rgb(246, 186, 60); }
+.pj-mgr-2 { border-color: rgb(236, 72, 56); }
+.pj-notches { flex-direction: row; margin-left: 10px; }
+.pj-notch { width: 22px; height: 44px; margin-left: 6px; border-radius: 5px; border-width: 3px; border-color: rgba(244, 239, 227, 0.6);
+    background-color: rgba(244, 239, 227, 0.15); }
+.pj-notch-0 { background-color: rgb(96, 200, 120); border-color: rgb(214, 240, 220); }
+.pj-notch-1 { background-color: rgb(246, 186, 60); border-color: rgb(255, 236, 190); }
+.pj-notch-2 { background-color: rgb(236, 72, 56); border-color: rgb(255, 210, 200); }
+.pj-patience-x { font-size: 32px; color: rgb(255, 224, 102); margin: 0 0 0 10px; }
+.pj-tutanak { position: absolute; left: 0; right: 0; top: 96px; bottom: 50px; align-items: center; justify-content: center;
+    background-color: rgba(244, 239, 227, 0.62); }
+.pj-tutanak-stamp { font-size: 150px; border-width: 12px; border-radius: 14px; padding: 0 34px; align-self: center; }
+.pj-tutanak-who { font-size: 50px; color: rgb(31, 42, 68); margin-top: 26px; background-color: rgb(250, 247, 238); padding: 4px 22px; border-radius: 10px; }

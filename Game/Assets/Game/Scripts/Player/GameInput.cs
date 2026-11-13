@@ -10,7 +10,7 @@ namespace BirimizKovulacak.Game
     ///
     /// v5 office layout: WASD / arrows walk, E use what you look at, Q computer, Tab phone, R record the call,
     /// Y answer, N decline / hang up, V push-to-talk (read by the voice module only), Esc back / pause.
-    /// Settings rebinds Q, Tab, R, E, V, Y and N.
+    /// Settings rebinds Q, Tab, R, E, V, Y, N and G (v5 Yaramazlıklar: the prank wheel in the meeting room).
     /// </summary>
     public static class GameInput
     {
@@ -18,7 +18,7 @@ namespace BirimizKovulacak.Game
         static InputActionAsset _asset;
         public static InputActionMap Gameplay { get; private set; }
 
-        public static InputAction Interact, Phone, Pause, AnswerCall, HangUp, PushToTalk, Computer, Record, Move;
+        public static InputAction Interact, Phone, Pause, AnswerCall, HangUp, PushToTalk, Computer, Record, Move, Prank;
 
         public static void Initialize()
         {
@@ -35,6 +35,8 @@ namespace BirimizKovulacak.Game
             PushToTalk = Gameplay.AddAction("PushToTalk", InputActionType.Button, "<Keyboard>/v");
             Computer = Gameplay.AddAction("Computer", InputActionType.Button, "<Keyboard>/q");
             Record = Gameplay.AddAction("Record", InputActionType.Button, "<Keyboard>/r");
+            // v5 Yaramazlıklar: the quick wheel at the meeting table (G was free)
+            Prank = Gameplay.AddAction("Prank", InputActionType.Button, "<Keyboard>/g");
             Move = Gameplay.AddAction("Move", InputActionType.Value);
             Move.expectedControlType = "Vector2";
             Move.AddCompositeBinding("2DVector").With("Up", "<Keyboard>/w").With("Down", "<Keyboard>/s").With("Left", "<Keyboard>/a").With("Right", "<Keyboard>/d");

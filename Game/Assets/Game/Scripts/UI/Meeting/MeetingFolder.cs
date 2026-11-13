@@ -17,14 +17,14 @@ namespace BirimizKovulacak.Game
     /// </summary>
     public sealed class MeetingFolder
     {
-        public enum Tab { Actions = 0, Chat = 1, Transfer = 2, Dossier = 3, Rules = 4 }
-        static readonly string[] Ids = { "actions", "chat", "transfer", "dossier", "rules" };
+        public enum Tab { Actions = 0, Pranks = 1, Chat = 2, Transfer = 3, Dossier = 4, Rules = 5 }
+        static readonly string[] Ids = { "actions", "pranks", "chat", "transfer", "dossier", "rules" };
 
         readonly MeetingUi _ui;
         readonly PlayState _st;
         public readonly VisualElement Root;
-        readonly Button[] _tabs = new Button[5];
-        readonly Label[] _badges = new Label[5];
+        readonly Button[] _tabs = new Button[6];
+        readonly Label[] _badges = new Label[6];
         readonly Label _clock, _prim, _title;
         readonly ScrollView _scroll;
         readonly PlaySection _body, _composeTargets;
@@ -122,7 +122,7 @@ namespace BirimizKovulacak.Game
 
         public void FocusField() { if (_tab == Tab.Chat) _field.Focus(); }
         public void MarkDirty() { _dirty = true; }
-        public void ResetWeek() { _seenChat = 0; _rulesPage = 0; _tab = Tab.Actions; _revealTab = MeetingReveal.TabSummary; _dirty = true; }
+        public void ResetWeek() { _seenChat = 0; _rulesPage = 0; _revealTab = MeetingReveal.TabSummary; SetTab(Tab.Actions); }
 
         /// <summary>v5 step 3b: the results' full reveal on one of its tabs (<see cref="MeetingReveal"/> tab ids).</summary>
         public void ShowReveal(string tab)
@@ -210,6 +210,10 @@ namespace BirimizKovulacak.Game
             SetBadge(Tab.Actions, ActionsAvailable(v) ? "!" : null);
             int unread = Unread(lc);
             SetBadge(Tab.Chat, unread > 0 && !(_open && _tab == Tab.Chat) ? unread.ToString() : null);
+            // v5 Yaramazlıklar: the tab only when the lobby turned them on
+            bool pranks = v.Features.PranksEnabled && v.Pranks != null;
+            if (_tabs[(int)Tab.Pranks].IsShown() != pranks) _tabs[(int)Tab.Pranks].Show(pranks);
+            if (!pranks && _tab == Tab.Pranks && _open) SetTab(Tab.Actions);
         }
 
         void SetBadge(Tab tab, string text)
@@ -227,6 +231,7 @@ namespace BirimizKovulacak.Game
             switch (_tab)
             {
                 case Tab.Actions: BuildActions(p, lc, v, now); break;
+                case Tab.Pranks: _ui.Pranks.BuildTab(p, lc, v, now); break;
                 case Tab.Chat: BuildChat(p, lc); break;
                 case Tab.Transfer: PlayBlocks.BuildTransfer(p, lc, v, _st, false); break;
                 case Tab.Dossier:

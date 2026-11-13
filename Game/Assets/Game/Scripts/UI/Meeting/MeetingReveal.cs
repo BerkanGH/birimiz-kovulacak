@@ -17,8 +17,8 @@ namespace BirimizKovulacak.Game
     public static class MeetingReveal
     {
         public const string TabSummary = "summary", TabRobbed = "robbed", TabBallots = "ballots", TabFirings = "firings",
-            TabTransfers = "transfers", TabChoices = "choices", TabIncidents = "incidents";
-        static readonly string[] Tabs = { TabSummary, TabRobbed, TabBallots, TabFirings, TabTransfers, TabChoices, TabIncidents };
+            TabTransfers = "transfers", TabChoices = "choices", TabIncidents = "incidents", TabPranks = "pranks";
+        static readonly string[] Tabs = { TabSummary, TabRobbed, TabBallots, TabFirings, TabTransfers, TabChoices, TabIncidents, TabPranks };
 
         public static void Build(VisualElement p, LineClient lc, LineView v, string tab, Action<string> setTab)
         {
@@ -40,7 +40,8 @@ namespace BirimizKovulacak.Game
             var tabs = Wrap(p);
             foreach (var id in Tabs)
             {
-                int n = id == TabSummary ? r.Players.Count : id == TabRobbed ? robbed.Count : id == TabBallots ? r.Ballots.Count : id == TabFirings ? r.Firings.Count
+                if (id == TabPranks && v.Pranks == null) continue;
+                int n = id == TabPranks ? v.Pranks.Log.Count : id == TabSummary ? r.Players.Count : id == TabRobbed ? robbed.Count : id == TabBallots ? r.Ballots.Count : id == TabFirings ? r.Firings.Count
                     : id == TabTransfers ? r.Transfers.Count : id == TabChoices ? r.Choices.Count : r.Incidents.Count;
                 string tid = id;
                 Btn(F("reveal.tab." + id, n), () => setTab(tid), tab == id ? "pl-on" : null).AddTo(tabs);
@@ -74,6 +75,7 @@ namespace BirimizKovulacak.Game
                     if (r.Incidents.Count == 0) Line(body, T("common.none"), "pl-dim");
                     foreach (var e in r.Incidents) Line(body, "• " + PlayText.Dossier(e));
                     break;
+                case TabPranks: BuildPranks(body, lc, v); break;
                 default: BuildSummary(body, lc, r, players); break;
             }
         }
@@ -89,7 +91,7 @@ namespace BirimizKovulacak.Game
             int start = lc.Config.StartPrim;
             foreach (var pr in players)
             {
-                int task = 0, whistle = 0, inv = 0, transfer = 0, desk = 0;
+                int task = 0, whistle = 0, inv = 0, transfer = 0, desk = 0, prank = 0;
                 foreach (var c in r.PrimLog)
                 {
                     if (c.Player != pr.Player) continue;
@@ -104,6 +106,7 @@ namespace BirimizKovulacak.Game
                         case PrimReason.TransferOut: transfer += c.Delta; break;
                         case PrimReason.DeskShare:
                         case PrimReason.Fired: desk += c.Delta; break;
+                        case PrimReason.Prank: prank += c.Delta; break;
                     }
                 }
                 var head = new StringBuilder();
@@ -119,9 +122,45 @@ namespace BirimizKovulacak.Game
                 Part(parts, "reveal.part.whistle", whistle);
                 Part(parts, "reveal.part.investigation", inv);
                 Part(parts, "reveal.part.transfer", transfer);
+                Part(parts, "reveal.part.prank", prank);
                 Part(parts, "reveal.part.desk", desk);
                 parts.Append("  →  ").Append(pr.Prim);
                 Line(p, parts.ToString(), "pl-dim");
+            }
+        }
+
+        /// <summary>v5 Yaramazlıklar: every prank of the match with its actor (phone rings revealed now), the prim burned per
+        /// colleague and the tutanaks. The plane notes stay private (only your own are shown to you).</summary>
+        static void BuildPranks(VisualElement p, LineClient lc, LineView v)
+        {
+            var pv = v.Pranks;
+            if (pv == null || pv.Log.Count == 0) { Line(p, T("common.none"), "pl-dim"); return; }
+            int me = lc.MySlot;
+            var burned = new Dictionary<int, int>();
+            int tutanak = 0, total = 0;
+            foreach (var e in pv.Log)
+            {
+                if (e.Cost > 0) { burned.TryGetValue(e.Actor, out int b); burned[e.Actor] = b + e.Cost; total += e.Cost; }
+                if (e.Tutanak) tutanak++;
+            }
+            Sub(p, F("reveal.pranks.head", pv.Log.Count, total, tutanak));
+            if (burned.Count > 0)
+            {
+                var sb = new StringBuilder();
+                foreach (var kv in burned)
+                {
+                    if (sb.Length > 0) sb.Append(" · ");
+                    sb.Append(F("reveal.pranks.burned", Name(kv.Key), kv.Value));
+                }
+                Line(p, sb.ToString(), "pl-dim");
+            }
+            int session = int.MinValue;
+            foreach (var e in pv.Log)
+            {
+                if (e.Session != session) { session = e.Session; Sub(p, T("reveal.pranks.session." + Math.Max(0, Math.Min(4, session)))); }
+                string line = "• " + MeetingPranks.LogLine(e, me);
+                if (e.Kind == PrankKind.Plane && !string.IsNullOrEmpty(e.Note)) line += "  «" + MeetingPranks.NoteText(e.Note) + "»";
+                Line(p, line, e.Tutanak ? "pl-bad" : e.Kind == PrankKind.PhoneRing ? "pl-warn" : e.Actor == me || e.Target == me ? "pl-private" : null);
             }
         }
 

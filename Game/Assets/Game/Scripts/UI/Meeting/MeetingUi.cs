@@ -33,6 +33,7 @@ namespace BirimizKovulacak.Game
         readonly MeetingBoard _board = new MeetingBoard();
         readonly MeetingProjector _projector = new MeetingProjector();
         readonly MeetingSubtitles _subs;
+        readonly MeetingPranks _pranks;
         readonly PlayState _st = new PlayState();
         bool _bound, _dirty = true, _boardZoom, _projZoom, _projAuto;
         int _week = int.MinValue;
@@ -47,8 +48,10 @@ namespace BirimizKovulacak.Game
         public MeetingFolder Folder => _folder;
         public MeetingBallot Ballot => _ballot;
         public MeetingProjector Projector => _projector;
+        public MeetingSubtitles Subs => _subs;
+        public MeetingPranks Pranks => _pranks;
         /// <summary>The folder, the ballot paper or the results bar is up: the cursor is free (no mouse-look).</summary>
-        public bool WantsCursor => _folder.IsOpen || _ballot.IsOpen || _slide.WantsCursor;
+        public bool WantsCursor => !_pranks.Aiming && (_folder.IsOpen || _ballot.IsOpen || _slide.WantsCursor || _pranks.WantsCursor);
         /// <summary>UI mocks / automated runs: the desk opening and the results do not move the camera by themselves.</summary>
         public static bool NoAutoCamera;
 
@@ -113,6 +116,8 @@ namespace BirimizKovulacak.Game
             Box("mt-pj-hint-lamp").NoPick().AddTo(_pjHint);
             _pjHintText = Bold("", "mt-pj-hint-text").NoPick().AddTo(_pjHint);
             _pjHint.Show(false);
+            // v5 Yaramazlıklar: the wheel, aiming, the word / note card, a plane's note, the splashes
+            _pranks = new MeetingPranks(this, Root);
         }
 
         public void Toast(string text, string kind = null, float seconds = 5f) { _toasts.Show(text, kind, seconds); }
@@ -142,6 +147,7 @@ namespace BirimizKovulacak.Game
             lc.PhaseChanged += OnPhase;
             Rooms.MeetingClicked += OnMeetingClicked;
             Rooms.SeatClicked += OnSeatClicked;
+            BotSpeech.ShoutHeard += OnShout;
         }
 
         /// <summary>UIRoot.Rebuild (language switch) drops this screen and builds a new one: stop listening then.</summary>
@@ -157,7 +163,7 @@ namespace BirimizKovulacak.Game
                 lc.ResultReceived -= OnResult;
                 lc.PhaseChanged -= OnPhase;
             }
-            if (_bound) { Rooms.MeetingClicked -= OnMeetingClicked; Rooms.SeatClicked -= OnSeatClicked; }
+            if (_bound) { Rooms.MeetingClicked -= OnMeetingClicked; Rooms.SeatClicked -= OnSeatClicked; BotSpeech.ShoutHeard -= OnShout; }
             _bound = false;
             _board.Release();
             _ballot.Release();
@@ -166,6 +172,14 @@ namespace BirimizKovulacak.Game
         }
 
         void OnView(LineView o, LineView n) { if (!Detached()) { _dirty = true; } }
+
+        /// <summary>v5 Yaramazlıklar: a bot's reaction out loud (over its head, with its mumble).</summary>
+        void OnShout(int from, string text)
+        {
+            if (Detached() || !Visible) return;
+            var lc = LineClient.I;
+            if (lc != null && lc.View != null) _subs.Say(lc, lc.View, from, text);
+        }
 
         void OnMessages(IReadOnlyList<LineMessage> list)
         {
@@ -211,6 +225,11 @@ namespace BirimizKovulacak.Game
             if (!Visible) return;
             switch (e.Type)
             {
+                case LineEventType.Prank:
+                case LineEventType.Patience:
+                case LineEventType.Tutanak:
+                    if (lc != null) _pranks.OnEvent(e, lc);
+                    break;
                 case LineEventType.TransferReceived:
                     Toast(PlayText.Event(e, me), "of-toast-money", 6f);
                     Sfx.Play("complete", 0.6f);
@@ -249,6 +268,7 @@ namespace BirimizKovulacak.Game
             if (to == LinePhase.None)
             {
                 CloseAll(false);
+                _pranks.Close();
                 _pendingPhaseToast = null;
                 _toasts.Clear();
                 _subs.Clear();
@@ -277,6 +297,10 @@ namespace BirimizKovulacak.Game
                 case MeetingTarget.Ballot: OpenBallot(); break;
                 case MeetingTarget.Board: OpenBoard(); break;
                 case MeetingTarget.Projector: OpenProjector(); break;
+                case MeetingTarget.Plane:
+                    var rooms = RoomsPresenter.Instance;
+                    _pranks.OpenNote(rooms != null && rooms.Meeting != null ? rooms.Meeting.MyPlaneIndex : -1);
+                    break;
             }
         }
 
@@ -286,6 +310,8 @@ namespace BirimizKovulacak.Game
             if (Detached() || !Visible) return;
             var v = LineClient.I != null ? LineClient.I.View : null;
             if (v == null) return;
+            // v5 Yaramazlıklar: aiming a prank (the armed prank goes at whoever I clicked)
+            if (_pranks.SeatClicked(slot)) return;
             if (MeetingBallot.Available(v)) { _ballot.MarkFromLook(slot); return; }
             if (v.Features.TextsOpen)
             {
@@ -377,6 +403,7 @@ namespace BirimizKovulacak.Game
         /// <summary>Esc from UIRoot: puts down what you hold; false when nothing was up (UIRoot opens the menu).</summary>
         public bool Back()
         {
+            if (Visible && _pranks.Close()) return true;
             if (!Visible || !(_folder.IsOpen || _ballot.IsOpen || _boardZoom || _projZoom)) return false;
             CloseAll();
             return true;
@@ -443,14 +470,32 @@ namespace BirimizKovulacak.Game
                 _pendingPhaseToast = null;
             }
             _toasts.Tick();
-            _subs.Tick(v, Root, _folder.IsOpen || _ballot.IsOpen || _boardZoom || _projZoom);
+            _subs.Tick(v, Root, _folder.IsOpen || _ballot.IsOpen || _boardZoom || _projZoom || _pranks.WantsCursor);
+            _pranks.Tick(lc, v, now, UIRoot.I == null || (!UIRoot.I.TextInputFocused && !UIRoot.I.OverlayOpen));
         }
 
         void HandleKeys(LineClient lc, LineView v)
         {
             if (UIRoot.I != null && (UIRoot.I.TextInputFocused || UIRoot.I.OverlayOpen)) return;
             if (ScreenFade.Alpha > 0.5f) return;
-            bool e = Pressed(GameInput.Interact), q = Pressed(GameInput.Computer), tab = Pressed(GameInput.Phone);
+            bool e = Pressed(GameInput.Interact), q = Pressed(GameInput.Computer), tab = Pressed(GameInput.Phone), g = Pressed(GameInput.Prank);
+            // v5 Yaramazlıklar: G opens / closes the quick wheel; while it, the word / note card or a note is up the keys are its own
+            if (g && v.Features.PranksEnabled && v.Pranks != null) { _pranks.OpenWheel(); Consume(); return; }
+            if (_pranks.WheelOpen) return;
+            if (_pranks.Reading || _pranks.DialogOpen)
+            {
+                var kb = UnityEngine.InputSystem.Keyboard.current;
+                bool enter = kb != null && (kb.enterKey.wasPressedThisFrame || kb.numpadEnterKey.wasPressedThisFrame);
+                if (e || enter) { _pranks.Primary(); Consume(); }
+                return;
+            }
+            if (_pranks.Aiming)
+            {
+                // E on a colleague fires (RoomsPresenter raises SeatClicked); E on nothing keeps aiming; Q / Tab give up the aim
+                if (e && Rooms.HoveredSeat < 0) { Consume(); return; }
+                if (q || tab) _pranks.Close();
+                else return;
+            }
             if (_folder.IsOpen)
             {
                 if (e || q) { CloseAll(); Consume(); }
@@ -555,14 +600,14 @@ namespace BirimizKovulacak.Game
         void UpdatePrompt(LineClient lc, LineView v)
         {
             var rooms = RoomsPresenter.Instance;
-            bool looking = rooms != null && rooms.Mode == PovMode.Meeting && !_folder.IsOpen && !_ballot.IsOpen && !_boardZoom && !_projZoom;
+            bool looking = rooms != null && rooms.Mode == PovMode.Meeting && !_folder.IsOpen && !_ballot.IsOpen && !_boardZoom && !_projZoom && !_pranks.WantsCursor;
             int seat = looking ? Rooms.HoveredSeat : -1;
             var target = looking ? Rooms.HoveredMeeting : MeetingTarget.None;
             // a colleague: name tag (name in their colour, suç and tags, what E does)
             var p = seat >= 0 ? lc.Player(seat) : null;
             if (p != null)
             {
-                string sig = "n" + seat + p.Name + p.Blame + p.Candidate + p.Fired + BallotDrops.InBox(v, p) + v.Features.VoteOpen + Loc.Language;
+                string sig = "n" + seat + p.Name + p.Blame + p.Candidate + p.Fired + BallotDrops.InBox(v, p) + v.Features.VoteOpen + Loc.Language + (int)_pranks.Armed + _pranks.Aiming;
                 if (sig != _promptSig || !_nameTag.IsShown())
                 {
                     if (!_nameTag.IsShown()) UiMotion.FadeIn(_nameTag, 0.12f);
@@ -571,7 +616,9 @@ namespace BirimizKovulacak.Game
                     _nameText.style.color = Color.Lerp(PlayerColor(p.ColorIndex), Color.white, 0.4f);
                     _nameInfo.SetText(MeetingText.NameInfo(v, p));
                     bool vote = MeetingBallot.Available(v);
-                    string act = vote ? F("meeting.name.act_vote", OfficeText.Key(GameInput.Interact)) : v.Features.TextsOpen ? F("meeting.name.act_text", OfficeText.Key(GameInput.Interact)) : "";
+                    string act = _pranks.Aiming ? F("prank.name_act", OfficeText.Key(GameInput.Interact), T("prank." + LinePranks.Id(_pranks.Armed) + ".name"))
+                        : vote ? F("meeting.name.act_vote", OfficeText.Key(GameInput.Interact)) : v.Features.TextsOpen ? F("meeting.name.act_text", OfficeText.Key(GameInput.Interact)) : "";
+                    _nameTag.EnableInClassList("mt-name-aim", _pranks.Aiming);
                     _nameAct.SetText(act);
                     _nameAct.Show(act.Length > 0);
                 }

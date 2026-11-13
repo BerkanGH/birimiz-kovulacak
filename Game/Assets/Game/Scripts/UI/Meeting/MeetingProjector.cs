@@ -82,6 +82,10 @@ namespace BirimizKovulacak.Game
                 _root.AddToClassList("pj-root");
                 var head = Box("pj-head").NoPick().AddTo(_root);
                 _kicker = Title("", "pj-kicker").NoPick().AddTo(head);
+                // v5 Yaramazlıklar: the manager's patience in the corner (his face and six notches)
+                _gauge = Box("pj-patience").NoPick().AddTo(head);
+                _gauge.Show(false);
+                _gaugeSig = null;
                 _clock = Title("", "pj-clock").NoPick().AddTo(head);
                 var body = Box("pj-body").NoPick().AddTo(_root);
                 _content = Box("pj-content").NoPick().AddTo(body);
@@ -89,6 +93,11 @@ namespace BirimizKovulacak.Game
                 _tape = new TapeDeck(_tapeHost);
                 _tape.UseMutualArrow();
                 _tapeHost.Show(false);
+                // v5 Yaramazlıklar: the TUTANAK stamp over whatever is on
+                _tutanak = Box("pj-tutanak").NoPick().AddTo(_root);
+                _tutanakStamp = UiKit.StampText(T("prank.tutanak.stamp"), "pj-stamp", "pj-tutanak-stamp").NoPick().AddTo(_tutanak);
+                _tutanakWho = Bold("", "pj-tutanak-who").NoPick().AddTo(_tutanak);
+                _tutanak.Show(false);
                 var foot = Box("pj-foot").NoPick().AddTo(_root);
                 _foot = Bold("", "pj-foot-text").NoPick().AddTo(foot);
                 Box("pj-grow").NoPick().AddTo(foot);
@@ -114,11 +123,59 @@ namespace BirimizKovulacak.Game
             _room = null;
             _panel.Release();
             _root = null; _tape = null; _sig = null; _show = Show.None;
+            _gauge = null; _tutanak = null; _gaugeSig = null; _tutanakUntil = 0f;
             _anims.Clear();
             _deckRound = double.NaN;
         }
 
         public void MarkDirty() { _sig = null; }
+
+        // ------------------------------------------------------------------ v5 Yaramazlıklar
+
+        VisualElement _gauge, _tutanak;
+        Label _tutanakStamp, _tutanakWho;
+        string _gaugeSig;
+        float _tutanakUntil;
+        bool _gaugePulse;
+
+        /// <summary>The patience changed: the corner gauge pulses.</summary>
+        public void Patience() { _gaugePulse = true; _gaugeSig = null; }
+
+        /// <summary>A tutanak: the stamp lands on the projector with the culprit's name for a few seconds.</summary>
+        public void Tutanak(int culprit)
+        {
+            if (_tutanak == null) return;
+            _tutanakWho.SetText(F("prank.tutanak.who", Name(culprit), LineClient.I != null ? LineClient.I.Config.TutanakBlame : 1));
+            _tutanak.Show(true);
+            _tutanakUntil = Time.unscaledTime + 3.6f;
+            UiMotion.Stamp(_tutanakStamp, -8f, 0.24f, 0.05f, () => Sfx.Play("stamp", 0.7f));
+            UiMotion.FadeIn(_tutanakWho, 0.25f, 0.25f);
+        }
+
+        void UpdatePatience(LineClient lc, LineView v)
+        {
+            if (_gauge == null) return;
+            if (_tutanak != null && _tutanak.IsShown() && Time.unscaledTime > _tutanakUntil) _tutanak.Show(false);
+            var pv = v.Pranks;
+            bool on = pv != null && pv.Session >= 0 && pv.Session < LinePranks.SessionResults;
+            if (_gauge.IsShown() != on) _gauge.Show(on);
+            if (!on) return;
+            int capacity = lc.Config.PatienceCapacity;
+            string sig = pv.Patience + ":" + pv.Level + ":" + capacity + ":" + pv.Multiplier;
+            if (sig == _gaugeSig) return;
+            _gaugeSig = sig;
+            _gauge.Clear();
+            var face = Box("pj-mgr", "pj-mgr-" + pv.Level).NoPick().AddTo(_gauge);
+            UiArt.Apply(face, pv.Level >= 2 ? "portraits/mgr_disiplinci_angry" : "portraits/mgr_disiplinci");
+            var notches = Box("pj-notches").NoPick().AddTo(_gauge);
+            for (int i = 0; i < capacity; i++)
+            {
+                var n = Box("pj-notch").NoPick().AddTo(notches);
+                if (i < pv.Patience) n.AddToClassList("pj-notch-" + LinePranks.Level(i + 1, capacity));
+            }
+            if (pv.Multiplier > 1) Bold("x" + pv.Multiplier, "pj-patience-x").NoPick().AddTo(_gauge);
+            if (_gaugePulse) { _gaugePulse = false; UiMotion.Pulse(_gauge, 0.12f, 0.35f); }
+        }
 
         // ------------------------------------------------------------------ per frame
 
@@ -127,6 +184,7 @@ namespace BirimizKovulacak.Game
             if (_root == null || v == null) return;
             var show = Pick(v, now, out _pick);
             _clock.SetText(v.Phase == LinePhase.Abandoned ? "" : UiKit.Clock(Math.Max(0, v.PhaseEndTime - now)));
+            UpdatePatience(lc, v);
             _kicker.SetText(Loc.Upper(Kicker(show, lc, v)));
             bool tape = show == Show.Tape;
             if (_tapeHost.IsShown() != tape) { _tapeHost.Show(tape); if (tape) UiMotion.FadeIn(_tapeHost, 0.3f); }

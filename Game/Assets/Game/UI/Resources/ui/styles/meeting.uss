@@ -147,3 +147,99 @@
 .mt-sub-screen { left: 50%; top: auto; bottom: 110px; translate: -50% 0; }
 /* (3b polish) zoomed on the projector the corner notes start under its header and clock */
 .mt-toasts-zoom { top: 182px; }
+
+/* ---------------------------------------------------------------- v5 Yaramazlıklar (MeetingPranks.cs, MeetingSubtitles.cs) */
+/* the manager's line over his head */
+.mt-sub-manager { border-color: rgb(160, 40, 30); background-color: rgba(255, 246, 238, 0.97); }
+/* aiming: the name tag of whoever the prank would hit */
+.mt-name-aim { border-width: 3px; border-color: rgb(255, 140, 60); }
+/* coffee / cream over my screen */
+.pk-splash { position: absolute; left: 0; top: 0; right: 0; bottom: 0; -unity-background-scale-mode: stretch-to-fill; }
+/* my own post-it (I cannot see my forehead) */
+.pk-mypostit { position: absolute; top: 128px; left: 50%; translate: -50% 0; align-items: center; background-color: rgb(255, 232, 98);
+    padding: 4px 22px 8px 22px; rotate: 3deg; border-bottom-width: 4px; border-color: rgba(176, 140, 20, 0.6); }
+.pk-mypostit-kicker { font-size: 13px; color: rgb(120, 92, 20); letter-spacing: 2px; margin: 0; }
+.pk-mypostit-word { font-size: 32px; color: rgb(31, 42, 68); margin: 0; }
+/* the quick wheel (G) */
+.pk-wheel { position: absolute; left: 0; top: 0; right: 0; bottom: 0; background-color: rgba(10, 14, 26, 0.5); }
+.pk-ring { position: absolute; left: 50%; top: 50%; width: 0; height: 0; }
+.pk-centre { position: absolute; left: -160px; top: -160px; width: 320px; height: 320px; border-radius: 160px; background-color: rgba(23, 31, 52, 0.95);
+    border-width: 4px; border-color: rgb(255, 224, 102); align-items: center; justify-content: center; padding: 22px 26px; }
+.pk-centre-title { font-size: 22px; color: rgb(255, 224, 102); letter-spacing: 3px; margin-bottom: 8px; }
+.pk-centre-level { font-size: 19px; color: rgb(244, 239, 227); margin: 6px 0 4px 0; -unity-text-align: middle-center; white-space: normal; }
+.pk-centre-info { font-size: 16px; color: rgb(214, 220, 236); white-space: normal; -unity-text-align: middle-center; }
+.pk-slice { position: absolute; width: 270px; height: 96px; translate: -50% -50%; background-color: rgb(252, 248, 238); border-radius: 18px;
+    border-width: 3px; border-bottom-width: 6px; border-color: rgb(31, 42, 68); padding: 6px 12px 6px 38px; align-items: center; justify-content: center; }
+.pk-slice:hover { background-color: rgb(255, 240, 180); border-color: rgb(232, 140, 40); }
+.pk-slice-on { background-color: rgb(255, 240, 180); border-color: rgb(232, 140, 40); }
+.pk-slice-off { background-color: rgb(214, 216, 224); border-color: rgb(120, 126, 146); }
+.pk-slice-off .pk-slice-name { color: rgb(96, 102, 122); }
+.pk-slice-key { position: absolute; left: 8px; top: 6px; height: 26px; font-size: 15px; }
+.pk-slice-name { font-size: 21px; color: rgb(31, 42, 68); margin: 0; -unity-text-align: middle-center; }
+.pk-slice-info { font-size: 15px; color: rgb(80, 86, 108); white-space: normal; -unity-text-align: middle-center; margin: 2px 0 0 0; }
+.pk-slice-off .pk-slice-info { color: rgb(170, 50, 40); }
+.pk-wheel-foot { position: absolute; bottom: 70px; left: 50%; translate: -50% 0; font-size: 18px; color: rgb(244, 239, 227);
+    background-color: rgba(23, 31, 52, 0.88); padding: 6px 18px; border-radius: 14px; }
+/* the patience gauge: the manager's face and the notches (the wheel's centre, the folder's tab) */
+.pk-gauge { flex-direction: row; align-items: center; }
+.pk-face { width: 46px; height: 46px; border-radius: 23px; border-width: 4px; border-color: rgb(70, 170, 100); background-color: rgb(250, 247, 238);
+    -unity-background-scale-mode: scale-and-crop; }
+.pk-face-1 { border-color: rgb(236, 170, 40); }
+.pk-face-2 { border-color: rgb(214, 60, 46); }
+.pk-notches { flex-direction: row; margin-left: 8px; }
+.pk-notch { width: 14px; height: 26px; margin-left: 4px; border-radius: 3px; border-width: 2px; border-color: rgba(244, 239, 227, 0.55);
+    background-color: rgba(244, 239, 227, 0.12); }
+.pk-notch-0 { background-color: rgb(70, 170, 100); border-color: rgb(46, 120, 70); }
+.pk-notch-1 { background-color: rgb(236, 170, 40); border-color: rgb(170, 110, 20); }
+.pk-notch-2 { background-color: rgb(214, 60, 46); border-color: rgb(150, 36, 28); }
+.mt-tablet .pk-notch { border-color: rgba(31, 42, 68, 0.35); background-color: rgba(31, 42, 68, 0.06); }
+.mt-tablet .pk-notch-0 { background-color: rgb(70, 170, 100); border-color: rgb(46, 120, 70); }
+.mt-tablet .pk-notch-1 { background-color: rgb(236, 170, 40); border-color: rgb(170, 110, 20); }
+.mt-tablet .pk-notch-2 { background-color: rgb(214, 60, 46); border-color: rgb(150, 36, 28); }
+.pk-gauge-big .pk-face { width: 68px; height: 68px; border-radius: 34px; border-width: 5px; }
+.pk-gauge-big .pk-notch { width: 18px; height: 34px; margin-left: 5px; }
+/* the folder's tab */
+.pk-head-row { flex-direction: row; align-items: center; }
+.pk-head-text { margin-left: 18px; flex-grow: 1; flex-shrink: 1; }
+.pk-row { margin-bottom: 7px; padding: 7px 14px 8px 14px; border-radius: 10px; border-width: 2px; border-color: rgba(31, 42, 68, 0.16);
+    background-color: rgb(255, 252, 244); }
+.pk-row:hover { border-color: rgba(232, 140, 40, 0.7); }
+.pk-row-open { border-color: rgb(232, 140, 40); background-color: rgb(255, 246, 226); }
+.pk-row-off .pk-row-name { color: rgb(120, 124, 140); }
+.pk-row-top { flex-direction: row; align-items: center; }
+.pk-row-name { font-size: 21px; color: rgb(31, 42, 68); margin: 0; }
+.mt-tablet .pk-chip-cost { background-color: rgba(210, 56, 47, 0.14); }
+.mt-tablet .pk-chip-free { background-color: rgba(36, 120, 74, 0.18); }
+.pk-row-reason { font-size: 16px; color: rgb(184, 52, 42); margin: 1px 0 0 0; }
+.pk-row-desc { font-size: 17px; color: rgb(70, 78, 100); white-space: normal; margin: 4px 0 0 0; }
+.pk-row-actions { flex-direction: row; flex-wrap: wrap; align-items: center; margin-top: 6px; }
+.pk-target { border-left-width: 7px; min-width: 96px; }
+.pk-note-row { align-items: center; }
+/* the post-it word / plane note card */
+.pk-dialog { position: absolute; left: 50%; top: 46%; translate: -50% -50%; width: 780px; background-color: rgb(252, 248, 238); border-radius: 16px;
+    border-width: 3px; border-bottom-width: 7px; border-color: rgb(31, 42, 68); padding: 16px 24px 16px 24px; }
+.pk-dialog-title { font-size: 34px; color: rgb(31, 42, 68); margin: 0; }
+.pk-dialog-info { font-size: 18px; color: rgb(80, 86, 108); white-space: normal; margin: 2px 0 8px 0; }
+.pk-dialog-sub { font-size: 15px; color: rgb(107, 111, 128); letter-spacing: 2px; margin: 8px 0 2px 0; }
+.pk-words { flex-direction: row; flex-wrap: wrap; }
+.pk-word { font-size: 22px; min-width: 128px; min-height: 48px; margin: 4px 8px 4px 0; background-color: rgb(255, 232, 98); color: rgb(31, 42, 68);
+    border-width: 2px; border-color: rgba(176, 140, 20, 0.6); rotate: -1deg; }
+.pk-word-on { border-width: 4px; border-color: rgb(210, 56, 47); background-color: rgb(255, 214, 60); }
+.pk-note-field { font-size: 22px; margin: 4px 0 6px 0; min-height: 44px; }
+.pk-targets { flex-direction: row; flex-wrap: wrap; }
+.pk-dialog-buttons { flex-direction: row; justify-content: flex-end; margin-top: 12px; }
+/* aiming */
+.pk-aim { position: absolute; bottom: 150px; left: 50%; translate: -50% 0; background-color: rgba(23, 31, 52, 0.9); border-width: 2px;
+    border-color: rgb(255, 140, 60); border-radius: 18px; padding: 8px 22px; }
+.pk-aim-text { font-size: 21px; color: rgb(244, 239, 227); }
+/* a plane's note */
+.pk-reader { position: absolute; left: 50%; top: 44%; translate: -50% -50%; width: 660px; background-color: rgb(253, 251, 245); border-radius: 6px;
+    padding: 22px 32px 18px 32px; rotate: -1.5deg; border-bottom-width: 6px; border-color: rgba(0, 0, 0, 0.18); align-items: center; }
+.pk-reader-kicker { font-size: 16px; color: rgb(107, 111, 128); letter-spacing: 3px; margin: 0; }
+.pk-reader-from { font-size: 18px; color: rgb(107, 111, 128); margin: 2px 0 0 0; }
+.pk-reader-text { font-size: 42px; color: rgb(31, 42, 68); white-space: normal; -unity-text-align: middle-center; margin: 14px 0 18px 0; }
+/* the patience dots of a prank (filled: it adds; hollow: flattering takes away) */
+.pk-dots-chip { flex-direction: row; align-items: center; }
+.pk-dots-label { font-size: 17px; color: rgb(31, 42, 68); margin: 0 6px 0 0; }
+.pk-dot { width: 12px; height: 12px; border-radius: 6px; margin: 0 2px; background-color: rgb(214, 96, 40); border-width: 2px; border-color: rgb(150, 56, 20); }
+.pk-dot-relief { background-color: rgba(0, 0, 0, 0); border-color: rgb(36, 120, 74); }

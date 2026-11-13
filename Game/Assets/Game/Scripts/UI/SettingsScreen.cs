@@ -240,6 +240,7 @@ UiSettings.SetFloat(Rooms.PrefSensitivity, v), v => v.ToString("0.00") + "×");
             BindRow(GameInput.PushToTalk, 0, "input.push_to_talk");
             BindRow(GameInput.AnswerCall, 0, "input.answer_call");
             BindRow(GameInput.HangUp, 0, "input.hang_up");
+            BindRow(GameInput.Prank, 0, "input.prank");
             var fixedRow = Box("bind-row").AddTo(_body);
             Text(Loc.T("settings.bind_fixed"), "bind-label").AddTo(fixedRow);
             KeyCap(Loc.T("ctl.mouse_key")).AddTo(fixedRow);
@@ -311,19 +312,20 @@ UiSettings.SetFloat(Rooms.PrefSensitivity, v), v => v.ToString("0.00") + "×");
     {
         static HowToPlayScreen _i;
         public const int PageGoal = 0, PageFlow = 1, PageBonus = 2, PageCash = 3, PageShift = 4, PageBlame = 5, PageInvestigation = 6,
-            PageRecorder = 7, PageTransfers = 8, PageCrisis = 9, PageFinal = 10;
-        public const int Pages = 11;
+            PageRecorder = 7, PageTransfers = 8, PageCrisis = 9, PageFinal = 10, PagePranks = 11;
+        public const int Pages = 12;
         /// <summary>Illustration per page; null = the icon tile below.</summary>
         static readonly string[] PageArt =
         {
             "onboarding/ob_1_rooms", "onboarding_v4/intro_3_meeting", "onboarding/ob_3_rounds", null, null, "onboarding/ob_4_blame", null,
-            "onboarding/ob_6_recording", "onboarding/ob_2_phone", null, "onboarding/ob_7_friday",
+            "onboarding/ob_6_recording", "onboarding/ob_2_phone", null, "onboarding/ob_7_friday", null,
         };
         /// <summary>Fallback when an illustration is missing: one big icon on a paper tile.</summary>
         static readonly string[] PageIcon =
         {
             "icons_v3/meeting", "icons_v3/agenda_app", "icons_v3/share", "icons_v3/take_all", "icons_v3/sticky_todo", "icons_v3/blame",
             "icons_v3/agenda_target", "icons_v3/recording", "icons_v3/manager_line", "icons_v3/warning_letter", "icons_v3/defense",
+            "icons_v3/coffee_spill",
         };
 
         /// <summary>The rules in force: the host's config in a match, else the local one.</summary>
@@ -352,6 +354,7 @@ UiSettings.SetFloat(Rooms.PrefSensitivity, v), v => v.ToString("0.00") + "×");
                 case PageTransfers: return new object[] { c.TransferMax };
                 case PageCrisis: return new object[] { c.CrisisBlame, c.CandidatesFor(4), c.CandidatesFor(6) };
                 case PageFinal: return new object[] { c.FiringsFor(4), c.FiringsFor(6) };
+                case PagePranks: return new object[] { c.PatienceCapacity, c.TutanakBlame, c.CoffeeCost, c.PhoneRingCost, c.FlatterRelief, c.DefencePatienceMultiplier, OfficeText.Key(GameInput.Prank) };
                 default: return new object[0];
             }
         }

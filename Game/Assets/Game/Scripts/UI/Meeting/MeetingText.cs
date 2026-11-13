@@ -71,6 +71,7 @@ namespace BirimizKovulacak.Game
                 case MeetingTarget.Ballot: return T("meeting.use.ballot");
                 case MeetingTarget.Board: return T("meeting.use.board");
                 case MeetingTarget.Projector: return T("meeting.use.projector");
+                case MeetingTarget.Plane: return T("prank.use.plane");
                 default: return "";
             }
         }

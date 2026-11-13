@@ -62,6 +62,32 @@ namespace BirimizKovulacak.Game
             return sp.z > 0.2f && sp.x > Screen.width * 0.04f && sp.x < Screen.width * 0.96f && sp.y > Screen.height * 0.12f && sp.y < Screen.height * 0.98f;
         }
 
+        /// <summary>v5 Yaramazlıklar: the manager says something (over his head, a low mumble from the head of the table).</summary>
+        public void SayManager(string text)
+        {
+            const int m = Slots - 1;
+            var room = RoomsPresenter.Instance != null ? RoomsPresenter.Instance.Meeting : null;
+            if (room == null || room.Manager == null) return;
+            _defence[m] = false;
+            _full[m] = text ?? "";
+            _from[m] = Time.unscaledTime;
+            _until[m] = Time.unscaledTime + Mathf.Clamp(2.5f + _full[m].Length * 0.05f, 3.5f, 6f);
+            _who[m].SetText(PlayText.T("prank.manager.name"));
+            _who[m].style.color = new Color(0.62f, 0.16f, 0.12f);
+            _box[m].EnableInClassList("mt-sub-defence", false);
+            _box[m].EnableInClassList("mt-sub-manager", true);
+            _box[m].Show(true);
+            UiMotion.FadeIn(_box[m], 0.15f);
+            Vector3 head = ManagerHead(room);
+            Sfx.Mumble(Mathf.Clamp(_full[m].Length * 0.045f, 0.8f, 3.2f), 0.66f, 7, head);
+        }
+
+        static Vector3 ManagerHead(MeetingRoom room)
+        {
+            var b = room.Manager;
+            return b.Head != null ? b.Head.position + Vector3.up * 0.3f : b.transform.position + Vector3.up * 1.9f;
+        }
+
         public void Clear()
         {
             for (int i = 0; i < Slots; i++) { _until[i] = 0f; _box[i].Show(false); }
@@ -91,7 +117,10 @@ namespace BirimizKovulacak.Game
                 _text[i].SetText(n >= _full[i].Length ? _full[i] : _full[i].Substring(0, n));
                 Vector3 head;
                 bool placed = false;
-                if (room.TryGetHead(i, cam.transform.position, out head))
+                bool found;
+                if (i == Slots - 1) { found = room.Manager != null; head = found ? ManagerHead(room) : Vector3.zero; }
+                else found = room.TryGetHead(i, cam.transform.position, out head);
+                if (found)
                 {
                     var sp = cam.WorldToScreenPoint(head + Vector3.up * 0.18f);
                     float sw = Mathf.Max(1, Screen.width), sh = Mathf.Max(1, Screen.height);
