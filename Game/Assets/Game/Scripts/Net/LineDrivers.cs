@@ -56,6 +56,7 @@ namespace BirimizKovulacak.Game
             catch (System.Exception e) { Debug.LogException(e); return; }
             foreach (var x in _talk.Actions) lc.Send(x.Verb, x.Target, x.A, x.B, x.C, x.Text);
             foreach (var l in _talk.Lines) BotSpeech.SendLine(v.WeekId, l);
+            foreach (var l in _talk.Shouts) BotSpeech.SendShout(v.WeekId, l);
             foreach (var q in _talk.Asks) BotSpeech.SendAsk(v.WeekId, q);
             foreach (var line in _talk.Log) MatchLog.Write(line);
         }
@@ -214,6 +215,7 @@ namespace BirimizKovulacak.Game
                     {
                         new ShotSpec(4f, "room", () => Seat(-20f, 4f)), new ShotSpec(10f, "folder", () => Meeting?.OpenFolder(MeetingFolder.Tab.Actions)),
                         new ShotSpec(16f, "board", () => Meeting?.OpenBoard()), new ShotSpec(26f, "projector", () => Meeting?.OpenProjector()),
+                        new ShotSpec(32f, "pranks", () => Meeting?.OpenFolder(MeetingFolder.Tab.Pranks)),
                         new ShotSpec(38f, "projector_seat", ProjectorFromSeat),
                     };
                 case LinePhase.MeetingVote:
@@ -396,7 +398,11 @@ namespace BirimizKovulacak.Game
                 foreach (var p in v.Players) _seats.Add(new MeetingSeatInfo { Slot = p.Id, ColorIndex = p.ColorIndex, Name = p.Name, Connected = p.Connected });
                 rooms.EnterMeeting(me, _seats, "");
                 rooms.SetPovMode(PovMode.Meeting);
-                if (RoomsPresenter.Instance != null && RoomsPresenter.Instance.Meeting != null) RoomsPresenter.Instance.Meeting.ClearPayouts();
+                if (RoomsPresenter.Instance != null && RoomsPresenter.Instance.Meeting != null)
+                {
+                    RoomsPresenter.Instance.Meeting.ClearPayouts();
+                    RoomsPresenter.Instance.Meeting.ClearPranks();
+                }
             }
             var voice = VoiceSystem.Instance;
             foreach (var p in v.Players)
@@ -430,6 +436,12 @@ namespace BirimizKovulacak.Game
             }
             if (fired != _firedShown) { _firedShown = fired; rooms.SetFired(fired); }
             if (room != null) Payouts(room, lc, v);
+            // v5 Yaramazlıklar: stains, post-its, cream and the planes on the tables as the view says; the manager's mood
+            if (room != null)
+            {
+                room.SyncPranks(v.Pranks);
+                room.SetManagerMood(v.Pranks != null && v.Pranks.Session >= 0 && v.Pranks.Session < LinePranks.SessionResults ? v.Pranks.Level : 0);
+            }
             rooms.SetTimeOfDay(v.Day >= 2 ? 1f : 0.9f);
         }
 
