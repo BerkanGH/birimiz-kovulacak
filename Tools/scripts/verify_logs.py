@@ -94,7 +94,7 @@ def bot_talk(logs):
 
 
 PRANK_BOT = re.compile(r"bottalk prank seat=(\d+) policy=(\w+) kind=(\w+) target=(-?\d+) session=(-?\d+) phase=(\w+) cost=(\d+) "
-                       r"patience=(-?\d+) tutanak=(yes|no) culprit=(-?\d+) sealed=(yes|no) prim_after=(-?\d+)")
+                       r"patience=(-?\d+) tutanak=(yes|no) culprit=(-?\d+) sealed=(yes|no) prim_after=(-?\d+)(?: t=([\d.]+))?")
 PRANK_SUMMARY = re.compile(r"bottalk pranks seat=(\d+) policy=(\w+) made=(\d+) tried=(\d+) tutanak=(\d+) spent=(\d+) reactions=(\d+) final_prim=(-?\d+)")
 PRANK_HOST = re.compile(r"host: prank i=(\d+) kind=(\w+) actor=(-?\d+) target=(-?\d+) session=(-?\d+) phase=(\w+) cost=(\d+) patience=(-?\d+) "
                         r"after=(-?\d+) tutanak=(yes|no) culprit=(-?\d+)")
@@ -115,7 +115,7 @@ def pranks(logs):
         for m in PRANK_BOT.finditer(text):
             seat, policy, kind, target = int(m.group(1)), m.group(2), m.group(3), int(m.group(4))
             cost, tutanak, culprit, sealed, prim = int(m.group(7)), m.group(9) == "yes", int(m.group(10)), m.group(11) == "yes", int(m.group(12))
-            key = m.group(0)
+            key = m.group(0)  # includes t=, so two cakes at the same colleague both count
             if key in seen:
                 continue
             seen.add(key)
