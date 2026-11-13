@@ -462,6 +462,130 @@ namespace BirimizKovulacak.Game
             return Normalize(d, 0.5f);
         }
 
+        // ------------------------------------------------------------------ v5 Yaramazlıklar (all original, synthesised)
+
+        /// <summary>An embarrassing ringtone of our own: a bouncy kazoo-like ditty (square wave with vibrato) that ends in a
+        /// silly falling "boing", played twice (~3.4 s).</summary>
+        public static float[] PrankRing()
+        {
+            // a made-up ditty (no existing melody): hop, hop, wobble, fall
+            float[] notes = { 784f, 659f, 784f, 988f, 880f, 784f, 659f, 587f, 659f, 784f, 659f, 523f };
+            float[] lens = { 0.1f, 0.1f, 0.1f, 0.2f, 0.1f, 0.1f, 0.1f, 0.2f, 0.1f, 0.1f, 0.1f, 0.18f };
+            var d = new float[N(3.4f)];
+            for (int rep = 0; rep < 2; rep++)
+            {
+                float t = rep * 1.7f;
+                for (int i = 0; i < notes.Length; i++)
+                {
+                    float f = notes[i];
+                    int s0 = N(t), len = N(lens[i] * 0.92f);
+                    double ph = 0;
+                    for (int k = 0; k < len && s0 + k < d.Length; k++)
+                    {
+                        float u = k / (float)len, tt = k / (float)Rate;
+                        float vib = 1f + 0.018f * Mathf.Sin(2f * Mathf.PI * 7.5f * tt);
+                        ph += f * vib / Rate;
+                        float env = Mathf.Min(1f, tt / 0.006f) * (1f - u * 0.6f) * Mathf.Min(1f, (len - k) / (Rate * 0.006f));
+                        float x = Osc(Wave.Square, ph) * 0.55f + Osc(Wave.Triangle, ph * 2.0) * 0.3f;
+                        d[s0 + k] += x * env * 0.22f;
+                    }
+                    t += lens[i];
+                }
+                // the boing
+                AddTone(d, t + 0.02f, 0.28f, 420f, 150f, 0.3f, Wave.Triangle, 0.12f);
+            }
+            return Normalize(d, 0.62f);
+        }
+
+        /// <summary>A loud slurp of hot tea: band-passed noise sweeping up with a bubbling tremolo (~0.8 s).</summary>
+        public static float[] Slurp()
+        {
+            var rnd = new System.Random(71);
+            int len = N(0.85f);
+            var d = new float[len];
+            var bp = Biquad.BandPass(500f, 4f);
+            for (int i = 0; i < len; i++)
+            {
+                float u = i / (float)len, t = i / (float)Rate;
+                if ((i & 15) == 0) bp.SetBandPass(Mathf.Lerp(450f, 2600f, Mathf.Pow(u, 0.7f)) + 260f * Mathf.Sin(t * 60f), 3.5f);
+                float trem = 0.55f + 0.45f * Mathf.Abs(Mathf.Sin(t * 2f * Mathf.PI * 13f));
+                float env = Mathf.Min(1f, t / 0.05f) * Mathf.Min(1f, (len - i) / (Rate * 0.08f));
+                d[i] = bp.Process((float)(rnd.NextDouble() * 2 - 1)) * trem * env;
+            }
+            return Normalize(d, 0.6f);
+        }
+
+        /// <summary>A palm slammed on the meeting table: a low wooden thump and a rattle.</summary>
+        public static float[] TableSlam()
+        {
+            var rnd = new System.Random(73);
+            var d = new float[N(0.6f)];
+            AddTone(d, 0f, 0.35f, 95f, 55f, 0.9f, Wave.Sine, 0.09f, 0.001f);
+            AddTone(d, 0f, 0.12f, 240f, 160f, 0.35f, Wave.Triangle, 0.03f, 0.001f);
+            AddNoise(d, 0f, 0.09f, 0.6f, rnd, 0.18f, false, 0.025f, 0.0005f);
+            for (int k = 0; k < 4; k++) AddNoise(d, 0.07f + k * 0.045f, 0.03f, 0.12f, rnd, 0.5f, true, 0.01f);
+            return Normalize(d, 0.8f);
+        }
+
+        /// <summary>A wet splat (coffee on a shirt, cream in a face).</summary>
+        public static float[] Splat()
+        {
+            var rnd = new System.Random(79);
+            int len = N(0.45f);
+            var d = new float[len];
+            var lp = Biquad.LowPass(1800f);
+            for (int i = 0; i < len; i++)
+            {
+                float t = i / (float)Rate;
+                if ((i & 31) == 0) lp.SetLowPass(Mathf.Lerp(2200f, 300f, Mathf.Min(1f, t / 0.25f)), 0.8f);
+                d[i] = lp.Process((float)(rnd.NextDouble() * 2 - 1)) * Mathf.Min(1f, t / 0.003f) * Mathf.Exp(-t / 0.07f);
+            }
+            AddTone(d, 0f, 0.12f, 140f, 70f, 0.5f, Wave.Sine, 0.04f, 0.001f);
+            return Normalize(d, 0.7f);
+        }
+
+        /// <summary>Something thrown across the table: a short airy whoosh.</summary>
+        public static float[] Whoosh()
+        {
+            var rnd = new System.Random(83);
+            int len = N(0.5f);
+            var d = new float[len];
+            var bp = Biquad.BandPass(600f, 1.2f);
+            for (int i = 0; i < len; i++)
+            {
+                float u = i / (float)len;
+                if ((i & 15) == 0) bp.SetBandPass(Mathf.Lerp(500f, 1800f, Mathf.Sin(u * Mathf.PI)), 1.3f);
+                d[i] = bp.Process((float)(rnd.NextDouble() * 2 - 1)) * Mathf.Sin(u * Mathf.PI);
+            }
+            return Normalize(d, 0.4f);
+        }
+
+        /// <summary>A paper plane gliding: soft fluttering paper (~0.9 s).</summary>
+        public static float[] PaperFlutter()
+        {
+            var rnd = new System.Random(89);
+            int len = N(0.9f);
+            var d = new float[len];
+            var bp = Biquad.BandPass(2400f, 0.9f);
+            for (int i = 0; i < len; i++)
+            {
+                float u = i / (float)len, t = i / (float)Rate;
+                float flap = 0.35f + 0.65f * Mathf.Abs(Mathf.Sin(t * 2f * Mathf.PI * 19f));
+                d[i] = bp.Process((float)(rnd.NextDouble() * 2 - 1)) * flap * Mathf.Sin(u * Mathf.PI);
+            }
+            return Normalize(d, 0.32f);
+        }
+
+        /// <summary>A post-it slapped onto a forehead.</summary>
+        public static float[] Slap()
+        {
+            var rnd = new System.Random(97);
+            var d = new float[N(0.18f)];
+            AddNoise(d, 0f, 0.05f, 0.7f, rnd, 0.6f, true, 0.012f, 0.0003f);
+            AddTone(d, 0f, 0.06f, 320f, 210f, 0.3f, Wave.Sine, 0.02f, 0.0005f);
+            return Normalize(d, 0.55f);
+        }
+
         // ------------------------------------------------------------------ ambience loops
 
         /// <summary>Distant office typing, 6 s loop (sparse clicks, nothing near the seam).</summary>

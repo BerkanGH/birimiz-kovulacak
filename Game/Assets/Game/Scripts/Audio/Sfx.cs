@@ -93,6 +93,28 @@ namespace BirimizKovulacak.Game
             if (_i._clips.TryGetValue(name, out c)) _i._oneShot.PlayOneShot(c, volume * EffectsVolume);
         }
 
+        /// <summary>A one-shot from a point in the room (a prank at a colleague's seat); flat when <paramref name="at"/> is null.</summary>
+        public static void PlayAt(string name, Vector3? at, float volume = 1f, float pitch = 1f)
+        {
+            if (_i == null || name == null) return;
+            AudioClip c;
+            if (!_i._clips.TryGetValue(name, out c)) return;
+            if (!at.HasValue) { _i._oneShot.PlayOneShot(c, volume * EffectsVolume); return; }
+            var go = new GameObject("Sfx3D_" + name);
+            go.transform.SetParent(_i.transform);
+            go.transform.position = at.Value;
+            var src = go.AddComponent<AudioSource>();
+            src.playOnAwake = false;
+            Configure3D(src, 0.85f);
+            src.minDistance = 2.5f;
+            src.maxDistance = 25f;
+            src.pitch = pitch;
+            src.volume = volume * EffectsVolume;
+            src.clip = c;
+            src.Play();
+            Destroy(go, c.length / Mathf.Max(0.1f, pitch) + 0.2f);
+        }
+
         /// <summary>Starts/updates a keyed looping source (call every frame to follow a moving emitter). clip null stops.</summary>
         public static void LoopAt(string key, string clip, Vector3 position, float volume = 1f, bool spatial = true, float pitch = 1f)
         {
@@ -232,6 +254,14 @@ namespace BirimizKovulacak.Game
             Add("internet_down", SfxSynth.InternetDown());
             Add("power_down", SfxSynth.PowerDown());
             Add("splash", SfxSynth.Splash());
+            // v5 Yaramazlıklar
+            Add("prank_ring", SfxSynth.PrankRing());
+            Add("prank_slurp", SfxSynth.Slurp());
+            Add("prank_slam", SfxSynth.TableSlam());
+            Add("prank_splat", SfxSynth.Splat());
+            Add("prank_whoosh", SfxSynth.Whoosh());
+            Add("prank_paper", SfxSynth.PaperFlutter());
+            Add("prank_slap", SfxSynth.Slap());
             // ambience (looped by Ambience)
             Add("ambience_keys", SfxSynth.AmbienceKeys());
             Add("ambience_hum", SfxSynth.AmbienceHum());

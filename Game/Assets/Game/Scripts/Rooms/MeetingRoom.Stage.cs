@@ -86,7 +86,8 @@ namespace BirimizKovulacak.Game
             int spotSeat = _spot >= 0 && _spot < MaxSlots ? _seatOfSlot[_spot] : -1;
             for (int s = 0; s < _stand.Length && s < Seats.Length; s++)
             {
-                bool up = s == spotSeat && SlotAtSeat(s) != _fired;
+                // the defender, or a Yaramazlıklar stand-up ("İtiraz ediyorum!") for a moment
+                bool up = (s == spotSeat || PrankStanding(s)) && SlotAtSeat(s) != _fired;
                 float before = _stand[s];
                 _stand[s] = Mathf.MoveTowards(_stand[s], up ? 1f : 0f, dt / (up ? 0.7f : 0.55f));
                 if (before == _stand[s] && before == 0f) continue;

@@ -94,6 +94,7 @@ namespace BirimizKovulacak.Game
             if (FiredBox != null) FiredBox.SetActive(false);
             InitProps();
             InitStage();
+            InitPranks();
         }
 
         // ------------------------------------------------------------------ seats

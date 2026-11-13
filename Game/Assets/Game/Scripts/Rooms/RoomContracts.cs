@@ -41,14 +41,16 @@ namespace BirimizKovulacak.Game
 
     /// <summary>v5 step 3a: things you can use at the meeting table besides your colleagues: your folder (tablet), the ballot
     /// paper in front of you during a vote, the whiteboard across the table; step 3b: the projector screen (E zooms in).</summary>
-    public enum MeetingTarget { None, Folder, Ballot, Board, Projector }
+    public enum MeetingTarget { None, Folder, Ballot, Board, Projector, Plane }
 
     public enum MonitorState { Normal, Alert, Offline, Coffee, Off }
 
     /// <summary>OffHook (v5): the handset is up (phone panel open) but no call is running.</summary>
     public enum PhoneLineState { Idle, Ringing, Dialing, InCall, Dead, OffHook }
 
-    public enum MeetingReaction { None, Nod, Laugh, Gasp, Point, Slump, Cheer }
+    /// <summary>Seated reactions (v5 Yaramazlıklar adds the drink, panic, phone, shock, facepalm and shrug clips, and the
+    /// manager's anger and pleasure).</summary>
+    public enum MeetingReaction { None, Nod, Laugh, Gasp, Point, Slump, Cheer, Drink, Panic, Phone, Shocked, Facepalm, Shrug, Angry, Pleased }
 
     /// <summary>One occupied seat at the meeting table.</summary>
     public struct MeetingSeatInfo

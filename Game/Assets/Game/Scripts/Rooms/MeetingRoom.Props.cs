@@ -598,6 +598,7 @@ namespace BirimizKovulacak.Game
             TickFlyers(now);
             TickBox(now, dt);
             TickPayouts(now, dt);
+            TickPranks(cam != null ? cam.transform.position : _eye, dt);
         }
 
         static float Ease(float t) { t = Mathf.Clamp01(t); return t * t * (3f - 2f * t); }

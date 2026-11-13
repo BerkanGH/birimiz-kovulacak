@@ -623,7 +623,8 @@ namespace BirimizKovulacak.Game
                 case MeetingTarget.Folder: return !Meeting.FolderHeld && Meeting.FolderProgress < 0.05f;
                 case MeetingTarget.Ballot: return Meeting.BallotShown && !Meeting.BallotHeld && !Meeting.BallotDropping;
                 case MeetingTarget.Board:
-                case MeetingTarget.Projector: return true;
+                case MeetingTarget.Projector:
+                case MeetingTarget.Plane: return true;
                 default: return false;
             }
         }

@@ -108,11 +108,14 @@ namespace BirimizKovulacak.Game
             _talkLevel = Mathf.Clamp01(level);
         }
 
-        public void React(MeetingReaction r)
+        public void React(MeetingReaction r) { React(r, 0f); }
+
+        /// <summary>Plays a reaction clip; <paramref name="seconds"/> &gt; 0 holds it that long (the phone ring, the slurp).</summary>
+        public void React(MeetingReaction r, float seconds)
         {
-            if (r == MeetingReaction.None || _fired || _standing) return;
+            if (r == MeetingReaction.None || _fired || (_standing && !IsManager && r != MeetingReaction.Point)) return;
             _reaction = r;
-            _reactionUntil = Time.time + ReactionSeconds(r);
+            _reactionUntil = Time.time + (seconds > 0f ? seconds : ReactionSeconds(r));
             int h = Animator.StringToHash(ReactionState(r));
             if (Anim != null && Anim.HasState(0, h))
             {
@@ -136,6 +139,8 @@ namespace BirimizKovulacak.Game
         /// body stays (talk gestures while heard) and the whole bean rises.</summary>
         public void SetStanding(bool standing) { _standing = standing; }
         public bool Standing => _standing;
+        /// <summary>The head turn shown right now (degrees, right +): the head bone takes 70 % of it, the body 30 %.</summary>
+        public float HeadYaw => _headYaw;
         public void SetSpotlit(bool on) { _spot = on; }
 
         public void LookAt(Vector3 world) { _look = world; _hasLook = true; _gaze = false; }
@@ -161,8 +166,10 @@ namespace BirimizKovulacak.Game
                 {
                     case MeetingReaction.Nod:
                     case MeetingReaction.Laugh:
-                    case MeetingReaction.Cheer: return "Pleased";
+                    case MeetingReaction.Cheer:
+                    case MeetingReaction.Pleased: return "Pleased";
                     case MeetingReaction.Point: return "Point";
+                    case MeetingReaction.Shrug: return "Inspect";
                     default: return "Angry";
                 }
             }
@@ -174,6 +181,15 @@ namespace BirimizKovulacak.Game
                 case MeetingReaction.Point: return "SitPoint";
                 case MeetingReaction.Slump: return "SitSlump";
                 case MeetingReaction.Cheer: return "SitCheer";
+                // v5 Yaramazlıklar (standing clips played seated: the upper body reads; the bean stays in its chair)
+                case MeetingReaction.Drink: return "Drinking";
+                case MeetingReaction.Panic: return "Panic";
+                case MeetingReaction.Phone: return "Phone";
+                case MeetingReaction.Shocked: return "Shocked";
+                case MeetingReaction.Facepalm: return "Facepalm";
+                case MeetingReaction.Shrug: return "Shrug";
+                case MeetingReaction.Angry: return "SitGasp";
+                case MeetingReaction.Pleased: return "SitCheer";
                 default: return IdleState;
             }
         }
@@ -188,6 +204,14 @@ namespace BirimizKovulacak.Game
                 case MeetingReaction.Point: return 1.35f;
                 case MeetingReaction.Slump: return 2.6f;
                 case MeetingReaction.Cheer: return 1.25f;
+                case MeetingReaction.Drink: return 1.6f;
+                case MeetingReaction.Panic: return 1.4f;
+                case MeetingReaction.Phone: return 2.2f;
+                case MeetingReaction.Shocked: return 1.4f;
+                case MeetingReaction.Facepalm: return 1.6f;
+                case MeetingReaction.Shrug: return 1.3f;
+                case MeetingReaction.Angry: return 1.8f;
+                case MeetingReaction.Pleased: return 1.6f;
                 default: return 0f;
             }
         }
@@ -202,6 +226,14 @@ namespace BirimizKovulacak.Game
                 case MeetingReaction.Point: return BeanFace.Angry;
                 case MeetingReaction.Slump: return BeanFace.Sad;
                 case MeetingReaction.Cheer: return BeanFace.Laugh;
+                case MeetingReaction.Drink: return BeanFace.Happy;
+                case MeetingReaction.Panic: return BeanFace.Nervous;
+                case MeetingReaction.Phone: return BeanFace.Nervous;
+                case MeetingReaction.Shocked: return BeanFace.Shocked;
+                case MeetingReaction.Facepalm: return BeanFace.Sad;
+                case MeetingReaction.Shrug: return BeanFace.Smug;
+                case MeetingReaction.Angry: return BeanFace.Angry;
+                case MeetingReaction.Pleased: return BeanFace.Cheerful;
                 default: return BeanFace.Neutral;
             }
         }
@@ -216,7 +248,7 @@ namespace BirimizKovulacak.Game
             BeanFace face = RestFace;
             bool flap = false;
             if (_fired) { want = Animator.StringToHash(IsManager ? "Angry" : "SitBox"); face = BeanFace.Sad; }
-            else if (reacting) { want = _stateShown; face = IsManager ? (_talking ? BeanFace.Talking : RestFace) : ReactionFace(_reaction); flap = IsManager && _talking; }
+            else if (reacting) { want = _stateShown; face = IsManager ? (_talking ? BeanFace.Talking : _reaction == MeetingReaction.Pleased ? BeanFace.Cheerful : RestFace) : ReactionFace(_reaction); flap = IsManager && _talking; }
             else if (_away) { want = Animator.StringToHash(IsManager ? IdleState : "SitSlump"); face = BeanFace.Asleep; }
             else if (_standing && !IsManager)
             {
