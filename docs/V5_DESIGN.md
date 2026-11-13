@@ -343,7 +343,8 @@ Yeni görev fikirleri buraya eklenecek.
 **Henüz konuşulmadı [AÇIK]:**
 - Şirket hedefi: kalsın mı? Herkes açgözlü olursa herkes kaybetsin mi?
 - Gizli hedefler/gündemler: kalsın mı, sadeleşsin mi? Kovulup gizli gündemini tamamlayana tazminat?
-- Kirli oyunlar (kahve dökme, fişi çekme, sahte e-posta, telefon dinleme): hangileri kalır?
+- ~~Kirli oyunlar (kahve dökme, fişi çekme, sahte e-posta, telefon dinleme): hangileri kalır?~~ Cevaplandı
+  (2026-11-13): toplantı odasında **Yaramazlıklar**, bkz. `V5_YARAMAZLIKLAR.md`.
 - Terfi: kaldırılsın mı, yoksa "Takım Lideri" (sonraki bloğu yönetir, ilk suç ona yazılır) mı olsun?
 - Maç süresi ve blok sayısı (hedef: 12–15 dk).
 - Ses zorunlu mu, metin alternatifi kalsın mı?
