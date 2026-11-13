@@ -15,7 +15,7 @@ namespace BirimizKovulacak.Core
     /// Random-looking decisions (whether to call, delays, coins) are hashes of the seed and a topic, so they do not depend
     /// on network timing.
     /// </summary>
-    public sealed class LineBotTalker
+    public sealed partial class LineBotTalker
     {
         public readonly int Seat;
         public readonly LineBotPolicy Policy;
@@ -168,6 +168,8 @@ namespace BirimizKovulacak.Core
             if (v.Phase == LinePhase.Results || v.Phase == LinePhase.Abandoned)
             {
                 if (!flushed) Finish(v, o);
+                // Yaramazlıklar: the cake (and reactions to it) run on through the results
+                if (v.Phase == LinePhase.Results) Pranks(v, now, o);
                 return;
             }
             var me = P(v, Seat);
@@ -179,6 +181,7 @@ namespace BirimizKovulacak.Core
             Phone(v, now, o);
             Payments(v, now, o);
             Meeting(v, now, messages, o);
+            Pranks(v, now, o);
         }
 
         void Reset(int newWeek)
@@ -207,6 +210,7 @@ namespace BirimizKovulacak.Core
             flushed = false;
             lines = lies = calls = answeredCalls = refusedCalls = answers = chats = paid = broken = 0;
             ringCount = callCount = 0;
+            ResetPranks();
         }
 
         // ================================================================== helpers
@@ -286,7 +290,7 @@ namespace BirimizKovulacak.Core
             if (!l.Truthful) lies++;
             if (l.Claim != BotClaimKind.None) claims.Add(l);
             Log(string.Format(CultureInfo.InvariantCulture, "line seat={0} policy={1} key={2} to={3} truthful={4} claim={5}:{6}:{7} via={8} t={9:0.0}",
-                Seat, Policy, l, l.Listener, Yes(l.Truthful), l.Claim, l.ClaimTask, l.ClaimValue, l.Text ? (l.Listener < 0 ? "chat" : "text") : "phone", now));
+                Seat, Policy, l, l.Listener, Yes(l.Truthful), l.Claim, l.ClaimTask, l.ClaimValue, l.Shout ? "shout" : l.Text ? (l.Listener < 0 ? "chat" : "text") : "phone", now));
         }
 
         TaskMemo Memo(int number) { return number >= 0 && number < tasks.Length ? tasks[number] : null; }
@@ -1161,6 +1165,7 @@ namespace BirimizKovulacak.Core
                 else if (me != null) accuses = Mentions(m.Text, me.Name);
                 if (!accuses) continue;
                 lastAccuser = m.From;
+                accusers.Add(m.From);
                 // a final candidate answers in its defence (the subtitle on its feet), not twice
                 if (accusedAnswered || (segment == 2 && me != null && me.Candidate && !defended)) continue;
                 accusedAnswered = true;
@@ -1375,6 +1380,7 @@ namespace BirimizKovulacak.Core
             Log(string.Format(CultureInfo.InvariantCulture,
                 "summary seat={0} policy={1} lines={2} truthful={3} lies={4} calls={5} answered={6} refused={7} answers={8} chat={9} paid={10} broken={11} checks={12} mismatches={13}",
                 Seat, Policy, lines, lines - lies, lies, calls, answeredCalls, refusedCalls, answers, chats, paid, broken, checks, mismatches));
+            FinishPranks(v);
             o.Log.AddRange(pendingLog);
             pendingLog.Clear();
         }

@@ -47,7 +47,9 @@ namespace BirimizKovulacak.Core
     [Serializable]
     public sealed class LineConfig
     {
-        public int ConfigVersion = 5;
+        /// <summary>Schema version of this class (6: Yaramazlıklar added the prank numbers). Config files of another version are ignored.</summary>
+        public const int CurrentVersion = 6;
+        public int ConfigVersion = CurrentVersion;
         public LineDurations Durations = new LineDurations();
         /// <summary>When every connected player has submitted, TaskPlay ends this many seconds later.</summary>
         public float EarlyFinishSeconds = 3f;
@@ -112,6 +114,94 @@ namespace BirimizKovulacak.Core
         public int MeetingChatPerSegment = 30;
         /// <summary>Messages the engine keeps per recipient (oldest dropped first).</summary>
         public int MessagesKeptPerPlayer = 200;
+
+        // ---- Yaramazlıklar: meeting room pranks and the manager's patience (docs/V5_YARAMAZLIKLAR.md)
+        public bool PranksEnabled = true;
+        /// <summary>A prank that brings the patience to this or above is a tutanak (+<see cref="TutanakBlame"/> suç) and resets it to 0.</summary>
+        public int PatienceCapacity = 6;
+        /// <summary>Patience costs are multiplied during the final defence ("Arkadaşınız konuşuyor!"); flattering is not.</summary>
+        public int DefencePatienceMultiplier = 2;
+        public int TutanakBlame = 1;
+        public int CoffeeCost = 2;
+        public int CoffeePatience = 3;
+        public int CoffeePerSession = 1;
+        public int PlaneCost = 1;
+        public int PlanePatience = 2;
+        public int PlanePerSession = 1;
+        public int PlaneNoteMaxChars = 60;
+        public int PostItCost = 1;
+        public int PostItPatience = 2;
+        public int PostItPerSession = 1;
+        /// <summary>Phone ring: the patience is charged to the target (who also gets the tutanak).</summary>
+        public int PhoneRingCost = 2;
+        public int PhoneRingPatience = 3;
+        public int PhoneRingPerSession = 1;
+        public int SlurpPatience = 1;
+        public float SlurpCooldown = 10f;
+        public int StandUpPatience = 1;
+        public float StandUpCooldown = 10f;
+        public int FlatterCost = 1;
+        /// <summary>Flattering lowers the patience by this much (never below 0).</summary>
+        public int FlatterRelief = 2;
+        public int FlatterPerSession = 1;
+        public float CakeCooldown = 3f;
+        /// <summary>Cakes per player (Results only).</summary>
+        public int CakeMax = 5;
+
+        /// <summary>Prim a prank burns (0 = free).</summary>
+        public int PrankCost(PrankKind k)
+        {
+            switch (k)
+            {
+                case PrankKind.Coffee: return CoffeeCost;
+                case PrankKind.Plane: return PlaneCost;
+                case PrankKind.PostIt: return PostItCost;
+                case PrankKind.PhoneRing: return PhoneRingCost;
+                case PrankKind.Flatter: return FlatterCost;
+                default: return 0;
+            }
+        }
+
+        /// <summary>Patience a prank costs outside the defence (Flatter: 0, see <see cref="FlatterRelief"/>; Cake: 0).</summary>
+        public int PrankPatience(PrankKind k)
+        {
+            switch (k)
+            {
+                case PrankKind.Coffee: return CoffeePatience;
+                case PrankKind.Plane: return PlanePatience;
+                case PrankKind.PostIt: return PostItPatience;
+                case PrankKind.PhoneRing: return PhoneRingPatience;
+                case PrankKind.Slurp: return SlurpPatience;
+                case PrankKind.StandUp: return StandUpPatience;
+                default: return 0;
+            }
+        }
+
+        /// <summary>Uses per session (0 = no limit; Cake: <see cref="CakeMax"/> per match instead).</summary>
+        public int PrankPerSession(PrankKind k)
+        {
+            switch (k)
+            {
+                case PrankKind.Coffee: return CoffeePerSession;
+                case PrankKind.Plane: return PlanePerSession;
+                case PrankKind.PostIt: return PostItPerSession;
+                case PrankKind.PhoneRing: return PhoneRingPerSession;
+                case PrankKind.Flatter: return FlatterPerSession;
+                default: return 0;
+            }
+        }
+
+        /// <summary>Seconds between two uses of the same prank by one player (0 = none).</summary>
+        public float PrankCooldown(PrankKind k)
+        {
+            switch (k)
+            {
+                case PrankKind.Slurp: return SlurpCooldown;
+                case PrankKind.StandUp: return StandUpCooldown;
+                case PrankKind.Cake: return CakeCooldown;
+                default: return 0f;
+            }
+        }
 
         public int CandidatesFor(int players) { return ByPlayers(CandidatesByPlayers, players); }
         public int FiringsFor(int players) { return ByPlayers(FiringsByPlayers, players); }

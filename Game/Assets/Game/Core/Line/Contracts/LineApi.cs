@@ -85,6 +85,8 @@ namespace BirimizKovulacak.Core
         public double StartTime;
         public List<LinePlayerInfo> Players = new List<LinePlayerInfo>();
         public bool RecordingsEnabled = true;
+        /// <summary>Lobby option "Yaramazlıklar açık" (docs/V5_YARAMAZLIKLAR.md); false: every Prank fails with NotAvailable.</summary>
+        public bool PranksEnabled = true;
         /// <summary>Carried across matches of one session; null for the first match.</summary>
         public LineSessionHistory History;
 
@@ -164,6 +166,8 @@ namespace BirimizKovulacak.Core
         public bool WeekRunning;
         public int WeekId;
         public bool RecordingsEnabled = true;
+        /// <summary>Lobby option "Yaramazlıklar açık".</summary>
+        public bool PranksEnabled = true;
         /// <summary>Matches finished in this session.</summary>
         public int WeeksPlayed;
         /// <summary>Message key shown when the host cannot start, e.g. "lobby.need_players", "lobby.pool_too_small".</summary>

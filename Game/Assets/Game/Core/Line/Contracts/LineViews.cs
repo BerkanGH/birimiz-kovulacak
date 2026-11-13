@@ -39,6 +39,9 @@ namespace BirimizKovulacak.Core
         public LineFinalView Final;
         /// <summary>Full disclosure, only in Results.</summary>
         public LineWeekResult Results;
+        /// <summary>Yaramazlıklar (docs/V5_YARAMAZLIKLAR.md): the manager's patience, stains, post-its, my options and the
+        /// public prank log; null when pranks are off.</summary>
+        public LinePranksView Pranks;
     }
 
     [Serializable]
@@ -55,6 +58,10 @@ namespace BirimizKovulacak.Core
         public bool InvestigationOpen;
         public bool LeakOpen;
         public bool VoteOpen;
+        /// <summary>Yaramazlıklar are on in this match (lobby option).</summary>
+        public bool PranksEnabled;
+        /// <summary>A prank session runs (the meeting room phases; Results: cake only).</summary>
+        public bool PranksOpen;
     }
 
     [Serializable]
@@ -383,5 +390,76 @@ namespace BirimizKovulacak.Core
         public int Delta;
         public BlameReason Reason;
         public double Time;
+    }
+
+    // ---- Yaramazlıklar (docs/V5_YARAMAZLIKLAR.md)
+
+    /// <summary>The manager's patience and the pranks of the match as one player may see them.</summary>
+    [Serializable]
+    public sealed class LinePranksView
+    {
+        /// <summary><see cref="LinePranks.SessionOf"/> of the current phase (-1 outside the meeting room).</summary>
+        public int Session = -1;
+        /// <summary>0..capacity-1 (resets every session and after a tutanak).</summary>
+        public int Patience;
+        /// <summary>0 calm, 1 frowning, 2 red (<see cref="LinePranks.Level"/>).</summary>
+        public int Level;
+        /// <summary>Patience costs are multiplied right now (the final defence).</summary>
+        public int Multiplier = 1;
+        /// <summary>Per seat id 0..5: the post-it word on that colleague's forehead this session, -1 none.</summary>
+        public List<int> PostIts = new List<int>();
+        /// <summary>Per seat id: coffee stains (they stay for the whole match).</summary>
+        public List<int> Stains = new List<int>();
+        /// <summary>Per seat id: cakes in the face (Results).</summary>
+        public List<int> Cakes = new List<int>();
+        /// <summary>My pranks (one per kind, Coffee..Cake): price, patience, uses left and why it is closed right now.</summary>
+        public List<LinePrankOptionView> Options = new List<LinePrankOptionView>();
+        /// <summary>Every prank of the match, oldest first. A phone ring's Actor is -1 for everyone but its actor until Results;
+        /// a paper plane's Note is only in the target's and the sender's view (never revealed).</summary>
+        public List<LinePrankEntryView> Log = new List<LinePrankEntryView>();
+    }
+
+    [Serializable]
+    public sealed class LinePrankOptionView
+    {
+        public PrankKind Kind;
+        /// <summary>Prim it burns (0 = free).</summary>
+        public int Cost;
+        /// <summary>Patience it costs right now (×2 in the defence); negative: the relief of flattering.</summary>
+        public int Patience;
+        /// <summary>Uses left in this session (Cake: in the match); -1 = no limit.</summary>
+        public int UsesLeft = -1;
+        /// <summary>Host time when its cooldown ends (0 = none).</summary>
+        public double ReadyAt;
+        /// <summary>Why it cannot be done right now regardless of the target (None = available): WrongPhase, Fired, DeskSealed,
+        /// AlreadyUsed, LimitReached, RateLimited, InsufficientFunds, NotAvailable.</summary>
+        public LineFailure Block;
+    }
+
+    [Serializable]
+    public sealed class LinePrankEntryView
+    {
+        public int Index;
+        public PrankKind Kind;
+        /// <summary>-1 while hidden (a phone ring before Results, for everyone but its actor).</summary>
+        public int Actor = LineIds.None;
+        public int Target = LineIds.None;
+        /// <summary>Post-it word, else -1.</summary>
+        public int Word = -1;
+        /// <summary>Paper plane note: only for the target and the sender, else "".</summary>
+        public string Note = "";
+        public int Session = -1;
+        public LinePhase Phase;
+        public double Time;
+        /// <summary>Prim burned.</summary>
+        public int Cost;
+        /// <summary>Patience it added (negative: flattering's relief).</summary>
+        public int Patience;
+        /// <summary>The manager's patience after it (0 after a tutanak).</summary>
+        public int PatienceAfter;
+        /// <summary>Who the patience was charged to (the actor; the target for a phone ring), -1 when none.</summary>
+        public int Culprit = LineIds.None;
+        /// <summary>It overflowed the patience: the culprit got a tutanak.</summary>
+        public bool Tutanak;
     }
 }

@@ -41,12 +41,16 @@ namespace BirimizKovulacak.Core
         internal static LineSessionHistory Clone(LineSessionHistory value) { return Decode(10, value, WriteLineSessionHistory, ReadLineSessionHistory); }
         internal static LineWeekResult Clone(LineWeekResult value) { return Decode(11, value, WriteLineWeekResult, ReadLineWeekResult); }
 
+        /// <summary>The outcome hash has its own frozen header (the v5.0 wire version): bumping the wire format for new
+        /// features (6: Yaramazlıklar) must not move the hashes of outcomes that did not change (LineSim, automated runs).</summary>
+        private const ushort ResultHashSchema = 5;
+
         internal static ulong HashResult(LineWeekResult value)
         {
             if (value == null) throw new ArgumentNullException(nameof(value));
             var copy = Clone(value);
             copy.ResultHash = 0; copy.MatchId = "";
-            byte[] bytes = Encode(11, w => WriteLineWeekResult(w, copy));
+            byte[] bytes = Encode(11, w => WriteLineWeekResult(w, copy), ResultHashSchema);
             ulong hash = 14695981039346656037UL;
             unchecked { for (int i = 0; i < bytes.Length; i++) hash = (hash ^ bytes[i]) * 1099511628211UL; }
             return hash;
@@ -57,12 +61,14 @@ namespace BirimizKovulacak.Core
             return Decode(Encode(kind, w => write(w, value)), kind, read);
         }
 
-        private static byte[] Encode(byte kind, Action<BinaryWriter> write)
+        private static byte[] Encode(byte kind, Action<BinaryWriter> write) { return Encode(kind, write, (ushort)LineProtocol.Version); }
+
+        private static byte[] Encode(byte kind, Action<BinaryWriter> write, ushort version)
         {
             using (var stream = new MemoryStream())
             using (var writer = new BinaryWriter(stream, Utf8, true))
             {
-                writer.Write(Magic); writer.Write((ushort)LineProtocol.Version); writer.Write(kind);
+                writer.Write(Magic); writer.Write(version); writer.Write(kind);
                 write(writer); writer.Flush();
                 if (stream.Length > MaxPayload) throw new FormatException("Payload too large.");
                 return stream.ToArray();
@@ -179,18 +185,18 @@ namespace BirimizKovulacak.Core
         private static void WriteCallStatus(BinaryWriter w, CallStatus v) { WriteEnum(w, (byte)v, 3, "CallStatus"); }
         private static CallEndReason ReadCallEndReason(BinaryReader r) { return (CallEndReason)ReadEnum(r, 5, "CallEndReason"); }
         private static void WriteCallEndReason(BinaryWriter w, CallEndReason v) { WriteEnum(w, (byte)v, 5, "CallEndReason"); }
-        private static LineVerb ReadLineVerb(BinaryReader r) { return (LineVerb)ReadEnum(r, 14, "LineVerb"); }
-        private static void WriteLineVerb(BinaryWriter w, LineVerb v) { WriteEnum(w, (byte)v, 14, "LineVerb"); }
-        private static LineFailure ReadLineFailure(BinaryReader r) { return (LineFailure)ReadEnum(r, 24, "LineFailure"); }
-        private static void WriteLineFailure(BinaryWriter w, LineFailure v) { WriteEnum(w, (byte)v, 24, "LineFailure"); }
+        private static LineVerb ReadLineVerb(BinaryReader r) { return (LineVerb)ReadEnum(r, 15, "LineVerb"); }
+        private static void WriteLineVerb(BinaryWriter w, LineVerb v) { WriteEnum(w, (byte)v, 15, "LineVerb"); }
+        private static LineFailure ReadLineFailure(BinaryReader r) { return (LineFailure)ReadEnum(r, 25, "LineFailure"); }
+        private static void WriteLineFailure(BinaryWriter w, LineFailure v) { WriteEnum(w, (byte)v, 25, "LineFailure"); }
         private static LineAudience ReadLineAudience(BinaryReader r) { return (LineAudience)ReadEnum(r, 2, "LineAudience"); }
         private static void WriteLineAudience(BinaryWriter w, LineAudience v) { WriteEnum(w, (byte)v, 2, "LineAudience"); }
-        private static LineEventType ReadLineEventType(BinaryReader r) { return (LineEventType)ReadEnum(r, 18, "LineEventType"); }
-        private static void WriteLineEventType(BinaryWriter w, LineEventType v) { WriteEnum(w, (byte)v, 18, "LineEventType"); }
-        private static BlameReason ReadBlameReason(BinaryReader r) { return (BlameReason)ReadEnum(r, 6, "BlameReason"); }
-        private static void WriteBlameReason(BinaryWriter w, BlameReason v) { WriteEnum(w, (byte)v, 6, "BlameReason"); }
-        private static PrimReason ReadPrimReason(BinaryReader r) { return (PrimReason)ReadEnum(r, 9, "PrimReason"); }
-        private static void WritePrimReason(BinaryWriter w, PrimReason v) { WriteEnum(w, (byte)v, 9, "PrimReason"); }
+        private static LineEventType ReadLineEventType(BinaryReader r) { return (LineEventType)ReadEnum(r, 21, "LineEventType"); }
+        private static void WriteLineEventType(BinaryWriter w, LineEventType v) { WriteEnum(w, (byte)v, 21, "LineEventType"); }
+        private static BlameReason ReadBlameReason(BinaryReader r) { return (BlameReason)ReadEnum(r, 7, "BlameReason"); }
+        private static void WriteBlameReason(BinaryWriter w, BlameReason v) { WriteEnum(w, (byte)v, 7, "BlameReason"); }
+        private static PrimReason ReadPrimReason(BinaryReader r) { return (PrimReason)ReadEnum(r, 10, "PrimReason"); }
+        private static void WritePrimReason(BinaryWriter w, PrimReason v) { WriteEnum(w, (byte)v, 10, "PrimReason"); }
         private static MessageKind ReadMessageKind(BinaryReader r) { return (MessageKind)ReadEnum(r, 3, "MessageKind"); }
         private static void WriteMessageKind(BinaryWriter w, MessageKind v) { WriteEnum(w, (byte)v, 3, "MessageKind"); }
         private static DossierKind ReadDossierKind(BinaryReader r) { return (DossierKind)ReadEnum(r, 8, "DossierKind"); }
@@ -199,6 +205,8 @@ namespace BirimizKovulacak.Core
         private static void WriteBallotKind(BinaryWriter w, BallotKind v) { WriteEnum(w, (byte)v, 3, "BallotKind"); }
         private static FiringDecision ReadFiringDecision(BinaryReader r) { return (FiringDecision)ReadEnum(r, 5, "FiringDecision"); }
         private static void WriteFiringDecision(BinaryWriter w, FiringDecision v) { WriteEnum(w, (byte)v, 5, "FiringDecision"); }
+        private static PrankKind ReadPrankKind(BinaryReader r) { return (PrankKind)ReadEnum(r, 8, "PrankKind"); }
+        private static void WritePrankKind(BinaryWriter w, PrankKind v) { WriteEnum(w, (byte)v, 8, "PrankKind"); }
 
         // ---- contract types (declaration order)
         internal static void WriteLineAction(BinaryWriter w, LineAction v)
@@ -302,6 +310,7 @@ namespace BirimizKovulacak.Core
             w.Write(v.StartTime);
             WriteList(w, v.Players, (b, x) => { WriteLinePlayerInfo(b, x); });
             w.Write(v.RecordingsEnabled);
+            w.Write(v.PranksEnabled);
             WriteLineSessionHistory(w, v.History);
             WriteList(w, v.ForceTasks, (b, x) => { WriteTaskKind(b, x); });
         }
@@ -315,6 +324,7 @@ namespace BirimizKovulacak.Core
             v.StartTime = r.ReadDouble();
             v.Players = ReadList(r, b => ReadLinePlayerInfo(b));
             v.RecordingsEnabled = ReadBool(r);
+            v.PranksEnabled = ReadBool(r);
             v.History = ReadLineSessionHistory(r);
             v.ForceTasks = ReadList(r, b => ReadTaskKind(b));
             return v;
@@ -347,6 +357,7 @@ namespace BirimizKovulacak.Core
             w.Write(v.WeekRunning);
             w.Write(v.WeekId);
             w.Write(v.RecordingsEnabled);
+            w.Write(v.PranksEnabled);
             w.Write(v.WeeksPlayed);
             WriteString(w, v.StatusKey);
             WriteString(w, v.SessionId);
@@ -364,6 +375,7 @@ namespace BirimizKovulacak.Core
             v.WeekRunning = ReadBool(r);
             v.WeekId = r.ReadInt32();
             v.RecordingsEnabled = ReadBool(r);
+            v.PranksEnabled = ReadBool(r);
             v.WeeksPlayed = r.ReadInt32();
             v.StatusKey = ReadString(r);
             v.SessionId = ReadString(r);
@@ -535,6 +547,32 @@ namespace BirimizKovulacak.Core
             w.Write(v.TextsPerSegment);
             w.Write(v.MeetingChatPerSegment);
             w.Write(v.MessagesKeptPerPlayer);
+            w.Write(v.PranksEnabled);
+            w.Write(v.PatienceCapacity);
+            w.Write(v.DefencePatienceMultiplier);
+            w.Write(v.TutanakBlame);
+            w.Write(v.CoffeeCost);
+            w.Write(v.CoffeePatience);
+            w.Write(v.CoffeePerSession);
+            w.Write(v.PlaneCost);
+            w.Write(v.PlanePatience);
+            w.Write(v.PlanePerSession);
+            w.Write(v.PlaneNoteMaxChars);
+            w.Write(v.PostItCost);
+            w.Write(v.PostItPatience);
+            w.Write(v.PostItPerSession);
+            w.Write(v.PhoneRingCost);
+            w.Write(v.PhoneRingPatience);
+            w.Write(v.PhoneRingPerSession);
+            w.Write(v.SlurpPatience);
+            w.Write(v.SlurpCooldown);
+            w.Write(v.StandUpPatience);
+            w.Write(v.StandUpCooldown);
+            w.Write(v.FlatterCost);
+            w.Write(v.FlatterRelief);
+            w.Write(v.FlatterPerSession);
+            w.Write(v.CakeCooldown);
+            w.Write(v.CakeMax);
         }
         internal static LineConfig ReadLineConfig(BinaryReader r)
         {
@@ -580,6 +618,32 @@ namespace BirimizKovulacak.Core
             v.TextsPerSegment = r.ReadInt32();
             v.MeetingChatPerSegment = r.ReadInt32();
             v.MessagesKeptPerPlayer = r.ReadInt32();
+            v.PranksEnabled = ReadBool(r);
+            v.PatienceCapacity = r.ReadInt32();
+            v.DefencePatienceMultiplier = r.ReadInt32();
+            v.TutanakBlame = r.ReadInt32();
+            v.CoffeeCost = r.ReadInt32();
+            v.CoffeePatience = r.ReadInt32();
+            v.CoffeePerSession = r.ReadInt32();
+            v.PlaneCost = r.ReadInt32();
+            v.PlanePatience = r.ReadInt32();
+            v.PlanePerSession = r.ReadInt32();
+            v.PlaneNoteMaxChars = r.ReadInt32();
+            v.PostItCost = r.ReadInt32();
+            v.PostItPatience = r.ReadInt32();
+            v.PostItPerSession = r.ReadInt32();
+            v.PhoneRingCost = r.ReadInt32();
+            v.PhoneRingPatience = r.ReadInt32();
+            v.PhoneRingPerSession = r.ReadInt32();
+            v.SlurpPatience = r.ReadInt32();
+            v.SlurpCooldown = r.ReadSingle();
+            v.StandUpPatience = r.ReadInt32();
+            v.StandUpCooldown = r.ReadSingle();
+            v.FlatterCost = r.ReadInt32();
+            v.FlatterRelief = r.ReadInt32();
+            v.FlatterPerSession = r.ReadInt32();
+            v.CakeCooldown = r.ReadSingle();
+            v.CakeMax = r.ReadInt32();
             return v;
         }
 
@@ -606,6 +670,7 @@ namespace BirimizKovulacak.Core
             WriteLineMeetingView(w, v.Meeting);
             WriteLineFinalView(w, v.Final);
             WriteLineWeekResult(w, v.Results);
+            WriteLinePranksView(w, v.Pranks);
         }
         internal static LineView ReadLineView(BinaryReader r)
         {
@@ -631,6 +696,7 @@ namespace BirimizKovulacak.Core
             v.Meeting = ReadLineMeetingView(r);
             v.Final = ReadLineFinalView(r);
             v.Results = ReadLineWeekResult(r);
+            v.Pranks = ReadLinePranksView(r);
             return v;
         }
 
@@ -647,6 +713,8 @@ namespace BirimizKovulacak.Core
             w.Write(v.InvestigationOpen);
             w.Write(v.LeakOpen);
             w.Write(v.VoteOpen);
+            w.Write(v.PranksEnabled);
+            w.Write(v.PranksOpen);
         }
         internal static LineFeaturesView ReadLineFeaturesView(BinaryReader r)
         {
@@ -662,6 +730,8 @@ namespace BirimizKovulacak.Core
             v.InvestigationOpen = ReadBool(r);
             v.LeakOpen = ReadBool(r);
             v.VoteOpen = ReadBool(r);
+            v.PranksEnabled = ReadBool(r);
+            v.PranksOpen = ReadBool(r);
             return v;
         }
 
@@ -1221,6 +1291,99 @@ namespace BirimizKovulacak.Core
             v.Delta = r.ReadInt32();
             v.Reason = ReadBlameReason(r);
             v.Time = r.ReadDouble();
+            return v;
+        }
+    
+        // ---- Yaramazlıklar
+
+        internal static void WriteLinePranksView(BinaryWriter w, LinePranksView v)
+        {
+            w.Write(v != null); if (v == null) return;
+            w.Write(v.Session);
+            w.Write(v.Patience);
+            w.Write(v.Level);
+            w.Write(v.Multiplier);
+            WriteList(w, v.PostIts, (b, x) => { b.Write(x); });
+            WriteList(w, v.Stains, (b, x) => { b.Write(x); });
+            WriteList(w, v.Cakes, (b, x) => { b.Write(x); });
+            WriteList(w, v.Options, (b, x) => { WriteLinePrankOptionView(b, x); });
+            WriteList(w, v.Log, (b, x) => { WriteLinePrankEntryView(b, x); });
+        }
+        internal static LinePranksView ReadLinePranksView(BinaryReader r)
+        {
+            if (!ReadBool(r)) return null;
+            var v = new LinePranksView();
+            v.Session = r.ReadInt32();
+            v.Patience = r.ReadInt32();
+            v.Level = r.ReadInt32();
+            v.Multiplier = r.ReadInt32();
+            v.PostIts = ReadList(r, b => b.ReadInt32());
+            v.Stains = ReadList(r, b => b.ReadInt32());
+            v.Cakes = ReadList(r, b => b.ReadInt32());
+            v.Options = ReadList(r, b => ReadLinePrankOptionView(b));
+            v.Log = ReadList(r, b => ReadLinePrankEntryView(b));
+            return v;
+        }
+
+        internal static void WriteLinePrankOptionView(BinaryWriter w, LinePrankOptionView v)
+        {
+            w.Write(v != null); if (v == null) return;
+            WritePrankKind(w, v.Kind);
+            w.Write(v.Cost);
+            w.Write(v.Patience);
+            w.Write(v.UsesLeft);
+            w.Write(v.ReadyAt);
+            WriteLineFailure(w, v.Block);
+        }
+        internal static LinePrankOptionView ReadLinePrankOptionView(BinaryReader r)
+        {
+            if (!ReadBool(r)) return null;
+            var v = new LinePrankOptionView();
+            v.Kind = ReadPrankKind(r);
+            v.Cost = r.ReadInt32();
+            v.Patience = r.ReadInt32();
+            v.UsesLeft = r.ReadInt32();
+            v.ReadyAt = r.ReadDouble();
+            v.Block = ReadLineFailure(r);
+            return v;
+        }
+
+        internal static void WriteLinePrankEntryView(BinaryWriter w, LinePrankEntryView v)
+        {
+            w.Write(v != null); if (v == null) return;
+            w.Write(v.Index);
+            WritePrankKind(w, v.Kind);
+            w.Write(v.Actor);
+            w.Write(v.Target);
+            w.Write(v.Word);
+            WriteString(w, v.Note);
+            w.Write(v.Session);
+            WriteLinePhase(w, v.Phase);
+            w.Write(v.Time);
+            w.Write(v.Cost);
+            w.Write(v.Patience);
+            w.Write(v.PatienceAfter);
+            w.Write(v.Culprit);
+            w.Write(v.Tutanak);
+        }
+        internal static LinePrankEntryView ReadLinePrankEntryView(BinaryReader r)
+        {
+            if (!ReadBool(r)) return null;
+            var v = new LinePrankEntryView();
+            v.Index = r.ReadInt32();
+            v.Kind = ReadPrankKind(r);
+            v.Actor = r.ReadInt32();
+            v.Target = r.ReadInt32();
+            v.Word = r.ReadInt32();
+            v.Note = ReadString(r);
+            v.Session = r.ReadInt32();
+            v.Phase = ReadLinePhase(r);
+            v.Time = r.ReadDouble();
+            v.Cost = r.ReadInt32();
+            v.Patience = r.ReadInt32();
+            v.PatienceAfter = r.ReadInt32();
+            v.Culprit = r.ReadInt32();
+            v.Tutanak = ReadBool(r);
             return v;
         }
     }

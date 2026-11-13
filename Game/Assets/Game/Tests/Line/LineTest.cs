@@ -46,6 +46,14 @@ namespace BirimizKovulacak.Core.Tests.Line
             return r;
         }
 
+        /// <summary>Any action with all of its fields (pranks use B and C).</summary>
+        internal LineActionResult DoFull(int player, LineVerb verb, int target, int a, int b, int c, string text = "")
+        {
+            var r = Engine.Apply(player, new LineAction(Setup.WeekId, ++requests[player], verb, target, a, b, c, text), Now);
+            Drain();
+            return r;
+        }
+
         internal void Ok(int player, LineVerb verb, int target = -1, int a = -1, string text = "")
         {
             var r = Do(player, verb, target, a, text);

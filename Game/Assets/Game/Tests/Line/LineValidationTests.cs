@@ -11,10 +11,10 @@ namespace BirimizKovulacak.Core.Tests
         [Test]
         public void VersionsAndDefaultsMatchTheSpec()
         {
-            Assert.AreEqual(5, LineProtocol.Version);
+            Assert.AreEqual(6, LineProtocol.Version);
             Assert.AreEqual("v5.0-kayit", LineProtocol.RulesetVersion);
             var c = LineConfig.CreateDefault();
-            Assert.AreEqual(5, c.ConfigVersion);
+            Assert.AreEqual(6, c.ConfigVersion);
             Assert.AreEqual(6, c.StartPrim);
             Assert.AreEqual(new[] { 2, 5, 0, 1 }, new[] { c.BonusPairShare, c.BonusPairTaker, c.BonusPairSharer, c.BonusPairBothTake });
             Assert.AreEqual(new[] { 2, 5, 0, 1 }, new[] { c.BonusTrioNone, c.BonusTrioTaker, c.BonusTrioOthers, c.BonusTrioMany });

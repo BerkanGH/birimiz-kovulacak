@@ -33,6 +33,7 @@ namespace BirimizKovulacak.Core
                 TransfersOpen = TransfersOpen, TextsOpen = TextsOpen, MeetingChatOpen = ChatOpen,
                 WhistleOpen = WhistleWindow, InvestigationOpen = InvestigationOpen, LeakOpen = LeakOpen && RecordingsOn,
                 VoteOpen = (Phase == LinePhase.MeetingVote || Phase == LinePhase.CrisisVote || Phase == LinePhase.FinalVote) && !s.Fired,
+                PranksEnabled = PranksOn, PranksOpen = PrankSessionNow != LinePranks.SessionNone,
             };
             foreach (int id in ids)
             {
@@ -51,6 +52,7 @@ namespace BirimizKovulacak.Core
             if (MeetingVisible) v.Meeting = MeetingView();
             if (Phase >= LinePhase.CrisisVote && Phase <= LinePhase.Results) v.Final = FinalView();
             if (Phase == LinePhase.Results && result != null) v.Results = result;
+            v.Pranks = PranksView(player, time);
             return LineCodec.Clone(v);
         }
 

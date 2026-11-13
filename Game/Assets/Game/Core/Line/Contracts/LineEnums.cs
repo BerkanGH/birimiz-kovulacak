@@ -7,8 +7,10 @@ namespace BirimizKovulacak.Core
 
     public static class LineProtocol
     {
-        public const int Version = 5;
-        /// <summary>Ruleset identity for analytics and results; never pool data across different values.</summary>
+        /// <summary>Wire format version (6: Yaramazlıklar added the Prank verb and the pranks view).</summary>
+        public const int Version = 6;
+        /// <summary>Ruleset identity for analytics and results; never pool data across different values. Yaramazlıklar is a
+        /// lobby option (like recordings) and does not change it.</summary>
         public const string RulesetVersion = "v5.0-kayit";
         public const int MinPlayers = 3;
         public const int MaxPlayers = 6;
@@ -136,6 +138,10 @@ namespace BirimizKovulacak.Core
         Leak = 13,
         /// <summary>Host only, Results: end the match now.</summary>
         HostContinue = 14,
+        /// <summary>Meeting room prank (docs/V5_YARAMAZLIKLAR.md): A = (int)<see cref="PrankKind"/>, Target = colleague (-1 for
+        /// Slurp and Flatter, optional for StandUp), B = post-it word (0..<see cref="LinePranks.WordCount"/>-1), Text = the
+        /// paper plane's note, C = the patience the sender saw (optional guard: -1 = no check).</summary>
+        Prank = 15,
     }
 
     public enum LineFailure : byte
@@ -168,8 +174,10 @@ namespace BirimizKovulacak.Core
         AlreadyResolved = 22,
         /// <summary>Fired players take no further part in votes.</summary>
         Fired = 23,
-        /// <summary>Final candidates' desks are sealed: they may receive prim but not send it.</summary>
+        /// <summary>Final candidates' desks are sealed: they may receive prim but not send it (or burn it on pranks).</summary>
         DeskSealed = 24,
+        /// <summary>Prank: the manager's patience is no longer what the sender saw (<see cref="LineVerb.Prank"/> C guard).</summary>
+        PatienceChanged = 25,
     }
 
     public enum LineAudience : byte { All = 0, Player = 1, Host = 2 }
@@ -213,6 +221,15 @@ namespace BirimizKovulacak.Core
         Fired = 17,
         /// <summary>Public: recording pick A played (B = 1) or had no speech (B = 0).</summary>
         RecordingPlayed = 18,
+        /// <summary>Public: Actor pranked Target (A = (int)PrankKind, B = post-it word or -1, C = prank log index). A phone ring
+        /// hides its Actor (-1) from everyone but the actor until Results.</summary>
+        Prank = 19,
+        /// <summary>Public: the manager's patience changed: A = patience now, B = level now, C = level before; Actor = the
+        /// prank's actor (-1 when hidden), Target = who the patience was charged to.</summary>
+        Patience = 20,
+        /// <summary>Public: the manager's patience overflowed: Target gets a tutanak (+B suç); A = (int)PrankKind that did it,
+        /// Actor = its actor (-1 when hidden).</summary>
+        Tutanak = 21,
     }
 
     public enum BlameReason : byte
@@ -227,6 +244,8 @@ namespace BirimizKovulacak.Core
         InvestigationGuilty = 4,
         InvestigationFalse = 5,
         Crisis = 6,
+        /// <summary>A prank overflowed the manager's patience (Yaramazlıklar).</summary>
+        Tutanak = 7,
     }
 
     public enum PrimReason : byte
@@ -245,6 +264,8 @@ namespace BirimizKovulacak.Core
         DeskShare = 8,
         /// <summary>The fired player's desk is emptied.</summary>
         Fired = 9,
+        /// <summary>Prim burned on a prank (removed from the game; Other = the prank's target or -1).</summary>
+        Prank = 10,
     }
 
     public enum MessageKind : byte
@@ -288,5 +309,74 @@ namespace BirimizKovulacak.Core
         HigherBlame = 3,
         HigherPrim = 4,
         Random = 5,
+    }
+
+    /// <summary>Meeting room pranks (docs/V5_YARAMAZLIKLAR.md). Localisation id: <see cref="LinePranks.Id"/>.</summary>
+    public enum PrankKind : byte
+    {
+        None = 0,
+        /// <summary>A mug flies to the target: a coffee stain for the rest of the match. Prim, once per session.</summary>
+        Coffee = 1,
+        /// <summary>A paper plane lands on the target's table with a one-line note only the target (and the sender) reads.</summary>
+        Plane = 2,
+        /// <summary>A post-it with a ready-made word on the target's forehead until the session ends.</summary>
+        PostIt = 3,
+        /// <summary>Secret: the target's phone rings; the manager blames the target (the actor is revealed at Results).</summary>
+        PhoneRing = 4,
+        /// <summary>Free, cooldown: a loud slurp of tea.</summary>
+        Slurp = 5,
+        /// <summary>Free, cooldown: stand up, slam the table, point at a colleague (optional target).</summary>
+        StandUp = 6,
+        /// <summary>Flatter the manager: patience goes down.</summary>
+        Flatter = 7,
+        /// <summary>Results only: a cake in the target's face (free, cooldown, a few per player).</summary>
+        Cake = 8,
+    }
+
+    public static class LinePranks
+    {
+        public const int KindCount = 8;
+        /// <summary>Post-it words (localisation v5.prank.word.&lt;id&gt;): YALANCI, HIRSIZ?, MASUM, ZENGİN, SESSİZ.</summary>
+        public const int WordCount = 5;
+        public const int WordLiar = 0, WordThief = 1, WordInnocent = 2, WordRich = 3, WordQuiet = 4;
+        /// <summary>Sessions: meeting 1, meeting 2, the crisis vote (vote + verdict), the final (discussion .. last verdict), Results.</summary>
+        public const int SessionNone = -1, SessionMeeting1 = 0, SessionMeeting2 = 1, SessionCrisis = 2, SessionFinal = 3, SessionResults = 4;
+        static readonly string[] Ids = { "", "coffee", "plane", "postit", "phone", "slurp", "standup", "flatter", "cake" };
+        static readonly string[] Words = { "liar", "thief", "innocent", "rich", "quiet" };
+
+        /// <summary>Stable string id (localisation v5.prank.&lt;id&gt;.*, logs).</summary>
+        public static string Id(PrankKind k) { int i = (int)k; return i >= 0 && i < Ids.Length ? Ids[i] : ""; }
+        public static string WordId(int word) { return word >= 0 && word < Words.Length ? Words[word] : ""; }
+        public static bool Valid(PrankKind k) { return k >= PrankKind.Coffee && k <= PrankKind.Cake; }
+        /// <summary>The prank needs a colleague as its target (StandUp may name one; Slurp and Flatter never do).</summary>
+        public static bool NeedsTarget(PrankKind k) { return k == PrankKind.Coffee || k == PrankKind.Plane || k == PrankKind.PostIt || k == PrankKind.PhoneRing || k == PrankKind.Cake; }
+        public static bool TakesTarget(PrankKind k) { return NeedsTarget(k) || k == PrankKind.StandUp; }
+
+        /// <summary>The prank session of a phase (<paramref name="day"/> = meeting index), -1 outside the meeting room.</summary>
+        public static int SessionOf(LinePhase phase, int day)
+        {
+            switch (phase)
+            {
+                case LinePhase.MeetingDossier:
+                case LinePhase.MeetingDiscussion:
+                case LinePhase.MeetingVote:
+                case LinePhase.MeetingVerdict: return day <= 0 ? SessionMeeting1 : SessionMeeting2;
+                case LinePhase.CrisisVote:
+                case LinePhase.CrisisVerdict: return SessionCrisis;
+                case LinePhase.FinalDiscussion:
+                case LinePhase.FinalDefense:
+                case LinePhase.FinalVote:
+                case LinePhase.FinalVerdict: return SessionFinal;
+                case LinePhase.Results: return SessionResults;
+                default: return SessionNone;
+            }
+        }
+
+        /// <summary>The manager's mood: 0 calm, 1 frowning, 2 red (thirds of the capacity: 0-1 / 2-3 / 4-5 for 6).</summary>
+        public static int Level(int patience, int capacity)
+        {
+            if (capacity <= 0 || patience <= 0) return 0;
+            return Math.Min(2, patience * 3 / capacity);
+        }
     }
 }

@@ -56,6 +56,8 @@ namespace BirimizKovulacak.Core
         public int ClaimRound;
         /// <summary>Sent as a meeting chat line (Listener -1) or a private text (Listener ≥ 0) instead of on the phone.</summary>
         public bool Text;
+        /// <summary>Said out loud in the meeting room (a reaction to a prank): over the head for everyone, never in the chat.</summary>
+        public bool Shout;
         public double Time;
 
         public override string ToString()
@@ -88,8 +90,11 @@ namespace BirimizKovulacak.Core
         public readonly List<BotAsk> Asks = new List<BotAsk>();
         /// <summary>Log lines (released at Results: they say whether a bot lied).</summary>
         public readonly List<string> Log = new List<string>();
+        /// <summary>Yaramazlıklar: lines said out loud in the meeting room (a reaction to a prank): over the speaker's head for
+        /// everyone, with its mumble (presentation only, never through the engine).</summary>
+        public readonly List<BotLine> Shouts = new List<BotLine>();
 
-        public void Clear() { Actions.Clear(); Lines.Clear(); Said.Clear(); Asks.Clear(); Log.Clear(); }
+        public void Clear() { Actions.Clear(); Lines.Clear(); Said.Clear(); Asks.Clear(); Log.Clear(); Shouts.Clear(); }
     }
 
     /// <summary>
@@ -138,6 +143,14 @@ namespace BirimizKovulacak.Core
             { "bot.meet.accused.h", "" }, { "bot.meet.accused.g", "p" }, { "bot.meet.accused.m", "p" },
             { "bot.meet.leak.h", "" }, { "bot.meet.leak.g", "" }, { "bot.meet.leak.m", "" },
             { "bot.vote.h", "p" }, { "bot.vote.h_known", "p" }, { "bot.vote.g", "" }, { "bot.vote.m", "p" },
+            // Yaramazlıklar (docs/V5_YARAMAZLIKLAR.md §7): reactions over the head when pranked, a paper plane's note
+            { "bot.prank.coffee.h", "" }, { "bot.prank.coffee.g", "" }, { "bot.prank.coffee.m", "" },
+            { "bot.prank.postit.h", "" }, { "bot.prank.postit.g", "" }, { "bot.prank.postit.m", "" },
+            { "bot.prank.phone.h", "" }, { "bot.prank.phone.g", "" }, { "bot.prank.phone.m", "" },
+            { "bot.prank.plane.h", "" }, { "bot.prank.plane.g", "" }, { "bot.prank.plane.m", "" },
+            { "bot.prank.cake.h", "" }, { "bot.prank.cake.g", "" }, { "bot.prank.cake.m", "" },
+            { "bot.prank.tutanak.h", "" }, { "bot.prank.tutanak.g", "" }, { "bot.prank.tutanak.m", "" },
+            { "bot.prank.note.m1", "" }, { "bot.prank.note.m2", "" },
             // the question buttons
             { "bot.q.cb.1", "" }, { "bot.q.cb.2", "" }, { "bot.q.cb.3", "" },
             { "bot.q.cash.1", "" }, { "bot.q.cash.2", "" }, { "bot.q.cash.3", "" },

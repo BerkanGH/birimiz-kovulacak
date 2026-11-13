@@ -131,7 +131,7 @@ namespace BirimizKovulacak.Core
 
         private void ValidateConfig(int players)
         {
-            if (c.ConfigVersion != 5 || c.Durations == null || c.CandidatesByPlayers == null || c.FiringsByPlayers == null ||
+            if (c.ConfigVersion != LineConfig.CurrentVersion || c.Durations == null || c.CandidatesByPlayers == null || c.FiringsByPlayers == null ||
                 c.CandidatesByPlayers.Count != 4 || c.FiringsByPlayers.Count != 4)
                 throw new ArgumentException("Invalid config structure.");
             // Every numeric tunable, including ones added in future revisions: finite, 0..1e6.
@@ -140,7 +140,7 @@ namespace BirimizKovulacak.Core
             var d = c.Durations;
             if (d.TaskPlay <= 0 || d.FinalDefense <= 0 || d.FinalVote <= 0 || d.FinalRevote <= 0 || d.Ring <= 0 ||
                 c.AbandonSeconds <= 0 || c.PairingTries < 1 || c.PairingTries > 100000 || c.MessagesKeptPerPlayer < 1 ||
-                c.TextMaxChars > 512 || c.MeetingChatMaxChars > 512)
+                c.TextMaxChars > 512 || c.MeetingChatMaxChars > 512 || c.PlaneNoteMaxChars > 512 || c.PatienceCapacity < 1)
                 throw new ArgumentException("Invalid config range.");
             for (int n = LineProtocol.MinPlayers; n <= LineProtocol.MaxPlayers; n++)
             {
@@ -206,6 +206,7 @@ namespace BirimizKovulacak.Core
             Phase = phase;
             phaseStart = time;
             PhaseEndTime = time + Math.Max(0, duration);
+            PrankPhase();
             Changed();
             if (!CallsOpen) EndAllCalls(time, CallEndReason.PhaseEnd);
             Emit(LineEventType.PhaseChanged, time, a: (int)phase, b: (int)endReason);
@@ -358,6 +359,7 @@ namespace BirimizKovulacak.Core
                 case LineVerb.Record: return Record(id, time);
                 case LineVerb.Leak: return Leak(id, a, time);
                 case LineVerb.Vote: return Vote(id, a, time);
+                case LineVerb.Prank: return Prank(id, a, time);
                 default: return LineFailure.BadParam;
             }
         }
