@@ -97,3 +97,53 @@ bağlıdır. Botun asıl oyunu (`LineBot`) değişmez; yaramazlıkları konuşma
 
 Kâğıt top, sandalyesini alçalt, şakacı yastık, bedava tepkiler (gül, facepalm, göster, şok, yavaş alkış), kovulanın
 kutusuna eşya atmak, maç sonu unvanları (Kahve Mıknatısı, Müdürün Gözdesi, Tutanak Rekortmeni, Gizli Şakacı).
+
+## 9. Uygulama notları
+
+Uygulandı (`feature/v5-integration`, 2026-11-13). Kurallar ve sayılar yukarıdaki gibi; kod `LineConfig` içinde
+(`CoffeeCost`, `PatienceCapacity`, `DefencePatienceMultiplier` …), motor kuralları İngilizce olarak `V5_ENGINE_SPEC.md` §19,
+arayüz `UI.md` (Yaramazlıklar). Belgenin söylemediği ya da birebir uygulanamayan yerler:
+
+1. **Sürümler.** Kablo biçimi `LineProtocol.Version` 5 → 6 ve `LineConfig.ConfigVersion` 5 → 6 oldu (yeni fiil, hata
+   kodu, olaylar, görünüm, ayar sayıları; eski `line_config.json` yok sayılır, derleme yenisini yazar).
+   `RulesetVersion` **"v5.0-kayit" kaldı**: Yaramazlıklar, "Görüşmeler kaydedilebilir" gibi bir lobi seçeneği; ayrıca
+   LineSim çıktısının ilk satırı bu adı yazdığı için değişseydi "LineSim sonuçları birebir aynı" şartı tutmazdı. Sonuç
+   karması (`ResultHash`) artık kendi sabit başlığıyla (v5) hesaplanır; yaramazlık olmayan maçların karması değişmedi.
+2. **Tam açılış.** Yaramazlık listesi `LineWeekResult`'a değil görünüme (`LineView.Pranks.Log`) kondu: Sonuç'ta herkesin
+   görünümünde bütün yapanlar açıktır; yanan prim (`PrimReason.Prank`) ve tutanak suçu (`BlameReason.Tutanak`) sonuçların
+   prim / suç kayıtlarında zaten var. Sebep yine sonuç karmasının değişmemesi.
+3. **Sabır koruması (yeni).** `Prank` eyleminin C alanı isteğe bağlı olarak "gördüğüm sabır"ı taşır; sabır o arada
+   değiştiyse eylem `PatienceChanged` ile reddedilir. Botlar bunu hep gönderir: başka birinin yaramazlığı ağdan önce gelse
+   bile bir bot kendine tutanak getiremez. İnsan istemcisi göndermez; "son kahveyi kim atacak?" cesaret oyunu aynen durur.
+4. **Hedefsiz yaramazlıklar.** Çay höpürdetme ve yağ çekmenin hedefi yoktur (başka bir hedef reddedilir). Ayağa kalkmada
+   hedef isteğe bağlı: çarktan seçilince G'ye basıldığı an bakılan kişi gösterilir; sekmedeki "Kalk ve masaya vur" kimseyi
+   göstermez, "Birini göstererek" düğmesi nişan aldırır.
+5. **Beklemeler ve pasta.** 10 sn / 3 sn beklemeler zamana bağlıdır, oturumla sıfırlanmaz. "En çok 5 pasta" kişi başınadır
+   (Sonuç tek oturum).
+6. **Kovulanlar ve mühür.** Kovulan biri Sonuç'a kadar hiçbir yaramazlık yapamaz ama hedef olabilir; Sonuç'ta pasta
+   atabilir. Mühür, havalelerdeki gibi adaylar belli olduğu anda (Kriz kararı) başlar; Kriz oylaması sırasında henüz aday
+   yoktur.
+7. **Botlar, "ona oy verene kahve".** Oylar Sonuç'a kadar gizli, bu yüzden hiçbir bot kimin kendisine oy verdiğini bilemez.
+   Açgözlü kahveyi onu sohbette suçlayana, dosyada ihbar / soruşturma ile anana ya da görüşme kaydını sızdırana atar ("primi
+   bol": en az bedel + 6 prim).
+8. **Botlar oylama sırasında yaramazlık yapmaz** (toplantı, Kriz, final oylaması). Orada bir tutanak, botun oylamanın
+   başında söylediği oy cümlesini sonradan yanlış çıkarabilirdi ("Dürüst asla yalan söylemez"). Botların sırası koltuk
+   sırasına göre aşamanın içine yayılır.
+9. **Dürüst ve pasta.** §7 "Dürüst kimseye bir şey atmaz" ve "Hepsi Sonuç'ta bazen kazanana pasta atar" der: Dürüst
+   toplantıda kimseyi hedef almaz, Sonuç'ta kazanana pasta atabilir. `verify_logs.py` pastayı bu yüzden ayrı tutar.
+10. **Bot tepkileri sohbete yazılmaz.** Kısa bir paketle (`BotSpeech` "shout": bot → host → herkes) gider, kafanın üstünde
+    balon ve mırıltı olarak görünür; sohbet sınırlarını (toplantı başına 3 cümle, 1,5 sn) yemez ve Sonuç'ta da çalışır.
+    Karışık'ın kâğıt uçak notu hazır bir cümle jetonudur; her istemci kendi dilinde okur. Notlar hiçbir günlüğe yazılmaz.
+11. **Müdürün sözleri** her istemcide olaylardan kurulur: aynı anda birkaç şey olursa en güçlüsü (tutanak > telefon >
+    kademe > yağ çekme) bir an sonra söylenir. Projektördeki yüz müdürün portresidir (kıpkırmızıda kızgın hâli), halka ve
+    çentikler yeşil / sarı / kırmızı.
+12. **Animasyonlar.** Drinking / Panic / Phone / Shocked klipleri oturan karakterde oynatılır (ayakta klipleri gibi
+    görünür, bacaklar masanın altında kalır); ayağa kalkma savunmadaki kalkışın aynısıdır (sandalye geri kayar, karakter
+    yükselir), vuruş anında masa sesi ve sandık sallanır, sonra parmakla gösterir. Kupa ofisteki kupanın kopyasıdır;
+    uçak, post-it, pasta ve lekeler çalışma anında üretilen basit ağlardır (yeni varlık yok). Sesler (utanç verici zil sesi
+    dâhil) prosedürel üretilir; bilinen bir ezgi kullanılmadı.
+13. **İzler.** Lekeler, post-it ve krema odanın nesneleridir; her karede karakterin o anki (pozlanmış) gövde yüzeyine
+    yeniden oturtulur ve kafayla döner. Kemiğe bağlansalar deri kaydıkça gövdeden kopuyorlardı. Bir kişide en çok 4 leke
+    çizilir (sayı daha büyük olabilir). Kendime gelen kahve / pasta ekranda kısa bir sıçrama olarak görünür (1,5 sn / 2,6 sn).
+14. **Tuşlar.** Çark `G` (ayarlardan değiştirilebilir; başka bir eylemle çakışmıyor), 1–8 ya da tıklama seçer, nişan
+    bakarak `E` / sol tık, `Esc` / sağ tık vazgeçer. Kendi uçağım masada durur; üzerine tıklayınca not açılır.

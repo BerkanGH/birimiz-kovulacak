@@ -295,6 +295,55 @@ pays), `v5.office_botcall_refuse` (Greedy turns its victim down in the break, Mi
 made-up counter-accusation, the folder chat), `v5.meeting_botchat_defence` (a bot defending on its feet with its subtitle,
 out of view at the bottom, the final-vote lines), and `_en` variants of the office, promise, meeting and defence scenarios.
 
+
+**Yaramazlıklar (v5, meeting-room pranks).** docs/V5_YARAMAZLIKLAR.md; engine rules docs/V5_ENGINE_SPEC.md §19. Lobby option
+"Yaramazlıklar açık" (default on, host only, next to the recordings toggle; `LineLobbyView.PranksEnabled` →
+`LineSetup.PranksEnabled`).
+
+| File | What |
+|---|---|
+| `Scripts/UI/Meeting/MeetingPranks.cs` | The folder's **Yaramazlıklar** tab, the **G** quick wheel, aiming, the post-it word / plane note card, reading a plane's note, the coffee / cream splash over my screen, my own post-it badge, the manager's lines (strongest event first, a moment later), bot reactions out loud. |
+| `Scripts/Rooms/MeetingRoom.Pranks.cs` | World side: the mug (a copy of the office mug) arcing into a shirt with a splash and a stain for the match, the paper plane gliding onto a table (it stays for the session; mine is a `MeetingTarget.Plane` to read), the post-it slapping onto a forehead (a TextMeshPro word, for the session), the phone ring at a seat (panic, then the phone clip and a phone in the hand), the slurp (drinking clip), standing up (the defender's stand: chair back, slam, point), flattering (the manager pleased, then pointing), the cake (cream on the face), the manager's mood face. Runtime meshes and tinted copies of the paper material, no new assets. |
+| `Scripts/UI/Meeting/MeetingProjector.cs` | The patience gauge in the header corner (the manager's portrait in a green / amber / red ring, six notches, "x2" in the defence) and the **TUTANAK** stamp with the culprit's name over whatever is on. |
+| `Scripts/UI/Meeting/MeetingSubtitles.cs` | The manager's line over his head (red rim, low mumble); bot reactions use the bot bubbles. |
+| `Scripts/UI/Meeting/MeetingReveal.cs` | Results → Dosya: a **Yaramazlıklar** tab (every prank with its actor, phone rings revealed, prim burned per colleague, tutanaks; my own plane notes only) and "yaramazlık −N" in each balance. |
+| `Scripts/Audio/SfxSynth.cs` | Procedural sounds: an original embarrassing ringtone (a made-up kazoo-ish ditty and a "boing"), slurp, table slam, splat, whoosh, paper flutter, slap. `Sfx.PlayAt` plays a one-shot from a seat. |
+| `Scripts/Net/BotSpeech.cs`, `HostLineController`, `LineBotDriver` | Bot reactions as "shout" packets (bot → host → every client), never through the engine; the host's prank log at Results. |
+| `Scripts/UI/Dev/PrankMock.cs` | Mocks `-uimock "v5.meeting_prank*"` (+ `_en`). |
+
+*Folder tab.* Top: the manager's face and the notches, the mood ("Müdür sakin / kaşları çatık / kıpkırmızı!"), the
+rule (capacity, +1 suç; the phone ring's tutanak goes to the target), "Savunmada sabır ×2" in the defence, the keys.
+Then one row per prank: name, price chip (red "2 prim" / green "Bedava"), patience chip ("Sabır +3", "Sabır −2"), uses
+("Bu oturum: 1 hak", "Kalan: 5", "Her 10 sn") and, when closed, why (mühürlü, prim yetmiyor (2 gerekir), bu oturumda
+kullandın, 7 sn bekle (live), sadece Sonuç'ta, kovuldun). Clicking a row opens it: the description and its actions —
+name buttons in each colleague's colour (far seats) plus "Bakarak at (E)" for coffee / phone / cake, "Kelime seç ve
+yapıştır" / "Not yaz ve at" (the card) for the post-it / plane, one button for slurp / flatter / stand up. Below: the
+planes on my table (sender and note, "Oku") and what happened this session (the whole match at Results).
+
+*Wheel (G).* Eight slices around the manager's face and notches (1–8 or click; disabled slices grey with the reason in
+red); the centre describes the hovered one. Free ones go at once (stand-up points at whoever you looked at when you
+pressed G); coffee / phone / cake arm the aim; post-it / plane open the card (5 yellow word buttons, or a 60-character
+note field), which also has name buttons. G, Esc, a right click or a click outside closes it. While aiming: "Kahve
+fırlat: hedefine bak, tıkla ya da E · iptal: Esc / sağ tık" at the bottom, the hovered colleague's outline and name tag
+("E / tık: Kahve fırlat", orange rim); E on nothing keeps aiming, Q / Tab give up.
+
+*When it is me.* Coffee: a brown splatter over the screen for 1.5 s and a toast; cake: cream for ~2.6 s; plane: a toast
+(look at the plane on your table and press E: the note on a paper card, a bot's note in your language); post-it: a
+yellow "ALNINDA YAZIYOR: YALANCI" note under the strip for the session; phone: the ringtone and "Telefonun çalıyor!
+Müdür sana kızdı.".
+
+*Run screenshots* add `pranks` (the folder's tab) in the meeting discussion.
+
+Scenarios: `v5.meeting_prank_menu` (the tab with a used and a cooling prank, the plane row, sealed in the defence ×2),
+`v5.meeting_prank_wheel` (the wheel, a hovered slice, the post-it words, the plane note, aiming at Sarı),
+`v5.meeting_prank_coffee` (in flight, the splash, Yeşil's line, coffee at me), `v5.meeting_prank_stain` (stains in
+meeting 2, close up), `v5.meeting_prank_plane` (in flight, landed, the bot's line, a plane to me, the prompt, the note),
+`v5.meeting_prank_postit` (post-its on two foreheads, the bot's line, mine), `v5.meeting_prank_phone` (a hidden ring:
+panic, the phone, the bot's denial, the manager), `v5.meeting_prank_tutanak` (red gauge on the projector, the
+overflowing coffee, the stamp, the board), `v5.meeting_prank_flatter` (the manager pleased and pointing, a stand-up,
+a slurp), `v5.meeting_prank_cake` (results: the cake in flight, the cream, cake at me, the reveal tab),
+`v5.meeting_prank_lobby` (the lobby checkbox, the how-to page), each with `_en`.
+
 ---
 
 # History: UI / UX v2 — "kurumsal hiciv"

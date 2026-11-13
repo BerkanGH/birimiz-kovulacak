@@ -20,7 +20,7 @@ odd.
   recorder marks or votes before the rule below says they are revealed.
 - Request ids, duplicate rejection, `LineActionResult`, `LineFailure`, presence (`SetConnected`), the 60 s
   "fewer than two connected ⇒ Abandoned" rule, `LineText.Sanitize`: keep v4 behaviour.
-- `LineProtocol.Version = 5`, `RulesetVersion = "v5.0-kayit"`, `ConfigVersion = 5`. Players 3–6.
+- `LineProtocol.Version = 5`, `RulesetVersion = "v5.0-kayit"`, `ConfigVersion = 5`. Players 3–6. (Yaramazlıklar, §19: wire 6, config 6.)
 
 ## 2. Removed v4 systems
 
@@ -291,3 +291,69 @@ Interpretations chosen where this spec was silent or ambiguous. The code and tes
 Once candidates are fixed (`CrisisVerdict`), a candidate's outgoing transfers fail with `LineFailure.DeskSealed`.
 Candidates may still receive prim (vote buying stays possible). Reason: LineSim/review showed a candidate could empty
 their desk to an ally during `FinalVote`, so voters received nothing.
+
+## 19. Yaramazlıklar: meeting room pranks (2026-11-13, approved by the user)
+
+Design: `docs/V5_YARAMAZLIKLAR.md` (Turkish). Code: `Engine/LineEngine.Pranks.cs`, bots `Engine/LineBotTalker.Pranks.cs`,
+tests `Tests/Line/LinePrankTests.cs`. Pranks never block voice, votes, the defence order or any other rule; their only
+effects are burned prim and the tutanak (+suç) of whoever overflows the manager's patience.
+
+**Verb.** `LineVerb.Prank` (15): `A` = `PrankKind` (`Coffee 1, Plane 2, PostIt 3, PhoneRing 4, Slurp 5, StandUp 6,
+Flatter 7, Cake 8`), `Target` = a colleague (`-1` for Slurp and Flatter; optional for StandUp), `B` = post-it word
+`0..4` (`YALANCI, HIRSIZ?, MASUM, ZENGİN, SESSİZ`; `LinePranks.WordId`), `Text` = the plane's note (sanitised like
+`SendText`, `PlaneNoteMaxChars` 60), `C` = optional guard: the patience the sender saw (`-1` = no check).
+
+**Numbers** (*config*, `LineConfig`): `PranksEnabled` true, `PatienceCapacity` 6, `DefencePatienceMultiplier` 2,
+`TutanakBlame` 1; cost / patience / per session: Coffee 2 / 3 / 1, Plane 1 / 2 / 1, PostIt 1 / 2 / 1, PhoneRing 2 / 3
+(charged to the target) / 1, Slurp free / 1 / cooldown `SlurpCooldown` 10 s, StandUp free / 1 / `StandUpCooldown` 10 s,
+Flatter 1 / −`FlatterRelief` 2 / 1, Cake free / none / `CakeCooldown` 3 s and `CakeMax` 5 per match.
+`LineSetup.PranksEnabled` (lobby option "Yaramazlıklar açık", default on) and the config flag must both be on.
+
+**Sessions** (`LinePranks.SessionOf`): meeting 1 (Day 0 meeting phases) = 0, meeting 2 = 1, the crisis vote
+(`CrisisVote`, `CrisisVerdict`) = 2, the final (`FinalDiscussion` .. every `FinalVerdict`) = 3, `Results` = 4 (cake only).
+Office phases (and `CrisisCalls`) have none. A new session resets the patience to 0, clears the post-its and the
+per-session uses; coffee stains stay for the match; cooldowns are host times and are not reset.
+
+**Validation order.** `NotAvailable` (off), `BadParam` (kind), `WrongPhase` (no session; cake outside Results; anything
+but cake in Results), `Fired` (fired actor before Results), target (`InvalidTarget` / `Self`; a target given to Slurp or
+Flatter is `InvalidTarget`), parameters (`BadParam` word, `EmptyText` / `TooLong` note), then the target-independent block
+that the view also shows per option: `DeskSealed` (a candidate after `CrisisVerdict` starts may only do free pranks),
+`AlreadyUsed` (session limit), `LimitReached` (cakes), `RateLimited` (cooldown), `InsufficientFunds`; last the guard
+`PatienceChanged` (25) when `C ≥ 0` and differs from the patience (not for the cake).
+
+**Effects.** The cost is burned (`PrimReason.Prank`, Other = target; prim never below 0). Coffee adds a stain to the
+target, a post-it replaces the target's word for the session, a cake adds a cake to the target (Results). Outside Results
+the patience cost (×2 during `FinalDefense`, not for Flatter) is charged to the *culprit* (the actor; the target for a
+phone ring). Reaching the capacity is a tutanak: `+TutanakBlame` suç to the culprit at once (`BlameReason.Tutanak`, on the
+board; during the crisis vote it can change the candidates, in the final it only counts in the "higher suç" tie-break),
+the patience back to 0. Flattering lowers the patience by 2, never below 0. Levels (`LinePranks.Level`): thirds of the
+capacity, 0–1 calm, 2–3 frowning, 4–5 red. No randomness is used.
+
+**Privacy.** Everything is public except: a phone ring's actor (the view's log and the events show `-1` to everyone but
+the actor until Results), and the plane's note (only in the target's and the sender's view, never revealed, never logged).
+
+**View.** `LineFeaturesView.PranksEnabled / PranksOpen`; `LineView.Pranks` (`LinePranksView`, null when off): `Session`,
+`Patience`, `Level`, `Multiplier`, per seat id `PostIts` / `Stains` / `Cakes`, my `Options` (one per kind: cost, current
+patience, uses left, `ReadyAt`, `Block` = the reason it is closed right now) and the match's `Log`
+(`LinePrankEntryView`: index, kind, actor, target, word, note, session, phase, time, cost, patience, patience after,
+culprit, tutanak). At Results the log is the full disclosure of the pranks (with `PrimLog` / `BlameLog`).
+
+**Events.** `Prank` (19: Actor, Target, A = kind, B = word, C = log index; per-player audiences for a phone ring),
+`Patience` (20: A = patience now, B = level now, C = level before; Actor = the prank's actor or -1, Target = culprit),
+`Tutanak` (21: Target = culprit, A = kind, B = suç, Actor or -1) plus the usual `BlameAdded`. Flattering is the `Prank`
+event with A = Flatter.
+
+**Wire.** `LineProtocol.Version` 6 and `LineConfig.CurrentVersion` 6 (new verb, failure, event, reason values; the
+pranks view; the config numbers). `RulesetVersion` stays `v5.0-kayit` (pranks are a lobby option like recordings).
+`LineCodec.HashResult` writes its own frozen header (`ResultHashSchema` = 5) so outcomes that did not change keep their
+hashes; LineSim output is identical to the pre-prank engine.
+
+**Bots** (`LineBotTalker`, never `LineBot`, only from the bot's own view): Honest slurps and flatters when the manager is
+red and never targets anyone; Greedy throws coffee at whoever accused it in the chat, whistled / investigated it or
+leaked its call when it has prim to spare (≥ cost + 6) and rings its vote target's phone when the manager is red (the only
+prank a bot makes that overflows the patience: the tutanak lands on the target); Mixed sticks a "YALANCI" (accuser) or
+"HIRSIZ?" (known culprit) post-it or sends a plane with a line-token note; everyone sometimes cakes a winner. Never a
+prank that would bring the bot a tutanak, never prim from a sealed desk, at most two per session, none during the
+votes, moments staggered by seat order, the guard always sent. Reactions to pranks on the bot are lines out loud
+(`BotTalkOutput.Shouts`, presentation only). At Results each bot logs `bottalk prank …` per prank (cakes as they land) and
+`bottalk pranks …`; the host logs `host: pranks …` and `host: prank …`; `Tools/scripts/verify_logs.py` checks them.
