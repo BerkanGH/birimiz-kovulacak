@@ -57,7 +57,7 @@ namespace BirimizKovulacak.Game
                 if (File.Exists(path))
                 {
                     var loaded = JsonConvert.DeserializeObject<LineConfig>(File.ReadAllText(path), JsonSettings);
-                    if (loaded != null && loaded.ConfigVersion == LineProtocol.Version) { cfg = loaded; Debug.Log("[Config] Loaded " + path); }
+                    if (loaded != null && loaded.ConfigVersion == LineConfig.CurrentVersion) { cfg = loaded; Debug.Log("[Config] Loaded " + path); }
                     else Debug.LogWarning("[Config] " + path + " is for another version - using built-in v5 defaults.");
                 }
             }

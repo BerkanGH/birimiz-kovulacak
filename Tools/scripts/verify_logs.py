@@ -15,6 +15,14 @@ Phase grammar (docs/V5_ENGINE_SPEC.md section 3):
 v5 bot talk (docs/V5_BOT_TALK.md): each bot logs at Results "bottalk line ... policy=P ... truthful=yes|no",
 "bottalk check ... ok=yes|no" (every claim compared with the results) and "bottalk summary ...". The script adds them up
 per policy and fails when an Honest bot lied or a claim's truth flag did not match the results. Runs without bots pass.
+
+v5 Yaramazlıklar (docs/V5_YARAMAZLIKLAR.md): at Results the host logs "host: pranks week=W enabled=.. total=N tutanak=T
+burned=B" and "host: prank i=.. kind=K actor=A target=T ... tutanak=yes|no culprit=C"; each bot logs "bottalk prank seat=S
+policy=P kind=K target=T ... cost=C tutanak=yes|no culprit=C sealed=yes|no prim_after=N" (cakes as they land) and
+"bottalk pranks seat=S policy=P made=.. tutanak=.. spent=.. final_prim=..". The script reports pranks per kind and per
+policy and the tutanak count, and fails on negative prim, a sealed candidate spending prim, an Honest bot targeting a
+colleague (the results' cake excepted: everyone may cake the winner), or a bot overflowing the patience itself (only
+Greedy's phone ring may, and its tutanak lands on the target).
 """
 import glob
 import os
@@ -85,6 +93,77 @@ def bot_talk(logs):
     return not bad
 
 
+PRANK_BOT = re.compile(r"bottalk prank seat=(\d+) policy=(\w+) kind=(\w+) target=(-?\d+) session=(-?\d+) phase=(\w+) cost=(\d+) "
+                       r"patience=(-?\d+) tutanak=(yes|no) culprit=(-?\d+) sealed=(yes|no) prim_after=(-?\d+)")
+PRANK_SUMMARY = re.compile(r"bottalk pranks seat=(\d+) policy=(\w+) made=(\d+) tried=(\d+) tutanak=(\d+) spent=(\d+) reactions=(\d+) final_prim=(-?\d+)")
+PRANK_HOST = re.compile(r"host: prank i=(\d+) kind=(\w+) actor=(-?\d+) target=(-?\d+) session=(-?\d+) phase=(\w+) cost=(\d+) patience=(-?\d+) "
+                        r"after=(-?\d+) tutanak=(yes|no) culprit=(-?\d+)")
+
+
+def pranks(logs):
+    """Yaramazlıklar totals per kind and policy; False on a rule a bot (or the engine) must never break."""
+    bad = []
+    per_policy = {}
+    per_kind = {}
+    host_total = host_tutanak = host_burned = 0
+    hosts = 0
+    reactions = 0
+    for path in logs:
+        name = os.path.basename(path)
+        text = open(path, encoding="utf-8", errors="replace").read()
+        seen = set()
+        for m in PRANK_BOT.finditer(text):
+            seat, policy, kind, target = int(m.group(1)), m.group(2), m.group(3), int(m.group(4))
+            cost, tutanak, culprit, sealed, prim = int(m.group(7)), m.group(9) == "yes", int(m.group(10)), m.group(11) == "yes", int(m.group(12))
+            key = m.group(0)
+            if key in seen:
+                continue
+            seen.add(key)
+            row = per_policy.setdefault(policy, {"pranks": 0, "tutanak": 0, "spent": 0, "kinds": {}})
+            row["pranks"] += 1
+            row["spent"] += cost
+            row["kinds"][kind] = row["kinds"].get(kind, 0) + 1
+            if tutanak:
+                row["tutanak"] += 1
+            if prim < 0 and prim != -1:
+                bad.append("%s: negative prim after a prank: %s" % (name, key[:160]))
+            if sealed and cost > 0:
+                bad.append("%s: a sealed candidate spent prim: %s" % (name, key[:160]))
+            if policy == "Honest" and target >= 0 and kind != "Cake":
+                bad.append("%s: an Honest bot targeted a colleague: %s" % (name, key[:160]))
+            if tutanak and not (policy == "Greedy" and kind == "PhoneRing"):
+                bad.append("%s: a bot overflowed the patience itself: %s" % (name, key[:160]))
+            if tutanak and culprit == seat:
+                bad.append("%s: a bot brought itself a tutanak: %s" % (name, key[:160]))
+        for m in PRANK_SUMMARY.finditer(text):
+            reactions += int(m.group(7))
+            if int(m.group(8)) < 0 and int(m.group(8)) != -1:
+                bad.append("%s: negative final prim: %s" % (name, m.group(0)[:160]))
+        host_lines = PRANK_HOST.findall(text)
+        if host_lines or "host: pranks week=" in text:
+            hosts += 1
+            for h in host_lines:
+                host_total += 1
+                per_kind[h[1]] = per_kind.get(h[1], 0) + 1
+                host_burned += int(h[6])
+                if h[9] == "yes":
+                    host_tutanak += 1
+    if not per_policy and not hosts:
+        print("pranks: none logged")
+        return True
+    if hosts:
+        print("pranks (host): total=%d tutanak=%d burned=%d by kind: %s" % (
+            host_total, host_tutanak, host_burned, ", ".join("%s %d" % kv for kv in sorted(per_kind.items())) or "-"))
+    for policy in sorted(per_policy):
+        r = per_policy[policy]
+        print("pranks %-6s %d (tutanak %d, prim burned %d): %s" % (
+            policy, r["pranks"], r["tutanak"], r["spent"], ", ".join("%s %d" % kv for kv in sorted(r["kinds"].items()))))
+    print("pranks: %d bot reactions out loud" % reactions)
+    for b in bad[:10]:
+        print("   PRANK PROBLEM:", b)
+    return not bad
+
+
 def main(run):
     logs = sorted(f for f in glob.glob(os.path.join(run, "*.log")) if not os.path.basename(f).startswith("unity_"))
     if not logs:
@@ -130,6 +209,8 @@ def main(run):
             ok = False
             print("   MISMATCH: not every process received the same result")
     if not bot_talk(logs):
+        ok = False
+    if not pranks(logs):
         ok = False
     print("PASS" if ok and results else "FAIL")
     return 0 if ok and results else 1

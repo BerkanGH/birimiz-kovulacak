@@ -1048,7 +1048,7 @@ Envelope fields (every event, omitted when not applicable): schema_version, even
 |---|---|---|---|---|
 | `player` | slot (0-5) | yes | no |  |
 | `delta` | int | yes | no |  |
-| `reason` | enum | yes | no | @BlameReason (vote, cash_caught, whistled, investigation_guilty, investigation_false, crisis) |
+| `reason` | enum | yes | no | @BlameReason (vote, cash_caught, whistled, investigation_guilty, investigation_false, crisis, tutanak) |
 | `blame_after` | int | yes | no |  |
 
 ### final_started
@@ -1533,8 +1533,8 @@ Envelope fields (every event, omitted when not applicable): schema_version, even
 
 | Param | Type | Required | Cloud | Values |
 |---|---|---|---|---|
-| `verb` | enum | yes | no | @Verb (call, answer, decline, hang_up, submit_task, vote, send_text, send_meeting_chat, transfer, whistle, investigate, record, leak, host_continue) |
-| `failure` | enum | yes | no | @Failure (wrong_phase, stale_week, duplicate, invalid_target, self, busy, already_used, not_available, already_in_call, not_in_call, not_ringing, bad_param, absent, host_only, limit_reached, too_long, empty_text, rate_limited, insufficient_funds, not_owned, not_eligible, already_resolved, fired, desk_sealed) |
+| `verb` | enum | yes | no | @Verb (call, answer, decline, hang_up, submit_task, vote, send_text, send_meeting_chat, transfer, whistle, investigate, record, leak, host_continue, prank) |
+| `failure` | enum | yes | no | @Failure (wrong_phase, stale_week, duplicate, invalid_target, self, busy, already_used, not_available, already_in_call, not_in_call, not_ringing, bad_param, absent, host_only, limit_reached, too_long, empty_text, rate_limited, insufficient_funds, not_owned, not_eligible, already_resolved, fired, desk_sealed, patience_changed) |
 
 ### tutorial_step_viewed
 

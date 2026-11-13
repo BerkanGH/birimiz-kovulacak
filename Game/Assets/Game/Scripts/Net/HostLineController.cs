@@ -87,6 +87,8 @@ namespace BirimizKovulacak.Game
         public bool WeekRunning => _engine != null;
         public Slot[] Slots => _slots;
         public bool RecordingsEnabled { get; private set; } = true;
+        /// <summary>Lobby option "Yaramazlıklar açık" (docs/V5_YARAMAZLIKLAR.md), on by default.</summary>
+        public bool PranksEnabled { get; private set; } = true;
         public int WeeksPlayed => _history != null ? _history.WeeksPlayed : 0;
         public string ConfigJson { get; private set; }
         /// <summary>Random id of this hosting session (analytics correlation only).</summary>
@@ -392,6 +394,13 @@ namespace BirimizKovulacak.Game
             BroadcastLobby();
         }
 
+        public void SetPranks(bool on)
+        {
+            if (WeekRunning || PranksEnabled == on) return;
+            PranksEnabled = on;
+            BroadcastLobby();
+        }
+
         /// <summary>False with a localisation key explaining why (e.g. "lobby.need_players").</summary>
         public bool CanStart(out string reasonKey)
         {
@@ -417,7 +426,7 @@ namespace BirimizKovulacak.Game
             var lv = new LineLobbyView
             {
                 BuildId = GameConfig.BuildId, WeekRunning = WeekRunning, WeekId = _weekId,
-                RecordingsEnabled = RecordingsEnabled, WeeksPlayed = WeeksPlayed, StatusKey = reason,
+                RecordingsEnabled = RecordingsEnabled, PranksEnabled = PranksEnabled, WeeksPlayed = WeeksPlayed, StatusKey = reason,
                 SessionId = SessionId, GroupId = GroupId,
             };
             lv.Experiments.AddRange(CurrentExperiments());
@@ -470,12 +479,14 @@ namespace BirimizKovulacak.Game
                 Seed = args.Seed != 0 ? args.Seed + _weekId - 1 : _rng.Next(1, int.MaxValue),
                 StartTime = Now, // the engine clock starts here; anything earlier would be time going backwards
                 RecordingsEnabled = RecordingsEnabled,
+                PranksEnabled = PranksEnabled,
                 History = _history,
             };
             for (int i = 0; i < SlotCount; i++)
                 if (_slots[i].Occupied) setup.Players.Add(new LinePlayerInfo { Id = i, Name = _slots[i].Name, ColorIndex = i, IsBot = _slots[i].Virtual });
             var config = GameConfig.CopyLine();
             config.RecordingsEnabled = RecordingsEnabled;
+            config.PranksEnabled = config.PranksEnabled && PranksEnabled;
             try { _engine = LineEngineFactory.Create(setup, config); }
             catch (Exception e)
             {
@@ -521,11 +532,14 @@ namespace BirimizKovulacak.Game
             _lastSentVersion = -1;
             _abandonedAt = -1;
             _resultLogged = false;
+            _pranksLogged = 0;
+            _prankSummary = false;
+            _prankLogVersion = -1;
             ResetRecordings();
             // The seed reproduces every secret of the match: it is logged only once results are public (LogResult).
             _matchSeed = setup.Seed;
             MatchLog.Write("host: week " + _weekId + " started players=" + setup.Players.Count + " ruleset=" + LineProtocol.RulesetVersion
-                + " recordings=" + RecordingsEnabled + " weeksPlayed=" + WeeksPlayed);
+                + " recordings=" + RecordingsEnabled + " pranks=" + PranksEnabled + " weeksPlayed=" + WeeksPlayed);
             BroadcastLobby();
             SendViewsToAll();
             return true;
@@ -594,6 +608,7 @@ namespace BirimizKovulacak.Game
             _weeksCompleted++;
             var r = _engine.Result;
             if (r != null) MatchLog.Write("host: " + LineClient.ResultLine(r) + " seed=" + _matchSeed);
+            LogPranks();
             // Results are public now: telemetry may flush the private-until-match-end buffer.
             if (_engine.Phase == LinePhase.Results || _engine.IsFinished) ReportMatchEnd("results");
         }
@@ -652,6 +667,7 @@ namespace BirimizKovulacak.Game
             if ((changed && now - _lastViewSend >= ViewInterval) || now - _lastHeartbeat >= HeartbeatInterval) SendViewsToAll();
 
             if (_engine.Phase == LinePhase.Results && !_resultLogged && _engine.Result != null) LogResult();
+            else if (_resultLogged && _engine.Phase == LinePhase.Results && !_engine.IsFinished) LogPranks();
             if (_engine.IsFinished)
             {
                 if (_engine.Phase == LinePhase.Abandoned)
@@ -698,6 +714,7 @@ namespace BirimizKovulacak.Game
             s.Talker.Tick(view, _botConfig ?? _engine.Config, now, _engine.MessagesFor(s.Index, s.Talker.MessagesSeen), _talk);
             foreach (var a in _talk.Actions) _engine.Apply(s.Index, BotAction(s, a), now);
             foreach (var l in _talk.Lines) DeliverTalk(l.Listener, BotSpeech.PackLine(_weekId, l));
+            foreach (var l in _talk.Shouts) Shout(BotSpeech.PackShout(_weekId, l), -1);
             foreach (var q in _talk.Asks)
             {
                 var to = q.To >= 0 && q.To < SlotCount ? _slots[q.To] : null;
@@ -705,6 +722,53 @@ namespace BirimizKovulacak.Game
                 else DeliverTalk(q.To, BotSpeech.PackAsk(_weekId, q));
             }
             foreach (var line in _talk.Log) MatchLog.Write(line);
+        }
+
+        /// <summary>A reaction out loud: every person's (and -bot process's) client but the speaker's own process.</summary>
+        void Shout(byte[] packet, int except)
+        {
+            for (int i = 0; i < SlotCount; i++) if (i != except) DeliverTalk(i, packet);
+        }
+
+        int _pranksLogged;
+        bool _prankSummary;
+        long _prankLogVersion = -1;
+
+        /// <summary>
+        /// Yaramazlıklar log (verify_logs.py): every prank with its actor once the results are public (a phone ring's actor is
+        /// secret until then, so nothing is written during the match), then the cakes as they land.
+        /// </summary>
+        void LogPranks()
+        {
+            if (_engine == null || _engine.Phase != LinePhase.Results || _engine.StateVersion == _prankLogVersion) return;
+            _prankLogVersion = _engine.StateVersion;
+            LineView v;
+            try { v = _engine.BuildView(FirstSeat(), Now); }
+            catch (Exception e) { Debug.LogException(e); return; }
+            var pv = v.Pranks;
+            if (!_prankSummary)
+            {
+                _prankSummary = true;
+                int tutanak = 0, burned = 0;
+                if (pv != null) foreach (var e in pv.Log) { if (e.Tutanak) tutanak++; burned += e.Cost; }
+                MatchLog.Write("host: pranks week=" + _weekId + " enabled=" + (pv != null ? "yes" : "no") + " total=" + (pv != null ? pv.Log.Count : 0)
+                    + " tutanak=" + tutanak + " burned=" + burned);
+            }
+            if (pv == null) return;
+            for (int i = _pranksLogged; i < pv.Log.Count; i++)
+            {
+                var e = pv.Log[i];
+                MatchLog.Write(string.Format(System.Globalization.CultureInfo.InvariantCulture,
+                    "host: prank i={0} kind={1} actor={2} target={3} session={4} phase={5} cost={6} patience={7} after={8} tutanak={9} culprit={10}",
+                    e.Index, e.Kind, e.Actor, e.Target, e.Session, e.Phase, e.Cost, e.Patience, e.PatienceAfter, e.Tutanak ? "yes" : "no", e.Culprit));
+            }
+            _pranksLogged = pv.Log.Count;
+        }
+
+        int FirstSeat()
+        {
+            foreach (var p in _engine.Setup.Players) return p.Id;
+            return 0;
         }
 
         /// <summary>A bot talk packet to a person's (or a -bot process's) client.</summary>
@@ -726,6 +790,12 @@ namespace BirimizKovulacak.Game
             int slot, week, from, to;
             bool ask;
             if (_engine == null || !_clientSlot.TryGetValue(clientId, out slot)) return;
+            // Yaramazlıklar: a -bot player's reaction out loud goes to the whole room (only its own, only this week)
+            if (BotSpeech.IsShout(packet, out week, out from))
+            {
+                if (from == slot && week == (_weekId & 0xFF)) Shout(packet, slot);
+                return;
+            }
             if (!BotSpeech.Peek(packet, out week, out from, out to, out ask) || from != slot || week != (_weekId & 0xFF) || to == from) return;
             int partner = _engine.CallPartner(from);
             if (partner != to)

@@ -16,7 +16,7 @@ namespace BirimizKovulacak.Game
     /// </summary>
     public static class BotSpeech
     {
-        const byte KindLine = 1, KindAsk = 2;
+        const byte KindLine = 1, KindAsk = 2, KindShout = 3;
 
         /// <summary>Client → host (set by NetSession).</summary>
         public static Action<byte[]> Transport;
@@ -24,6 +24,9 @@ namespace BirimizKovulacak.Game
         public static event Action<BotAsk> AskReceived;
         /// <summary>A bot line said to me on the phone (UI: typewriter, mumble).</summary>
         public static event Action<Entry> LineHeard;
+        /// <summary>Yaramazlıklar: a bot says something out loud in the meeting room (a reaction to a prank): speaker, text.
+        /// The meeting UI shows it over the speaker's head; the mumble plays from the seat.</summary>
+        public static event Action<int, string> ShoutHeard;
 
         // ------------------------------------------------------------------ packets: [kind, week, from, to, ...]
 
@@ -38,6 +41,30 @@ namespace BirimizKovulacak.Game
             b[i++] = (byte)l.Args.Count;
             foreach (int a in l.Args) { b[i++] = (byte)(a & 0xFF); b[i++] = (byte)((a >> 8) & 0xFF); }
             return b;
+        }
+
+        /// <summary>A line said out loud to the room (Yaramazlıklar reactions): the line packet with its own kind, "to" = the speaker.</summary>
+        public static byte[] PackShout(int week, BotLine l)
+        {
+            var b = PackLine(week, l);
+            b[0] = KindShout;
+            b[3] = (byte)l.Speaker;
+            return b;
+        }
+
+        /// <summary>Host routing: a shout from <paramref name="from"/> (well-formed, any listener: it goes to the room).</summary>
+        public static bool IsShout(byte[] p, out int week, out int from)
+        {
+            week = from = -1;
+            if (p == null || p.Length < 6 || p[0] != KindShout) return false;
+            int to;
+            string key;
+            List<int> args;
+            p[0] = KindLine;
+            bool ok = TryLine(p, out from, out to, out key, out args);
+            p[0] = KindShout;
+            week = p[1];
+            return ok && from < LineProtocol.MaxPlayers;
         }
 
         public static byte[] PackAsk(int week, BotAsk a)
@@ -84,6 +111,7 @@ namespace BirimizKovulacak.Game
         // ------------------------------------------------------------------ sending
 
         public static void SendLine(int week, BotLine l) { Transport?.Invoke(PackLine(week, l)); }
+        public static void SendShout(int week, BotLine l) { Transport?.Invoke(PackShout(week, l)); }
         public static void SendAsk(int week, BotAsk a) { Transport?.Invoke(PackAsk(week, a)); }
 
         /// <summary>The local player presses question <paramref name="index"/> (1/2/3) on the phone with a bot.</summary>
@@ -115,6 +143,19 @@ namespace BirimizKovulacak.Game
                 if (TryAsk(p, out a) && a.To == lc.MySlot) AskReceived?.Invoke(a);
                 return;
             }
+            if (p[0] == KindShout)
+            {
+                int sfrom, w;
+                if (!IsShout(p, out w, out sfrom) || LaunchArgs.Current.Bot) return;
+                p[0] = KindLine;
+                int sto;
+                string skey;
+                List<int> sargs;
+                bool ok = TryLine(p, out sfrom, out sto, out skey, out sargs);
+                p[0] = KindShout;
+                if (ok) Shout(sfrom, skey, sargs);
+                return;
+            }
             int from, to;
             string key;
             List<int> args;
@@ -131,6 +172,13 @@ namespace BirimizKovulacak.Game
             Add(e);
             Speak(from, Text(key, e.Args), null);
             LineHeard?.Invoke(e);
+        }
+
+        /// <summary>A bot's line out loud in the meeting room (network, or a UI mock).</summary>
+        public static void Shout(int from, string key, List<int> args)
+        {
+            if (from >= 0 && from < 8) _talkers.Add(from);
+            ShoutHeard?.Invoke(from, Text(key, args ?? new List<int>()));
         }
 
         // ------------------------------------------------------------------ the local call transcript
