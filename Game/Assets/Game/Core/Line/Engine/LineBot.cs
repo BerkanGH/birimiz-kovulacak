@@ -13,6 +13,17 @@ namespace BirimizKovulacak.Core
         Mixed = 2,
     }
 
+    /// <summary>How a bot fills its ballots (meeting suç ballots, the crisis vote, the final firing votes).</summary>
+    public enum LineBotVoteStyle : byte
+    {
+        /// <summary>The v5 prototype rule: a culprit the bot saw take, else the highest suç (seeded tie-break).</summary>
+        MostBlame = 0,
+        /// <summary>Play to win: the rival the bot estimates to be the richest among the options (<see cref="LineBotLedger"/>,
+        /// plus a small fixed per-bot noise so bots disagree a little; seeded tie-break). The fired player's desk goes to
+        /// the voters, and the richest player wins.</summary>
+        Richest = 1,
+    }
+
     /// <summary>
     /// A view-only synthetic player (spec §13). It never calls, texts or uses the recorder. <see cref="Next"/> returns at
     /// most one action per call; call it until it returns null. With <see cref="ThinkSeconds"/> &gt; 0 the bot waits a
@@ -20,6 +31,10 @@ namespace BirimizKovulacak.Core
     /// Talk support (docs/V5_BOT_TALK.md): <see cref="PlannedTaskChoice"/> and <see cref="PlannedVote"/> preview a decision
     /// before the bot makes it by running the same policy on a copy of its random state, so they never change what it does.
     /// Calls, chat lines and payments are <see cref="LineBotTalker"/>'s job.
+    /// Votes (<see cref="VoteStyle"/>, default <see cref="LineBotVoteStyle.Richest"/>): every policy names the rival it
+    /// estimates to be the richest, from its own <see cref="LineBotLedger"/> (fed every view in <see cref="Next"/>). Once the
+    /// talker has announced a crisis / final vote (<see cref="CommitVote"/>), the bot casts exactly that target even if a
+    /// transfer or a prank changes its estimate before the ballot (an announced vote never silently changes).
     /// </summary>
     public sealed class LineBot
     {
@@ -38,12 +53,22 @@ namespace BirimizKovulacak.Core
         private int decidedChoice = -1, decidedVote = -1;
         /// <summary>Players this bot saw take in a task (from its own group reveals) or exposed publicly.</summary>
         private readonly HashSet<int> culprits = new HashSet<int>();
+        /// <summary>Richest votes: the bot's estimate of everyone's prim, and its fixed per-target noise salt.</summary>
+        private readonly LineBotLedger ledger;
+        private readonly uint salt;
+        private LineConfig config;
+        /// <summary>Announced votes (Richest): crisis = key -1, final round r = key r; for the week <see cref="commitWeek"/>.</summary>
+        private readonly Dictionary<int, int> committed = new Dictionary<int, int>();
+        private int commitWeek = int.MinValue;
+        private const int CrisisKey = -1;
 
         /// <summary>Maximum seeded delay before acting in a phase (0 = act immediately).</summary>
         public double ThinkSeconds;
         /// <summary>Earliest host time the bot wants to be asked again (+∞ = nothing to do in this phase).</summary>
         public double WakeAt { get; private set; } = double.PositiveInfinity;
         public LineBotPolicy Policy { get { return policy; } }
+        /// <summary>How this bot votes (default: the estimated richest rival).</summary>
+        public LineBotVoteStyle VoteStyle { get; set; } = LineBotVoteStyle.Richest;
 
         public LineBot(int seat, int seed, LineBotPolicy policy = LineBotPolicy.Honest)
         {
@@ -51,6 +76,8 @@ namespace BirimizKovulacak.Core
             this.seat = seat;
             this.policy = policy;
             rng = new LineRandom(seed);
+            ledger = new LineBotLedger(seat);
+            salt = unchecked((uint)seed * 2654435761u);
         }
 
         private LineAction Action(LineView v, LineVerb verb, int target = -1, int a = -1)
@@ -67,7 +94,11 @@ namespace BirimizKovulacak.Core
         public LineAction Next(LineView v, LineConfig config, double now)
         {
             WakeAt = double.PositiveInfinity;
-            if (v == null || v.Me != seat || v.Phase == LinePhase.Results || v.Phase == LinePhase.Abandoned || v.Phase == LinePhase.None) return null;
+            if (v == null || v.Me != seat) return null;
+            if (config != null) this.config = config;
+            // learning what the view shows is not a decision (no random draw): every view feeds the estimate
+            ledger.Ingest(v);
+            if (v.Phase == LinePhase.Results || v.Phase == LinePhase.Abandoned || v.Phase == LinePhase.None) return null;
             var me = v.Players.Find(p => p.Id == seat);
             if (me == null || !me.Connected) return null;
             if (week != v.WeekId) { week = v.WeekId; culprits.Clear(); phaseStart = double.NaN; }
@@ -138,7 +169,8 @@ namespace BirimizKovulacak.Core
                         if (m.Ballots[i] != -1) continue;
                         var options = VoteOptions(v, v.Phase == LinePhase.FinalVote);
                         if (options.Count == 0) return null;
-                        int target = Suspect(v, options, rng, culprits);
+                        int target = VoteStyle == LineBotVoteStyle.MostBlame ? Suspect(v, options, rng, culprits)
+                            : Richest(v, options, rng, Committed(v, v.Phase == LinePhase.FinalVote));
                         if (i == 0) { decidedVote = target; decidedAt = phaseStart; }
                         return Action(v, LineVerb.Vote, target, i);
                     }
@@ -188,6 +220,60 @@ namespace BirimizKovulacak.Core
             return top[r.Index(top.Count)];
         }
 
+        /// <summary>
+        /// The rival with the highest estimated prim (plus this bot's fixed noise for that rival); ties broken by
+        /// <paramref name="r"/> (one draw, like <see cref="Suspect"/>). An announced target (<paramref name="announced"/>)
+        /// that is still an option wins; the draw happens anyway so the random stream does not depend on announcements.
+        /// </summary>
+        private int Richest(LineView v, List<int> options, LineRandom r, int announced)
+        {
+            var est = ledger.Estimate(config);
+            double best = double.NegativeInfinity;
+            var top = new List<int>();
+            foreach (int id in options)
+            {
+                double e = Worth(est, id);
+                if (e > best + 1e-9) { best = e; top.Clear(); top.Add(id); }
+                else if (Math.Abs(e - best) <= 1e-9) top.Add(id);
+            }
+            int pick = top[r.Index(top.Count)];
+            return announced >= 0 && options.Contains(announced) ? announced : pick;
+        }
+
+        /// <summary>The estimate of <paramref name="id"/> as this bot weighs it: the ledger plus a fixed per-(bot, colleague)
+        /// noise in ±0.4 prim (derived from the bot's seed), so bots with the same facts disagree a little.</summary>
+        private double Worth(double[] est, int id)
+        {
+            return (id >= 0 && id < est.Length ? est[id] : 0) + Noise(id);
+        }
+
+        private double Noise(int id)
+        {
+            unchecked
+            {
+                uint h = (uint)(seat * 73856093) ^ (uint)(id * 19349663) ^ salt;
+                h ^= h >> 13; h *= 0x5bd1e995; h ^= h >> 15;
+                return ((h % 1000) / 1000.0 - 0.5) * 0.8;
+            }
+        }
+
+        /// <summary>The announced target for the vote of <paramref name="v"/> (crisis or final round), -1 when none.</summary>
+        private int Committed(LineView v, bool final)
+        {
+            if (VoteStyle != LineBotVoteStyle.Richest || commitWeek != v.WeekId) return -1;
+            int key;
+            if (!CommitKey(v, final, out key)) return -1;
+            int target;
+            return committed.TryGetValue(key, out target) ? target : -1;
+        }
+
+        private static bool CommitKey(LineView v, bool final, out int key)
+        {
+            key = CrisisKey;
+            if (final) { key = v.Final != null ? Math.Max(0, v.Final.Round) : 0; return true; }
+            return v.Phase == LinePhase.CrisisCalls || v.Phase == LinePhase.CrisisVote;
+        }
+
         // ---- talk support (read-only previews; docs/V5_BOT_TALK.md)
 
         /// <summary>True when <see cref="Next"/> has already seen the phase of <paramref name="v"/> (its think delay is drawn).</summary>
@@ -229,9 +315,70 @@ namespace BirimizKovulacak.Core
             var r = rng.Copy();
             int draws = phasesAhead + (Seen(v) ? 0 : 1);
             if (ThinkSeconds > 0) for (int i = 0; i < draws; i++) r.Unit();
-            var known = week == v.WeekId ? new HashSet<int>(culprits) : new HashSet<int>();
-            Learn(v, known);
-            return Suspect(v, list, r, known);
+            if (VoteStyle == LineBotVoteStyle.MostBlame)
+            {
+                var known = week == v.WeekId ? new HashSet<int>(culprits) : new HashSet<int>();
+                Learn(v, known);
+                return Suspect(v, list, r, known);
+            }
+            ledger.Ingest(v);
+            return Richest(v, list, r, Committed(v, final));
+        }
+
+        /// <summary>
+        /// Richest votes: the talker has just announced (a Vote / NotVote claim) that this bot's crisis ballot
+        /// (<paramref name="final"/> false, from CrisisCalls or CrisisVote) or final ballot of the current round goes to
+        /// <paramref name="target"/> (the <see cref="PlannedVote"/> it built the line from). From then on the bot casts
+        /// that target (in a revote too, while it is one of the tied) whatever new facts arrive, so the announcement stays
+        /// true. The first announcement of a vote wins. MostBlame bots ignore it (their behaviour is unchanged).
+        /// </summary>
+        public void CommitVote(LineView v, bool final, int target)
+        {
+            if (v == null || target < 0 || target == seat || VoteStyle != LineBotVoteStyle.Richest) return;
+            int key;
+            if (!CommitKey(v, final, out key)) return;
+            if (commitWeek != v.WeekId) { commitWeek = v.WeekId; committed.Clear(); }
+            if (!committed.ContainsKey(key)) committed[key] = target;
+        }
+
+        /// <summary>
+        /// This bot's current estimate of everyone's prim (seated players; fired = 0, its own = exact), from its own views
+        /// only. Learns from <paramref name="v"/> (when it is this bot's view) but decides nothing.
+        /// </summary>
+        public Dictionary<int, double> EstimatedPrim(LineView v)
+        {
+            ledger.Ingest(v);
+            var est = ledger.Estimate(config);
+            var map = new Dictionary<int, double>();
+            if (v != null) foreach (var p in v.Players) if (p.Id >= 0 && p.Id < est.Length) map[p.Id] = est[p.Id];
+            return map;
+        }
+
+        /// <summary>
+        /// The colleague this bot believes is the richest (its estimate plus its fixed noise, the same weighing as its
+        /// votes; exact ties go to the lowest seat) among <paramref name="options"/> (null = every colleague still employed).
+        /// With <paramref name="countMe"/> the bot's own exact balance competes too (the result is then its own seat when it
+        /// believes it is the richest; it wins ties). What its talk says it thinks; not a vote (no random draw, no
+        /// commitment). -1 when there is nobody.
+        /// </summary>
+        public int RichestRival(LineView v, List<int> options = null, bool countMe = false)
+        {
+            if (v == null) return -1;
+            var list = options != null ? new List<int>(options) : VoteOptions(v, false);
+            list.Remove(seat);
+            if (list.Count == 0) return -1;
+            list.Sort();
+            ledger.Ingest(v);
+            var est = ledger.Estimate(config);
+            int best = -1;
+            double bestWorth = double.NegativeInfinity;
+            if (countMe && seat < est.Length) { best = seat; bestWorth = est[seat]; }
+            foreach (int id in list)
+            {
+                double e = Worth(est, id);
+                if (e > bestWorth + 1e-9) { bestWorth = e; best = id; }
+            }
+            return best;
         }
 
         private static int BlameOf(LineView v, int id)
