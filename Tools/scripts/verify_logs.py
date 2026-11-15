@@ -15,6 +15,10 @@ Phase grammar (docs/V5_ENGINE_SPEC.md section 3):
 v5 bot talk (docs/V5_BOT_TALK.md): each bot logs at Results "bottalk line ... policy=P ... truthful=yes|no",
 "bottalk check ... ok=yes|no" (every claim compared with the results) and "bottalk summary ...". The script adds them up
 per policy and fails when an Honest bot lied or a claim's truth flag did not match the results. Runs without bots pass.
+Votes: each bot also logs every ballot it cast, "bottalk vote seat=S policy=P style=Richest|MostBlame ballot=Meeting|Crisis|Final
+round=R revote=.. index=I target=T target_prim=N richest=a,b richest_prim=M hit=yes|no" (the true balances when that vote
+started, from the results' prim log). The script reports per policy and ballot how many votes named a truly richest option
+(information only: bots estimate hidden balances, a miss is not an error).
 
 v5 Yaramazlıklar (docs/V5_YARAMAZLIKLAR.md): at Results the host logs "host: pranks week=W enabled=.. total=N tutanak=T
 burned=B" and "host: prank i=.. kind=K actor=A target=T ... tutanak=yes|no culprit=C"; each bot logs "bottalk prank seat=S
@@ -91,6 +95,41 @@ def bot_talk(logs):
     for b in bad[:10]:
         print("   BOT TALK PROBLEM:", b)
     return not bad
+
+
+VOTE = re.compile(r"bottalk vote seat=(\d+) policy=(\w+) style=(\w+) ballot=(\w+) round=(-?\d+) revote=(yes|no) index=(-?\d+) target=(-?\d+) "
+                  r"target_prim=(-?\d+) richest=([\d,]*) richest_prim=(-?\d+) hit=(yes|no)")
+
+
+def votes(logs):
+    """Ballots that named a truly richest option (when the vote started), per policy and ballot kind. Information only."""
+    per = {}
+    styles = set()
+    for path in logs:
+        text = open(path, encoding="utf-8", errors="replace").read()
+        seen = set()
+        for m in VOTE.finditer(text):
+            key = m.group(0)
+            if key in seen:
+                continue
+            seen.add(key)
+            policy, style, ballot, hit = m.group(2), m.group(3), m.group(4), m.group(12) == "yes"
+            styles.add(style)
+            row = per.setdefault(policy, {})
+            cell = row.setdefault(ballot, [0, 0])
+            cell[1] += 1
+            if hit:
+                cell[0] += 1
+    if not per:
+        print("votes: none logged")
+        return
+    for policy in sorted(per):
+        row = per[policy]
+        hits = sum(c[0] for c in row.values())
+        total = sum(c[1] for c in row.values())
+        print("votes %-6s to the truly richest %d/%d: %s" % (policy, hits, total, ", ".join(
+            "%s %d/%d" % (b, row[b][0], row[b][1]) for b in ("Meeting", "Crisis", "Final") if b in row)))
+    print("votes: style %s" % ", ".join(sorted(styles)))
 
 
 PRANK_BOT = re.compile(r"bottalk prank seat=(\d+) policy=(\w+) kind=(\w+) target=(-?\d+) session=(-?\d+) phase=(\w+) cost=(\d+) "
@@ -210,6 +249,7 @@ def main(run):
             print("   MISMATCH: not every process received the same result")
     if not bot_talk(logs):
         ok = False
+    votes(logs)
     if not pranks(logs):
         ok = False
     print("PASS" if ok and results else "FAIL")

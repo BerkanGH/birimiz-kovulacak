@@ -14,6 +14,10 @@ namespace BirimizKovulacak.Core
     /// has something to hide (a seeded coin per topic) and keeps about half of its promises.
     /// Random-looking decisions (whether to call, delays, coins) are hashes of the seed and a topic, so they do not depend
     /// on network timing.
+    /// Votes: with <see cref="LineBotVoteStyle.Richest"/> (the default) the bots explain their votes by money (the rival they
+    /// estimate to be the richest), voice that suspicion in the meeting chat, and every announced crisis / final vote is
+    /// committed (<see cref="LineBot.CommitVote"/>) so it cannot silently change before the ballot. MostBlame bots keep the
+    /// suç-board lines.
     /// </summary>
     public sealed partial class LineBotTalker
     {
@@ -66,6 +70,8 @@ namespace BirimizKovulacak.Core
             public BotQuestionSet AnswerSet;
             public int AnswerIndex;
             public bool Thanks;
+            /// <summary>Built when it is posted (a line that names what the bot thinks right then), instead of <see cref="Line"/>.</summary>
+            public Func<LineView, BotLine> Make;
         }
 
         sealed class Talk
@@ -119,12 +125,25 @@ namespace BirimizKovulacak.Core
         double nextChatAt, nextPayAt;
         readonly List<Due> chat = new List<Due>();
         long msgSeen;
-        bool accusedAnswered, situationPlanned, defended;
+        bool accusedAnswered, situationPlanned, defended, wealthPlanned;
         int lastAccuser = -1;
         double voteKey = double.NaN;
         readonly HashSet<int> leakReacted = new HashSet<int>();
         readonly HashSet<string> chatSaid = new HashSet<string>();
         readonly Dictionary<int, int> chatsBy = new Dictionary<int, int>();
+
+        // ------------------------------------------------------------------ votes (the log at Results)
+
+        sealed class VoteStart
+        {
+            public BallotKind Kind;
+            public int Round;
+            public bool Revote;
+            public double Time;
+            public readonly List<int> Options = new List<int>();
+        }
+
+        readonly List<VoteStart> voteStarts = new List<VoteStart>();
 
         // ------------------------------------------------------------------ logs and checks
 
@@ -207,6 +226,7 @@ namespace BirimizKovulacak.Core
             chatsBy.Clear();
             pendingLog.Clear();
             claims.Clear();
+            voteStarts.Clear();
             flushed = false;
             lines = lies = calls = answeredCalls = refusedCalls = answers = chats = paid = broken = 0;
             ringCount = callCount = 0;
@@ -413,6 +433,7 @@ namespace BirimizKovulacak.Core
             phase = v.Phase;
             phaseStart = v.PhaseStartTime;
             planned.Clear();
+            NoteVote(v);
             double len = Math.Max(1, v.PhaseEndTime - v.PhaseStartTime);
             string topic = "w" + week + "p" + (int)phase + "t" + v.TaskNumber + "d" + v.Day;
             if (QuietCallPhases && (phase == LinePhase.Intro || phase == LinePhase.CrisisCalls)) return;
@@ -469,6 +490,29 @@ namespace BirimizKovulacak.Core
                     break;
                 }
             }
+        }
+
+        /// <summary>A vote starts: remember when and among whom (for the vote log at Results).</summary>
+        void NoteVote(LineView v)
+        {
+            if (v.Phase != LinePhase.MeetingVote && v.Phase != LinePhase.CrisisVote && v.Phase != LinePhase.FinalVote) return;
+            var s = new VoteStart { Time = v.PhaseStartTime };
+            if (v.Phase == LinePhase.FinalVote)
+            {
+                if (v.Final == null) return;
+                s.Kind = BallotKind.Final;
+                s.Round = v.Final.Round;
+                s.Revote = v.Final.Revote;
+                s.Options.AddRange(v.Final.Options);
+            }
+            else
+            {
+                s.Kind = v.Phase == LinePhase.MeetingVote ? BallotKind.Meeting : BallotKind.Crisis;
+                s.Round = v.Phase == LinePhase.MeetingVote && v.Meeting != null ? v.Meeting.Index : 0;
+                foreach (var p in v.Players) if (!p.Fired) s.Options.Add(p.Id);
+            }
+            s.Options.Remove(Seat);
+            voteStarts.Add(s);
         }
 
         void Plan(int target, double at, string reason)
@@ -793,12 +837,49 @@ namespace BirimizKovulacak.Core
             int ahead = v.Phase == LinePhase.CrisisCalls ? 1 : 0;
             int target = bot != null ? bot.PlannedVote(v, false, ahead) : -1;
             if (Policy == LineBotPolicy.Mixed || target < 0) return Line("bot.crisis.call.m", other);
+            if (Rich)
+            {
+                if (Policy == LineBotPolicy.Honest)
+                    return Announce(v, false, target, Vote(Line(Richest(v, target, false) ? "bot.crisis.call.h_rich" : "bot.crisis.call.h_win", other, target), target, true, BallotKind.Crisis, 0));
+                int named = target != other ? target : Another(v, other, target, false);
+                if (named < 0) return Line("bot.crisis.call.m", other);
+                return Announce(v, false, target, Vote(Line("bot.crisis.call.g_rich", other, named), named, named == target, BallotKind.Crisis, 0));
+            }
             if (Policy == LineBotPolicy.Honest)
                 return Vote(Line(Leads(v, target) ? "bot.crisis.call.h" : "bot.crisis.call.h_known", other, target), target, true, BallotKind.Crisis, 0);
             // Greedy names its real target (it votes like everyone); never the listener
             int name = target != other ? target : Another(v, other, target, false);
             if (name < 0) return Line("bot.crisis.call.m", other);
             return Vote(Line("bot.crisis.call.g", other, name), name, name == target, BallotKind.Crisis, 0);
+        }
+
+        /// <summary>The bot votes for the estimated richest rival (<see cref="LineBotVoteStyle.Richest"/>).</summary>
+        bool Rich => bot != null && bot.VoteStyle == LineBotVoteStyle.Richest;
+
+        /// <summary>An announced vote (a Vote / NotVote claim): the bot casts <paramref name="target"/> (the vote the line was
+        /// built from) whatever arrives before the ballot, so the line can never turn into an accidental lie.</summary>
+        BotLine Announce(LineView v, bool final, int target, BotLine l)
+        {
+            if (bot != null) bot.CommitVote(v, final, target);
+            return l;
+        }
+
+        /// <summary>
+        /// Whether this bot believes <paramref name="target"/> is the richest of everyone the line speaks about: the other
+        /// colleagues (<paramref name="final"/>: the final candidates) and the bot itself when it is one of them (its own
+        /// balance is exact). Honest only says "the richest" when it believes it; otherwise it says it wants to win.
+        /// </summary>
+        bool Richest(LineView v, int target, bool final)
+        {
+            if (bot == null || target < 0) return false;
+            List<int> pool = null;
+            if (final && v.Final != null)
+            {
+                pool = new List<int>();
+                foreach (int id in v.Final.Candidates) { var p = P(v, id); if (p != null && !p.Fired) pool.Add(id); }
+            }
+            bool meToo = pool == null || pool.Contains(Seat);
+            return bot.RichestRival(v, pool, meToo) == target;
         }
 
         static BotLine Vote(BotLine l, int target, bool truthful, BallotKind ballot, int round)
@@ -983,6 +1064,7 @@ namespace BirimizKovulacak.Core
         {
             int target = bot != null ? bot.PlannedVote(v, false, v.Phase == LinePhase.CrisisCalls ? 1 : 0) : -1;
             if (Policy == LineBotPolicy.Mixed || target < 0) return Line(index == 0 ? "bot.crisis.a1.m" : "bot.crisis.a2.m", asker);
+            if (Rich) return CrisisAnswerRich(v, asker, index, target);
             if (index == 0)
             {
                 if (Policy == LineBotPolicy.Honest)
@@ -999,6 +1081,30 @@ namespace BirimizKovulacak.Core
             var l = Claim(Line("bot.crisis.a2.g", asker), BotClaimKind.NotVote, asker, target != asker);
             l.ClaimBallot = BallotKind.Crisis;
             return l;
+        }
+
+        /// <summary>Crisis questions, Richest votes: Honest names its real target by money (or says it wants to win), Greedy
+        /// names its target unless the asker is the target, and every Vote / NotVote answer is announced (committed).</summary>
+        BotLine CrisisAnswerRich(LineView v, int asker, int index, int target)
+        {
+            if (index == 0)
+            {
+                if (Policy == LineBotPolicy.Honest)
+                    return Announce(v, false, target, Vote(Line(Richest(v, target, false) ? "bot.crisis.a1.h_rich" : "bot.crisis.a1.h_win", asker, target), target, true, BallotKind.Crisis, 0));
+                int named = target != asker ? target : Another(v, asker, target, false);
+                if (named < 0) return Line("bot.crisis.a1.m", asker);
+                return Announce(v, false, target, Vote(Line("bot.crisis.a1.g_rich", asker, named), named, named == target, BallotKind.Crisis, 0));
+            }
+            if (Policy == LineBotPolicy.Honest)
+            {
+                if (target == asker) return Announce(v, false, target, Vote(Line("bot.crisis.a2.h_sorry", asker), asker, true, BallotKind.Crisis, 0));
+                var h = Claim(Line("bot.crisis.a2.h_rich", asker), BotClaimKind.NotVote, asker, true);
+                h.ClaimBallot = BallotKind.Crisis;
+                return Announce(v, false, target, h);
+            }
+            var l = Claim(Line("bot.crisis.a2.g", asker), BotClaimKind.NotVote, asker, target != asker);
+            l.ClaimBallot = BallotKind.Crisis;
+            return Announce(v, false, target, l);
         }
 
         // ================================================================== promises
@@ -1053,7 +1159,7 @@ namespace BirimizKovulacak.Core
             {
                 segment = seg;
                 chatCount = 0;
-                accusedAnswered = situationPlanned = defended = false;
+                accusedAnswered = situationPlanned = defended = wealthPlanned = false;
                 lastAccuser = -1;
                 chatsBy.Clear();
                 chat.RemoveAll(d => d.Line == null || !d.Line.Text || d.Line.Listener < 0);
@@ -1068,6 +1174,13 @@ namespace BirimizKovulacak.Core
                 situationPlanned = true;
                 var l = Situation(v, seg);
                 if (l != null) chat.Add(new Due { At = v.PhaseStartTime + len * (0.08 + 0.12 * rank + 0.05 * U("sit" + seg)), Line = l });
+            }
+            // Richest votes: who I think has the most money (said with what I know when it is posted), most meetings
+            if (!wealthPlanned && Rich && (v.Phase == LinePhase.MeetingDiscussion || v.Phase == LinePhase.FinalDiscussion))
+            {
+                wealthPlanned = true;
+                if (U("rich" + seg) < 0.7)
+                    chat.Add(new Due { At = v.PhaseStartTime + len * (0.30 + 0.09 * rank + 0.05 * U("richat" + seg)), Make = WealthLine });
             }
             // the defence: my turn on my feet (a subtitle over my character for everyone)
             if (!defended && v.Phase == LinePhase.FinalDefense && v.Final != null && v.Final.Defender == Seat)
@@ -1100,7 +1213,8 @@ namespace BirimizKovulacak.Core
             {
                 var d = chat[i];
                 if (d.At > now) break;
-                var l = d.Line;
+                var l = d.Make != null ? d.Make(v) : d.Line;
+                if (l == null) { chat.RemoveAt(i); i--; continue; }
                 bool text = l.Listener >= 0;
                 if (now < v.Mine.NextMessageAt || now < nextChatAt) break;
                 if (text)
@@ -1338,6 +1452,50 @@ namespace BirimizKovulacak.Core
 
         BotLine Defence(LineView v) { return Accused(v, lastAccuser); }
 
+        /// <summary>
+        /// The wealth suspicion in the meeting chat (Richest votes): the colleague this bot believes has the most money,
+        /// from its own ledger at the moment it speaks (the final discussion: among the candidates). Honest says it only when
+        /// it believes it (not when it thinks it is the richest itself); Greedy names its real pick (it wants that desk);
+        /// Mixed names someone else when its coin for the meeting says lie.
+        /// </summary>
+        BotLine WealthLine(LineView v)
+        {
+            if (bot == null || (v.Phase != LinePhase.MeetingDossier && v.Phase != LinePhase.MeetingDiscussion && v.Phase != LinePhase.FinalDiscussion)) return null;
+            var me = P(v, Seat);
+            if (me == null || me.Fired) return null;
+            bool final = segment == 2 && v.Final != null && v.Final.Candidates.Count > 0;
+            List<int> pool = null;
+            if (final)
+            {
+                pool = new List<int>();
+                foreach (int id in v.Final.Candidates) { var p = P(v, id); if (p != null && !p.Fired && id != Seat) pool.Add(id); }
+            }
+            int top = bot.RichestRival(v, pool);
+            if (top < 0) return null;
+            switch (Policy)
+            {
+                case LineBotPolicy.Honest:
+                    return Richest(v, top, final) ? Line(final ? "bot.meet.richc.h" : "bot.meet.rich.h", -1, top) : null;
+                case LineBotPolicy.Greedy:
+                    return Line("bot.meet.rich.g", -1, top);
+                default:
+                {
+                    int named = top;
+                    if (MixedLies("rich" + segment))
+                    {
+                        var others = pool != null ? new List<int>(pool) : new List<int>();
+                        if (pool == null) foreach (var p in v.Players) if (!p.Fired && p.Id != Seat) others.Add(p.Id);
+                        others.Remove(top);
+                        others.Sort();
+                        if (others.Count > 0) named = others[(int)(U("richother" + segment) * others.Count) % others.Count];
+                    }
+                    var l = Line("bot.meet.rich.m", -1, named);
+                    l.Truthful = named == top;
+                    return l;
+                }
+            }
+        }
+
         BotLine FinalVoteLine(LineView v)
         {
             var me = P(v, Seat);
@@ -1346,6 +1504,21 @@ namespace BirimizKovulacak.Core
             int target = bot != null ? bot.PlannedVote(v, true, 0) : -1;
             if (target < 0) return null;
             int round = v.Final.Round;
+            if (Rich)
+            {
+                if (Policy == LineBotPolicy.Honest)
+                {
+                    bool richest = Richest(v, target, true) && U("hwin" + round) >= 0.35;
+                    return Announce(v, true, target, Vote(Line(richest ? "bot.vote.h_rich" : "bot.vote.h_win", -1, target), target, true, BallotKind.Final, round));
+                }
+                int named = target;
+                if (MixedLies("final" + round))
+                {
+                    int other = Another(v, -1, target, true);
+                    if (other >= 0) named = other;
+                }
+                return Announce(v, true, target, Vote(Line("bot.vote.m_rich", -1, named), named, named == target, BallotKind.Final, round));
+            }
             if (Policy == LineBotPolicy.Honest)
                 return Vote(Line(Leads(v, target) ? "bot.vote.h" : "bot.vote.h_known", -1, target), target, true, BallotKind.Final, round);
             int name = target;
@@ -1380,9 +1553,41 @@ namespace BirimizKovulacak.Core
             Log(string.Format(CultureInfo.InvariantCulture,
                 "summary seat={0} policy={1} lines={2} truthful={3} lies={4} calls={5} answered={6} refused={7} answers={8} chat={9} paid={10} broken={11} checks={12} mismatches={13}",
                 Seat, Policy, lines, lines - lies, lies, calls, answeredCalls, refusedCalls, answers, chats, paid, broken, checks, mismatches));
+            if (r != null) LogVotes(r);
             FinishPranks(v);
             o.Log.AddRange(pendingLog);
             pendingLog.Clear();
+        }
+
+        /// <summary>
+        /// Every ballot of mine against the true balances when its vote started (the results' prim log): "richest" = the
+        /// options with the most prim then, hit = my ballot named one of them (verify_logs.py adds them up per policy).
+        /// </summary>
+        void LogVotes(LineWeekResult r)
+        {
+            string style = bot != null ? bot.VoteStyle.ToString() : "None";
+            foreach (var b in r.Ballots)
+            {
+                if (b.Voter != Seat || b.SelfAssigned || b.Target < 0) continue;
+                VoteStart start = null;
+                foreach (var s in voteStarts)
+                    if (s.Kind == b.Kind && s.Round == b.Round && s.Revote == (b.Kind == BallotKind.Final && b.Revote)) { start = s; break; }
+                if (start == null || start.Options.Count == 0) continue;
+                int best = int.MinValue;
+                var prim = new Dictionary<int, int>();
+                foreach (int id in start.Options)
+                {
+                    int x = config.StartPrim;
+                    foreach (var c in r.PrimLog) if (c.Player == id && c.Time <= start.Time) x += c.Delta;
+                    prim[id] = x;
+                    best = Math.Max(best, x);
+                }
+                var richest = new List<int>();
+                foreach (int id in start.Options) if (prim[id] == best) richest.Add(id);
+                Log(string.Format(CultureInfo.InvariantCulture, "vote seat={0} policy={1} style={2} ballot={3} round={4} revote={5} index={6} target={7} target_prim={8} richest={9} richest_prim={10} hit={11}",
+                    Seat, Policy, style, b.Kind, b.Round, Yes(b.Revote), b.Index, b.Target, prim.ContainsKey(b.Target) ? prim[b.Target] : -1,
+                    string.Join(",", richest), best, Yes(richest.Contains(b.Target))));
+            }
         }
 
         /// <summary>Whether a claim came true (known false when the results cannot tell).</summary>

@@ -135,6 +135,9 @@ namespace BirimizKovulacak.Core
             { "bot.crisis.call.h", "p" }, { "bot.crisis.call.h_known", "p" }, { "bot.crisis.call.g", "p" }, { "bot.crisis.call.m", "" },
             { "bot.crisis.a1.h", "p" }, { "bot.crisis.a1.h_known", "p" }, { "bot.crisis.a1.g", "p" }, { "bot.crisis.a1.m", "" },
             { "bot.crisis.a2.h", "" }, { "bot.crisis.a2.h_sorry", "" }, { "bot.crisis.a2.g", "" }, { "bot.crisis.a2.m", "" },
+            // Crisis, Richest votes (LineBotVoteStyle.Richest): explained by money
+            { "bot.crisis.call.h_rich", "p" }, { "bot.crisis.call.h_win", "p" }, { "bot.crisis.call.g_rich", "p" },
+            { "bot.crisis.a1.h_rich", "p" }, { "bot.crisis.a1.h_win", "p" }, { "bot.crisis.a1.g_rich", "p" }, { "bot.crisis.a2.h_rich", "" },
             // meetings (chat) and the final
             { "bot.meet.victim.h", "p" }, { "bot.meet.victim.g", "p" }, { "bot.meet.victim.g_paid", "" }, { "bot.meet.victim.m", "p" },
             { "bot.meet.witness.h", "p" }, { "bot.meet.witness.g", "p" }, { "bot.meet.witness.g_paid", "p" }, { "bot.meet.witness.g_quiet", "" },
@@ -143,6 +146,9 @@ namespace BirimizKovulacak.Core
             { "bot.meet.accused.h", "" }, { "bot.meet.accused.g", "p" }, { "bot.meet.accused.m", "p" },
             { "bot.meet.leak.h", "" }, { "bot.meet.leak.g", "" }, { "bot.meet.leak.m", "" },
             { "bot.vote.h", "p" }, { "bot.vote.h_known", "p" }, { "bot.vote.g", "" }, { "bot.vote.m", "p" },
+            // Richest votes: the wealth suspicion in the meeting chat, the final vote by money
+            { "bot.meet.rich.h", "p" }, { "bot.meet.richc.h", "p" }, { "bot.meet.rich.g", "p" }, { "bot.meet.rich.m", "p" },
+            { "bot.vote.h_rich", "p" }, { "bot.vote.h_win", "p" }, { "bot.vote.m_rich", "p" },
             // Yaramazlıklar (docs/V5_YARAMAZLIKLAR.md §7): reactions over the head when pranked, a paper plane's note
             { "bot.prank.coffee.h", "" }, { "bot.prank.coffee.g", "" }, { "bot.prank.coffee.m", "" },
             { "bot.prank.postit.h", "" }, { "bot.prank.postit.g", "" }, { "bot.prank.postit.m", "" },
