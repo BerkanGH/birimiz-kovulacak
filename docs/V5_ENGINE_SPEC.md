@@ -217,6 +217,8 @@ Phase 1.
 Policies: `Honest` (share, leave, volunteer when needed by a simple count, vote for the most suspicious by suç),
 `Greedy` (take, take, skip; whistle when witness; investigate when a partner took), `Mixed` (seeded per decision).
 Bots must reach `Results` in every phase without stalling; they do not call or use the recorder (Phase 3).
+Since 2026-11-15 every policy votes for the rival it estimates to be the richest (`LineBotVoteStyle.Richest`, §20); the
+suç rule above is kept as `LineBotVoteStyle.MostBlame`.
 
 ## 14. Codec
 
@@ -232,6 +234,8 @@ investigation guilty/innocent/insufficient prim/wrong group; crisis tie split; c
 revote, tie chain, payout to voters, second firing at 5–6; transfers privacy and limits; recorder/leak rules and
 pick timing; privacy (no other player's prim/choices/votes/transfers/recorder marks before reveal); determinism (two
 runs, same hash); codec round-trip for every contract type; bots finish 1,000 seeded matches per head count.
+The bot simulation `Tools/LineSim` (seeded bot matches per head count and policy mix, `Tools/LineSim/v5-sim.txt`) is
+described in §20.
 
 ## 16. Out of scope for Phase 1
 
@@ -278,7 +282,8 @@ Interpretations chosen where this spec was silent or ambiguous. The code and tes
   `WeekLength`, `LineManagerIds`, `LineIds.Manager/Nobody`, `LineSchedule`.
 - **Bots.** Honest bots also whistle as witnesses (otherwise nobody ever whistles on a greedy thief); Honest volunteers
   are the cleanest `Needed + 1` connected players by suç (ties by seat). All bots vote for a culprit they saw take,
-  else the highest suç (seeded tie-break). `LineBot.ThinkSeconds`/`WakeAt` let simulations add a per-phase delay.
+  else the highest suç (seeded tie-break; since §20 this is `LineBotVoteStyle.MostBlame`, the default votes for the
+  estimated richest). `LineBot.ThinkSeconds`/`WakeAt` let simulations add a per-phase delay.
 - **Telemetry.** The v4 observer is gone; its catalog rows stay as `pending_integration` with frozen v4 value lists
   (no v4 enum dependency) so the analyzer and service tests keep working; `lobby_created`/`match_started` lost the
   `length`/`manager` params; `HostTelemetryCoordinator` per-match hooks are no-ops and `LobbyCreated` lost its
@@ -357,3 +362,92 @@ prank that would bring the bot a tutanak, never prim from a sealed desk, at most
 votes, moments staggered by seat order, the guard always sent. Reactions to pranks on the bot are lines out loud
 (`BotTalkOutput.Shouts`, presentation only). At Results each bot logs `bottalk prank …` per prank (cakes as they land) and
 `bottalk pranks …`; the host logs `host: pranks …` and `host: prank …`; `Tools/scripts/verify_logs.py` checks them.
+
+## 20. Bots vote to win (2026-11-15, requested by the user)
+
+No rule changed. Prim is the score, the richest player wins and a fired player's desk goes to the players who voted for
+them, so bots now vote like players who want to win. Tasks (Honest shares / volunteers, Greedy takes / skips, Mixed
+50/50), whistles and investigations are unchanged. Code: `Engine/LineBot.cs` (`LineBotVoteStyle`), `Engine/LineBotLedger.cs`,
+talk `Engine/LineBotTalker.cs` (`docs/V5_BOT_TALK.md` §6, §6.1, §7), tests `Tests/Line/LineBotVoteTests.cs`.
+
+**Vote rule.** `LineBot.VoteStyle` (instance property, default `Richest`): every policy fills every ballot (meeting suç
+ballots, the crisis vote, final votes and revotes) with the option whose *estimated* prim plus a fixed per-(bot, target)
+noise is highest. The noise is a hash of the seat, the target and the bot's seed in [−0.4, +0.4) prim, so bots with the
+same facts disagree a little; exact ties take one `LineRandom.Index` draw, the same draw count as the MostBlame
+tie-break, so the bot's random stream advances identically in both styles. `MostBlame` is the Phase 1 rule (a culprit
+the bot saw take, else the highest suç): same code path, same random draws, same decisions as before (LineSim proof
+below).
+
+**The ledger** (`LineBotLedger`, one per bot): balances are hidden, so the bot estimates them from its own views only.
+`Ingest(view)` records facts (idempotent; ignores views of other seats; a new week resets it) and is called on every
+`LineBot.Next` (and by the previews); it remembers facts across phases because the meeting dossier is per meeting.
+`Estimate(config)` per seat: start at `StartPrim`; my own balance exact; fired = 0; Client Bonus: my group exact, the
+others the expected payout from the public takers count (unknown takers spread over the colleagues whose choice is
+unknown, weight 2.5 for a known Petty Cash thief else 1; an investigation's result fixes the target's choice; groups
+I was not in are valued with the pair payouts); Petty Cash: caught = 0, a whistled thief nets 0, the whistler
++`CashWhistleReward`, my group exact, the dossier's unresolved thefts (minus my group's open one) spread over the
+colleagues who could have taken (not caught, whistled or a whistler) with weight 0.5 + their Client Bonus take
+probability (0.3 when unknown); Weekend Shift: `ShiftSkipPay` to everyone off the public roster; investigations:
+investigator −cost (+refund when guilty), guilty target −refund; desk shares of the firings so far; my transfers (I
+sent X to j: j +X; j sent me X: j −X); pranks in the public log: the burned prim (`LinePrankEntryView.Cost`, i.e.
+`LineConfig.PrankCost`) from a known actor (a phone ring's actor is hidden until Results: skipped). Never below 0.
+
+**Previews and announcements.** `PlannedVote` runs the same estimate and the same random draws on a copy of the random
+state, so with the same facts it is exactly the vote the bot will cast (tested in every phase before the vote). New facts
+can still arrive between a preview and the ballot (a transfer, a prank, a desk share), so an announced vote is frozen:
+when the talker builds a `Vote` / `NotVote` claim (Honest and Greedy crisis lines, the final vote lines) it calls
+`LineBot.CommitVote(view, final, target)` with the target it built the line from. From then on the bot casts that
+target for that vote (crisis; final round r, its revote too while the target is one of the tied), the tie-break draw
+still happens, and `PlannedVote` returns it. The first announcement of a vote wins; MostBlame bots ignore it. So an
+Honest vote line is never contradicted by the ballot and every claim stays consistent with the results
+(`verify_logs.py`: "Honest 0 lies", no `ok=no`); when an Honest bot's announced target is no longer its estimated richest,
+its later money lines switch to wording that does not claim it ("I want to win too", "I've said where my vote goes").
+Unannounced statements (the meeting chat's wealth suspicion) are said
+with the facts of that moment and are not commitments.
+
+**Talk API.** `LineBot.EstimatedPrim(view)` (the estimate per seated player) and `LineBot.RichestRival(view, options,
+countMe)` (the bot's belief, same weighing as its votes, lowest seat on exact ties; with `countMe` its own exact balance
+competes, so Honest only says "X is the richest" when it believes it). Both learn from the view but decide nothing.
+At Results each talker logs every ballot it cast: `bottalk vote seat policy style ballot round revote index target
+target_prim richest richest_prim hit` (true balances at the start of that vote, from `PrimLog`); `verify_logs.py`
+reports the hit rate per policy and ballot kind.
+
+**Wire.** No change: `LineProtocol.Version` 6, `LineConfig.CurrentVersion` 6, `RulesetVersion` `v5.0-kayit`; no codec
+change (bots, ledgers and commitments are local to the bot's process).
+
+**LineSim** (`Tools/LineSim/Program.cs`; `dotnet run -c Release --project Tools/LineSim/LineSim.csproj -- --matches 1000
+--output Tools/LineSim/v5-sim.txt` writes the committed report). Flags: `--matches N --players all|3..6 --mix
+all|half|one-greedy|mixed|lobby --vote richest|blame --think s --seed N --output path`; `--vote richest` (default) is the
+game's bots, `blame` the old rule. Mixes: `half` (each seat Honest or Greedy 50/50), `one-greedy`, `mixed` (all Mixed),
+`lobby` (seat % 3 Honest / Greedy / Mixed like the lobby, seats shuffled per match). Per cell, besides the prim / suç /
+firing lines: `Votes:` fired = richest alive / richest candidate / suç leader (true balances at the start of each final
+round), crisis suç to the richest / the suç leader, final vote top share (concentration); `Estimate:` top-hit (each
+bot's top estimated rival is truly the richest, at the start of each final round), mean absolute error, winner prim,
+gap to the second, shared wins. Proof that only voting changed: LineSim built from 13aa1b1 and the new LineSim with
+`--vote blame` (300 matches, seed 7000, think 15 and 0, each of half / one-greedy / mixed) give identical result
+aggregate hashes in all 24 cells, e.g. think 15 half 3–6p `8092D555377C4DB1 663D2D5CA20E5E32 47F932C0375ED366
+0A9C0581F8442085`.
+
+Win share per seat, 1000 matches per cell, seeds 5000..5999, think 15 (`v5-sim.txt`; "blame" = the same run with
+`--vote blame`):
+
+| Mix | Players | Richest: win share H / G / M | Fired = richest alive | Estimate top-hit | Blame: win share H / G / M | Blame: fired = richest |
+|---|---|---|---|---|---|---|
+| lobby | 3 | 39.2 / 28.4 / 32.4 | 91.2% | 100% | 62.6 / 6.4 / 31.0 | 42.3% |
+| lobby | 4 | 23.1 / 8.4 / 45.5 | 86.1% | 91.9% | 22.0 / 15.4 / 40.5 | 61.3% |
+| lobby | 5 | 35.9 / 5.3 / 17.6 | 65.0% | 80.1% | 17.3 / 18.3 / 28.8 | 15.5% |
+| lobby | 6 | 22.2 / 9.9 / 17.9 | 69.8% | 81.9% | 10.8 / 20.8 / 18.4 | 22.6% |
+| half | 3 | 33.2 / 33.4 / – | 100% | 100% | 58.5 / 8.4 / – | 58.2% |
+| half | 4 | 34.7 / 15.3 / – | 86.4% | 93.8% | 22.3 / 27.7 / – | 57.6% |
+| half | 5 | 35.9 / 4.0 / – | 66.4% | 83.6% | 24.7 / 15.2 / – | 32.3% |
+| half | 6 | 26.5 / 6.7 / – | 77.0% | 94.8% | 13.3 / 20.0 / – | 42.2% |
+| one-greedy | 3–6 | Greedy fired 100%, wins 0 | 100 / 100 / 99.8 / 50.0% | 100 / 100 / 100 / 72.7% | same | 100 / 100 / 68.2 / 89.7% |
+
+Notes: with 3 players everything is visible (one trio), so the estimate is exact. "Fired = richest alive" is lower at
+5–6 players because only the candidates (top suç) can be fired; "richest candidate" is 88–96% there. 6-player
+one-greedy is degenerate (five identical Honest seats; the estimate spreads the single unknown Client Bonus taker over
+several colleagues, so the Honest whistler can look richer than the thief; the second firing then hits a tied Honest).
+The scratch prototype ingested views only at phase changes and missed facts that appear mid-phase (e.g. an
+investigation late in a meeting without a vote); ingesting every view makes the 3-player estimate exact (prototype
+3p lobby H / M / G 49 / 31 / 20 at seeds 9000.., the port 44 / 30 / 26 there); 4–6 players match the prototype within
+about one point.

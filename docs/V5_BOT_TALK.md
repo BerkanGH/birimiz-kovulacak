@@ -4,6 +4,15 @@ Durum: **[KARAR]** (2026-11-12, kullanıcı taslağı onayladı; `feature/v5-int
 (`V5_DESIGN.md`, `V5_ENGINE_SPEC.md`) ve botların kararları (`LineBot`: Dürüst / Açgözlü / Karışık) değişmez. Bu belge
 botların **ne söylediğini, ne zaman aradığını ve sözlerini nasıl tuttuğunu** anlatır.
 
+**Güncelleme (2026-11-15, kullanıcının isteği): botlar kazanmak için oy verir.** Prim = para = puan; en zengin kazanır,
+kovulanın masası ona oy verenlere paylaşılır. Bu yüzden her bot (Dürüst, Açgözlü, Karışık) her oylamada (toplantı suç
+oyları, Kriz, final kovma oyları) seçenekler arasında **en zengin olduğunu tahmin ettiği rakibe** oy verir. Bakiyeler
+gizli olduğu için bot kendi defterini tutar (`LineBotLedger`, sadece kendi görüşündeki bilgiyle; §6.1). Görevlerdeki
+davranış (Dürüst paylaşır / yazar, Açgözlü alır / yazmaz, Karışık yarı yarıya), ihbar ve soruşturma aynen kaldı. Botlar
+oylarını artık parayla açıklar ve toplantıda kimin zengin olduğunu düşündüklerini söyler (§6, §7). Eski kural
+("bildiği suçlu, yoksa en yüksek suç") `LineBotVoteStyle.MostBlame` olarak duruyor (LineSim `--vote blame`); o kuraldaki
+botlar eski cümleleri söyler.
+
 Botlar sadece test içindir; gerçek maçlar 3–6 insanla oynanır. Amaç, tek başına test ederken ofisin ve toplantının boş
 hissettirmemesi.
 
@@ -121,10 +130,49 @@ Soru düğmeleri: **[1] Kime oy vereceksin?** *(Who are you voting for?)* · **[
 | [1] | "{lider}. Tahtaya bak." <br>*"{leader}. Look at the board."* <br>Lider değilse: "{hedef}. Ne yaptığını biliyorum." <br>*"{target}. I know what they did."* | "{hedef}. Kesin." <br>*"{target}. Definitely."* | "Daha bilmiyorum." <br>*"I don't know yet."* |
 | [2] | "Tahta ne derse o. Önde değilsen merak etme." <br>*"Whatever the board says. If you're not ahead, don't worry."* <br>Soran kişi hedefiyse ve önde değilse: "Kusura bakma, oyum sana." <br>*"Sorry, my vote is you."* | "Sana vermem, söz. 2 prim gönderirsen yemin ederim." <br>*"I won't, promise. Send me 2 prim and I'll swear on it."* | "1 prim gönder, düşünürüm." <br>*"Send me 1 prim, I'll think about it."* |
 
-Bütün botlar aynı kuralla oy verir: bildiği bir suçlu varsa ona, yoksa suçu en yüksek olana (eşitlikte botun tohumu).
-Dürüst bu yüzden bazen tahtanın liderine değil, kendi grubunda aldığını gördüğü birine oy verir; cümlesi buna göre
-değişir. Açgözlü'nün {hedef}'i gerçek oyudur; hedefi karşısındaki kişiyse başka bir ad söyler (yalan) ve kendi hedefini
-asla aramaz.
+Yukarıdaki tablo eski oy kuralının (`MostBlame`) cümleleridir: bildiği bir suçlu varsa ona, yoksa suçu en yüksek olana
+(eşitlikte botun tohumu). Dürüst bu yüzden bazen tahtanın liderine değil, kendi grubunda aldığını gördüğü birine oy verir;
+cümlesi buna göre değişir. Açgözlü'nün söylediği ad gerçek oyudur; hedefi karşısındaki kişiyse başka bir ad söyler
+(yalan) ve kendi hedefini asla aramaz.
+
+**Para ile oy (`Richest`, varsayılan).** Oy en zengin olduğunu tahmin ettiği rakibe gider; cümleler parayla açıklar:
+
+| Durum | Dürüst | Açgözlü | Karışık |
+|---|---|---|---|
+| Bot arar | "Hesabıma göre en zengin {hedef}. Oyum ona." <br>*"By my count {target} is the richest. My vote goes there."* <br>Kendini daha zengin sanıyorsa: "Görevlerde dürüst oynadım ama kazanmak da istiyorum: oyum {hedef}." <br>*"I played the tasks honestly, but I want to win too: my vote is {target}."* | "Paranın çoğu {hedef} tarafında, gönderelim." <br>*"Most of the money is on {target}'s side. Let's send them off."* | (değişmedi) "Henüz karar vermedim. İkna et beni." |
+| [1] | "{hedef}. Bence en çok o kazandı." <br>*"{target}. I think they've earned the most."* <br>Kendini daha zengin sanıyorsa: "{hedef}. Dürüst oynadım ama kazanmak da istiyorum." <br>*"{target}. I played honestly, but I want to win too."* | "{hedef}. Masası dolu, kesin." <br>*"{target}. That desk is full, trust me."* | (değişmedi) "Daha bilmiyorum." |
+| [2] | Soran kişi hedefi değilse: "Oyum en çok kazanana gidiyor. Hesabıma göre o sen değilsin." <br>*"My vote goes to whoever earned the most. By my count that's not you."* <br>Hedefiyse: "Kusura bakma, oyum sana." <br>Oyunu başka birine söylemişken soran kişi artık en zengin görünüyorsa: "Oyumu söyledim, değiştirmem. Sana değil." <br>*"I've said where my vote goes and I'm not changing it. It's not you."* | (değişmedi) "Sana vermem, söz. 2 prim gönderirsen yemin ederim." | (değişmedi) "1 prim gönder, düşünürüm." |
+
+- Dürüst "en zengin" der ancak buna gerçekten inanıyorsa: kendi primi (kesin bilir) tahmin ettiği herkesten fazlaysa
+  "en zengin {hedef}" yalan olurdu; o zaman "kazanmak da istiyorum" cümlesini söyler (oyu yine doğru).
+- Açgözlü {hedef} olarak gerçek oyunu söyler; hedefi karşısındaki kişiyse başka bir ad söyler (yalan, eskisi gibi).
+- **Söylenen oy değişmez.** Bot bir oyu söylediği anda (`Vote` / `NotVote` iddiası: Dürüst'ün ve Açgözlü'nün Kriz
+  cümleleri, final oy cümleleri) `LineBot.CommitVote` ile o oya bağlanır: ondan sonra gelen bir havale ya da yaramazlık
+  tahminini değiştirse bile pusulaya söylediği kişiyi yazar (final eşitlik tekrarında da, o kişi hâlâ adaysa). Bu yüzden
+  Dürüst'ün söylediği oy hiçbir zaman sonradan yalana dönmez; Açgözlü'nün / Karışık'ın yalanı da söylediği anda belli
+  olur (`truthful=no`) ve sonuçla tutarlı kalır. Örnek: Dürüst "oyum Sarı" dedikten sonra Sarı ona 4 prim gönderirse
+  bot onu artık en zengin saymaz ama pusulaya yine Sarı yazılır. Söylenmemiş bir oy ise son bilgiyle verilir (önizleme sadece tahmindir).
+
+### 6.1 Defter: bot kimin ne kadar parası olduğunu nasıl tahmin eder?
+
+Sadece kendi görüşü (`LineView`) ve hatırladıkları (toplantı dosyası her toplantıda yenilenir, defter unutmaz):
+
+- Herkes başlangıç primiyle (6) başlar; kendi primini kesin bilir; kovulan 0 sayılır.
+- **Müşteri Bonusu:** kendi grubu kesin. Diğerleri: herkese açık "alan sayısı"ndan beklenen ödeme; bilinmeyen alanlar
+  kalan kişilere dağıtılır, kasadan aldığı bilinenlere daha çok. Soruşturmanın sonucu (aldı / paylaştı) kesin bilgidir.
+- **Küçük Kasa:** yakalananlar 0, ihbar edilen hırsız 0 (aldığını geri verdi), ihbar eden +2, kendi grubu kesin.
+  Dosyadaki çözülmemiş hırsızlık sayısı (kendi grubundaki hariç) alabilecek kişilere dağıtılır (yakalanan, ihbar edilen ve
+  ihbar eden alamaz), Müşteri Bonusu'nda alma olasılığına göre.
+- **Hafta Sonu Nöbeti:** listede olmayan herkese +2.
+- **Soruşturma:** açan −4, haklı çıktıysa +3; haklı çıktığı kişi −3.
+- **Final:** kovulanların masa payı alanlara eklenir.
+- **Kendi havaleleri:** X'e N gönderdiysem X +N; X bana N gönderdiyse X −N.
+- **Yaramazlıklar:** herkese açık listede yapanı belli olan şakanın maliyeti yapanından düşülür (telefon çaldırmanın
+  yapanı sonuç ekranına kadar gizli: sayılmaz).
+
+Oy seçenekler arasında tahmini en yüksek olana gider; her botun her rakip için sabit küçük bir sapması (±0,4 prim,
+botun tohumundan) vardır, böylece aynı bilgiyle botlar biraz farklı düşünür. Kalan eşitlikte botun tohumu seçer.
+LineSim'de (`Tools/LineSim/v5-sim.txt`) tahminin en zengini bulma oranı 3 kişide %100, 4–6 kişide yaklaşık %80–95'tir.
 
 ## 7. Toplantı (sohbet ve savunma)
 
@@ -135,7 +183,9 @@ asla aramaz.
 | Suçluyken (dikkat dağıtma) | — | "{masum} çok sessiz. Bence asıl o bir şey saklıyor." <br>*"{innocent} is very quiet. I think they're the one hiding something."* | "Hepimizin bir hatası var, değil mi?" <br>*"We all make mistakes, right?"* |
 | Suçlanınca | "Ben bir şey yapmadım. Soruşturma açın, görürsünüz." <br>*"I didn't do anything. Open an investigation and you'll see."* | "Yalan! {suçlayan} benden prim istedi, vermedim diye konuşuyor." <br>*"Lies! {accuser} asked me for prim and is talking because I said no."* | Aldıysa: "Evet aldım, ama {başkası} daha fazlasını yaptı." <br>*"Yes, I took it, but {someone else} did worse."* |
 | Kendi kaydı sızınca | "Evet, o benim. Söylediğimin arkasındayım." <br>*"Yes, that's me. I stand by what I said."* | "Bu kayıt bağlamından koparılmış!" <br>*"That recording is taken out of context!"* | "Hmm. Bunu açıklayabilirim." <br>*"Hmm. I can explain that."* |
-| Final oyu | "Suç tahtasında lider {lider}. Oyum ona." <br>*"{leader} leads the suç board. My vote goes there."* <br>Lider değilse: "Ben {hedef} diyorum. Ne yaptığını biliyorum." | "Çekmecesi en dolu olanı kovalım, primi bize kalır." <br>*"Let's fire the one with the fullest drawer, the prim stays with us."* | "Bu sefer {hedef} diyorum." <br>*"This time I'm saying {target}."* |
+| Final oyu (eski kural) | "Suç tahtasında lider {lider}. Oyum ona." <br>*"{leader} leads the suç board. My vote goes there."* <br>Lider değilse: "Ben {hedef} diyorum. Ne yaptığını biliyorum." | "Çekmecesi en dolu olanı kovalım, primi bize kalır." <br>*"Let's fire the one with the fullest drawer, the prim stays with us."* | "Bu sefer {hedef} diyorum." <br>*"This time I'm saying {target}."* |
+| Final oyu (para ile oy) | "Hesabıma göre adaylar içinde en zengin {hedef}. Oyum ona." <br>*"By my count {target} is the richest candidate. My vote goes there."* <br>Bazen (ya da kendini daha zengin sanan aday ise her zaman): "Görevlerde dürüst oynadım ama kazanmak da istiyorum: oyum {hedef}." | (değişmedi) "Çekmecesi en dolu olanı kovalım, primi bize kalır." | "Paranın çoğu {hedef} tarafında, gönderelim." <br>*"Most of the money is on {target}'s side. Let's send them off."* (yalan yazı-turası "yalan" derse başka bir aday) |
+| Zenginlik şüphesi (para ile oy; her toplantının tartışmasında ~%70) | "Bence bu maçı en çok {hedef} kazandı." <br>*"I think {target} has earned the most this match."* <br>Final tartışmasında: "Adaylar arasında en çok {hedef} kazandı bence." <br>*"Of the candidates, I think {target} has earned the most."* <br>Kendini daha zengin sanıyorsa söylemez. | "{hedef} — masası dolu gibi duruyor." <br>*"{target} — that desk looks pretty full."* | "Paranın çoğu {hedef} tarafında gibi. Yanılıyor muyum?" <br>*"Most of the money seems to be on {target}'s side. Am I wrong?"* |
 
 - **Sıra ve tempo.** Toplantı 1: mağdur > tanık > suçlu (dikkat dağıtma). Toplantı 2 (nöbet eksikse): yazmayan Açgözlü /
   Karışık dikkat dağıtır. Final tartışması: aday olan ve almış bir bot dikkat dağıtır; yoksa toplantı 1'de söyleyemediği
@@ -151,6 +201,10 @@ asla aramaz.
 - **Karışık suçlanınca:** almadıysa Dürüst'ün cümlesini söyler (doğru); aldıysa ve bildiği başka bir suçlu varsa "Evet
   aldım, ama {başkası}…", yoksa "Hepimizin bir hatası var, değil mi?".
 - **{masum}:** Açgözlü'nün suçlu olduğunu bilmediği, sohbette en az konuşmuş kişi (iftira: her zaman yalan sayılır).
+- **Zenginlik şüphesi:** cümle söyleneceği anda kurulur (o anki defterle); toplantı 1 ve 2'de bütün rakipler arasından,
+  final tartışmasında adaylar arasından. Dürüst ve Açgözlü gerçek tahminini söyler (Açgözlü o masayı istiyor); Karışık
+  toplantı başına yalan yazı-turası "yalan" derse başka birinin adını verir. Bu cümle bir oy sözü değildir (toplantı
+  oylamasına kadar bilgi değişebilir); kimseyi hırsızlıkla suçlamaz, bu yüzden adı geçen bot "suçlandım" diye cevap vermez.
 
 Yer tutucular: {arayan} arayan kişi, {ortak} ortak, {hırsız} çalan, {masum} suçsuz biri, {suçlayan} botu suçlayan,
 {başkası} başka bir suçlu, {lider} suç tahtası lideri (aynı zamanda botun gerçek oyu), {hedef} botun oy hedefi, {K}
@@ -176,6 +230,16 @@ gereken nöbetçi sayısı. Kodda her anahtarın yer tutucuları sırayla `{0}`,
    mevcut kaçamak cümlelerinden biri kullanılır ("Sen bana güvenirsen ben de sana.", "Bir sebebin varsa dinliyorum.",
    "Kaç kişi yazdı acaba?…"). Yeni cümle yok.
 7. **Genel, telefonu açınca (Dürüst):** {ortak} yerine arayan kişi ({arayan}); arayan her zaman ortak değil.
+8. **Para ile oy (2026-11-15).** Taslaktaki cümleler uyarlandı: "Bence bu maçı en çok {X} kazandı." (Dürüst, toplantı),
+   "{X} — masası dolu gibi duruyor." (Açgözlü, toplantı), "Hesabıma göre en zengin {X}. Oyum ona." (Dürüst, Kriz
+   araması; finalde "adaylar içinde"), "Paranın çoğu {X} tarafında, gönderelim." (Açgözlü Kriz araması, Karışık final
+   oyu), "{X}. Bence en çok o kazandı." (Dürüst, [1]), "Görevlerde dürüst oynadım ama kazanmak da istiyorum: oyum {X}."
+   (Dürüst; kendini daha zengin sandığında "en zengin" demek yalan olacağı için bu cümleyi kullanır). Yeni: Dürüst'ün
+   [2] cevabı "Oyum en çok kazanana gidiyor. Hesabıma göre o sen değilsin.", Açgözlü'nün [1] cevabı "{X}. Masası dolu,
+   kesin.", Karışık'ın toplantı cümlesi "Paranın çoğu {X} tarafında gibi. Yanılıyor muyum?" ve final tartışmasında
+   Dürüst'ün "Adaylar arasında en çok {X} kazandı bence.". Dürüst oyunu söyledikten sonra soran kişi en zengin
+   görünmeye başladıysa [2]'ye "Oyumu söyledim, değiştirmem. Sana değil." der (söylenen oy değişmez, ama "o sen
+   değilsin" artık inandığı şey olmazdı). Renk adından sonra ek yok ("Oyum: {X}." / "{X} — …" kalıbı).
 
 ## 9. Teknik
 
@@ -184,6 +248,7 @@ gereken nöbetçi sayısı. Kodda her anahtarın yer tutucuları sırayla `{0}`,
 | Cümle kataloğu, soru düğmeleri, sohbet jetonu | `Core/Line/Engine/LineBotTalk.cs` (`LineBotLines`, `BotLine`, `BotAsk`) |
 | Konuşma beyni (arama, cevap, toplantı, söz, kayıt) | `Core/Line/Engine/LineBotTalker.cs` (saf C#, testli) |
 | Kararların önizlemesi | `LineBot.PlannedTaskChoice`, `LineBot.PlannedVote`: aynı politika, botun rastgele durumunun kopyasıyla; kararı değiştirmez (LineSim sonuçları birebir aynı) |
+| Para ile oy | `LineBot.VoteStyle` (`Richest` varsayılan, `MostBlame` eski kural), `Core/Line/Engine/LineBotLedger.cs` (defter), `LineBot.EstimatedPrim` / `RichestRival` (konuşma için tahmin), `LineBot.CommitVote` (söylenen oy bağlanır) |
 | Ağ | `Scripts/Net/BotSpeech.cs` (paketler, döküm, mırıltı, konuşma seviyesi), `NetSession.BotTalkRpc` / `BotTalkToRpc`, `HostLineController.OnBotTalk` (sadece aynı görüşmenin iki ucu arasında iletir) |
 | Host botları / `-bot` süreçleri | `HostLineController.TickBots` → `Talk`; `LineBotDriver.Talk` |
 | Arayüz | `Scripts/UI/Office/BotCallCard.cs` (balon, sorular, prim), `OfficePhone` (LCD ipucu, rehberde "bot · yazıyla konuşur"), `Scripts/UI/Meeting/MeetingSubtitles.cs` (baş üstü balon, savunma altyazısı) |
@@ -199,12 +264,18 @@ gereken nöbetçi sayısı. Kodda her anahtarın yer tutucuları sırayla `{0}`,
 - **Kayıt:** her bot sonuç ekranında günlüğüne yazar: `bottalk line …` (anahtar, konuşan, dinleyen, `truthful=yes/no`),
   `bottalk call / answer / refuse / pay / promise …`, `bottalk check …` (her iddia sonuçlarla karşılaştırılır: `ok=yes/no`)
   ve `bottalk summary …`. Maç sırasında yazılmaz (kimin yalan söylediği sonuçtan önce günlükte görünmesin).
-  `Tools/scripts/verify_logs.py` bunları toplar; Dürüst bir yalan ya da `ok=no` bulursa FAIL verir.
+  `Tools/scripts/verify_logs.py` bunları toplar; Dürüst bir yalan ya da `ok=no` bulursa FAIL verir. Ayrıca her bot
+  attığı her pusulayı yazar: `bottalk vote seat=… policy=… style=… ballot=Meeting|Crisis|Final … target=… richest=…
+  hit=yes|no` (o oylama başladığında gerçekten en zengin olan seçenekler, sonuçların prim kaydından); `verify_logs.py`
+  politika ve oylama başına kaçının gerçekten en zengine gittiğini raporlar (bilgi amaçlı; tahmin yanılabilir).
 - **-calltest:** Intro ve Kriz görüşmelerini test kancası yapar (hemen açar, kaydeder, sızdırır); bot o evrelerde kendi
   araması yapmaz, kancanın görüşmesini kapatmaz, sadece konuşur. Diğer evrelerde aramaları bot açar.
 - **Testler:** `Tests/Line/LineBotTalkTests.cs`: önizlemeler kararı değiştirmez ve gerçek seçimi / oyu bilir; Dürüst hiç
   yalan söylemez ve her iddia sonuçla tutarlıdır; Açgözlü aldığında iddiası hep yalandır, Karışık bazen; cümleler sadece
   botun görebildiği kişileri suçlar, yer tutucular hep dolu; motor bot işlemlerini hatasız alır; tohum aynıysa konuşma
-  aynıdır; her soru düğmesine cevap gelir.
+  aynıdır; her soru düğmesine cevap gelir. `Tests/Line/LineBotVoteTests.cs`: defterin her kalemi (ortak, alan sayısı,
+  yakalanma / ihbar / açık hırsızlık, nöbet listesi, soruşturma, masa payı, havaleler, yaramazlık maliyeti), en zengin
+  seçimi ve sapma, eski kuralın aynen kalması, önizlemenin her evrede gerçek oya eşit olması, söylenen oyun değişmemesi
+  (bot "oyum X" dedikten sonra X ona prim gönderse de oy X'e gider), belirlenimcilik, para cümleleri ve oy kaydı.
 - **Mock'lar:** `-uimock "v5.office_botcall*"` (gelen arama, sorular, Açgözlü yalanı, Dürüst'ün ödenen sözü, reddetme,
   Kriz soruları), `"v5.meeting_botchat*"` (suçlamalar, cevap, sohbet, savunma altyazısı, final oyu), `_en` sürümleri.

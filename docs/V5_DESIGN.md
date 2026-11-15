@@ -408,3 +408,7 @@ durmalı.
 - Maçta dağıtılan suç: 2–3 başarısız görev × 4 oy + Kriz 4 ≈ **12–16**. Lider ≈ 5–6 suçta; Kriz'in 4 suçu
   sıralamayı gerçekten değiştirebilir.
 - Soruşturma (4) başlangıç primiyle karşılanabilir ama harcayanı belirgin şekilde fakirleştirir.
+
+Bot simülasyonunun güncel sayıları: `Tools/LineSim/v5-sim.txt` (açıklaması `V5_ENGINE_SPEC.md` §20). 2026-11-15'ten beri
+botlar her oylamada kazanmak için en zengin olduğunu tahmin ettikleri rakibe oy verir (eski "bildiği suçlu, yoksa en
+yüksek suç" kuralının sayıları için LineSim `--vote blame`). Bu bir bot davranışıdır; buradaki kurallar ve sayılar değişmedi.
