@@ -118,7 +118,7 @@ namespace BirimizKovulacak.Core.Tests
         [Test]
         public void TransfersCloseAfterTheFinalVote()
         {
-            var m = new LineTest();
+            var m = new LineTest(configure: LineTest.Meeting2Vote);
             m.ToCrisis(id => LineChoice.Skip, id => id == 3 ? 0 : 3);
             m.Until(LinePhase.FinalVote);
             int sender = m.Ids.First(id => !m.Player(id).Candidate);
@@ -133,7 +133,7 @@ namespace BirimizKovulacak.Core.Tests
         [Test]
         public void CandidateDesksAreSealedButCanReceive()
         {
-            var m = new LineTest();
+            var m = new LineTest(configure: LineTest.Meeting2Vote);
             m.ToCrisis(id => LineChoice.Skip, id => id == 3 ? 0 : 3);
             m.Ok(0, LineVerb.Transfer, 1, 1); // before candidates exist anyone may send
             m.Until(LinePhase.CrisisVerdict);

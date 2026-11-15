@@ -199,6 +199,17 @@ namespace BirimizKovulacak.Core
             Changed();
         }
 
+        /// <summary>Lowers suç by up to <paramref name="amount"/> (never below 0); logs and announces it as a negative change.</summary>
+        private void RemoveBlame(int id, int amount, BlameReason reason, double time)
+        {
+            int applied = Math.Min(amount, seats[id].Blame);
+            if (applied <= 0) return;
+            seats[id].Blame -= applied;
+            blameLog.Add(new LineBlameChange { Player = id, Delta = -applied, Reason = reason, Time = time });
+            Emit(LineEventType.BlameAdded, time, target: id, a: -applied, b: (int)reason);
+            Changed();
+        }
+
         // ---- phase machine
 
         private void Enter(LinePhase phase, double time, double duration)
@@ -282,9 +293,16 @@ namespace BirimizKovulacak.Core
                 case LinePhase.MeetingVerdict: EndMeeting(time); break;
                 case LinePhase.CrisisCalls: StartCrisisVote(time); break;
                 case LinePhase.CrisisVote: ResolveCrisis(time); Enter(LinePhase.CrisisVerdict, time, c.Durations.CrisisVerdict); break;
-                case LinePhase.CrisisVerdict: StartFinalDiscussion(time); break;
+                case LinePhase.CrisisVerdict:
+                    // nobody has suç (CandidateMinBlame): no candidates, nobody is fired, straight to the results
+                    if (final.Candidates.Count == 0 || final.FiringsTotal <= 0) { endReason = PhaseEndReason.Skipped; ToResults(time); }
+                    else StartFinalDiscussion(time);
+                    break;
                 case LinePhase.FinalDiscussion: StartDefense(time); break;
-                case LinePhase.FinalDefense: StartFinalVote(time, 0, Remaining(), false); break;
+                case LinePhase.FinalDefense:
+                    if (final.FiringsTotal <= 0 || Remaining().Count == 0) ToResults(time);
+                    else StartFinalVote(time, 0, Remaining(), false);
+                    break;
                 case LinePhase.FinalVote: ResolveFinalVote(time); break;
                 case LinePhase.FinalVerdict: AfterVerdict(time); break;
                 case LinePhase.Results: IsFinished = true; Changed(); break;

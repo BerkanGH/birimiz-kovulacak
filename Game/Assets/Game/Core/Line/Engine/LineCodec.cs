@@ -193,14 +193,14 @@ namespace BirimizKovulacak.Core
         private static void WriteLineAudience(BinaryWriter w, LineAudience v) { WriteEnum(w, (byte)v, 2, "LineAudience"); }
         private static LineEventType ReadLineEventType(BinaryReader r) { return (LineEventType)ReadEnum(r, 21, "LineEventType"); }
         private static void WriteLineEventType(BinaryWriter w, LineEventType v) { WriteEnum(w, (byte)v, 21, "LineEventType"); }
-        private static BlameReason ReadBlameReason(BinaryReader r) { return (BlameReason)ReadEnum(r, 7, "BlameReason"); }
-        private static void WriteBlameReason(BinaryWriter w, BlameReason v) { WriteEnum(w, (byte)v, 7, "BlameReason"); }
+        private static BlameReason ReadBlameReason(BinaryReader r) { return (BlameReason)ReadEnum(r, 9, "BlameReason"); }
+        private static void WriteBlameReason(BinaryWriter w, BlameReason v) { WriteEnum(w, (byte)v, 9, "BlameReason"); }
         private static PrimReason ReadPrimReason(BinaryReader r) { return (PrimReason)ReadEnum(r, 10, "PrimReason"); }
         private static void WritePrimReason(BinaryWriter w, PrimReason v) { WriteEnum(w, (byte)v, 10, "PrimReason"); }
         private static MessageKind ReadMessageKind(BinaryReader r) { return (MessageKind)ReadEnum(r, 3, "MessageKind"); }
         private static void WriteMessageKind(BinaryWriter w, MessageKind v) { WriteEnum(w, (byte)v, 3, "MessageKind"); }
-        private static DossierKind ReadDossierKind(BinaryReader r) { return (DossierKind)ReadEnum(r, 8, "DossierKind"); }
-        private static void WriteDossierKind(BinaryWriter w, DossierKind v) { WriteEnum(w, (byte)v, 8, "DossierKind"); }
+        private static DossierKind ReadDossierKind(BinaryReader r) { return (DossierKind)ReadEnum(r, 9, "DossierKind"); }
+        private static void WriteDossierKind(BinaryWriter w, DossierKind v) { WriteEnum(w, (byte)v, 9, "DossierKind"); }
         private static BallotKind ReadBallotKind(BinaryReader r) { return (BallotKind)ReadEnum(r, 3, "BallotKind"); }
         private static void WriteBallotKind(BinaryWriter w, BallotKind v) { WriteEnum(w, (byte)v, 3, "BallotKind"); }
         private static FiringDecision ReadFiringDecision(BinaryReader r) { return (FiringDecision)ReadEnum(r, 5, "FiringDecision"); }
@@ -573,6 +573,13 @@ namespace BirimizKovulacak.Core
             w.Write(v.FlatterPerSession);
             w.Write(v.CakeCooldown);
             w.Write(v.CakeMax);
+            w.Write(v.CashWhistledKeeps);
+            w.Write(v.ShiftFailSkipPay);
+            w.Write(v.ShiftFailSkipBlame);
+            w.Write(v.ShiftFailVote);
+            w.Write(v.ShiftVolunteerClean);
+            w.Write(v.InvestigationSharerOnly);
+            w.Write(v.CandidateMinBlame);
         }
         internal static LineConfig ReadLineConfig(BinaryReader r)
         {
@@ -644,6 +651,13 @@ namespace BirimizKovulacak.Core
             v.FlatterPerSession = r.ReadInt32();
             v.CakeCooldown = r.ReadSingle();
             v.CakeMax = r.ReadInt32();
+            v.CashWhistledKeeps = ReadBool(r);
+            v.ShiftFailSkipPay = r.ReadInt32();
+            v.ShiftFailSkipBlame = r.ReadInt32();
+            v.ShiftFailVote = ReadBool(r);
+            v.ShiftVolunteerClean = r.ReadInt32();
+            v.InvestigationSharerOnly = ReadBool(r);
+            v.CandidateMinBlame = r.ReadInt32();
             return v;
         }
 

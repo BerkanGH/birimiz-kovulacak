@@ -103,7 +103,9 @@ namespace BirimizKovulacak.Core.Tests.Line
             Until(LinePhase.MeetingDossier, 0);
         }
 
-        /// <summary>Clean tasks 1-2, task 3 with the given volunteers, then (if task 3 failed) meeting 2 with the given single ballots.</summary>
+        /// <summary>Clean tasks 1-2, task 3 with the given volunteers, then (if task 3 failed) meeting 2: with
+        /// <see cref="LineConfig.ShiftFailVote"/> (v5.0, <see cref="Meeting2Vote"/>) the given single ballots; v5.1 has no
+        /// meeting 2 vote (the skippers' suç is automatic).</summary>
         internal void ToCrisis(Func<int, int> volunteer = null, Func<int, int> meeting2Vote = null)
         {
             ToMeeting1();
@@ -111,11 +113,36 @@ namespace BirimizKovulacak.Core.Tests.Line
             Next();
             if (Engine.Phase == LinePhase.MeetingDossier)
             {
-                Until(LinePhase.MeetingVote);
-                if (meeting2Vote != null) foreach (int id in Ids) Ok(id, LineVerb.Vote, meeting2Vote(id), 0);
+                for (int i = 0; i < 20 && Engine.Phase != LinePhase.MeetingVote && Engine.Phase != LinePhase.CrisisCalls; i++) Next();
+                if (Engine.Phase == LinePhase.MeetingVote && meeting2Vote != null) foreach (int id in Ids) Ok(id, LineVerb.Vote, meeting2Vote(id), 0);
                 Until(LinePhase.CrisisCalls);
             }
             Assert.AreEqual(LinePhase.CrisisCalls, Engine.Phase);
+        }
+
+        /// <summary>The v5.0 Weekend Shift (and Client Bonus share) numbers: an unstaffed shift pays the skippers 2 and meeting 2
+        /// holds a suç vote (no automatic suç). Tests of the crisis and the final use it to set suç up with ballots.</summary>
+        internal static void Meeting2Vote(LineConfig c)
+        {
+            c.ShiftFailVote = true;
+            c.ShiftFailSkipBlame = 0;
+            c.ShiftFailSkipPay = c.ShiftSkipPay;
+            c.BonusPairShare = 2;
+            c.BonusTrioNone = 2;
+        }
+
+        /// <summary>Every number and switch of the v5.0 rules (LineSim --rules old).</summary>
+        internal static void V50(LineConfig c)
+        {
+            Meeting2Vote(c);
+            c.CashWhistleReward = 2;
+            c.CashWhistledKeeps = false;
+            c.ShiftVolunteerClean = 0;
+            c.InvestigationSharerOnly = false;
+            c.InvestigationCost = 4;
+            c.InvestigationGuiltyBlame = 3;
+            c.InvestigationRefund = 3;
+            c.CandidateMinBlame = 0;
         }
 
         internal List<LinePhase> PhaseTrace()

@@ -78,6 +78,19 @@ namespace BirimizKovulacak.Core
                 }
                 meeting.Roster.AddRange(t.Roster);
                 Line(DossierKind.ShiftRoster, time, n1: t.Roster.Count, n2: t.Needed, task: t.Kind);
+                if (t.Failed && c.ShiftFailSkipBlame > 0)
+                {
+                    // v5.1: every skipper of the unstaffed shift gets the suç now, publicly; no vote follows (ShiftFailVote)
+                    int skippers = 0;
+                    foreach (int id in ids)
+                    {
+                        if (t.Roster.Contains(id)) continue;
+                        skippers++;
+                        AddBlame(id, c.ShiftFailSkipBlame, BlameReason.ShiftFailSkip, time);
+                    }
+                    if (skippers > 0) Line(DossierKind.ShiftSkipBlame, time, n1: c.ShiftFailSkipBlame, n2: skippers, task: t.Kind);
+                }
+                if (!c.ShiftFailVote) meeting.Voteable = CountVoteable(); // known now (0): the meeting shows no vote is coming
             }
             Enter(LinePhase.MeetingDossier, time, c.Durations.MeetingDossier);
         }
@@ -132,7 +145,7 @@ namespace BirimizKovulacak.Core
                     else if (t.Kind == TaskKind.PettyCash && t.Thefts.Exists(x => !x.Resolved)) count++;
                 }
             }
-            else if (tasks[2].Failed) count++;
+            else if (tasks[2].Failed && c.ShiftFailVote) count++;
             return count;
         }
 
@@ -189,6 +202,8 @@ namespace BirimizKovulacak.Core
             if (f != LineFailure.None) return f;
             var t = TaskOf(TaskKind.ClientBonus);
             if (t.GroupOf[id] != t.GroupOf[a.Target]) return LineFailure.NotEligible;
+            // v5.1: only a sharer may investigate, and only a group-mate who took (no false investigations)
+            if (c.InvestigationSharerOnly && (t.Choice[id] == LineChoice.Take || t.Choice[a.Target] != LineChoice.Take)) return LineFailure.NotEligible;
             if (investigated.Contains(a.Target)) return LineFailure.AlreadyResolved;
             if (s.Prim < c.InvestigationCost) return LineFailure.InsufficientFunds;
             s.InvestigationUsed = true;
@@ -213,7 +228,9 @@ namespace BirimizKovulacak.Core
             var list = new List<int>();
             if (!InvestigationOpen || seats[id].InvestigationUsed || c.InvestigationsPerPlayer <= 0) return list;
             var t = TaskOf(TaskKind.ClientBonus);
-            foreach (int other in t.GroupFor(id)) if (other != id && !investigated.Contains(other)) list.Add(other);
+            if (c.InvestigationSharerOnly && t.Choice[id] == LineChoice.Take) return list;
+            foreach (int other in t.GroupFor(id))
+                if (other != id && !investigated.Contains(other) && (!c.InvestigationSharerOnly || t.Choice[other] == LineChoice.Take)) list.Add(other);
             return list;
         }
 

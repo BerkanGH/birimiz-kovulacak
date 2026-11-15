@@ -15,11 +15,12 @@ namespace BirimizKovulacak.Core.Tests
         [TestCase(3), TestCase(4), TestCase(5), TestCase(6)]
         public void DefaultMatchSkipsMeeting1VoteAndRunsMeeting2(int n)
         {
-            // Defaults: share, leave, skip. Tasks 1-2 succeed (no vote-able failure); task 3 fails (no volunteers).
+            // Defaults: share, leave, skip. Tasks 1-2 succeed (no vote-able failure); task 3 fails (no volunteers): meeting 2
+            // is the dossier and the discussion (v5.1: the skippers' suç is automatic, no vote).
             var m = new LineTest(n);
             m.Finish();
             var expected = new List<P>(Tasks12) { P.MeetingDossier, P.MeetingDiscussion, P.TaskPlay, P.TaskReveal,
-                P.MeetingDossier, P.MeetingDiscussion, P.MeetingVote, P.MeetingVerdict };
+                P.MeetingDossier, P.MeetingDiscussion };
             expected.AddRange(FinalTail);
             int firings = m.Config.FiringsFor(n);
             for (int i = 0; i < firings; i++)

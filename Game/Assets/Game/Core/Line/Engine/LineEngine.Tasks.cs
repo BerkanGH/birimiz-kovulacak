@@ -181,6 +181,9 @@ namespace BirimizKovulacak.Core
                 case TaskKind.PettyCash: ResolvePettyCash(t); break;
                 case TaskKind.WeekendShift: ResolveWeekendShift(t); break;
             }
+            // v5.1: every volunteer's suç goes down, staffed or not (never below 0)
+            if (t.Kind == TaskKind.WeekendShift && c.ShiftVolunteerClean > 0)
+                foreach (int id in t.Roster) RemoveBlame(id, c.ShiftVolunteerClean, BlameReason.ShiftClean, time);
             foreach (int id in ids)
             {
                 AddPrim(id, t.Payout[id], PrimReason.Task, time);
@@ -226,14 +229,14 @@ namespace BirimizKovulacak.Core
             // Failure (unresolved theft) is decided when meeting 1 opens, after the whistle window.
         }
 
+        /// <summary>Volunteers get 0; skippers get <see cref="LineConfig.ShiftSkipPay"/> when the shift is staffed, else
+        /// <see cref="LineConfig.ShiftFailSkipPay"/> (and their suç when meeting 2 opens).</summary>
         private void ResolveWeekendShift(TaskState t)
         {
-            foreach (int id in ids)
-            {
-                if (t.Choice[id] == LineChoice.Volunteer) t.Roster.Add(id);
-                else t.Payout[id] = c.ShiftSkipPay;
-            }
+            foreach (int id in ids) if (t.Choice[id] == LineChoice.Volunteer) t.Roster.Add(id);
             t.Failed = t.Roster.Count < t.Needed;
+            int skipPay = t.Failed ? c.ShiftFailSkipPay : c.ShiftSkipPay;
+            foreach (int id in ids) if (t.Choice[id] != LineChoice.Volunteer) t.Payout[id] = skipPay;
         }
 
         // ---- whistle (break after Petty Cash)
@@ -250,8 +253,9 @@ namespace BirimizKovulacak.Core
             if (theft.Resolved) return LineFailure.AlreadyResolved;
             theft.Whistler = id;
             theft.WhistleTime = time;
-            // The stolen prim leaves the game (min with balance); suç is applied publicly when meeting 1 opens.
-            int lost = -AddPrim(a.Target, -c.CashTake, PrimReason.Whistled, time, id);
+            // v5.1: the thief keeps the stolen prim and the whistle pays nothing (CashWhistledKeeps, CashWhistleReward 0).
+            // v5.0: the stolen prim left the game (min with balance). Suç is applied publicly when meeting 1 opens.
+            int lost = c.CashWhistledKeeps ? 0 : -AddPrim(a.Target, -c.CashTake, PrimReason.Whistled, time, id);
             AddPrim(id, c.CashWhistleReward, PrimReason.WhistleReward, time, a.Target);
             Emit(LineEventType.Whistled, time, id, a.Target, lost, recipient: id);
             Emit(LineEventType.Whistled, time, id, a.Target, lost, recipient: a.Target);

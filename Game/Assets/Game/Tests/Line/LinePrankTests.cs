@@ -32,10 +32,11 @@ namespace BirimizKovulacak.Core.Tests
         static LinePranksView P(LineTest m, int viewer = 0) { return m.View(viewer).Pranks; }
         static LinePrankOptionView Opt(LineTest m, int viewer, PrankKind k) { return P(m, viewer).Options.Single(o => o.Kind == k); }
 
-        /// <summary>Meeting 1's dossier after clean tasks: everyone has 6 + 2 = 8 prim.</summary>
+        /// <summary>Meeting 1's dossier after clean tasks: everyone has 6 + 2 = 8 prim (the prank tests keep the v5.0 Client
+        /// Bonus share and meeting 2 vote, <see cref="LineTest.Meeting2Vote"/>: their numbers are about pranks).</summary>
         static LineTest Meeting1(int players = 4, Action<LineConfig> configure = null, Action<LineSetup> prepare = null, int seed = 731)
         {
-            var m = new LineTest(players, seed, configure, prepare);
+            var m = new LineTest(players, seed, c => { LineTest.Meeting2Vote(c); configure?.Invoke(c); }, prepare);
             m.ToMeeting1();
             if (configure == null) Assert.AreEqual(8, m.Prim(0));
             return m;
@@ -44,7 +45,7 @@ namespace BirimizKovulacak.Core.Tests
         /// <summary>Crisis verdict with candidates 1, 2, 3 (0 is not a candidate), as in LineFinalTests.</summary>
         static LineTest CrisisVerdict()
         {
-            var m = new LineTest(4);
+            var m = new LineTest(4, configure: LineTest.Meeting2Vote);
             var meeting2 = new[] { 1, 2, 3, 1 };
             var crisis = new[] { 1, 0, 1, 1 };
             m.ToCrisis(id => LineChoice.Skip, id => meeting2[id]);

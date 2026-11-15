@@ -126,11 +126,11 @@ namespace BirimizKovulacak.Core.Tests
 
             var both = new LineTest(4);
             both.PlayTask(0, LineTest.Share);
-            foreach (int id in both.Ids) Assert.AreEqual(8, both.Prim(id));
+            foreach (int id in both.Ids) Assert.AreEqual(6 + 3, both.Prim(id), "v5.1: both share 3 each");
             Assert.AreEqual(0, both.View().Task.Takers);
         }
 
-        [TestCase(0, 2, 2, 2)]
+        [TestCase(0, 3, 3, 3)]
         [TestCase(1, 5, 0, 0)]
         [TestCase(2, 1, 1, 1)]
         [TestCase(3, 1, 1, 1)]
@@ -167,8 +167,8 @@ namespace BirimizKovulacak.Core.Tests
             var g = m.Group(0);
             int thief = g[0], witness = g[1];
             m.PlayTask(1, id => id == thief ? Take : LineChoice.Leave);
-            Assert.AreEqual(8 + 3, m.Prim(thief));
-            Assert.AreEqual(8, m.Prim(witness));
+            Assert.AreEqual(9 + 3, m.Prim(thief));
+            Assert.AreEqual(9, m.Prim(witness));
             Assert.AreEqual(Take, m.View(witness).Task.Choices.Single(c => c.Player == thief).Choice);
             int outsider = m.Ids.First(id => !g.Contains(id));
             Assert.IsFalse(m.View(outsider).Task.Choices.Any(c => c.Player == thief), "outside the group nothing is visible");
@@ -208,7 +208,7 @@ namespace BirimizKovulacak.Core.Tests
             m.Next(); m.Next();
             var g = m.Group(0);
             m.PlayTask(1, id => g.Contains(id) ? Take : 0);
-            foreach (int id in g) Assert.AreEqual(8, m.Prim(id));
+            foreach (int id in g) Assert.AreEqual(9, m.Prim(id));
             foreach (int id in g) Assert.AreEqual(0, m.Blame(id), "suç is announced in meeting 1, not at reveal");
             CollectionAssert.IsEmpty(m.View(g[0]).Mine.WitnessOf);
             m.Until(LinePhase.MeetingDossier);
@@ -221,7 +221,7 @@ namespace BirimizKovulacak.Core.Tests
         }
 
         [Test]
-        public void WhistleTakesBackTheCashRewardsTheWitnessAndIsPublicInMeeting1()
+        public void WhistleIsFreeTheThiefKeepsTheCashAndItIsPublicInMeeting1()
         {
             var m = new LineTest(4);
             m.PlayTask(0, LineTest.Share);
@@ -237,10 +237,10 @@ namespace BirimizKovulacak.Core.Tests
             m.Fail(LineFailure.NotEligible, thief, LineVerb.Whistle, witness);
             m.Ok(witness, LineVerb.Whistle, thief);
             m.Fail(LineFailure.AlreadyResolved, witness, LineVerb.Whistle, thief);
-            Assert.AreEqual(8, m.Prim(thief));
-            Assert.AreEqual(10, m.Prim(witness));
+            Assert.AreEqual(9 + 3, m.Prim(thief), "v5.1: the whistled thief keeps the cash");
+            Assert.AreEqual(9, m.Prim(witness), "v5.1: no whistle reward, no cost");
             Assert.AreEqual(0, m.Blame(thief), "suç lands with the dossier");
-            Assert.IsTrue(m.Events.Any(e => e.Type == LineEventType.Whistled && e.AudiencePlayer == thief && e.A == 3));
+            Assert.IsTrue(m.Events.Any(e => e.Type == LineEventType.Whistled && e.AudiencePlayer == thief && e.A == 0), "nothing taken back");
             Assert.IsFalse(m.Events.Any(e => e.Type == LineEventType.Whistled && e.IsVisibleTo(outsider)));
             m.Next();
             Assert.AreEqual(LinePhase.MeetingDossier, m.Engine.Phase);
@@ -254,9 +254,9 @@ namespace BirimizKovulacak.Core.Tests
         }
 
         [Test]
-        public void WhistledThiefWhoSpentTheCashLosesOnlyWhatIsLeft()
+        public void V50WhistledThiefWhoSpentTheCashLosesOnlyWhatIsLeft()
         {
-            var m = new LineTest(4);
+            var m = new LineTest(4, configure: LineTest.V50);
             m.PlayTask(0, LineTest.Share);
             m.Next(); m.Next();
             var g = m.Group(0);
@@ -266,8 +266,8 @@ namespace BirimizKovulacak.Core.Tests
             Assert.AreEqual(1, m.Prim(thief));
             m.Next();
             m.Ok(witness, LineVerb.Whistle, thief);
-            Assert.AreEqual(0, m.Prim(thief));
-            Assert.AreEqual(8 + 10 + 2, m.Prim(witness));
+            Assert.AreEqual(0, m.Prim(thief), "v5.0: the cash is taken back (what is left of it)");
+            Assert.AreEqual(8 + 10 + 2, m.Prim(witness), "v5.0: the whistler earns 2");
         }
 
         [Test]

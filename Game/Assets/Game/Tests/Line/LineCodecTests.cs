@@ -205,7 +205,7 @@ namespace BirimizKovulacak.Core.Tests
         public void NumericWireOrderIsLittleEndianAndEnumsAreOneByte()
         {
             byte[] bytes = LineCodec.EncodeAction(new LineAction(0x01020304, 0xA1B2C3D4, LineVerb.SubmitTask, -1, 0x11223344, 7));
-            CollectionAssert.AreEqual(new byte[] {0xB3,6,0,2,1,4,3,2,1,0xD4,0xC3,0xB2,0xA1,5,255,255,255,255,0x44,0x33,0x22,0x11,7,0,0,0,255,255,255,255,1},bytes);
+            CollectionAssert.AreEqual(new byte[] {0xB3,7,0,2,1,4,3,2,1,0xD4,0xC3,0xB2,0xA1,5,255,255,255,255,0x44,0x33,0x22,0x11,7,0,0,0,255,255,255,255,1},bytes);
         }
 
         [Test]

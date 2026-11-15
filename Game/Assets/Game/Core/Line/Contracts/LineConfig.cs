@@ -41,14 +41,17 @@ namespace BirimizKovulacak.Core
     }
 
     /// <summary>
-    /// Every v5 tunable (docs/V5_ENGINE_SPEC.md, prototype numbers v0 from docs/V5_DESIGN.md §12).
-    /// prim = money = score; suç = public blame.
+    /// Every v5 tunable (docs/V5_ENGINE_SPEC.md, numbers from docs/V5_DESIGN.md §12).
+    /// prim = money = score; suç = public blame. The defaults are the v5.1 rules (2026-11-15); the comments name the
+    /// v5.0 value of every number that changed, so a config can still play the old rules (LineSim --rules old).
     /// </summary>
     [Serializable]
     public sealed class LineConfig
     {
-        /// <summary>Schema version of this class (6: Yaramazlıklar added the prank numbers). Config files of another version are ignored.</summary>
-        public const int CurrentVersion = 6;
+        /// <summary>Schema version of this class (6: Yaramazlıklar added the prank numbers; 7: the v5.1 rules: free
+        /// sharer-only investigation, the whistled thief keeps the cash, shift cleaning and the failed shift's automatic suç,
+        /// candidates need suç). Config files of another version are ignored.</summary>
+        public const int CurrentVersion = 7;
         public int ConfigVersion = CurrentVersion;
         public LineDurations Durations = new LineDurations();
         /// <summary>When every connected player has submitted, TaskPlay ends this many seconds later.</summary>
@@ -61,12 +64,14 @@ namespace BirimizKovulacak.Core
         // ---- prim
         public int StartPrim = 6;
         // Client Bonus, pair
-        public int BonusPairShare = 2;
+        /// <summary>Both share (v5.0: 2).</summary>
+        public int BonusPairShare = 3;
         public int BonusPairTaker = 5;
         public int BonusPairSharer = 0;
         public int BonusPairBothTake = 1;
         // Client Bonus, trio
-        public int BonusTrioNone = 2;
+        /// <summary>Nobody takes (v5.0: 2).</summary>
+        public int BonusTrioNone = 3;
         public int BonusTrioTaker = 5;
         public int BonusTrioOthers = 0;
         public int BonusTrioMany = 1;
@@ -74,20 +79,43 @@ namespace BirimizKovulacak.Core
         public int CashTake = 3;
         public int CashCaughtBlame = 2;
         public int CashWhistleBlame = 3;
-        public int CashWhistleReward = 2;
+        /// <summary>Prim the (first) whistler earns (v5.0: 2).</summary>
+        public int CashWhistleReward = 0;
+        /// <summary>A whistled thief keeps the stolen prim (v5.0: false: it was taken back and left the game).</summary>
+        public bool CashWhistledKeeps = true;
         // Weekend Shift
+        /// <summary>Prim of each skipper when the shift is staffed (volunteers ≥ needed).</summary>
         public int ShiftSkipPay = 2;
+        /// <summary>Prim of each skipper when the shift is not staffed (v5.0: 2, like <see cref="ShiftSkipPay"/>).</summary>
+        public int ShiftFailSkipPay = 0;
+        /// <summary>Suç every skipper of an unstaffed shift gets when meeting 2 opens (v5.0: 0).</summary>
+        public int ShiftFailSkipBlame = 2;
+        /// <summary>Meeting 2 holds a suç vote for the unstaffed shift (v5.0: true). Without it meeting 2 is the dossier and
+        /// the discussion only.</summary>
+        public bool ShiftFailVote = false;
+        /// <summary>Suç removed from every volunteer (never below 0) when the shift resolves, staffed or not (v5.0: 0).</summary>
+        public int ShiftVolunteerClean = 1;
 
         // ---- investigation
         public int InvestigationsPerPlayer = 1;
-        public int InvestigationCost = 4;
-        public int InvestigationGuiltyBlame = 3;
-        public int InvestigationRefund = 3;
+        /// <summary>Only a Client Bonus sharer may investigate, and only a group-mate who took: no false investigations
+        /// (v5.0: false: any group-mate; investigating a sharer blamed the investigator).</summary>
+        public bool InvestigationSharerOnly = true;
+        /// <summary>Prim the investigator pays (v5.0: 4).</summary>
+        public int InvestigationCost = 0;
+        /// <summary>Suç of a target who took (v5.0: 3).</summary>
+        public int InvestigationGuiltyBlame = 4;
+        /// <summary>Prim a guilty target pays the investigator (v5.0: 3).</summary>
+        public int InvestigationRefund = 0;
+        /// <summary>Suç of an investigator whose target shared (only without <see cref="InvestigationSharerOnly"/>).</summary>
         public int InvestigationFalseBlame = 3;
 
         // ---- meetings, crisis, final
         public int BlamePerVote = 1;
         public int CrisisBlame = 4;
+        /// <summary>Suç a player needs to be a final candidate (v5.0: 0). Fewer qualify than the candidate count: those;
+        /// the firings never exceed the candidates; nobody qualifies: nobody is fired.</summary>
+        public int CandidateMinBlame = 1;
         /// <summary>Final candidates for 3, 4, 5, 6 players (ties with the last candidate are added).</summary>
         public List<int> CandidatesByPlayers = new List<int> { 2, 2, 3, 3 };
         /// <summary>Firings for 3, 4, 5, 6 players.</summary>

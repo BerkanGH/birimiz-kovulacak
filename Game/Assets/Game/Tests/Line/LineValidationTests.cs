@@ -11,15 +11,20 @@ namespace BirimizKovulacak.Core.Tests
         [Test]
         public void VersionsAndDefaultsMatchTheSpec()
         {
-            Assert.AreEqual(6, LineProtocol.Version);
-            Assert.AreEqual("v5.0-kayit", LineProtocol.RulesetVersion);
+            Assert.AreEqual(7, LineProtocol.Version);
+            Assert.AreEqual("v5.1-kayit", LineProtocol.RulesetVersion);
             var c = LineConfig.CreateDefault();
-            Assert.AreEqual(6, c.ConfigVersion);
+            Assert.AreEqual(7, c.ConfigVersion);
             Assert.AreEqual(6, c.StartPrim);
-            Assert.AreEqual(new[] { 2, 5, 0, 1 }, new[] { c.BonusPairShare, c.BonusPairTaker, c.BonusPairSharer, c.BonusPairBothTake });
-            Assert.AreEqual(new[] { 2, 5, 0, 1 }, new[] { c.BonusTrioNone, c.BonusTrioTaker, c.BonusTrioOthers, c.BonusTrioMany });
-            Assert.AreEqual(new[] { 3, 2, 3, 2, 2 }, new[] { c.CashTake, c.CashCaughtBlame, c.CashWhistleBlame, c.CashWhistleReward, c.ShiftSkipPay });
-            Assert.AreEqual(new[] { 4, 3, 3, 3 }, new[] { c.InvestigationCost, c.InvestigationGuiltyBlame, c.InvestigationRefund, c.InvestigationFalseBlame });
+            Assert.AreEqual(new[] { 3, 5, 0, 1 }, new[] { c.BonusPairShare, c.BonusPairTaker, c.BonusPairSharer, c.BonusPairBothTake });
+            Assert.AreEqual(new[] { 3, 5, 0, 1 }, new[] { c.BonusTrioNone, c.BonusTrioTaker, c.BonusTrioOthers, c.BonusTrioMany });
+            Assert.AreEqual(new[] { 3, 2, 3, 0 }, new[] { c.CashTake, c.CashCaughtBlame, c.CashWhistleBlame, c.CashWhistleReward });
+            Assert.IsTrue(c.CashWhistledKeeps);
+            Assert.AreEqual(new[] { 2, 0, 2, 1 }, new[] { c.ShiftSkipPay, c.ShiftFailSkipPay, c.ShiftFailSkipBlame, c.ShiftVolunteerClean });
+            Assert.IsFalse(c.ShiftFailVote);
+            Assert.IsTrue(c.InvestigationSharerOnly);
+            Assert.AreEqual(new[] { 1, 0, 4, 0, 3 }, new[] { c.InvestigationsPerPlayer, c.InvestigationCost, c.InvestigationGuiltyBlame, c.InvestigationRefund, c.InvestigationFalseBlame });
+            Assert.AreEqual(1, c.CandidateMinBlame);
             Assert.AreEqual(new[] { 1, 4, 10, 1 }, new[] { c.BlamePerVote, c.CrisisBlame, c.TransferMax, c.RecorderUses });
             Assert.AreEqual(new[] { 2, 2, 3, 3 }, new[] { c.CandidatesFor(3), c.CandidatesFor(4), c.CandidatesFor(5), c.CandidatesFor(6) });
             Assert.AreEqual(new[] { 1, 1, 2, 2 }, new[] { c.FiringsFor(3), c.FiringsFor(4), c.FiringsFor(5), c.FiringsFor(6) });

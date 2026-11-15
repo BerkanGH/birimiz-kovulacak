@@ -7,11 +7,14 @@ namespace BirimizKovulacak.Core
 
     public static class LineProtocol
     {
-        /// <summary>Wire format version (6: Yaramazlıklar added the Prank verb and the pranks view).</summary>
-        public const int Version = 6;
+        /// <summary>Wire format version (6: Yaramazlıklar added the Prank verb and the pranks view; 7: the v5.1 rules added
+        /// BlameReason.ShiftClean / ShiftFailSkip and DossierKind.ShiftSkipBlame).</summary>
+        public const int Version = 7;
         /// <summary>Ruleset identity for analytics and results; never pool data across different values. Yaramazlıklar is a
-        /// lobby option (like recordings) and does not change it.</summary>
-        public const string RulesetVersion = "v5.0-kayit";
+        /// lobby option (like recordings) and does not change it. v5.1 (2026-11-15): Client Bonus 3/3, free sharer-only
+        /// investigation (+4 suç), the whistled thief keeps the cash (no whistle reward), shift cleaning (−1 suç) and the
+        /// failed shift's automatic suç (no meeting 2 vote), 0 suç is never a candidate.</summary>
+        public const string RulesetVersion = "v5.1-kayit";
         public const int MinPlayers = 3;
         public const int MaxPlayers = 6;
     }
@@ -130,7 +133,7 @@ namespace BirimizKovulacak.Core
         Transfer = 9,
         /// <summary>Petty Cash break: Target = the sole taker of my group.</summary>
         Whistle = 10,
-        /// <summary>Meeting 1: Target = a member of my Client Bonus group.</summary>
+        /// <summary>Meeting 1: Target = a member of my Client Bonus group (v5.1: I shared and the target took).</summary>
         Investigate = 11,
         /// <summary>Mark my current connected call as recorded.</summary>
         Record = 12,
@@ -207,13 +210,15 @@ namespace BirimizKovulacak.Core
         TaskSubmitted = 10,
         /// <summary>To the recipient: Actor = sender, A = amount.</summary>
         TransferReceived = 11,
-        /// <summary>To whistler and thief: Actor = whistler, Target = thief, A = prim taken back.</summary>
+        /// <summary>To whistler and thief: Actor = whistler, Target = thief, A = prim taken back (0 when the thief keeps it,
+        /// <see cref="LineConfig.CashWhistledKeeps"/>).</summary>
         Whistled = 12,
         /// <summary>Public: Actor investigated Target; A = 1 Target had taken / 0 Target had shared.</summary>
         Investigated = 13,
         /// <summary>Public: Actor leaked call C between A (caller) and B (callee); Target = pick index.</summary>
         Leaked = 14,
-        /// <summary>Public: Target's suç rose by A (B = (int)BlameReason).</summary>
+        /// <summary>Public: Target's suç changed by A (B = (int)BlameReason). A is negative only for
+        /// <see cref="BlameReason.ShiftClean"/> (a volunteer's suç going down).</summary>
         BlameAdded = 15,
         /// <summary>Public: crisis resolved; Target = sole receiver or -1 on a tie, A = suç per receiver, B = receivers.</summary>
         CrisisResolved = 16,
@@ -246,13 +251,17 @@ namespace BirimizKovulacak.Core
         Crisis = 6,
         /// <summary>A prank overflowed the manager's patience (Yaramazlıklar).</summary>
         Tutanak = 7,
+        /// <summary>Weekend Shift volunteer: suç removed (a negative change, never below 0) when the shift resolves.</summary>
+        ShiftClean = 8,
+        /// <summary>Skipped a Weekend Shift that was not staffed (applied when meeting 2 opens).</summary>
+        ShiftFailSkip = 9,
     }
 
     public enum PrimReason : byte
     {
         None = 0,
         Task = 1,
-        /// <summary>Whistled thief loses the stolen prim.</summary>
+        /// <summary>Whistled thief loses the stolen prim (v5.0 rules only: <see cref="LineConfig.CashWhistledKeeps"/> false).</summary>
         Whistled = 2,
         WhistleReward = 3,
         InvestigationCost = 4,
@@ -296,6 +305,9 @@ namespace BirimizKovulacak.Core
         Investigation = 7,
         /// <summary>Player leaked a call between N1 (caller) and N2 (callee); Other = recording pick index.</summary>
         Leak = 8,
+        /// <summary>Weekend Shift not staffed (meeting 2): every skipper got N1 suç; N2 = skippers (everyone not in
+        /// <see cref="LineMeetingView.Roster"/>).</summary>
+        ShiftSkipBlame = 9,
     }
 
     public enum BallotKind : byte { None = 0, Meeting = 1, Crisis = 2, Final = 3 }

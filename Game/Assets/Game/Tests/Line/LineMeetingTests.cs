@@ -91,32 +91,68 @@ namespace BirimizKovulacak.Core.Tests
         }
 
         [Test]
-        public void GuiltyInvestigationCostsFourRefundsThreeAndExposesTheTaker()
+        public void SharerInvestigatesTheTakerForFreeAndTheTakerKeepsThePrim()
         {
             var m = new LineTest();
             var (partner, _) = TwoFailures(m);
-            int partnerPrim = m.Prim(partner), takerPrim = m.Prim(0);
-            Assert.AreEqual(6, partnerPrim);
-            Assert.AreEqual(11, takerPrim);
+            Assert.AreEqual(6, m.Prim(partner));
+            Assert.AreEqual(11, m.Prim(0));
             CollectionAssert.AreEqual(new[] { 0 }, m.View(partner).Mine.InvestigationTargets);
             m.Ok(partner, LineVerb.Investigate, 0);
-            Assert.AreEqual(6 - 4 + 3, m.Prim(partner));
-            Assert.AreEqual(11 - 3, m.Prim(0));
-            Assert.AreEqual(3, m.Blame(0));
+            Assert.AreEqual(6, m.Prim(partner), "v5.1: free, nothing refunded");
+            Assert.AreEqual(11, m.Prim(0), "v5.1: the taker keeps the 5");
+            Assert.AreEqual(4, m.Blame(0));
             Assert.AreEqual(0, m.Blame(partner));
             Assert.IsTrue(m.View(partner).Mine.InvestigationUsed);
+            CollectionAssert.IsEmpty(m.View(partner).Mine.InvestigationTargets);
             var line = m.View(3).Meeting.Dossier.Single(d => d.Kind == DossierKind.Investigation);
             Assert.AreEqual(partner, line.Player);
             Assert.AreEqual(0, line.Other);
             Assert.AreEqual(1, line.N1);
             Assert.IsTrue(m.Events.Any(e => e.Type == LineEventType.Investigated && e.Audience == LineAudience.All && e.A == 1));
             m.Fail(LineFailure.AlreadyUsed, partner, LineVerb.Investigate, 0);
+            m.Finish();
+            Assert.IsFalse(m.Engine.Result.PrimLog.Any(x => x.Reason == PrimReason.InvestigationCost || x.Reason == PrimReason.InvestigationRefund),
+                "no money moves");
+            Assert.AreEqual(1, m.Engine.Result.BlameLog.Count(x => x.Reason == BlameReason.InvestigationGuilty && x.Player == 0 && x.Delta == 4));
         }
 
         [Test]
-        public void InnocentInvestigationBlamesTheInvestigator()
+        public void TakersNeverInvestigateAndSharersAreNeverTargets()
         {
+            // a taker against the sharer: no false investigations
             var m = new LineTest();
+            var (partner, _) = TwoFailures(m);
+            CollectionAssert.IsEmpty(m.View(0).Mine.InvestigationTargets);
+            m.Fail(LineFailure.NotEligible, 0, LineVerb.Investigate, partner);
+            Assert.AreEqual(11, m.Prim(0));
+            Assert.AreEqual(0, m.Blame(0));
+            Assert.IsFalse(m.View(3).Meeting.Dossier.Any(d => d.Kind == DossierKind.Investigation));
+
+            // two takers in a pair cannot investigate each other; two sharers have nobody to investigate
+            var takers = new LineTest();
+            takers.Next();
+            int other = takers.Group(0).Single(x => x != 0);
+            int sharer = takers.Ids.First(id => id != 0 && id != other);
+            int sharerMate = takers.Group(sharer).Single(x => x != sharer);
+            takers.PlayTask(0, id => id == 0 || id == other ? Take : 0);
+            takers.Next(); takers.Next();
+            takers.PlayTask(1, id => 0);
+            takers.Until(LinePhase.MeetingDossier);
+            CollectionAssert.IsEmpty(takers.View(0).Mine.InvestigationTargets);
+            CollectionAssert.IsEmpty(takers.View(other).Mine.InvestigationTargets);
+            takers.Fail(LineFailure.NotEligible, 0, LineVerb.Investigate, other);
+            takers.Fail(LineFailure.NotEligible, other, LineVerb.Investigate, 0);
+            CollectionAssert.IsEmpty(takers.View(sharer).Mine.InvestigationTargets, "my partner shared too");
+            takers.Fail(LineFailure.NotEligible, sharer, LineVerb.Investigate, sharerMate);
+            takers.Fail(LineFailure.NotEligible, sharer, LineVerb.Investigate, 0);   // a taker of another group
+            Assert.AreEqual(0, takers.Blame(0) + takers.Blame(other) + takers.Blame(sharer) + takers.Blame(sharerMate));
+        }
+
+        [Test]
+        public void V50InnocentInvestigationBlamesTheInvestigator()
+        {
+            var m = new LineTest(configure: LineTest.V50);
             var (partner, _) = TwoFailures(m);
             m.Ok(0, LineVerb.Investigate, partner);
             Assert.AreEqual(11 - 4, m.Prim(0));
@@ -127,7 +163,18 @@ namespace BirimizKovulacak.Core.Tests
         }
 
         [Test]
-        public void InvestigationNeedsTheSameGroupThePhaseAndThePrim()
+        public void V50GuiltyInvestigationCostsFourAndRefundsThree()
+        {
+            var m = new LineTest(configure: LineTest.V50);
+            var (partner, _) = TwoFailures(m);
+            m.Ok(partner, LineVerb.Investigate, 0);
+            Assert.AreEqual(6 - 4 + 3, m.Prim(partner));
+            Assert.AreEqual(11 - 3, m.Prim(0));
+            Assert.AreEqual(3, m.Blame(0));
+        }
+
+        [Test]
+        public void InvestigationNeedsTheSameGroupAndThePhase()
         {
             var m = new LineTest();
             m.PlayTask(0, id => id == 0 ? Take : 0);
@@ -136,17 +183,32 @@ namespace BirimizKovulacak.Core.Tests
             m.Fail(LineFailure.WrongPhase, partner, LineVerb.Investigate, 0);
             m.Next(); m.Next();
             m.PlayTask(1, id => 0);
-            m.Ok(partner, LineVerb.Transfer, outsider, 5);
+            m.Ok(partner, LineVerb.Transfer, outsider, 6);
+            Assert.AreEqual(0, m.Prim(partner));
             m.Until(LinePhase.MeetingDossier);
             m.Fail(LineFailure.NotEligible, outsider, LineVerb.Investigate, 0);
             m.Fail(LineFailure.Self, partner, LineVerb.Investigate, partner);
-            m.Fail(LineFailure.InsufficientFunds, partner, LineVerb.Investigate, 0);
             m.Next();
             Assert.AreEqual(LinePhase.MeetingDiscussion, m.Engine.Phase);
+            m.Ok(partner, LineVerb.Investigate, 0);   // free: a sharer with 0 prim may investigate
+            m.Until(LinePhase.TaskPlay);               // the only taker is exposed: no vote, task 3
+            m.Fail(LineFailure.WrongPhase, partner, LineVerb.Investigate, 0);
+        }
+
+        [Test]
+        public void V50InvestigationNeedsThePrim()
+        {
+            var m = new LineTest(configure: LineTest.V50);
+            m.PlayTask(0, id => id == 0 ? Take : 0);
+            int partner = m.Group(0).Single(x => x != 0);
+            int outsider = m.Ids.First(id => id != 0 && id != partner);
+            m.Next(); m.Next();
+            m.PlayTask(1, id => 0);
+            m.Ok(partner, LineVerb.Transfer, outsider, 5);
+            m.Until(LinePhase.MeetingDossier);
+            m.Fail(LineFailure.InsufficientFunds, partner, LineVerb.Investigate, 0);
             m.Ok(outsider, LineVerb.Transfer, partner, 5);
             m.Ok(partner, LineVerb.Investigate, 0);
-            m.Until(LinePhase.MeetingVote);
-            m.Fail(LineFailure.WrongPhase, 0, LineVerb.Investigate, partner);
         }
 
         [Test]
@@ -155,9 +217,27 @@ namespace BirimizKovulacak.Core.Tests
             var m = new LineTest(3);
             m.PlayTask(0, id => id == 0 ? Take : 0);
             m.ToMeeting1Continue(id => 0);
+            CollectionAssert.AreEqual(new[] { 0 }, m.View(1).Mine.InvestigationTargets);
+            CollectionAssert.AreEqual(new[] { 0 }, m.View(2).Mine.InvestigationTargets);
             m.Ok(1, LineVerb.Investigate, 0);
             m.Fail(LineFailure.AlreadyResolved, 2, LineVerb.Investigate, 0);
-            CollectionAssert.AreEqual(new[] { 1 }, m.View(2).Mine.InvestigationTargets);
+            CollectionAssert.IsEmpty(m.View(2).Mine.InvestigationTargets, "the only taker is exposed; a sharer is never a target");
+            Assert.IsFalse(m.View(2).Mine.InvestigationUsed);
+        }
+
+        [Test]
+        public void TrioSharerPicksOneOfTwoTakers()
+        {
+            var m = new LineTest(3);
+            m.PlayTask(0, id => id == 0 ? 0 : Take);
+            m.ToMeeting1Continue(id => 0);
+            CollectionAssert.AreEquivalent(new[] { 1, 2 }, m.View(0).Mine.InvestigationTargets);
+            CollectionAssert.IsEmpty(m.View(1).Mine.InvestigationTargets);
+            m.Ok(0, LineVerb.Investigate, 2);
+            Assert.AreEqual(4, m.Blame(2));
+            Assert.AreEqual(0, m.Blame(1));
+            Assert.AreEqual(6 + 1, m.Prim(2), "two takers in a trio get 1 each and keep it");
+            m.Fail(LineFailure.AlreadyUsed, 0, LineVerb.Investigate, 1);
         }
 
         [Test]
@@ -176,9 +256,36 @@ namespace BirimizKovulacak.Core.Tests
         }
 
         [Test]
-        public void Meeting2HasOneBallotForTheFailedShift()
+        public void Meeting2HasNoVoteTheSkippersGetTheSucWhenItOpens()
         {
             var m = new LineTest(5);
+            m.ToMeeting1();
+            int before = m.Prim(4);
+            m.PlayTask(2, id => id < 2 ? LineChoice.Volunteer : LineChoice.Skip);
+            m.Next();
+            Assert.AreEqual(LinePhase.MeetingDossier, m.Engine.Phase);
+            Assert.AreEqual(1, m.Engine.Day);
+            var meeting = m.View().Meeting;
+            Assert.AreEqual(0, meeting.VoteableCount, "known from the start: no vote is coming");
+            for (int id = 0; id < 5; id++) Assert.AreEqual(id < 2 ? 0 : 2, m.Blame(id));
+            Assert.AreEqual(before, m.Prim(4), "an unstaffed shift pays the skippers nothing");
+            var line = meeting.Dossier.Single(d => d.Kind == DossierKind.ShiftSkipBlame);
+            Assert.AreEqual(2, line.N1);
+            Assert.AreEqual(3, line.N2);
+            Assert.AreEqual(3, m.Events.Count(e => e.Type == LineEventType.BlameAdded && e.B == (int)BlameReason.ShiftFailSkip && e.A == 2));
+            m.Until(LinePhase.CrisisCalls);
+            CollectionAssert.DoesNotContain(m.PhaseTrace(), LinePhase.MeetingVote);
+            var ended = m.Events.Last(e => e.Type == LineEventType.PhaseChanged);
+            Assert.AreEqual((int)PhaseEndReason.Skipped, ended.B);
+            m.Finish();
+            Assert.AreEqual(3, m.Engine.Result.BlameLog.Count(b => b.Reason == BlameReason.ShiftFailSkip));
+            Assert.IsFalse(m.Engine.Result.Ballots.Any(b => b.Kind == BallotKind.Meeting));
+        }
+
+        [Test]
+        public void V50Meeting2HasOneBallotForTheFailedShift()
+        {
+            var m = new LineTest(5, configure: LineTest.V50);
             m.ToMeeting1();
             m.PlayTask(2, id => 0);
             m.Until(LinePhase.MeetingVote, 1);

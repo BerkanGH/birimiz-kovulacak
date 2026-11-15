@@ -71,19 +71,24 @@ namespace BirimizKovulacak.Core
             ChooseCandidates();
         }
 
-        /// <summary>Top CandidatesFor(N) by suç; everyone tied with the last included candidate joins.</summary>
+        /// <summary>Top CandidatesFor(N) by suç among the players with at least <see cref="LineConfig.CandidateMinBlame"/>
+        /// suç (fewer qualify: those); everyone tied with the last included candidate joins. Firings ≤ candidates.</summary>
         private void ChooseCandidates()
         {
             var order = new List<int>(ids);
+            order.RemoveAll(id => seats[id].Blame < c.CandidateMinBlame);
             order.Sort((x, y) => seats[x].Blame != seats[y].Blame ? seats[y].Blame.CompareTo(seats[x].Blame) : x.CompareTo(y));
             int count = Math.Min(c.CandidatesFor(PlayerCount), order.Count);
-            int threshold = seats[order[count - 1]].Blame;
-            foreach (int id in order)
+            if (count > 0)
             {
-                if (seats[id].Blame < threshold) break;
-                final.Candidates.Add(id);
-                final.DefenseOrder.Add(id);
-                seats[id].Candidate = true;
+                int threshold = seats[order[count - 1]].Blame;
+                foreach (int id in order)
+                {
+                    if (seats[id].Blame < threshold) break;
+                    final.Candidates.Add(id);
+                    final.DefenseOrder.Add(id);
+                    seats[id].Candidate = true;
+                }
             }
             final.FiringsTotal = Math.Min(final.FiringsTotal, final.Candidates.Count);
             Changed();
@@ -190,6 +195,12 @@ namespace BirimizKovulacak.Core
                 StartFinalVote(time, final.Round + 1, remaining, false);
                 return;
             }
+            ToResults(time);
+        }
+
+        /// <summary>The week ends: results (also straight after the crisis when nobody has the suç to be a candidate).</summary>
+        private void ToResults(double time)
+        {
             FinishResult(time);
             picks.Clear();
             Enter(LinePhase.Results, time, c.Durations.Results);

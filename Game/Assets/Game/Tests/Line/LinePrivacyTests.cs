@@ -87,7 +87,7 @@ namespace BirimizKovulacak.Core.Tests
         {
             LineTest Run(int target)
             {
-                var m = new LineTest(4, 5150);
+                var m = new LineTest(4, 5150, LineTest.Meeting2Vote);
                 m.ToMeeting1();
                 m.PlayTask(2, id => 0);
                 m.Until(LinePhase.MeetingVote);

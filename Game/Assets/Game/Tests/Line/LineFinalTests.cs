@@ -9,10 +9,12 @@ namespace BirimizKovulacak.Core.Tests
     [TestFixture]
     public sealed class LineFinalTests
     {
-        /// <summary>Clean tasks (everyone ends with 10 prim), meeting 2 and crisis ballots as given (-1 = leave empty).</summary>
+        /// <summary>Clean tasks (everyone ends with 10 prim), meeting 2 and crisis ballots as given (-1 = leave empty). The
+        /// suç comes from a meeting 2 vote, so these use the v5.0 shift numbers (<see cref="LineTest.Meeting2Vote"/>); the
+        /// final itself is v5.1 (0 suç is never a candidate).</summary>
         static LineTest Crisis(int n, int[] meeting2, int[] crisis, Action<LineTest> beforeCrisisVote = null, int seed = 731)
         {
-            var m = new LineTest(n, seed);
+            var m = new LineTest(n, seed, LineTest.Meeting2Vote);
             m.ToCrisis(id => LineChoice.Skip, id => meeting2[id]);
             beforeCrisisVote?.Invoke(m);
             m.Next();
@@ -58,7 +60,7 @@ namespace BirimizKovulacak.Core.Tests
         [Test]
         public void CrisisBallotsAreSecretUntilResults()
         {
-            var m = new LineTest();
+            var m = new LineTest(configure: LineTest.Meeting2Vote);
             m.ToCrisis();
             m.Next();
             m.Ok(0, LineVerb.Vote, 2);

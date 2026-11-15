@@ -59,7 +59,8 @@ namespace BirimizKovulacak.Core.Tests
         [TestCase(3), TestCase(4), TestCase(5), TestCase(6)]
         public void BotsFinishAThousandSeededMatches(int n)
         {
-            int fired = 0;
+            int fired = 0, fewer = 0;
+            var c = LineConfig.CreateDefault();
             for (int seed = 1; seed <= 1000; seed++)
             {
                 var e = Run(n, seed, seat => Seeded(seed, seat));
@@ -67,8 +68,14 @@ namespace BirimizKovulacak.Core.Tests
                 fired += e.Result.Fired.Count;
                 Assert.AreEqual(n, e.Result.Players.Count);
                 Assert.IsTrue(e.Result.Winners.Count >= 1);
+                // v5.1: only players with suç are candidates, and the firings never exceed the candidates
+                int candidates = e.Result.Players.Count(p => p.WasCandidate);
+                Assert.IsTrue(e.Result.Players.Where(p => p.WasCandidate).All(p => p.Blame >= c.CandidateMinBlame), "seed " + seed);
+                Assert.AreEqual(Math.Min(c.FiringsFor(n), candidates), e.Result.Fired.Count, "seed " + seed);
+                if (e.Result.Fired.Count < c.FiringsFor(n)) fewer++;
             }
-            Assert.AreEqual(1000 * LineConfig.CreateDefault().FiringsFor(n), fired);
+            Assert.LessOrEqual(fired, 1000 * c.FiringsFor(n));
+            TestContext.WriteLine(n + " players: " + fewer + " matches fired fewer than " + c.FiringsFor(n));
         }
 
         [TestCase(LineBotPolicy.Honest), TestCase(LineBotPolicy.Greedy), TestCase(LineBotPolicy.Mixed)]
