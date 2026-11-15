@@ -12,13 +12,16 @@ namespace BirimizKovulacak.Core
     /// <item>Client Bonus: my own group exactly; the others get the expected payout from the public takers count, the
     ///   unknown takers spread over the colleagues not known either way, weighted toward known Petty Cash thieves
     ///   (an investigation's result is known either way);</item>
-    /// <item>Petty Cash: caught takers get 0, a whistled thief nets 0, the whistler +<see cref="LineConfig.CashWhistleReward"/>;
-    ///   my own group exactly; the unresolved thefts of other groups (the dossier's count) spread over the colleagues who
-    ///   could have taken, weighted by their Client Bonus take probability;</item>
-    /// <item>Weekend Shift: everyone not on the public roster gets <see cref="LineConfig.ShiftSkipPay"/>;</item>
-    /// <item>investigations: the investigator pays the cost and, when the target was guilty, gets the refund from the target;</item>
+    /// <item>Petty Cash: caught takers get 0, a whistled thief keeps the take (<see cref="LineConfig.CashWhistledKeeps"/>;
+    ///   v5.0: nets 0), the whistler +<see cref="LineConfig.CashWhistleReward"/> (v5.1: 0); my own group exactly; the
+    ///   unresolved thefts of other groups (the dossier's count) spread over the colleagues who could have taken, weighted by
+    ///   their Client Bonus take probability;</item>
+    /// <item>Weekend Shift: everyone not on the public roster gets <see cref="LineConfig.ShiftSkipPay"/> when the shift was
+    ///   staffed, <see cref="LineConfig.ShiftFailSkipPay"/> (v5.1: 0) when it was not;</item>
+    /// <item>investigations: the investigator pays the cost and, when the target was guilty, gets the refund from the target
+    ///   (v5.1: both 0, the investigation is free and moves no money);</item>
     /// <item>desk shares of the firings so far;</item>
-    /// <item>my own transfers (I sent X to j: j +X; j sent me X: j −X);</item>
+    /// <item>my own transfers (I sent X to j: j +X; j sent me X: j −X), silence money and its returns included;</item>
     /// <item>pranks in the public log: the prim it burned, from its actor (a phone ring's actor is hidden until the results:
     ///   skipped).</item>
     /// </list>
@@ -259,7 +262,8 @@ namespace BirimizKovulacak.Core
                 {
                     if (!seated[id]) continue;
                     est[id] += Whistles(id) * c.CashWhistleReward;
-                    if (pcCaught[id] || pcWhistler[id] >= 0) continue; // caught: 0; whistled: +take −take
+                    if (pcWhistler[id] >= 0 && !pcCaught[id] && c.CashWhistledKeeps) { est[id] += c.CashTake; continue; } // whistled: keeps it
+                    if (pcCaught[id] || pcWhistler[id] >= 0) continue; // caught: 0; whistled (v5.0): +take −take
                     if (pcGroup[id])
                     {
                         if (id == mySoleThief) est[id] += c.CashTake;
@@ -279,8 +283,14 @@ namespace BirimizKovulacak.Core
                 }
             }
 
-            // Weekend Shift
-            if (wsKnown) for (int id = 0; id < N; id++) if (seated[id] && !wsRoster[id]) est[id] += c.ShiftSkipPay;
+            // Weekend Shift: the skippers' pay depends on whether the roster reached ceil(N/2)
+            if (wsKnown)
+            {
+                int players = 0, volunteers = 0;
+                for (int id = 0; id < N; id++) { if (seated[id]) players++; if (seated[id] && wsRoster[id]) volunteers++; }
+                int skipPay = volunteers < LineConfig.ShiftNeeded(players) ? c.ShiftFailSkipPay : c.ShiftSkipPay;
+                for (int id = 0; id < N; id++) if (seated[id] && !wsRoster[id]) est[id] += skipPay;
+            }
 
             // Investigations
             for (int id = 0; id < N; id++)

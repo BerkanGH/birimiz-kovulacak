@@ -130,11 +130,22 @@ namespace BirimizKovulacak.Core.Tests.Line
             meeting.Meeting = Meeting(0, D(DossierKind.CashCaught, 2, n1: 2), D(DossierKind.CashCaught, 3, n1: 2),
                 D(DossierKind.Whistle, 0, 1, n1: 3), D(DossierKind.Whistle, 4, 5, n1: 3));
             var e = Fed(reveal, meeting);
-            Assert.AreEqual(C.StartPrim, e[1], "a whistled thief nets 0");
+            Assert.AreEqual(C.StartPrim + C.CashTake, e[1], "a whistled thief keeps the take (v5.1)");
             Assert.AreEqual(C.StartPrim, e[2], "caught: 0");
             Assert.AreEqual(C.StartPrim, e[3], "caught: 0");
-            Assert.AreEqual(C.StartPrim + C.CashWhistleReward, e[4], "whistler");
-            Assert.AreEqual(C.StartPrim, e[5], "a whistled thief nets 0");
+            Assert.AreEqual(C.StartPrim, e[4], "whistler: no reward (v5.1)");
+            Assert.AreEqual(C.StartPrim + C.CashTake, e[5], "a whistled thief keeps the take (v5.1)");
+
+            // v5.0 numbers: the take went back and the whistler earned 2
+            var old = LineConfig.CreateDefault();
+            LineTest.V50(old);
+            var l = new LineBotLedger(0);
+            l.Ingest(reveal);
+            l.Ingest(meeting);
+            var o = l.Estimate(old);
+            Assert.AreEqual(old.StartPrim, o[1], "v5.0: a whistled thief nets 0");
+            Assert.AreEqual(old.StartPrim + 2, o[4], "v5.0: whistler +2");
+            Assert.AreEqual(old.StartPrim, o[5]);
         }
 
         [Test]
@@ -172,6 +183,37 @@ namespace BirimizKovulacak.Core.Tests.Line
             Assert.AreEqual(C.StartPrim + C.ShiftSkipPay, e[1]);
             Assert.AreEqual(C.StartPrim, e[2]);
             Assert.AreEqual(C.StartPrim + C.ShiftSkipPay, e[3]);
+        }
+
+        [Test]
+        public void Ledger_WeekendShift_AnUnstaffedShiftPaysTheSkippersNothing()
+        {
+            var v = View();
+            v.Task = new LineTaskView { Kind = TaskKind.WeekendShift, Number = 2, Revealed = true };
+            v.Task.Roster.Add(2);   // 4 players need 2
+            var e = Fed(v);
+            Assert.AreEqual(0, C.ShiftFailSkipPay);
+            Assert.AreEqual(C.StartPrim + C.ShiftFailSkipPay, e[1]);
+            Assert.AreEqual(C.StartPrim, e[2]);
+            Assert.AreEqual(C.StartPrim + C.ShiftFailSkipPay, e[3]);
+            var old = LineConfig.CreateDefault();
+            LineTest.V50(old);
+            var l = new LineBotLedger(0);
+            l.Ingest(v);
+            Assert.AreEqual(old.StartPrim + 2, l.Estimate(old)[1], "v5.0: skippers got 2 either way");
+        }
+
+        [Test]
+        public void Ledger_SilenceMoney_AndItsReturn_AreTransfersLikeAnyOther()
+        {
+            // 1 paid me 1 for silence and I sent it back: net 0; 3 paid me 1 and I kept it: 3 −1
+            var v = View();
+            v.Mine.Transfers.Add(new LineTransferView { From = 1, To = 0, Amount = 1, Time = 10 });
+            v.Mine.Transfers.Add(new LineTransferView { From = 0, To = 1, Amount = 1, Time = 11 });
+            v.Mine.Transfers.Add(new LineTransferView { From = 3, To = 0, Amount = 1, Time = 12 });
+            var e = Fed(v);
+            Assert.AreEqual(C.StartPrim, e[1]);
+            Assert.AreEqual(C.StartPrim - 1, e[3]);
         }
 
         [Test]

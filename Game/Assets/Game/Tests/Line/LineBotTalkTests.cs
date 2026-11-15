@@ -14,7 +14,7 @@ namespace BirimizKovulacak.Core.Tests.Line
     {
         static readonly LineBotPolicy[] Rotation = { LineBotPolicy.Honest, LineBotPolicy.Greedy, LineBotPolicy.Mixed };
 
-        sealed class Sim
+        internal sealed class Sim
         {
             public ILineEngine Engine;
             public LineConfig Config;
@@ -32,6 +32,9 @@ namespace BirimizKovulacak.Core.Tests.Line
             public int Asks, PhoneLines, Transfers;
             public LineWeekResult Result;
         }
+
+        /// <summary>A talking bot-only match (LineBotDealTests: the silence deals).</summary>
+        internal static Sim RunForDeals(int players, int seed, Func<int, LineBotPolicy> policy) { return Run(players, seed, policy); }
 
         static Sim Run(int players, int seed, Func<int, LineBotPolicy> policy, bool talk = true, bool previews = false, double think = 4, float scale = 0.3f)
         {

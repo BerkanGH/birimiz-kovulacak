@@ -18,9 +18,9 @@ namespace BirimizKovulacak.Core
         Vote = 2,
         /// <summary>"I won't vote for you": ClaimValue = the listener.</summary>
         NotVote = 3,
-        /// <summary>"I would report it."</summary>
+        /// <summary>"I would report it" / "I'll investigate" / "your money goes back, I won't keep quiet".</summary>
         Whistle = 4,
-        /// <summary>"I'd keep quiet (for prim)." Bots always report a theft they witness.</summary>
+        /// <summary>"I'd keep quiet (for prim)": true when, once paid, the bot does not punish (its betrayal coin).</summary>
         Silence = 5,
         /// <summary>"I'll send you N prim": ClaimValue = N (kept or not per policy).</summary>
         Pay = 6,
@@ -118,7 +118,7 @@ namespace BirimizKovulacak.Core
             { "bot.cb.a2.h", "" }, { "bot.cb.a2.g", "" }, { "bot.cb.a2.m", "" },
             { "bot.cb.a3.h", "" }, { "bot.cb.a3.g", "" }, { "bot.cb.a3.m", "" },
             { "bot.cb.victim.h", "" }, { "bot.cb.victim.g", "" }, { "bot.cb.victim.m", "" },
-            { "bot.cb.thief.g", "" }, { "bot.cb.thief.m", "" },
+            { "bot.cb.hush.g", "" }, { "bot.cb.thief.m", "" },
             // Petty Cash
             { "bot.cash.call.h", "" }, { "bot.cash.call.g", "" }, { "bot.cash.call.m", "" },
             { "bot.cash.a1.h", "" }, { "bot.cash.a1.g", "" }, { "bot.cash.a1.m", "" },
@@ -126,6 +126,8 @@ namespace BirimizKovulacak.Core
             { "bot.cash.a3.h", "" }, { "bot.cash.a3.g", "" }, { "bot.cash.a3.m", "" },
             { "bot.cash.witness.h", "" }, { "bot.cash.witness.g", "" }, { "bot.cash.witness.m", "" },
             { "bot.cash.thief.g", "" }, { "bot.cash.thief.m", "" },
+            // silence deals (v5.1): the answer to silence money from a colleague the bot could punish
+            { "bot.deal.refund.h", "" }, { "bot.deal.refund.m", "" }, { "bot.deal.keep.g", "" }, { "bot.deal.keep.m", "" },
             // Weekend Shift
             { "bot.shift.call.h", "n" }, { "bot.shift.call.h_skip", "n" }, { "bot.shift.call.g", "" }, { "bot.shift.call.m", "" },
             { "bot.shift.a1.h", "" }, { "bot.shift.a1.h_skip", "" }, { "bot.shift.a1.g", "" }, { "bot.shift.a1.m", "" },
@@ -145,6 +147,7 @@ namespace BirimizKovulacak.Core
             { "bot.meet.deflect.g", "p" }, { "bot.meet.deflect.m", "" },
             { "bot.meet.accused.h", "" }, { "bot.meet.accused.g", "p" }, { "bot.meet.accused.m", "p" },
             { "bot.meet.leak.h", "" }, { "bot.meet.leak.g", "" }, { "bot.meet.leak.m", "" },
+            { "bot.meet.betrayed.g", "p" }, { "bot.meet.betrayed.m", "p" },
             { "bot.vote.h", "p" }, { "bot.vote.h_known", "p" }, { "bot.vote.g", "" }, { "bot.vote.m", "p" },
             // Richest votes: the wealth suspicion in the meeting chat, the final vote by money
             { "bot.meet.rich.h", "p" }, { "bot.meet.richc.h", "p" }, { "bot.meet.rich.g", "p" }, { "bot.meet.rich.m", "p" },

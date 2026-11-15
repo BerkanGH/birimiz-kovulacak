@@ -18,6 +18,10 @@ namespace BirimizKovulacak.Core
     /// estimate to be the richest), voice that suspicion in the meeting chat, and every announced crisis / final vote is
     /// committed (<see cref="LineBot.CommitVote"/>) so it cannot silently change before the ballot. MostBlame bots keep the
     /// suç-board lines.
+    /// Silence deals (v5.1): a Greedy / Mixed bot that took (a Client Bonus betrayal, a sole Petty Cash theft) pays every
+    /// victim / witness 1 prim for silence in the break (a call, else a text); a bot that is paid by the colleague it could
+    /// punish answers with what its <see cref="LineBot"/> will really do (<see cref="LineBot.WillPunish"/>): Honest sends
+    /// the money back (the bot's own transfer) and punishes, Greedy keeps it and may still punish.
     /// </summary>
     public sealed partial class LineBotTalker
     {
@@ -51,6 +55,8 @@ namespace BirimizKovulacak.Core
             public int Needed = -1;
             public int Mine = -1;
             public bool Failed;
+            /// <summary>When its TaskPlay started (silence money counts from there).</summary>
+            public double Start = double.NaN;
         }
 
         readonly TaskMemo[] tasks = new TaskMemo[3];
@@ -100,7 +106,6 @@ namespace BirimizKovulacak.Core
         double ringKey = double.NaN, answerAt, refuseAt, declineAt;
         bool refuse, refuseSaid, answered;
         int ringCount, callCount;
-        readonly HashSet<int> refusedOnce = new HashSet<int>();
         readonly List<BotAsk> heard = new List<BotAsk>();
 
         // ------------------------------------------------------------------ promises
@@ -117,6 +122,28 @@ namespace BirimizKovulacak.Core
         }
 
         readonly List<Promise> promises = new List<Promise>();
+
+        // ------------------------------------------------------------------ silence deals (docs/V5_BOT_TALK.md §4.1)
+
+        /// <summary>Silence money I owe a victim / witness of mine: said on the phone or, past the deadline, by text.</summary>
+        sealed class Hush
+        {
+            public int Target, Task;
+            public TaskKind Kind;
+            public double Deadline, At = -1;
+            public bool Done;
+            public string Via = "";
+        }
+
+        readonly List<Hush> hushes = new List<Hush>();
+        /// <summary>Deal reactions already said (key: target * 2 + whistle).</summary>
+        readonly HashSet<int> dealReacted = new HashSet<int>();
+        /// <summary>When meeting 1 ended (silence money is counted until then).</summary>
+        double dealsEnd = double.NaN;
+        /// <summary>Every payment this talker sent (to, amount, time, silence money?): at Results they are told apart from the
+        /// bot's own returns of silence money, and silence money never counts as keeping another promise.</summary>
+        sealed class Sent { public int To, Amount; public double Time; public bool Hush; }
+        readonly List<Sent> sent = new List<Sent>();
 
         // ------------------------------------------------------------------ meeting chat
 
@@ -198,6 +225,7 @@ namespace BirimizKovulacak.Core
             if (v.Phase != phase || v.PhaseStartTime != phaseStart) OnPhase(v, now);
             Remember(v, now, o);
             Phone(v, now, o);
+            HushByText(v, now);
             Payments(v, now, o);
             Meeting(v, now, messages, o);
             Pranks(v, now, o);
@@ -215,9 +243,12 @@ namespace BirimizKovulacak.Core
             talk = null;
             planned.Clear();
             ringKey = double.NaN;
-            refusedOnce.Clear();
             heard.Clear();
             promises.Clear();
+            hushes.Clear();
+            sent.Clear();
+            dealReacted.Clear();
+            dealsEnd = double.NaN;
             segment = int.MinValue;
             chat.Clear();
             msgSeen = 0;
@@ -386,6 +417,7 @@ namespace BirimizKovulacak.Core
                 {
                     m = tasks[t.Number] = new TaskMemo { Kind = t.Kind, Number = t.Number, Needed = t.Needed };
                     m.Group.AddRange(t.Group.Count > 0 ? t.Group : v.Mine.Group);
+                    if (v.Phase == LinePhase.TaskPlay) m.Start = v.PhaseStartTime;
                 }
                 if (t.Revealed && !m.Revealed)
                 {
@@ -400,7 +432,9 @@ namespace BirimizKovulacak.Core
                     else if (t.Kind == TaskKind.ClientBonus) m.Failed = t.Takers > 0;
                 }
             }
-            // prim that came in: thank the sender (on the phone if we are talking, else a short call or a text)
+            if (double.IsNaN(dealsEnd) && v.Day >= 1) dealsEnd = now;
+            // prim that came in: thank the sender (on the phone if we are talking, else a short call or a text); silence
+            // money from a colleague I could punish gets the answer my LineBot will act on instead
             var list = v.Mine.Transfers;
             for (int i = transfersSeen; i < list.Count; i++)
             {
@@ -410,6 +444,12 @@ namespace BirimizKovulacak.Core
                 paidBy.TryGetValue(tr.From, out had);
                 paidBy[tr.From] = had + tr.Amount;
                 Log(string.Format(CultureInfo.InvariantCulture, "received seat={0} from={1} amount={2}", Seat, tr.From, tr.Amount));
+                bool whistle;
+                if (DealOpen(v, tr.From, out whistle))
+                {
+                    if (dealReacted.Add(tr.From * 2 + (whistle ? 1 : 0))) DealReaction(v, tr.From, whistle, now);
+                    continue;
+                }
                 if (talk != null && talk.Other == tr.From && !talk.HungUp)
                 {
                     talk.Queue.Add(new Due { At = now + 0.8 * k, Thanks = true });
@@ -458,6 +498,16 @@ namespace BirimizKovulacak.Core
                     int target;
                     string reason = BreakCall(v, out target);
                     if (reason != null) Plan(target, phaseStart + (2.5 + Seat * 1.0 + U("at:" + topic) * 3.0) * scale, reason);
+                    // silence money: a Greedy / Mixed taker calls each victim / witness early in the break (a Petty Cash
+                    // witness can whistle until the break ends); past the deadline it texts instead
+                    var t = v.Task != null ? Memo(v.Task.Number) : null;
+                    int i = 0;
+                    foreach (int id in HushTargets(t))
+                    {
+                        if (hushes.Exists(h => h.Task == t.Number && h.Target == id)) continue;
+                        hushes.Add(new Hush { Target = id, Task = t.Number, Kind = t.Kind, Deadline = phaseStart + len * (t.Kind == TaskKind.PettyCash ? 0.55 : 0.85) });
+                        Plan(id, phaseStart + (0.6 + 0.4 * Seat + 2.0 * i++ + U("hush:" + topic + id) * 1.0) * scale, "hush");
+                    }
                     break;
                 }
                 case LinePhase.TaskReveal:
@@ -522,7 +572,8 @@ namespace BirimizKovulacak.Core
             planned.Add(new PlannedCall { Target = target, At = at, Reason = reason });
         }
 
-        /// <summary>The break call this bot wants to make (victim → thief, witness → thief, Petty Cash thief → witness).</summary>
+        /// <summary>The break call this bot wants to make (victim → taker, witness → thief); a taker's silence money is a
+        /// separate "hush" call (<see cref="HushTargets"/>).</summary>
         string BreakCall(LineView v, out int target)
         {
             target = -1;
@@ -540,14 +591,61 @@ namespace BirimizKovulacak.Core
             else if (t.Kind == TaskKind.PettyCash)
             {
                 int thief = SoleTaker(t);
-                if (thief < 0) return null;
-                if (thief == Seat && Policy != LineBotPolicy.Honest)
-                {
-                    foreach (int id in t.Group) if (id != Seat) { target = id; return "thief"; }
-                }
-                else if (thief != Seat && mine == LineChoice.Leave) { target = thief; return "witness"; }
+                if (thief >= 0 && thief != Seat && mine == LineChoice.Leave) { target = thief; return "witness"; }
             }
             return null;
+        }
+
+        /// <summary>Who a Greedy / Mixed bot pays for silence after a revealed task: the Client Bonus group-mates who shared
+        /// while it took, or every witness of its sole Petty Cash theft. Honest never takes.</summary>
+        List<int> HushTargets(TaskMemo t)
+        {
+            var list = new List<int>();
+            if (t == null || !t.Revealed || Policy == LineBotPolicy.Honest || t.Mine != LineChoice.Take) return list;
+            if (t.Kind == TaskKind.ClientBonus)
+            {
+                foreach (int id in t.Group)
+                {
+                    int c;
+                    if (id != Seat && t.Choices.TryGetValue(id, out c) && c == LineChoice.Share) list.Add(id);
+                }
+            }
+            else if (t.Kind == TaskKind.PettyCash && SoleTaker(t) == Seat)
+                foreach (int id in t.Group) if (id != Seat) list.Add(id);
+            return list;
+        }
+
+        /// <summary>The silence money line (a payment made on the spot: Greedy and Mixed both send it, it buys the deal).</summary>
+        BotLine HushLine(TaskKind kind, int task, int other)
+        {
+            string key = kind == TaskKind.ClientBonus ? (Policy == LineBotPolicy.Greedy ? "bot.cb.hush.g" : "bot.cb.thief.m") : Key("bot.cash.thief");
+            var l = Claim(Line(key, other), BotClaimKind.Pay, 1, true, task);
+            l.ClaimRound = (int)Cond.Now;
+            return l;
+        }
+
+        Hush PendingHush(int task, int other)
+        {
+            foreach (var h in hushes) if (h.Task == task && h.Target == other && !h.Done) return h;
+            return null;
+        }
+
+        /// <summary>The hush call did not happen in time (busy, declined, missed): the line goes by text, the prim with it.</summary>
+        void HushByText(LineView v, double now)
+        {
+            foreach (var h in hushes)
+            {
+                if (h.Done || now < h.Deadline) continue;
+                if (talk != null && talk.Other == h.Target && !talk.HungUp) continue;
+                var ph = v.Mine.Phone;
+                if (ph.Other == h.Target && ph.Status != CallStatus.Idle) continue;
+                var pl = P(v, h.Target);
+                h.Done = true;
+                if (pl == null || !pl.Connected || !v.Features.TextsOpen) { h.Via = "none"; continue; }
+                var l = HushLine(h.Kind, h.Task, h.Target);
+                l.Text = true;
+                chat.Add(new Due { At = now, Line = l });
+            }
         }
 
         static int SoleTaker(TaskMemo t)
@@ -622,27 +720,13 @@ namespace BirimizKovulacak.Core
             int rings = 1 + (int)(U("rings:" + topic) * 3);
             double left = Math.Max(0.5, ph.RingUntil - now);
             answerAt = now + Math.Min(rings * RingSeconds, left * 0.7);
-            if (Policy == LineBotPolicy.Greedy && phase == LinePhase.Break && Robbed(caller) && !refusedOnce.Contains(caller))
-            {
-                refuse = true;
-                refusedOnce.Add(caller);
-            }
-            else if (Policy == LineBotPolicy.Mixed && !MustTalk(v, caller) && U("refuse:" + topic) < 0.3) refuse = true;
+            if (Policy == LineBotPolicy.Mixed && !MustTalk(v, caller) && U("refuse:" + topic) < 0.3) refuse = true;
             if (refuse)
             {
                 refusedCalls++;
                 refuseAt = now + Math.Min(RingSeconds, left * 0.5);
                 Log(string.Format(CultureInfo.InvariantCulture, "refuse seat={0} from={1} t={2:0.0}", Seat, caller, now));
             }
-        }
-
-        /// <summary>Client Bonus: I took and this colleague of my group shared.</summary>
-        bool Robbed(int other)
-        {
-            var t = MemoOf(TaskKind.ClientBonus);
-            if (t == null || !t.Revealed || t.Mine != LineChoice.Take || !t.Group.Contains(other)) return false;
-            int c;
-            return t.Choices.TryGetValue(other, out c) && c == LineChoice.Share;
         }
 
         /// <summary>Mixed never dodges a call it has something to say in (the break's victim / witness / thief business).</summary>
@@ -782,8 +866,14 @@ namespace BirimizKovulacak.Core
             {
                 case "task": return v.Phase == LinePhase.TaskPlay || v.Phase == LinePhase.TaskReveal ? TaskOpener(v, other) : BreakLineFor(v, other, false);
                 case "victim":
-                case "witness":
-                case "thief": return BreakLineFor(v, other, false);
+                case "witness": return BreakLineFor(v, other, false);
+                case "hush":
+                {
+                    var t = v.Task != null ? Memo(v.Task.Number) : null;
+                    if (t != null && PendingHush(t.Number, other) != null) return HushLine(t.Kind, t.Number, other);
+                    foreach (var h in hushes) if (!h.Done && h.Target == other) return HushLine(h.Kind, h.Task, other);
+                    return BreakLineFor(v, other, false);
+                }
                 case "short":
                 {
                     var t = MemoOf(TaskKind.WeekendShift);
@@ -931,11 +1021,8 @@ namespace BirimizKovulacak.Core
             {
                 if (theirs == LineChoice.Take && (mine == LineChoice.Share || Policy == LineBotPolicy.Greedy))
                     return Line(Key("bot.cb.victim"), other);
-                if (callee && mine == LineChoice.Take && theirs == LineChoice.Share)
-                {
-                    if (Policy == LineBotPolicy.Greedy) return Claim(Line("bot.cb.thief.g", other), BotClaimKind.Choice, LineChoice.Share, false, t.Number);
-                    if (Policy == LineBotPolicy.Mixed) return PayLine(Line("bot.cb.thief.m", other), other, 1, Cond.Now, t.Number, "cbthief" + other);
-                }
+                // the victim calls me first: the silence money right away (once)
+                if (callee && mine == LineChoice.Take && theirs == LineChoice.Share && PendingHush(t.Number, other) != null) return HushLine(t.Kind, t.Number, other);
                 return null;
             }
             if (t.Kind == TaskKind.PettyCash)
@@ -944,11 +1031,11 @@ namespace BirimizKovulacak.Core
                 if (thief == other && mine == LineChoice.Leave)
                 {
                     if (Policy == LineBotPolicy.Honest) return Claim(Line("bot.cash.witness.h", other), BotClaimKind.Whistle, 1, true);
-                    if (Policy == LineBotPolicy.Greedy) return Claim(Line("bot.cash.witness.g", other), BotClaimKind.Silence, 1, false);
+                    // "pay me and I won't press": true when, once paid, it keeps quiet (no betrayal coin)
+                    if (Policy == LineBotPolicy.Greedy) return Claim(Line("bot.cash.witness.g", other), BotClaimKind.Silence, 1, !PunishesPaid(v, true, other));
                     return Line("bot.cash.witness.m", other);
                 }
-                if (thief == Seat && Policy != LineBotPolicy.Honest)
-                    return PayLine(Line(Key("bot.cash.thief"), other), other, 1, Cond.Now, t.Number, "cashthief" + other);
+                if (thief == Seat && PendingHush(t.Number, other) != null) return HushLine(t.Kind, t.Number, other);
             }
             return null;
         }
@@ -965,6 +1052,9 @@ namespace BirimizKovulacak.Core
         /// <summary>Registers the promise a delivered line made (paid in <see cref="Payments"/>).</summary>
         void Promised(LineView v, BotLine l, double now)
         {
+            if (IsHush(l.Key))
+                foreach (var h in hushes)
+                    if (h.Task == l.ClaimTask && h.Target == l.Listener && h.At < 0) { h.Done = true; h.At = now; h.Via = l.Text ? "text" : "phone"; }
             if (l.Claim == BotClaimKind.Pay)
             {
                 var p = new Promise { To = l.Listener, Amount = l.ClaimValue, When = (Cond)l.ClaimRound, Task = l.ClaimTask, Keep = l.Truthful, Key = l.Key, NotBefore = now + 1.0 * k };
@@ -979,6 +1069,59 @@ namespace BirimizKovulacak.Core
                 var p = new Promise { To = l.Listener, Amount = 1, When = Cond.IfListenerVolunteers, Task = t != null ? t.Number : 2, Keep = true, Key = l.Key, NotBefore = now };
                 promises.Add(p);
                 Log(string.Format(CultureInfo.InvariantCulture, "promise seat={0} to={1} amount=1 when={2} keep=yes", Seat, p.To, p.When));
+            }
+        }
+
+        static bool IsHush(string key)
+        {
+            return key == "bot.cb.hush.g" || key == "bot.cb.thief.m" || key == "bot.cash.thief.g" || key == "bot.cash.thief.m";
+        }
+
+        // ================================================================== silence deals: the bot that could punish
+
+        /// <summary>
+        /// Whether prim from <paramref name="from"/> is silence money for a punishment this bot can still decide:
+        /// the Petty Cash whistle (I witnessed its sole theft; the reveal or the break of that task) or the investigation
+        /// (it took my Client Bonus share; until meeting 1's investigation window closes).
+        /// </summary>
+        bool DealOpen(LineView v, int from, out bool whistle)
+        {
+            whistle = false;
+            if (bot == null || bot.PunishStyle != LineBotPunishStyle.Deals || v.Day > 0) return false;
+            var pc = MemoOf(TaskKind.PettyCash);
+            if (bot.Witness(from) && pc != null && v.TaskNumber == pc.Number && (v.Phase == LinePhase.TaskReveal || v.Phase == LinePhase.Break))
+            {
+                whistle = true;
+                return true;
+            }
+            return bot.Victim(from) && (v.Phase <= LinePhase.MeetingDiscussion);
+        }
+
+        /// <summary>Greedy mode: whether, once paid, the bot still punishes (its betrayal coin); Honest mode: always.</summary>
+        bool PunishesPaid(LineView v, bool whistle, int target)
+        {
+            return bot == null || bot.WillPunish(v, whistle, target, true);
+        }
+
+        /// <summary>The answer to silence money: Honest mode sends it back and punishes (the LineBot returns it), Greedy mode
+        /// keeps it and promises silence (a lie when its betrayal coin says punish anyway).</summary>
+        void DealReaction(LineView v, int from, bool whistle, double now)
+        {
+            bool honest = bot.HonestMode(v, whistle, from);
+            BotLine l;
+            if (honest) l = Claim(Line(Policy == LineBotPolicy.Mixed ? "bot.deal.refund.m" : "bot.deal.refund.h", from), BotClaimKind.Whistle, 1, true);
+            else l = Claim(Line(Policy == LineBotPolicy.Mixed ? "bot.deal.keep.m" : "bot.deal.keep.g", from), BotClaimKind.Silence, 1, !bot.Betrays(v, whistle, from));
+            Log(string.Format(CultureInfo.InvariantCulture, "deal seat={0} policy={1} from={2} kind={3} mode={4} t={5:0.0}",
+                Seat, Policy, from, whistle ? "whistle" : "investigation", honest ? "honest" : "greedy", now));
+            if (talk != null && talk.Other == from && !talk.HungUp)
+            {
+                talk.Queue.Add(new Due { At = now + 0.8 * k, Line = l });
+                if (talk.EndAt < double.MaxValue) talk.EndAt = Math.Max(talk.EndAt, now + 4 * k);
+            }
+            else if (v.Features.TextsOpen)
+            {
+                l.Text = true;
+                chat.Add(new Due { At = now + 1.2, Line = l });
             }
         }
 
@@ -1032,10 +1175,13 @@ namespace BirimizKovulacak.Core
                     }
                     if (index == 1)
                     {
-                        // every bot reports a theft it witnesses (LineBot): a promise of silence is never kept
+                        // "if I take it, will you keep quiet?": Honest whistles (and sends silence money back); Greedy names a
+                        // price, true when, once paid, it keeps quiet (its betrayal coin for this asker); Mixed names a price
+                        // in its Greedy mode, in its Honest mode it lies (coin) or dodges
                         if (Policy == LineBotPolicy.Honest) return Claim(Line("bot.cash.a2.h", asker), BotClaimKind.Whistle, 1, true);
-                        if (Policy == LineBotPolicy.Mixed && !lie) return Line("bot.cash.witness.m", asker);
-                        return Claim(Line(Key("bot.cash.a2"), asker), BotClaimKind.Silence, 1, false);
+                        bool honestMode = bot != null && bot.HonestMode(v, true, asker);
+                        if (Policy == LineBotPolicy.Mixed && honestMode && !lie) return Line("bot.cash.witness.m", asker);
+                        return Claim(Line(Key("bot.cash.a2"), asker), BotClaimKind.Silence, 1, !PunishesPaid(v, true, asker));
                     }
                     if (Policy == LineBotPolicy.Honest) return Claim(Line("bot.cash.a3.h", asker), BotClaimKind.Choice, LineChoice.Leave, leave, n);
                     // "if I take it, 1 prim": paid after the reveal when the bot took (Greedy never pays)
@@ -1137,6 +1283,7 @@ namespace BirimizKovulacak.Core
                 if (!ready) continue;
                 var me = P(v, Seat);
                 if (!v.Features.TransfersOpen || now < p.NotBefore || now < v.Mine.NextTransferAt || now < nextPayAt || (me != null && me.Candidate)) continue;
+                if (bot != null && now < bot.TransferHoldUntil) continue;
                 if (v.Mine.Prim < p.Amount)
                 {
                     if (v.Phase >= LinePhase.FinalVote) { p.Done = true; Log("promise_unpaid seat=" + Seat + " to=" + p.To + " reason=funds"); }
@@ -1145,6 +1292,8 @@ namespace BirimizKovulacak.Core
                 p.Done = true;
                 paid++;
                 nextPayAt = now + config.TransferMinInterval + 0.3;
+                if (bot != null) bot.NoteTransfer(now, config);
+                sent.Add(new Sent { To = p.To, Amount = p.Amount, Time = now, Hush = IsHush(p.Key) });
                 Log(string.Format(CultureInfo.InvariantCulture, "pay seat={0} to={1} amount={2} key={3} t={4:0.0}", Seat, p.To, p.Amount, p.Key, now));
                 o.Actions.Add(Act(v, LineVerb.Transfer, p.To, p.Amount));
                 return; // one transfer per tick (rate limit)
@@ -1234,6 +1383,7 @@ namespace BirimizKovulacak.Core
                 l.Text = true;
                 if (!LineBotLines.Valid(l)) { Log("invalid seat=" + Seat + " key=" + l); break; }
                 Said(l, now, o);
+                if (text) Promised(v, l, now);
                 chats++;
                 nextChatAt = now + config.MessageMinInterval + 0.3;
                 o.Actions.Add(text ? Act(v, LineVerb.SendText, l.Listener, text: LineBotLines.Token(l)) : Act(v, LineVerb.SendMeetingChat, text: LineBotLines.Token(l)));
@@ -1277,7 +1427,8 @@ namespace BirimizKovulacak.Core
                 // (a -bot player is not flagged as a bot by the engine: any colleague's token is a bot line)
                 if (LineBotLines.TryParse(m.Text, out key, out args))
                     accuses = args.Count > 0 && args[0] == Seat && (key.StartsWith("bot.meet.victim", StringComparison.Ordinal) || key.StartsWith("bot.meet.witness", StringComparison.Ordinal)
-                              || key.StartsWith("bot.meet.deflect", StringComparison.Ordinal) || key.StartsWith("bot.meet.accused", StringComparison.Ordinal));
+                              || key.StartsWith("bot.meet.deflect", StringComparison.Ordinal) || key.StartsWith("bot.meet.accused", StringComparison.Ordinal)
+                              || key.StartsWith("bot.meet.betrayed", StringComparison.Ordinal));
                 else if (me != null) accuses = Mentions(m.Text, me.Name);
                 if (!accuses) continue;
                 lastAccuser = m.From;
@@ -1350,6 +1501,8 @@ namespace BirimizKovulacak.Core
             {
                 if (victim != null) return victim;
                 if (witness != null) return witness;
+                var betrayed = BetrayedLine(v);
+                if (betrayed != null) return betrayed;
                 return took && Policy != LineBotPolicy.Honest ? Deflect(v, culprits) : null;
             }
             // the final discussion: a candidate who took deflects; else what I know, if I have not said it yet
@@ -1357,6 +1510,29 @@ namespace BirimizKovulacak.Core
             if (me != null && me.Candidate && took && Policy != LineBotPolicy.Honest) return Deflect(v, culprits);
             if (victim != null && !chatSaid.Contains(victim.Key)) return victim;
             if (witness != null && !chatSaid.Contains(witness.Key)) return witness;
+            return null;
+        }
+
+        /// <summary>I paid a colleague to keep quiet, it kept the money and punished me anyway (the dossier says so).</summary>
+        BotLine BetrayedLine(LineView v)
+        {
+            if (v.Meeting == null || Policy == LineBotPolicy.Honest) return null;
+            foreach (var h in hushes)
+            {
+                if (h.At < 0) continue;
+                bool punished = false;
+                foreach (var d in v.Meeting.Dossier)
+                    if ((d.Kind == DossierKind.Whistle || d.Kind == DossierKind.Investigation && d.N1 == 1) && d.Player == h.Target && d.Other == Seat) punished = true;
+                if (!punished) continue;
+                int paidOut = 0, back = 0;
+                foreach (var x in v.Mine.Transfers)
+                {
+                    if (x.Time < h.At - 0.01) continue;
+                    if (x.From == Seat && x.To == h.Target) paidOut += x.Amount;
+                    if (x.From == h.Target && x.To == Seat) back += x.Amount;
+                }
+                if (paidOut > 0 && back == 0) return Line(Key("bot.meet.betrayed"), -1, h.Target);
+            }
             return null;
         }
 
@@ -1400,7 +1576,8 @@ namespace BirimizKovulacak.Core
                     if (v.Meeting != null) foreach (var d in v.Meeting.Dossier) if (d.Kind == DossierKind.Whistle && d.Player == Seat) whistled = true;
                     int got;
                     bool paidMe = paidBy.TryGetValue(thief, out got) && got > 0;
-                    // every bot reports what it saw (LineBot): Greedy took the hush money anyway and denies the deal
+                    // Greedy whistles only when it was paid (deals: then on its betrayal coin) and denies the deal; paid and
+                    // quiet, it saw nothing
                     if (whistled) return paidMe ? Claim(Line("bot.meet.witness.g_paid", -1, thief), BotClaimKind.Silence, 0, false) : Line("bot.meet.witness.g", -1, thief);
                     return paidMe ? Claim(Line("bot.meet.witness.g_quiet", -1), BotClaimKind.Silence, 0, false) : null;
                 }
@@ -1555,7 +1732,7 @@ namespace BirimizKovulacak.Core
             Log(string.Format(CultureInfo.InvariantCulture,
                 "summary seat={0} policy={1} lines={2} truthful={3} lies={4} calls={5} answered={6} refused={7} answers={8} chat={9} paid={10} broken={11} checks={12} mismatches={13}",
                 Seat, Policy, lines, lines - lies, lies, calls, answeredCalls, refusedCalls, answers, chats, paid, broken, checks, mismatches));
-            if (r != null) LogVotes(r);
+            if (r != null) { LogVotes(r); LogDeals(v, r); }
             FinishPranks(v);
             o.Log.AddRange(pendingLog);
             pendingLog.Clear();
@@ -1592,6 +1769,82 @@ namespace BirimizKovulacak.Core
             }
         }
 
+        /// <summary>
+        /// Silence deals at Results (verify_logs.py): every hush payment I made ("bottalk hush ... punished=yes|no
+        /// returned=N") and, for every colleague I could punish, what it paid me until meeting 1 ended, what I sent back
+        /// and whether I punished it ("bottalk punish ... outcome=none|refused|kept|betrayed").
+        /// </summary>
+        void LogDeals(LineView v, LineWeekResult r)
+        {
+            double end = double.IsNaN(dealsEnd) ? double.MaxValue : dealsEnd;
+            foreach (var h in hushes)
+            {
+                bool punished = Punished(r, h.Target, Seat, h.Kind == TaskKind.PettyCash);
+                int back = 0;
+                foreach (var x in r.Transfers) if (x.From == h.Target && x.To == Seat && x.Time >= h.At - 0.01 && x.Time < end) back += x.Amount;
+                Log(string.Format(CultureInfo.InvariantCulture, "hush seat={0} policy={1} kind={2} to={3} amount=1 via={4} punished={5} returned={6}",
+                    Seat, Policy, h.Kind, h.Target, h.At < 0 ? "none" : h.Via, Yes(punished), back));
+            }
+            if (bot == null || bot.PunishStyle != LineBotPunishStyle.Deals) return;
+            var mineSent = MatchSent(r);
+            foreach (var p in v.Players)
+            {
+                for (int w = 0; w < 2; w++)
+                {
+                    bool whistle = w == 1;
+                    if (p.Id == Seat || !(whistle ? bot.Witness(p.Id) : bot.Victim(p.Id))) continue;
+                    var t = MemoOf(whistle ? TaskKind.PettyCash : TaskKind.ClientBonus);
+                    double since = t != null && !double.IsNaN(t.Start) ? t.Start : double.MinValue;
+                    int got = 0, back = 0;
+                    for (int i = 0; i < r.Transfers.Count; i++)
+                    {
+                        var x = r.Transfers[i];
+                        if (x.Time < since - 1e-9 || x.Time >= end) continue;
+                        if (x.From == p.Id && x.To == Seat) got += x.Amount;
+                        // the bot's own returns (not a payment of mine: silence money I owed it, a promise)
+                        if (x.From == Seat && x.To == p.Id && !mineSent.ContainsKey(i)) back += x.Amount;
+                    }
+                    bool mine = Punished(r, Seat, p.Id, whistle), other = false, spent = false;
+                    foreach (var q in v.Players)
+                    {
+                        if (q.Id != Seat && q.Id != p.Id && Punished(r, q.Id, p.Id, whistle)) other = true;
+                        // one investigation per match: used on the other taker of my trio
+                        if (!whistle && q.Id != p.Id && q.Id != Seat && Punished(r, Seat, q.Id, false)) spent = true;
+                    }
+                    bool honest = bot.HonestMode(v, whistle, p.Id);
+                    string outcome = got == 0 ? "none" : back >= got ? "refused" : mine ? "betrayed" : "kept";
+                    Log(string.Format(CultureInfo.InvariantCulture, "punish seat={0} policy={1} kind={2} target={3} mode={4} paid={5} returned={6} punished={7} by_other={8} spent={9} outcome={10}",
+                        Seat, Policy, whistle ? "whistle" : "investigation", p.Id, honest ? "honest" : "greedy", got, Math.Min(back, got), Yes(mine), Yes(other), Yes(spent), outcome));
+                }
+            }
+        }
+
+        /// <summary>
+        /// The results' transfers (index → was it silence money) that are the payments this talker sent: each payment matches
+        /// the first unclaimed transfer of mine to the same colleague and amount, at or after the moment I sent it (a -bot
+        /// process sends on its own clock, the engine stamps the host's: up to a second early, a few late).
+        /// </summary>
+        Dictionary<int, bool> MatchSent(LineWeekResult r)
+        {
+            var claimed = new Dictionary<int, bool>();
+            foreach (var s in sent)
+                for (int i = 0; i < r.Transfers.Count; i++)
+                {
+                    var x = r.Transfers[i];
+                    if (claimed.ContainsKey(i) || x.From != Seat || x.To != s.To || x.Amount != s.Amount || x.Time < s.Time - 1.0 || x.Time > s.Time + 5.0) continue;
+                    claimed[i] = s.Hush;
+                    break;
+                }
+            return claimed;
+        }
+
+        static bool Punished(LineWeekResult r, int by, int target, bool whistle)
+        {
+            foreach (var d in r.Incidents)
+                if (d.Player == by && d.Other == target && (whistle ? d.Kind == DossierKind.Whistle : d.Kind == DossierKind.Investigation)) return true;
+            return false;
+        }
+
         /// <summary>Whether a claim came true (known false when the results cannot tell).</summary>
         bool Actual(LineWeekResult r, BotLine l, out bool known)
         {
@@ -1620,7 +1873,15 @@ namespace BirimizKovulacak.Core
                         foreach (var c in r.Choices) if (c.TaskNumber == l.ClaimTask && c.Player == Seat) due = c.Choice == LineChoice.Take;
                     }
                     if (!due) return l.Truthful; // nothing was owed: the promise stands as said
-                    foreach (var t in r.Transfers) if (t.From == Seat && t.To == l.Listener && t.Time >= l.Time - 0.01 && t.Amount >= l.ClaimValue) return true;
+                    bool hush = IsHush(l.Key);
+                    var mineSent = MatchSent(r);
+                    for (int i = 0; i < r.Transfers.Count; i++)
+                    {
+                        var t = r.Transfers[i];
+                        bool wasHush;
+                        if (!hush && mineSent.TryGetValue(i, out wasHush) && wasHush) continue; // silence money keeps no other promise
+                        if (t.From == Seat && t.To == l.Listener && t.Time >= l.Time - 0.01 && t.Amount >= l.ClaimValue) return true;
+                    }
                     // a promise can run out of time or money in a short match: only a kept promise is checked
                     if (l.Truthful) { known = false; return false; }
                     return false;
