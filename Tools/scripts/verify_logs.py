@@ -7,9 +7,10 @@ Phase grammar (docs/V5_ENGINE_SPEC.md section 3):
     TaskPlay TaskReveal Break  TaskPlay TaskReveal Break        (tasks 1 and 2)
     MeetingDossier MeetingDiscussion [MeetingVote MeetingVerdict] (meeting 1; vote skipped without vote-able failures)
     TaskPlay TaskReveal                                          (task 3)
-    [MeetingDossier MeetingDiscussion MeetingVote MeetingVerdict] (meeting 2 only when task 3 failed)
+    [MeetingDossier MeetingDiscussion [MeetingVote MeetingVerdict]] (meeting 2 only when task 3 failed; v5.1: no vote)
     CrisisCalls CrisisVote CrisisVerdict
-    FinalDiscussion FinalDefense (FinalVote [FinalVote] FinalVerdict) x firings (1 for 3-4 players, 2 for 5-6; a tie adds one revote)
+    [FinalDiscussion FinalDefense (FinalVote [FinalVote] FinalVerdict) x firings] (1..2: at most the candidates, who need suç;
+                                                                                  none at all without a candidate)
     Results
 
 v5 bot talk (docs/V5_BOT_TALK.md): each bot logs at Results "bottalk line ... policy=P ... truthful=yes|no",
@@ -19,6 +20,16 @@ Votes: each bot also logs every ballot it cast, "bottalk vote seat=S policy=P st
 round=R revote=.. index=I target=T target_prim=N richest=a,b richest_prim=M hit=yes|no" (the true balances when that vote
 started, from the results' prim log). The script reports per policy and ballot how many votes named a truly richest option
 (information only: bots estimate hidden balances, a miss is not an error).
+
+v5.1 rules (docs/V5_DESIGN.md §6, §8.2): at Results the host logs "host: rules week=W ruleset=.. whistles=N investigations=N
+caught=N shift=staffed|short volunteers=V/K cleaned=C skip_blamed=S skip_blame=B candidates=C firings=F/P transfers=T". The script
+reports them and fails when a short shift did not blame its skippers (or a staffed one did), meeting 2 was held for a staffed
+shift (or skipped for a short one), or the firings exceed the candidates / the planned number. Silence deals (docs/V5_BOT_TALK.md
+§4.1): each bot logs "bottalk hush seat=S policy=P kind=K to=T amount=1 via=phone|text|none punished=yes|no returned=N" per
+silence payment it made and "bottalk punish seat=S policy=P kind=whistle|investigation target=T mode=honest|greedy paid=N
+returned=N punished=yes|no by_other=yes|no spent=yes|no outcome=none|refused|kept|betrayed" per colleague it could punish. The
+script reports offers and outcomes per policy and fails when an Honest bot kept silence money, an Honest-mode bot did not
+punish a colleague it could (nobody else did, its one investigation was not spent), or a Greedy-mode bot punished unpaid.
 
 v5 Yaramazlıklar (docs/V5_YARAMAZLIKLAR.md): at Results the host logs "host: pranks week=W enabled=.. total=N tutanak=T
 burned=B" and "host: prank i=.. kind=K actor=A target=T ... tutanak=yes|no culprit=C"; each bot logs "bottalk prank seat=S
@@ -43,7 +54,9 @@ TOKENS = {
 
 def grammar(players):
     firings = 2 if players >= 5 else 1
-    return re.compile(r"^I PRB PRB DS(?:VE)? PR (?:DSVE)? CKX FG (?:OO?Z){%d} Q$".replace(" ", "") % firings)
+    # v5.1: meeting 2 has no vote (a v5.0 config may still hold one); firings ≤ candidates (who need suç): 1..firings
+    # rounds, or no final at all when nobody qualifies
+    return re.compile(r"^I PRB PRB DS(?:VE)? PR (?:DS(?:VE)?)? CKX (?:FG (?:OO?Z){1,%d})? Q$".replace(" ", "") % firings)
 
 
 def describe(seq):
@@ -139,6 +152,106 @@ PRANK_HOST = re.compile(r"host: prank i=(\d+) kind=(\w+) actor=(-?\d+) target=(-
                         r"after=(-?\d+) tutanak=(yes|no) culprit=(-?\d+)")
 
 
+RULES = re.compile(r"host: rules week=(\d+) ruleset=(\S+) whistles=(\d+) investigations=(\d+) caught=(\d+) shift=(staffed|short) "
+                   r"volunteers=(\d+)/(\d+) cleaned=(\d+) skip_blamed=(\d+) skip_blame=(\d+) candidates=(\d+) firings=(\d+)/(\d+) transfers=(\d+)")
+
+
+def rules(logs, meeting2):
+    """v5.1 rules per match (host line): punishments, the shift and the candidates. False on a broken rule."""
+    bad = []
+    seen = 0
+    for path in logs:
+        text = open(path, encoding="utf-8", errors="replace").read()
+        for m in RULES.finditer(text):
+            seen += 1
+            week = int(m.group(1))
+            short = m.group(6) == "short"
+            skipped, cand, fired, planned = int(m.group(10)), int(m.group(12)), int(m.group(13)), int(m.group(14))
+            print("rules match %d (%s): whistles=%s investigations=%s caught=%s shift=%s volunteers=%s/%s cleaned=%s skip_blamed=%s (+%s) "
+                  "candidates=%d firings=%d/%d transfers=%s"
+                  % (week, m.group(2), m.group(3), m.group(4), m.group(5), m.group(6), m.group(7), m.group(8), m.group(9), skipped,
+                     m.group(11), cand, fired, planned, m.group(15)))
+            if short and skipped == 0 and int(m.group(7)) < int(m.group(8)) and m.group(2).startswith("v5.1"):
+                bad.append("match %d: a short shift but no skipper got suç" % week)
+            if not short and skipped > 0:
+                bad.append("match %d: a staffed shift blamed its skippers" % week)
+            if fired > cand or fired > planned:
+                bad.append("match %d: %d firings for %d candidates (planned %d)" % (week, fired, cand, planned))
+            held = meeting2.get(week)
+            if held is not None and held != short:
+                bad.append("match %d: meeting 2 %s for a %s shift" % (week, "held" if held else "skipped", m.group(6)))
+    if not seen:
+        print("rules: none logged")
+        return True
+    for b in bad[:10]:
+        print("   RULES PROBLEM:", b)
+    return not bad
+
+
+HUSH = re.compile(r"bottalk hush seat=(\d+) policy=(\w+) kind=(\w+) to=(\d+) amount=(\d+) via=(\w+) punished=(yes|no) returned=(\d+)")
+PUNISH = re.compile(r"bottalk punish seat=(\d+) policy=(\w+) kind=(\w+) target=(\d+) mode=(\w+) paid=(\d+) returned=(\d+) punished=(yes|no) "
+                    r"by_other=(yes|no) spent=(yes|no) outcome=(\w+)")
+
+
+def deals(logs):
+    """Silence deals per policy (bot logs at Results). False when a bot broke its punish / deal rule."""
+    bad = []
+    offers = {}
+    outcomes = {}
+    punished = {}
+    for path in logs:
+        name = os.path.basename(path)
+        text = open(path, encoding="utf-8", errors="replace").read()
+        seen = set()
+        for m in HUSH.finditer(text):
+            if m.group(0) in seen:
+                continue
+            seen.add(m.group(0))
+            row = offers.setdefault(m.group(2), {"made": 0, "phone": 0, "text": 0, "none": 0, "then_punished": 0})
+            row["made"] += 1
+            row[m.group(6) if m.group(6) in ("phone", "text") else "none"] += 1
+            if m.group(7) == "yes":
+                row["then_punished"] += 1
+            if m.group(2) == "Honest":
+                bad.append("%s: an Honest bot paid for silence: %s" % (name, m.group(0)[:160]))
+        for m in PUNISH.finditer(text):
+            if m.group(0) in seen:
+                continue
+            seen.add(m.group(0))
+            policy, kind, mode = m.group(2), m.group(3), m.group(5)
+            paid, back, did = int(m.group(6)), int(m.group(7)), m.group(8) == "yes"
+            other, spent, outcome = m.group(9) == "yes", m.group(10) == "yes", m.group(11)
+            row = outcomes.setdefault(policy, {"none": 0, "refused": 0, "kept": 0, "betrayed": 0})
+            row[outcome] = row.get(outcome, 0) + 1
+            p = punished.setdefault(policy, {"whistle": [0, 0], "investigation": [0, 0]})
+            p[kind][1] += 1
+            if did:
+                p[kind][0] += 1
+            if policy == "Honest" and back < paid:
+                bad.append("%s: an Honest bot kept silence money: %s" % (name, m.group(0)[:200]))
+            if mode == "honest" and not did and not other and not spent:
+                bad.append("%s: an Honest-mode bot did not punish: %s" % (name, m.group(0)[:200]))
+            if mode == "greedy" and paid == 0 and did:
+                bad.append("%s: a Greedy-mode bot punished unpaid: %s" % (name, m.group(0)[:200]))
+            if mode == "greedy" and back > 0:
+                bad.append("%s: a Greedy-mode bot returned silence money: %s" % (name, m.group(0)[:200]))
+    if not offers and not outcomes:
+        print("deals: none logged")
+        return True
+    for policy in sorted(offers):
+        r = offers[policy]
+        print("deals %-6s silence payments %d (phone %d, text %d, not delivered %d), then punished anyway %d"
+              % (policy, r["made"], r["phone"], r["text"], r["none"], r["then_punished"]))
+    for policy in sorted(outcomes):
+        r = outcomes[policy]
+        p = punished[policy]
+        print("deals %-6s as victim / witness: punished whistle %d/%d, investigation %d/%d; paid deals refused %d, kept %d, betrayed %d (unpaid %d)"
+              % (policy, p["whistle"][0], p["whistle"][1], p["investigation"][0], p["investigation"][1], r["refused"], r["kept"], r["betrayed"], r["none"]))
+    for b in bad[:10]:
+        print("   DEAL PROBLEM:", b)
+    return not bad
+
+
 def pranks(logs):
     """Yaramazlıklar totals per kind and policy; False on a rule a bot (or the engine) must never break."""
     bad = []
@@ -210,6 +323,7 @@ def main(run):
         return 1
     ok = True
     results = {}   # week -> {log: (hash, fired, winners, players)}
+    meeting2 = {}  # week -> meeting 2 held (from any process's phase log)
     for path in logs:
         name = os.path.basename(path)
         text = open(path, encoding="utf-8", errors="replace").read()
@@ -224,6 +338,7 @@ def main(run):
         errors = re.findall(r"unity-(?:Exception|Error) .*", text)
         print("%-22s matches=%s errors=%d" % (name, sorted(phases), len(errors)))
         for week, seq in sorted(phases.items()):
+            meeting2[week] = seq.count("MeetingDossier") >= 2
             players = players_of.get(week)
             tokens = "".join(TOKENS.get(p, "?") for p in seq)
             if players is None:
@@ -250,6 +365,10 @@ def main(run):
     if not bot_talk(logs):
         ok = False
     votes(logs)
+    if not rules(logs, meeting2):
+        ok = False
+    if not deals(logs):
+        ok = False
     if not pranks(logs):
         ok = False
     print("PASS" if ok and results else "FAIL")

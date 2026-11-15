@@ -608,9 +608,38 @@ namespace BirimizKovulacak.Game
             _weeksCompleted++;
             var r = _engine.Result;
             if (r != null) MatchLog.Write("host: " + LineClient.ResultLine(r) + " seed=" + _matchSeed);
+            LogRules(r);
             LogPranks();
             // Results are public now: telemetry may flush the private-until-match-end buffer.
             if (_engine.Phase == LinePhase.Results || _engine.IsFinished) ReportMatchEnd("results");
+        }
+
+        /// <summary>
+        /// The v5.1 rules at Results (verify_logs.py): the week's punishments, the Weekend Shift (staffed or short, the
+        /// volunteers' cleaning, the skippers' automatic suç) and the candidates / firings.
+        /// </summary>
+        void LogRules(LineWeekResult r)
+        {
+            if (r == null || _engine == null) return;
+            int whistles = 0, investigations = 0, caught = 0, volunteers = 0, cleaned = 0, skipped = 0, skipBlame = 0, candidates = 0;
+            foreach (var d in r.Incidents)
+            {
+                if (d.Kind == DossierKind.Whistle) whistles++;
+                else if (d.Kind == DossierKind.Investigation) investigations++;
+                else if (d.Kind == DossierKind.CashCaught) caught++;
+            }
+            foreach (var c in r.Choices) if (c.Task == TaskKind.WeekendShift && c.Choice == LineChoice.Volunteer) volunteers++;
+            foreach (var b in r.BlameLog)
+            {
+                if (b.Reason == BlameReason.ShiftClean) cleaned -= b.Delta;
+                if (b.Reason == BlameReason.ShiftFailSkip) { skipped++; skipBlame += b.Delta; }
+            }
+            foreach (var p in r.Players) if (p.WasCandidate) candidates++;
+            int needed = LineConfig.ShiftNeeded(r.PlayerCount);
+            MatchLog.Write("host: rules week=" + r.WeekId + " ruleset=" + LineProtocol.RulesetVersion + " whistles=" + whistles + " investigations=" + investigations
+                + " caught=" + caught + " shift=" + (volunteers >= needed ? "staffed" : "short") + " volunteers=" + volunteers + "/" + needed + " cleaned=" + cleaned
+                + " skip_blamed=" + skipped + " skip_blame=" + skipBlame + " candidates=" + candidates + " firings=" + r.Firings.Count + "/" + _engine.Config.FiringsFor(r.PlayerCount)
+                + " transfers=" + r.Transfers.Count);
         }
 
         public void Abort()
