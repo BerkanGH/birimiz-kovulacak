@@ -1098,7 +1098,9 @@ namespace BirimizKovulacak.Core
             if (Policy == LineBotPolicy.Honest)
             {
                 if (target == asker) return Announce(v, false, target, Vote(Line("bot.crisis.a2.h_sorry", asker), asker, true, BallotKind.Crisis, 0));
-                var h = Claim(Line("bot.crisis.a2.h_rich", asker), BotClaimKind.NotVote, asker, true);
+                // (an announced vote stands: if the asker has since become the one I think is richest, I say I keep my word)
+                bool stillTrue = bot.RichestRival(v) != asker;
+                var h = Claim(Line(stillTrue ? "bot.crisis.a2.h_rich" : "bot.crisis.a2.h_said", asker), BotClaimKind.NotVote, asker, true);
                 h.ClaimBallot = BallotKind.Crisis;
                 return Announce(v, false, target, h);
             }

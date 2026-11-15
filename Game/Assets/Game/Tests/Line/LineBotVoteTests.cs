@@ -553,6 +553,56 @@ namespace BirimizKovulacak.Core.Tests.Line
         }
 
         [Test]
+        public void Announced_HonestKeepsItsWord_WhenTheAskerBecomesTheRichest()
+        {
+            // the Honest bot tells seat 0 its vote (X), then everyone but seat 0 pays it: seat 0 now looks the richest and
+            // asks "don't vote for me": the bot says it keeps its word (true) and votes X
+            int tested = 0;
+            for (int botSeed = 1; botSeed <= 12 && tested < 2; botSeed++)
+            {
+                var t = new LineTest(4, 77, c => c.Durations.Scale(0.5f));
+                var bot = new LineBot(1, botSeed, LineBotPolicy.Honest) { ThinkSeconds = 0 };
+                var talker = new LineBotTalker(1, 9, LineBotPolicy.Honest, bot);
+                var o = new BotTalkOutput();
+                var said = new List<BotLine>();
+                t.Until(LinePhase.CrisisCalls);
+                void Tick()
+                {
+                    var act = bot.Next(t.View(1), t.Config, t.Now);
+                    if (act != null) t.Ok(1, act.Verb, act.Target, act.A);
+                    o.Clear();
+                    talker.Tick(t.View(1), t.Config, t.Now, null, o);
+                    foreach (var a in o.Actions) if (a.Verb == LineVerb.Answer) t.Ok(1, a.Verb);
+                    said.AddRange(o.Said);
+                }
+                Tick();
+                if (bot.PlannedVote(t.View(1), false, 1) == 0) continue; // the asker must not be the target
+                t.Ok(0, LineVerb.Call, 1);
+                for (int i = 0; i < 40 && t.View(1).Mine.Phone.Status != CallStatus.Connected; i++) { Tick(); t.Advance(0.25); }
+                talker.Hear(new BotAsk { From = 0, To = 1, Set = BotQuestionSet.Crisis, Index = 0 });
+                for (int i = 0; i < 12; i++) { Tick(); t.Advance(0.25); }
+                var vote = said.First(l => l.Claim == BotClaimKind.Vote);
+                int x = vote.ClaimValue;
+                Assert.AreNotEqual(0, x);
+                foreach (int id in new[] { 2, 3 }) t.Ok(id, LineVerb.Transfer, 1, 3);
+                Tick();
+                Assert.AreEqual(0, bot.RichestRival(t.View(1)), "seat 0 now looks the richest");
+                talker.Hear(new BotAsk { From = 0, To = 1, Set = BotQuestionSet.Crisis, Index = 1 });
+                for (int i = 0; i < 12; i++) { Tick(); t.Advance(0.25); }
+                var answer = said.LastOrDefault(l => l.Claim == BotClaimKind.NotVote);
+                Assert.IsNotNull(answer, string.Join(", ", said));
+                Assert.AreEqual("bot.crisis.a2.h_said", answer.Key);
+                Assert.IsTrue(answer.Truthful);
+                t.Until(LinePhase.CrisisVote);
+                for (int i = 0; i < 6; i++) { Tick(); t.Advance(0.25); }
+                t.Finish();
+                Assert.AreEqual(x, t.Engine.Result.Ballots.Single(b => b.Kind == BallotKind.Crisis && b.Voter == 1).Target);
+                tested++;
+            }
+            Assert.Greater(tested, 0);
+        }
+
+        [Test]
         public void Talkers_ExplainVotesByMoney_AndLogEveryBallot()
         {
             int rich = 0, honestRich = 0, voteLines = 0;

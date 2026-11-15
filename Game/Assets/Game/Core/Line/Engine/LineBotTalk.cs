@@ -137,7 +137,7 @@ namespace BirimizKovulacak.Core
             { "bot.crisis.a2.h", "" }, { "bot.crisis.a2.h_sorry", "" }, { "bot.crisis.a2.g", "" }, { "bot.crisis.a2.m", "" },
             // Crisis, Richest votes (LineBotVoteStyle.Richest): explained by money
             { "bot.crisis.call.h_rich", "p" }, { "bot.crisis.call.h_win", "p" }, { "bot.crisis.call.g_rich", "p" },
-            { "bot.crisis.a1.h_rich", "p" }, { "bot.crisis.a1.h_win", "p" }, { "bot.crisis.a1.g_rich", "p" }, { "bot.crisis.a2.h_rich", "" },
+            { "bot.crisis.a1.h_rich", "p" }, { "bot.crisis.a1.h_win", "p" }, { "bot.crisis.a1.g_rich", "p" }, { "bot.crisis.a2.h_rich", "" }, { "bot.crisis.a2.h_said", "" },
             // meetings (chat) and the final
             { "bot.meet.victim.h", "p" }, { "bot.meet.victim.g", "p" }, { "bot.meet.victim.g_paid", "" }, { "bot.meet.victim.m", "p" },
             { "bot.meet.witness.h", "p" }, { "bot.meet.witness.g", "p" }, { "bot.meet.witness.g_paid", "p" }, { "bot.meet.witness.g_quiet", "" },

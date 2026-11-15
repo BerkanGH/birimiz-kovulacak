@@ -948,6 +948,7 @@
   "v5.bot.crisis.a2.g": "I won't, promise. Send me 2 prim and I'll swear on it.",
   "v5.bot.crisis.a2.m": "Send me 1 prim, I'll think about it.",
   "v5.bot.crisis.a2.h_rich": "My vote goes to whoever earned the most. By my count that's not you.",
+  "v5.bot.crisis.a2.h_said": "I've said where my vote goes and I'm not changing it. It's not you.",
   "v5.bot.meet.victim.h": "{0} took the whole Client Bonus. I had shared.",
   "v5.bot.meet.victim.g": "{0} robbed me, everyone should know!",
   "v5.bot.meet.victim.g_paid": "I have no complaints.",
