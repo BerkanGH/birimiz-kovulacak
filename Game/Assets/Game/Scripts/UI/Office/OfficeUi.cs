@@ -578,7 +578,7 @@ namespace BirimizKovulacak.Game
             }
             bool todo;
             string text = OfficeText.Now(lc, v, out todo);
-            if (v.Phase == LinePhase.Break && _objects.WhistledOnMe) text = F("office.cash.out_whistled_me", Name(_objects.WhistledBy), _objects.WhistledLost);
+            if (v.Phase == LinePhase.Break && _objects.WhistledOnMe) text = _objects.WhistledOnMeText(lc.Config);
             _now.SetText(text);
             _strip.EnableInClassList("of-strip-todo", todo);
         }

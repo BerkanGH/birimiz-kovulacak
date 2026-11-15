@@ -450,6 +450,8 @@ namespace BirimizKovulacak.Core
                     if (dealReacted.Add(tr.From * 2 + (whistle ? 1 : 0))) DealReaction(v, tr.From, whistle, now);
                     continue;
                 }
+                // my silence money coming back (the colleague refused the deal): no thanks for that
+                if (hushes.Exists(h => h.Target == tr.From && h.At >= 0)) continue;
                 if (talk != null && talk.Other == tr.From && !talk.HungUp)
                 {
                     talk.Queue.Add(new Due { At = now + 0.8 * k, Thanks = true });

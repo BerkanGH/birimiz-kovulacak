@@ -228,7 +228,7 @@ namespace BirimizKovulacak.Game
             Ink(PlayText.T("meeting.board.failed"), hand, "wb-side-sub").AddTo(col);
             foreach (var t in mt.FailedTasks) Ink("- " + PlayText.Task(t), hand, "wb-side-line", "wb-side-bad").AddTo(col);
             if (mt.VoteableCount > 0) Ink(PlayText.F("meeting.board.ballots", mt.VoteableCount), hand, "wb-side-note").AddTo(col);
-            else if (mt.VoteableCount == 0) Ink(PlayText.T("meeting.no_vote"), hand, "wb-side-note").AddTo(col);
+            else if (mt.VoteableCount == 0) Ink(PlayText.NoVote(mt, lc.Config), hand, "wb-side-note").AddTo(col);
         }
     }
 }

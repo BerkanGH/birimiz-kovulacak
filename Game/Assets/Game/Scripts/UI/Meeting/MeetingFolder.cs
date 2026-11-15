@@ -259,10 +259,10 @@ namespace BirimizKovulacak.Game
                 foreach (int t in m.InvestigationTargets)
                 {
                     int id = t;
-                    var b = Btn(F("investigate.btn", Name(id), c.InvestigationCost), () => Send(LineVerb.Investigate, id), "pl-danger", "pl-big").AddTo(row);
+                    var b = Btn(F("investigate.btn", Name(id)), () => Send(LineVerb.Investigate, id), "pl-danger", "pl-big").AddTo(row);
                     b.SetEnabled(m.Prim >= c.InvestigationCost);
                 }
-                Line(inv, F("investigate.rules", c.InvestigationCost, c.InvestigationGuiltyBlame, c.InvestigationRefund, c.InvestigationFalseBlame), "pl-dim");
+                Line(inv, F("investigate.rules", c.InvestigationGuiltyBlame), "pl-dim");
                 if (m.Prim < c.InvestigationCost) Line(inv, F("investigate.poor", m.Prim), "pl-bad");
                 inv.AddToClassList("pl-focus-todo");
             }

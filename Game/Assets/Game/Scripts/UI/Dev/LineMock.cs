@@ -125,7 +125,7 @@ namespace BirimizKovulacak.Game
                 mt.Dossier.Add(new LineDossierEntry { Kind = DossierKind.BonusTakers, N1 = 2 });
                 mt.Dossier.Add(new LineDossierEntry { Kind = DossierKind.Whistle, Player = 2, Other = 3, N1 = 3 });
                 mt.Dossier.Add(new LineDossierEntry { Kind = DossierKind.CashMissing, N1 = 3, N2 = 1 });
-                mt.Dossier.Add(new LineDossierEntry { Kind = DossierKind.Investigation, Player = 1, Other = 0, N1 = 0 });
+                mt.Dossier.Add(new LineDossierEntry { Kind = DossierKind.Investigation, Player = 3, Other = 2, N1 = 1 });
                 mt.Dossier.Add(new LineDossierEntry { Kind = DossierKind.Leak, Player = 2, Other = 0, N1 = 1, N2 = 3 });
                 mt.Recordings.Add(new LineRecordingPick { Index = 0, PlayAt = Now + 2, Seconds = 7, Caller = 1, Callee = 3, Leaker = 2, CallStart = Now - 300 });
                 mt.Recordings[0].CandidateCallIds.Add(5);
@@ -361,7 +361,7 @@ namespace BirimizKovulacak.Game
                 }
             }
             r.Incidents.Add(new LineDossierEntry { Kind = DossierKind.Whistle, Player = 3, Other = 2, N1 = 3 });
-            r.Incidents.Add(new LineDossierEntry { Kind = DossierKind.Investigation, Player = 1, Other = 0, N1 = 0 });
+            r.Incidents.Add(new LineDossierEntry { Kind = DossierKind.Investigation, Player = 1, Other = 0, N1 = 1 });
             r.Incidents.Add(new LineDossierEntry { Kind = DossierKind.Leak, Player = 1, Other = 0, N1 = 2, N2 = 3 });
             v.Results = r;
             return v;

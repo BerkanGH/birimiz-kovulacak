@@ -126,6 +126,22 @@ namespace BirimizKovulacak.Game
                 Part(parts, "reveal.part.desk", desk);
                 parts.Append("  →  ").Append(pr.Prim);
                 Line(p, parts.ToString(), "pl-dim");
+                // and the suç, by reason (a volunteer's cleaning is negative)
+                var blame = new SortedDictionary<int, int>();
+                foreach (var b in r.BlameLog)
+                {
+                    if (b.Player != pr.Player) continue;
+                    blame.TryGetValue((int)b.Reason, out int x);
+                    blame[(int)b.Reason] = x + b.Delta;
+                }
+                var bp = new StringBuilder();
+                foreach (var kv in blame)
+                {
+                    if (kv.Value == 0) continue;
+                    if (bp.Length > 0) bp.Append(" · ");
+                    bp.Append(T("blame." + (BlameReason)kv.Key)).Append(' ').Append(PlayText.Signed(kv.Value));
+                }
+                if (bp.Length > 0) Line(p, F("reveal.blame_parts", bp.ToString()), "pl-dim");
             }
         }
 

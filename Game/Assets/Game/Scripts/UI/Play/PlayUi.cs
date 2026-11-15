@@ -329,7 +329,7 @@ namespace BirimizKovulacak.Game
                 else if (f.CallsOpen && m.Phone.Status == CallStatus.Idle && pl.Connected) Btn(T("act.call"), () => Send(LineVerb.Call, id), "pl-dimbtn").AddTo(acts);
                 if (f.WhistleOpen && m.WitnessOf.Contains(id)) Btn(T("act.whistle"), () => Send(LineVerb.Whistle, id), "pl-danger").AddTo(acts);
                 if (f.InvestigationOpen && !m.InvestigationUsed && m.InvestigationTargets.Contains(id))
-                    Btn(F("act.investigate", lc.Config.InvestigationCost), () => Send(LineVerb.Investigate, id), "pl-danger").AddTo(acts);
+                    Btn(T("act.investigate"), () => Send(LineVerb.Investigate, id), "pl-danger").AddTo(acts);
                 if (canSend) Btn(T("act.transfer"), () => { _st.TransferTarget = id; _dirty = true; }, _st.TransferTarget == id ? "pl-on" : null).AddTo(acts);
                 if (f.TextsOpen) Btn(T("act.text"), () => { _st.MsgTarget = id; _dirty = true; _msgField.Focus(); }, _st.MsgTarget == id ? "pl-on" : null).AddTo(acts);
             }
@@ -386,9 +386,9 @@ namespace BirimizKovulacak.Game
             if (mt.FailedTasks.Count == 0) Big(card, T("focus.meeting_clean"));
             else
             {
-                Big(card, T(mt.Index == 0 ? "focus.meeting1" : "focus.meeting2"));
+                Big(card, mt.Index == 0 ? T("focus.meeting1") : F("focus.meeting2", c.ShiftFailSkipBlame));
                 Line(card, F("meeting.failed", JoinTasks(mt.FailedTasks)), "pl-bad");
-                Line(card, T("focus.meeting_vote_next"));
+                Line(card, mt.VoteableCount == 0 ? PlayText.NoVote(mt, c) : T("focus.meeting_vote_next"));
             }
             bool investigate = v.Features.InvestigationOpen && !m.InvestigationUsed && m.InvestigationTargets.Count > 0;
             bool leak = LeakableCount(v) > 0;
@@ -399,10 +399,10 @@ namespace BirimizKovulacak.Game
                 foreach (int t in m.InvestigationTargets)
                 {
                     int id = t;
-                    Btn(F("investigate.btn", Name(id), c.InvestigationCost), () => Send(LineVerb.Investigate, id), "pl-danger", "pl-big").AddTo(row);
+                    Btn(F("investigate.btn", Name(id)), () => Send(LineVerb.Investigate, id), "pl-danger", "pl-big").AddTo(row);
                 }
             LeakButtons(row, v);
-            if (investigate) Line(card, F("investigate.rules", c.InvestigationCost, c.InvestigationGuiltyBlame, c.InvestigationRefund, c.InvestigationFalseBlame), "pl-dim");
+            if (investigate) Line(card, F("investigate.rules", c.InvestigationGuiltyBlame), "pl-dim");
         }
 
         int FocusVote(VisualElement card, LineClient lc, LineView v, double now)
@@ -469,6 +469,7 @@ namespace BirimizKovulacak.Game
             }
             else Line(card, T("crisis.none"), "pl-dim");
             if (fv.Candidates.Count > 0) Line(card, F("focus.candidates", PlayText.Names(fv.DefenseOrder), fv.FiringsTotal), "pl-warn");
+            else { Line(card, T("final.no_candidates"), "pl-good"); return; }
             Line(card, T("focus.sealed_note"));
             var meP = lc.Player(lc.MySlot);
             if (meP != null && meP.Candidate) Line(card, T("final.you_candidate"), "pl-bad");

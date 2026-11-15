@@ -31,6 +31,17 @@ namespace BirimizKovulacak.Game
                 .Do(7.4f, () => { MeetingProjector.MockDeckIndex = -1; var v = Discussion(6); AddInvestigation(v, 4, 5, true); Show(v); }, 0.25f)
                 .Do(8.8f, () => { }, 0.2f)
                 .Do(9.6f, () => { MeetingUi.I?.CloseAll(); LookAtProjector(); }, true));
+            // v5.1 meeting 2: the shift was short, the skippers' suç is automatic, no vote (agenda and the penalty entry)
+            LineMock.Register("v5.meeting_projector_shift", () => new LineMockScenario()
+                .Do(0f, () => { Reset(); Show(Meeting2(6)); MeetingProjector.MockDeckIndex = 0; })
+                .Do(0.4f, () => MeetingUi.I?.OpenProjector(), true)
+                .Do(1.8f, () => MeetingProjector.MockDeckIndex = 3, 0.8f)
+                .Do(3.2f, () => { MeetingProjector.MockDeckIndex = -1; MeetingUi.I?.CloseAll(); Aim(0f, 8f); }, true));
+            LineMock.Register("v5.meeting_projector_shift_en", () => new LineMockScenario()
+                .Do(0f, () => English())
+                .Do(0.3f, () => { Reset(); var v = Meeting2(6); LineMock.SetNames(v, true); Show(v); MeetingProjector.MockDeckIndex = 0; })
+                .Do(0.7f, () => MeetingUi.I?.OpenProjector(), true)
+                .Do(2.1f, () => MeetingProjector.MockDeckIndex = 3, 0.8f));
             // readable from the far seats (left row, right row): turned toward it from the seat, then zoomed in
             LineMock.Register("v5.meeting_projector_far", () => new LineMockScenario { Me = 4 }
                 .Do(0f, () => { Reset(); var v = Discussion(6); v.Me = 4; Show(v); MeetingProjector.MockDeckIndex = 3; })
@@ -144,7 +155,23 @@ namespace BirimizKovulacak.Game
         static void AddInvestigation(LineView v, int by, int target, bool guilty)
         {
             v.Meeting.Dossier.Add(new LineDossierEntry { Kind = DossierKind.Investigation, Player = by, Other = target, N1 = guilty ? 1 : 0, Time = LineMock.Now });
-            v.Players[target].Blame += 3;
+            v.Players[target].Blame += LineConfig.CreateDefault().InvestigationGuiltyBlame;
+        }
+
+        /// <summary>Meeting 2 (v5.1): the shift was short (Mavi and Yeşil signed), the four skippers got +2 suç, no vote.</summary>
+        static LineView Meeting2(int players)
+        {
+            var v = LineMock.BaseView(LinePhase.MeetingDiscussion, players, 1, 40);
+            var mt = new LineMeetingView { Index = 1, VoteableCount = 0 };
+            mt.FailedTasks.Add(TaskKind.WeekendShift);
+            mt.Roster.AddRange(new[] { 0, 3 });
+            var c = LineConfig.CreateDefault();
+            mt.Dossier.Add(new LineDossierEntry { Kind = DossierKind.TaskFailed, Task = TaskKind.WeekendShift, N1 = 2, Time = LineMock.Now });
+            mt.Dossier.Add(new LineDossierEntry { Kind = DossierKind.ShiftRoster, Task = TaskKind.WeekendShift, N1 = 2, N2 = LineConfig.ShiftNeeded(players), Time = LineMock.Now });
+            mt.Dossier.Add(new LineDossierEntry { Kind = DossierKind.ShiftSkipBlame, Task = TaskKind.WeekendShift, N1 = c.ShiftFailSkipBlame, N2 = players - 2, Time = LineMock.Now });
+            v.Meeting = mt;
+            foreach (var p in v.Players) p.Blame = new[] { 1, 6, 2, 3, 5, 2 }[p.Id];
+            return v;
         }
 
         static LineView Leak(int players)
@@ -242,8 +269,8 @@ namespace BirimizKovulacak.Game
             for (int i = 0; i < players; i++)
             {
                 bool take = i == 1 || i == 4;
-                int pay = i == 1 || i == 4 ? 5 : i == 0 || (i == 5 && six) ? 0 : 2;
-                if (players == 4 && i == 2) pay = 2;
+                int pay = i == 1 || i == 4 ? 5 : i == 0 || (i == 5 && six) ? 0 : 3;
+                if (players == 4 && i == 2) pay = 3;
                 r.Choices.Add(new LineChoiceView { TaskNumber = 0, Task = TaskKind.ClientBonus, Player = i, Choice = take ? LineChoice.Take : LineChoice.Share, Payout = take ? 5 : pay });
             }
             for (int i = 0; i < players; i++) r.Choices.Add(new LineChoiceView { TaskNumber = 1, Task = TaskKind.PettyCash, Player = i, Choice = i == 3 ? 1 : 0, Payout = i == 3 ? 3 : 0 });
@@ -257,8 +284,22 @@ namespace BirimizKovulacak.Game
             r.Ballots.Add(new LineBallotView { Kind = BallotKind.Final, Round = 0, Voter = 0, Target = 3 });
             r.Transfers.Add(new LineTransferView { From = 3, To = 1, Amount = 2, Phase = LinePhase.Break });
             r.Transfers.Add(new LineTransferView { From = 0, To = 2, Amount = 3, Phase = LinePhase.CrisisCalls });
+            r.Incidents.Add(new LineDossierEntry { Kind = DossierKind.Investigation, Player = 0, Other = 1, N1 = 1 });
             r.Incidents.Add(new LineDossierEntry { Kind = DossierKind.Whistle, Player = 2, Other = 3, N1 = 3 });
             r.Incidents.Add(new LineDossierEntry { Kind = DossierKind.Leak, Player = 2, Other = 0, N1 = 1, N2 = 3 });
+            // the suç log behind every board total (v5.1: the volunteers 1, 3, 5 lost 1; Sarı was investigated)
+            var why = new[]
+            {
+                new[] { (int)BlameReason.Vote, 5, (int)BlameReason.Crisis, 4 },
+                new[] { (int)BlameReason.Vote, 3, (int)BlameReason.InvestigationGuilty, 4, (int)BlameReason.ShiftClean, -1 },
+                new[] { (int)BlameReason.Vote, 4 },
+                new[] { (int)BlameReason.Whistled, 3, (int)BlameReason.Vote, 5, (int)BlameReason.ShiftClean, -1 },
+                new[] { (int)BlameReason.Vote, 3 },
+                new[] { (int)BlameReason.Vote, 5, (int)BlameReason.Crisis, 4, (int)BlameReason.ShiftClean, -1 },
+            };
+            for (int i = 0; i < players; i++)
+                for (int k = 0; k < why[i].Length; k += 2)
+                    r.BlameLog.Add(new LineBlameChange { Player = i, Reason = (BlameReason)why[i][k], Delta = why[i][k + 1] });
             // the prim log behind every balance (start 6)
             foreach (var c in r.Choices) if (c.Payout != 0) r.PrimLog.Add(new LinePrimChange { Player = c.Player, Delta = c.Payout, Reason = PrimReason.Task });
             foreach (var t in r.Transfers)

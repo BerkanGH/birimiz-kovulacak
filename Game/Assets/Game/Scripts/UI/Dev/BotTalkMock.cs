@@ -8,7 +8,9 @@ namespace BirimizKovulacak.Game
     /// v5 bot talk scenarios for the UI mock (docs/V5_BOT_TALK.md): <c>-uimock "v5.office_botcall*"</c> a bot calls during
     /// Client Bonus (ringing, its opening lie under the call pill, the bubble beside the phone with the question buttons,
     /// questions 1 and 3 answered with Greedy's lies), an Honest bot's Weekend Shift promise and the prim it pays after the
-    /// reveal, refusals ("Şu an çok yoğunum.", "Sonra ararım."), crisis questions; <c>"v5.meeting_botchat*"</c> bot lines in
+    /// reveal, a refusal ("Sonra ararım."), the v5.1 silence deals (a Greedy taker calls its victim with "Soruşturma açma,
+    /// 1 prim senin." and pays; I pay an Honest witness who sends it back: "Paranı geri gönderiyorum..."), crisis questions;
+    /// <c>"v5.meeting_botchat*"</c> bot lines in
     /// the meeting chat over their heads (accusations, the answer when accused, the folder's chat), the defence subtitle
     /// over the standing bot (and at the bottom when it is out of view), the final-vote lines. "_en" variants.
     /// Seat 0 is me (Mavi); Pembe (2) is a Greedy bot, Yeşil (3) an Honest bot, as LineMock.BaseView makes 2 and 3 bots.
@@ -28,14 +30,18 @@ namespace BirimizKovulacak.Game
             LineMock.Register("v5.office_botcall_promise", () => Promise(false));
             LineMock.Register("v5.office_botcall_promise_en", () => Promise(true));
 
-            // ---- refusals: Greedy turns its victim down in the break, Mixed says it will call back
+            // ---- a refusal: a Mixed bot says it will call back (Greedy no longer turns its victim down: it pays it)
             LineMock.Register("v5.office_botcall_refuse", () => new LineMockScenario()
-                .Do(0f, () => { Look(); var v = Break(); Dial(v, Greedy); Show(v); Aim(0f, 15f); OfficeUi.I.OpenPhone(); })
-                .Do(1.4f, () => { BotSpeech.Hear(Greedy, "bot.refuse.g", null); }, 0.6f)
-                .Do(2.6f, () => { var v = Break(); Show(v); Ended(Greedy, CallEndReason.Declined); }, 0.8f)
-                .Do(4.2f, () => { OfficeUi.I.CloseFocus(); var v = Break(); Dial(v, Honest); Show(v); }, 0.2f)
-                .Do(5.0f, () => { BotSpeech.Hear(Honest, "bot.refuse.m", null); }, 0.7f)
-                .Do(6.2f, () => { Show(Break()); Ended(Honest, CallEndReason.Declined); }, 0.6f));
+                .Do(0f, () => { Look(); var v = Break(); Dial(v, Honest); Show(v); Aim(0f, 15f); OfficeUi.I.OpenPhone(); }, 0.2f)
+                .Do(1.0f, () => { BotSpeech.Hear(Honest, "bot.refuse.m", null); }, 0.7f)
+                .Do(2.2f, () => { Show(Break()); Ended(Honest, CallEndReason.Declined); }, 0.6f));
+
+            // ---- v5.1 silence deals: Pembe (Greedy) took my Client Bonus share and calls with the silence money
+            LineMock.Register("v5.office_botcall_hush", () => Hush(false));
+            LineMock.Register("v5.office_botcall_hush_en", () => Hush(true));
+            // ---- I took the Petty Cash alone, Yeşil (Honest) is the witness: my 1 prim comes straight back
+            LineMock.Register("v5.office_botcall_deal", () => Deal(false));
+            LineMock.Register("v5.office_botcall_deal_en", () => Deal(true));
 
             // ---- crisis calls: I ask an Honest bot who it votes for, and not to vote for me
             LineMock.Register("v5.office_botcall_crisis", () => new LineMockScenario()
@@ -100,6 +106,83 @@ namespace BirimizKovulacak.Game
                     });
                 }, 0.9f)
                 .Do(t + 11.0f, () => OfficeUi.I.OpenComputer(OfficeComputer.App.Transfer), true);
+        }
+
+        static LineMockScenario Hush(bool en)
+        {
+            var s = new LineMockScenario();
+            if (en) s.Do(0f, English);
+            float t = en ? 0.3f : 0f;
+            return s
+                .Do(t, () => { Look(); var v = Break(); Names(v, en); Ring(v, Greedy); Show(v); Aim(0f, 15f); }, true)
+                .Do(t + 1.2f, () => { var v = Break(); Names(v, en); Connect(v, Greedy, false); Show(v); OfficeUi.I.OpenPhone();
+                    BotSpeech.Hear(Greedy, "bot.cb.hush.g", null); }, 1.6f)
+                .Do(t + 3.4f, () =>
+                {
+                    var v = Break();
+                    Names(v, en);
+                    Connect(v, Greedy, false);
+                    v.Mine.Prim += 1;
+                    v.Mine.Transfers.Add(new LineTransferView { From = Greedy, To = 0, Amount = 1, Time = LineMock.Now, Phase = LinePhase.Break });
+                    Show(v);
+                    LineClient.I.ApplyEvents(new List<LineEvent>
+                    {
+                        new LineEvent { Type = LineEventType.TransferReceived, Actor = Greedy, Target = 0, A = 1, Audience = LineAudience.Player, AudiencePlayer = 0, Time = LineMock.Now },
+                    });
+                }, 0.9f)
+                .Do(t + 5.0f, () => BotSpeech.Hear(Greedy, "bot.bye.g", null), 1.2f);
+        }
+
+        static LineMockScenario Deal(bool en)
+        {
+            var s = new LineMockScenario();
+            if (en) s.Do(0f, English);
+            float t = en ? 0.3f : 0f;
+            return s
+                .Do(t, () => { Look(); var v = CashBreak(); Names(v, en); Connect(v, Honest, true); Show(v); Aim(0f, 15f); OfficeUi.I.OpenPhone();
+                    BotSpeech.Hear(Honest, "bot.answer.h", Args(0)); }, 1.0f)
+                .Do(t + 1.6f, () =>
+                {
+                    var v = CashBreak();
+                    Names(v, en);
+                    Connect(v, Honest, true);
+                    v.Mine.Prim -= 1;
+                    v.Mine.Transfers.Add(new LineTransferView { From = 0, To = Honest, Amount = 1, Time = LineMock.Now, Phase = LinePhase.Break });
+                    Show(v);
+                }, 0.4f)
+                .Do(t + 2.6f, () => BotSpeech.Hear(Honest, "bot.deal.refund.h", null), 1.6f)
+                .Do(t + 4.6f, () =>
+                {
+                    var v = CashBreak();
+                    Names(v, en);
+                    Connect(v, Honest, true);
+                    v.Mine.Transfers.Add(new LineTransferView { From = 0, To = Honest, Amount = 1, Time = LineMock.Now - 3, Phase = LinePhase.Break });
+                    v.Mine.Transfers.Add(new LineTransferView { From = Honest, To = 0, Amount = 1, Time = LineMock.Now, Phase = LinePhase.Break });
+                    Show(v);
+                    LineClient.I.ApplyEvents(new List<LineEvent>
+                    {
+                        new LineEvent { Type = LineEventType.TransferReceived, Actor = Honest, Target = 0, A = 1, Audience = LineAudience.Player, AudiencePlayer = 0, Time = LineMock.Now },
+                    });
+                }, 0.9f);
+        }
+
+        /// <summary>The Petty Cash break: I took alone, Yeşil (Honest) left the cash and is my witness.</summary>
+        static LineView CashBreak()
+        {
+            var v = LineMock.BaseView(LinePhase.Break, 4, 0, 22);
+            v.TaskNumber = 1;
+            var t = new LineTaskView { Kind = TaskKind.PettyCash, Number = 1, Family = TaskFamily.Pair, Revealed = true, Submitted = true, MyChoice = LineChoice.Take, MyPayout = 3 };
+            t.Group.Add(0); t.Group.Add(Honest);
+            t.Choices.Add(new LineChoiceView { TaskNumber = 1, Task = TaskKind.PettyCash, Player = 0, Choice = LineChoice.Take, Payout = 3 });
+            t.Choices.Add(new LineChoiceView { TaskNumber = 1, Task = TaskKind.PettyCash, Player = Honest, Choice = LineChoice.Leave, Payout = -1 });
+            v.Task = t;
+            v.Features.WhistleOpen = true;
+            v.Mine.Group.Clear(); v.Mine.Group.AddRange(t.Group);
+            v.Mine.CallLog.Clear();
+            v.Mine.Transfers.Clear();
+            v.Mine.Prim = 12;
+            v.LineBoard.Clear();
+            return v;
         }
 
         static void Look() { RoomsPresenter.ForceLookInput = true; BotSpeech.ClearTranscript(); }

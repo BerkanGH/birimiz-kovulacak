@@ -23,6 +23,8 @@ namespace BirimizKovulacak.Game
             /// <summary>0 = before the shift task (empty sheet), 1 = the task runs, 2 = revealed.</summary>
             public int Stage;
             public int Lines, Needed, SkipPay;
+            /// <summary>The volunteers' cleaning and the skippers' suç when the roster is short (the rule note).</summary>
+            public int Clean, FailBlame;
             /// <summary>Stage 1: my name is on the sheet (submitted Volunteer).</summary>
             public bool MineOn;
             public string MyName;
@@ -126,7 +128,7 @@ namespace BirimizKovulacak.Game
                     name.style.color = InkColor(lc != null ? lc.ColorOf(s.Roster[i]) : s.Roster[i]);
                 }
             }
-            string note = s.Stage == 1 ? PlayText.T("office.roster.sheet_hidden") : PlayText.F("office.roster.sheet_rule", s.SkipPay);
+            string note = s.Stage == 1 ? PlayText.T("office.roster.sheet_hidden") : PlayText.F("office.roster.sheet_rule", s.SkipPay, s.Clean, s.FailBlame);
             var n = Place("rs-note-box", 40f, Row0 + lines * RowStep + 8f, W - 80f, 60f);
             Ink(note, UiKit.HandFont, "rs-note").AddTo(n);
             if (s.Stage == 2)
@@ -143,7 +145,7 @@ namespace BirimizKovulacak.Game
         static string Signature(State s)
         {
             var sb = new StringBuilder(96);
-            sb.Append(Loc.Language).Append('|').Append(s.Stage).Append('|').Append(s.Lines).Append('|').Append(s.Needed).Append('|').Append(s.SkipPay)
+            sb.Append(Loc.Language).Append('|').Append(s.Stage).Append('|').Append(s.Lines).Append('|').Append(s.Needed).Append('|').Append(s.SkipPay).Append('|').Append(s.Clean).Append('|').Append(s.FailBlame)
               .Append('|').Append(s.MyName).Append(s.MyColor).Append(s.MineOn ? '+' : '-');
             if (s.Roster != null) foreach (int id in s.Roster) sb.Append(',').Append(id).Append(PlayText.Name(id));
             return sb.ToString();

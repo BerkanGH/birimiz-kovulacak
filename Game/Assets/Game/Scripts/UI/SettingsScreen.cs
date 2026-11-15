@@ -345,11 +345,11 @@ UiSettings.SetFloat(Rooms.PrefSensitivity, v), v => v.ToString("0.00") + "×");
             switch (page)
             {
                 case PageGoal: return new object[] { c.StartPrim };
-                case PageBonus: return new object[] { c.BonusPairShare, c.BonusPairTaker, c.BonusPairSharer, c.BonusPairBothTake };
-                case PageCash: return new object[] { c.CashTake, c.CashCaughtBlame, c.CashWhistleBlame, c.CashWhistleReward };
-                case PageShift: return new object[] { c.ShiftSkipPay };
+                case PageBonus: return new object[] { c.BonusPairShare, c.BonusPairTaker, c.BonusPairSharer, c.BonusPairBothTake, c.InvestigationGuiltyBlame };
+                case PageCash: return new object[] { c.CashTake, c.CashCaughtBlame, c.CashWhistleBlame };
+                case PageShift: return new object[] { c.ShiftSkipPay, c.ShiftVolunteerClean, c.ShiftFailSkipBlame };
                 case PageBlame: return new object[] { c.BlamePerVote };
-                case PageInvestigation: return new object[] { c.InvestigationCost, c.InvestigationGuiltyBlame, c.InvestigationRefund, c.InvestigationFalseBlame };
+                case PageInvestigation: return new object[] { c.InvestigationGuiltyBlame };
                 case PageRecorder: return new object[] { c.RecorderUses, Mathf.RoundToInt(c.LeakSeconds) };
                 case PageTransfers: return new object[] { c.TransferMax };
                 case PageCrisis: return new object[] { c.CrisisBlame, c.CandidatesFor(4), c.CandidatesFor(6) };

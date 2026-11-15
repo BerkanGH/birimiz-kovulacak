@@ -46,9 +46,9 @@ namespace BirimizKovulacak.Game
             var c = lc.Config;
             switch (t.Kind)
             {
-                case TaskKind.ClientBonus: Big(card, T("focus.task.client_bonus")); break;
-                case TaskKind.PettyCash: Big(card, T("focus.task.petty_cash")); break;
-                case TaskKind.WeekendShift: Big(card, F("focus.task.weekend_shift", c.ShiftSkipPay, t.Needed >= 0 ? t.Needed : LineConfig.ShiftNeeded(v.Players.Count))); break;
+                case TaskKind.ClientBonus: Big(card, F("focus.task.client_bonus", t.Group.Count >= 3 ? c.BonusTrioNone : c.BonusPairShare, c.BonusPairTaker, c.InvestigationGuiltyBlame)); break;
+                case TaskKind.PettyCash: Big(card, F("focus.task.petty_cash", c.CashTake, c.CashWhistleBlame, c.CashCaughtBlame)); break;
+                case TaskKind.WeekendShift: Big(card, PlayText.ShiftFocus(c, t.Needed >= 0 ? t.Needed : LineConfig.ShiftNeeded(v.Players.Count))); break;
                 default: Big(card, T("hint.TaskPlay")); break;
             }
             if (t.Kind == TaskKind.WeekendShift) Line(card, F("task.everyone", t.Needed >= 0 ? t.Needed : LineConfig.ShiftNeeded(v.Players.Count)));
@@ -87,7 +87,7 @@ namespace BirimizKovulacak.Game
                 foreach (int thief in m.WitnessOf)
                 {
                     int id = thief;
-                    Big(card, F("break.witness", Name(id), c.CashWhistleBlame, c.CashWhistleReward), "pl-bad");
+                    Big(card, F("break.witness", Name(id), c.CashWhistleBlame), "pl-bad");
                     if (goTo == null) Btn(F("break.whistle_btn", Name(id)), () => Send(LineVerb.Whistle, id), "pl-danger", "pl-choice").AddTo(card);
                 }
                 if (goTo != null)
@@ -98,7 +98,7 @@ namespace BirimizKovulacak.Game
                 Line(card, T("focus.witness_or"), "pl-dim");
                 state = Todo;
             }
-            else if (v.Phase == LinePhase.Break && v.Features.WhistleOpen && SoleTaker(t, me)) Big(card, T("focus.thief"), "pl-warn");
+            else if (v.Phase == LinePhase.Break && v.Features.WhistleOpen && SoleTaker(t, me)) Big(card, F("focus.thief", c.CashWhistleBlame), "pl-warn");
             else if (v.Phase == LinePhase.Break) Big(card, T(t.Number == 0 ? "break.next_task" : "break.meeting")); // breaks follow tasks 1 and 2 only
             else Big(card, T("hint.TaskReveal"));
             if (!t.Revealed) { Line(card, T("task.not_revealed"), "pl-dim"); return state; }
@@ -246,7 +246,7 @@ namespace BirimizKovulacak.Game
                 Head(p, F("meeting.title", mt.Index + 1));
                 if (v.Phase != LinePhase.MeetingDossier && v.Phase != LinePhase.MeetingDiscussion)
                     Line(p, mt.FailedTasks.Count > 0 ? F("meeting.failed", JoinTasks(mt.FailedTasks)) : T("meeting.no_failures"), mt.FailedTasks.Count > 0 ? "pl-bad" : "pl-good");
-                if (mt.VoteableCount >= 0) Line(p, mt.VoteableCount > 0 ? F("meeting.voteable", mt.VoteableCount) : T("meeting.no_vote"));
+                if (mt.VoteableCount >= 0) Line(p, mt.VoteableCount > 0 ? F("meeting.voteable", mt.VoteableCount) : PlayText.NoVote(mt, lc.Config));
                 if (mt.Roster.Count > 0) Line(p, F("meeting.roster", PlayText.Names(mt.Roster)));
             }
             if (mt.Dossier.Count > 0)

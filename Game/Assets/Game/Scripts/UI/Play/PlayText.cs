@@ -48,22 +48,38 @@ namespace BirimizKovulacak.Game
         public static string Failure(LineFailure f) { return Loc.Has("v5.fail." + f) ? T("fail." + f) : f.ToString(); }
         public static string Signed(int d) { return d > 0 ? "+" + d : d.ToString(); }
 
-        /// <summary>The task's rules with the host's numbers.</summary>
+        /// <summary>The task's rules with the host's numbers (the v5.1 rules: free sharer-only investigation, the whistled
+        /// thief keeps the cash, shift cleaning and the unstaffed shift's automatic suç).</summary>
         public static string TaskRules(LineTaskView t, LineConfig c, int players)
         {
             switch (t.Kind)
             {
                 case TaskKind.ClientBonus:
                     return t.Group.Count >= 3
-                        ? F("task.client_bonus.rules_trio", c.BonusTrioNone, c.BonusTrioTaker, c.BonusTrioOthers, c.BonusTrioMany)
-                        : F("task.client_bonus.rules_pair", c.BonusPairShare, c.BonusPairTaker, c.BonusPairSharer, c.BonusPairBothTake);
+                        ? F("task.client_bonus.rules_trio", c.BonusTrioNone, c.BonusTrioTaker, c.BonusTrioOthers, c.BonusTrioMany, c.InvestigationGuiltyBlame)
+                        : F("task.client_bonus.rules_pair", c.BonusPairShare, c.BonusPairTaker, c.BonusPairSharer, c.BonusPairBothTake, c.InvestigationGuiltyBlame);
                 case TaskKind.PettyCash:
-                    return F("task.petty_cash.rules", c.CashTake, c.CashCaughtBlame, c.CashWhistleBlame, c.CashWhistleReward);
+                    return F("task.petty_cash.rules", c.CashTake, c.CashCaughtBlame, c.CashWhistleBlame);
                 case TaskKind.WeekendShift:
-                    return F("task.weekend_shift.rules", t.Needed >= 0 ? t.Needed : LineConfig.ShiftNeeded(players), c.ShiftSkipPay);
+                    return F("task.weekend_shift.rules", t.Needed >= 0 ? t.Needed : LineConfig.ShiftNeeded(players), c.ShiftSkipPay, c.ShiftVolunteerClean, c.ShiftFailSkipBlame);
                 default:
                     return "";
             }
+        }
+
+        /// <summary>The Weekend Shift's choice card: skip pay {0}, needed {1}, the volunteers' cleaning {2}, the skippers'
+        /// suç when it is short {3}.</summary>
+        public static string ShiftFocus(LineConfig c, int needed)
+        {
+            return F("focus.task.weekend_shift", c.ShiftSkipPay, needed, c.ShiftVolunteerClean, c.ShiftFailSkipBlame);
+        }
+
+        /// <summary>A meeting without a vote: meeting 2 of a short shift (the skippers' suç is automatic) or nothing to vote on.</summary>
+        public static string NoVote(LineMeetingView mt, LineConfig c)
+        {
+            if (mt != null && mt.Index == 1 && mt.FailedTasks.Contains(TaskKind.WeekendShift) && !c.ShiftFailVote && c.ShiftFailSkipBlame > 0)
+                return F("meeting.shift_auto", c.ShiftFailSkipBlame);
+            return T("meeting.no_vote");
         }
 
         /// <summary>One public dossier / incident line (typed entry -> sentence).</summary>
@@ -77,6 +93,7 @@ namespace BirimizKovulacak.Game
                 case DossierKind.Whistle: return F("dossier.whistle", Name(e.Player), Name(e.Other), e.N1);
                 case DossierKind.CashMissing: return F("dossier.cash_missing", e.N1, e.N2);
                 case DossierKind.ShiftRoster: return F("dossier.shift_roster", e.N1, e.N2);
+                case DossierKind.ShiftSkipBlame: return F("dossier.shift_skip_blame", e.N1, e.N2);
                 case DossierKind.Investigation: return F(e.N1 == 1 ? "dossier.investigation_guilty" : "dossier.investigation_innocent", Name(e.Player), Name(e.Other));
                 case DossierKind.Leak: return F("dossier.leak", Name(e.Player), Name(e.N1), Name(e.N2));
                 default: return e.Kind.ToString();
@@ -98,11 +115,18 @@ namespace BirimizKovulacak.Game
             {
                 case LineEventType.TransferReceived: return F("event.transfer", Name(e.Actor), e.A);
                 case LineEventType.Whistled:
-                    return e.Target == me ? F("event.whistled_me", Name(e.Actor), e.A)
-                        : F("event.whistled", Name(e.Target), LineClient.I != null ? LineClient.I.Config.CashWhistleReward : LineConfig.CreateDefault().CashWhistleReward);
+                {
+                    // A = prim taken back: 0 when the thief keeps it (v5.1)
+                    var c = LineClient.I != null ? LineClient.I.Config : LineConfig.CreateDefault();
+                    if (e.Target == me) return e.A > 0 ? F("event.whistled_me", Name(e.Actor), e.A) : F("event.whistled_me_keep", Name(e.Actor), c.CashWhistleBlame);
+                    return F("event.whistled", Name(e.Target), c.CashWhistleBlame);
+                }
                 case LineEventType.Investigated: return F(e.A == 1 ? "event.investigated_guilty" : "event.investigated_innocent", Name(e.Actor), Name(e.Target));
                 case LineEventType.Leaked: return F("event.leaked", Name(e.Actor), Name(e.A), Name(e.B));
-                case LineEventType.BlameAdded: return F("event.blame", Name(e.Target), e.A, T("blame." + (BlameReason)e.B));
+                case LineEventType.BlameAdded:
+                    // a volunteer's cleaning is a negative change
+                    return e.A < 0 ? F("event.blame_down", Name(e.Target), -e.A, T("blame." + (BlameReason)e.B))
+                        : F("event.blame", Name(e.Target), e.A, T("blame." + (BlameReason)e.B));
                 case LineEventType.CrisisResolved: return e.Target >= 0 ? F("event.crisis_one", Name(e.Target), e.A) : F("event.crisis_tie", e.B, e.A);
                 case LineEventType.Fired: return F("event.fired", Name(e.Target), e.A);
                 case LineEventType.RecordingPlayed:

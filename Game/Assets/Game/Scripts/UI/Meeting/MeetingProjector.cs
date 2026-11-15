@@ -463,7 +463,7 @@ namespace BirimizKovulacak.Game
                 B(row, PlayText.Task(t), "pj-task-name");
             }
             string vote = mt.VoteableCount > 0 ? F("projector.agenda.ballots", mt.VoteableCount, c.BlamePerVote)
-                : mt.VoteableCount == 0 ? T("meeting.no_vote") : T("focus.meeting_vote_next");
+                : mt.VoteableCount == 0 ? PlayText.NoVote(mt, c) : T("focus.meeting_vote_next");
             L(_content, vote, "pj-line", "pj-warn");
             if (mt.Roster.Count > 0) L(_content, F("meeting.roster", PlayText.Names(mt.Roster)), "pj-small");
         }
@@ -532,6 +532,7 @@ namespace BirimizKovulacak.Game
                 case DossierKind.Investigation: return "pj-stamp-navy";
                 case DossierKind.Leak: return "pj-stamp-orange";
                 case DossierKind.ShiftRoster: return "pj-stamp-green";
+                case DossierKind.ShiftSkipBlame: return "pj-stamp-orange";
                 default: return null;
             }
         }
@@ -546,7 +547,8 @@ namespace BirimizKovulacak.Game
             UiMotion.Stamp(stamp, -5f, 0.22f, 0.15f, fresh ? (Action)(() => Sfx.Play("stamp", 0.45f)) : null);
             string text = PlayText.Dossier(e);
             if (e.Kind == DossierKind.Investigation) text = F(e.N1 == 1 ? "projector.investigation_guilty" : "projector.investigation_innocent", Name(e.Player), Name(e.Other));
-            B(box, text, "pj-entry-text", e.Kind == DossierKind.Investigation && e.N1 == 1 || e.Kind == DossierKind.Whistle || e.Kind == DossierKind.CashCaught ? "pj-bad" : null);
+            B(box, text, "pj-entry-text", e.Kind == DossierKind.Investigation && e.N1 == 1 || e.Kind == DossierKind.Whistle || e.Kind == DossierKind.CashCaught
+                || e.Kind == DossierKind.ShiftSkipBlame ? "pj-bad" : null);
             var row = Bx(box, "pj-row");
             var who = new List<int>();
             switch (e.Kind)
@@ -564,6 +566,9 @@ namespace BirimizKovulacak.Game
             }
             if (e.Kind == DossierKind.ShiftRoster && v.Meeting != null && v.Meeting.Roster.Count > 0)
                 foreach (int id in v.Meeting.Roster) Person(row, lc, id, "pj-face-s");
+            // the skippers of a short shift: everyone not on the roster
+            if (e.Kind == DossierKind.ShiftSkipBlame && v.Meeting != null)
+                foreach (var pl in v.Players) if (!v.Meeting.Roster.Contains(pl.Id)) Person(row, lc, pl.Id, "pj-face-s", T("projector.role.skipped"));
         }
 
         static string RoleOf(LineDossierEntry e, int i)

@@ -78,8 +78,15 @@ namespace BirimizKovulacak.Game
             _dirty = true;
         }
 
-        /// <summary>Petty Cash break: a witness took my notes back (the "Şimdi" line stops warning about it).</summary>
+        /// <summary>Petty Cash break: a witness whistled on me (the "Şimdi" line stops warning about it; v5.0 also took my notes back).</summary>
         public bool WhistledOnMe => _whistledBy >= 0;
+
+        /// <summary>A witness whistled on me: v5.1 the cash stays with me (the suç comes in meeting 1); v5.0 it was taken back.</summary>
+        public string WhistledOnMeText(LineConfig c)
+        {
+            return _whistledLost > 0 ? F("office.cash.out_whistled_me", Name(_whistledBy), _whistledLost)
+                : F("office.cash.out_whistled_me_keep", Name(_whistledBy), c.CashTake, c.CashWhistleBlame);
+        }
         public int WhistledBy => _whistledBy;
         public int WhistledLost => _whistledLost;
 
@@ -100,7 +107,7 @@ namespace BirimizKovulacak.Game
                         _explained += c.CashWhistleReward;
                         _explainedUntil = Time.unscaledTime + 2.5f;
                     }
-                    if (e.Target == me) { _whistledBy = e.Actor; _whistledLost = e.A; Sfx.Play("bills", 0.6f); }
+                    if (e.Target == me) { _whistledBy = e.Actor; _whistledLost = e.A; if (e.A > 0) Sfx.Play("bills", 0.6f); }
                     _dirty = true;
                     break;
             }
@@ -243,7 +250,7 @@ namespace BirimizKovulacak.Game
             if (t == null || t.Kind != TaskKind.PettyCash) { Big(p, T("office.cash.none")); return; }
             if (v.Phase == LinePhase.TaskPlay)
             {
-                Big(p, T("focus.task.petty_cash"));
+                Big(p, F("focus.task.petty_cash", c.CashTake, c.CashWhistleBlame, c.CashCaughtBlame));
                 Line(p, F("task.group", PlayText.Names(t.Group.FindAll(id => id != me))) + "  ·  " + F("office.cash.amount", c.CashTake), "pl-dim");
                 bool took = t.Submitted && t.MyChoice == LineChoice.Take;
                 Line(p, took ? F("office.cash.status_taken", c.CashTake) : t.Submitted ? T("office.cash.status_left") : T("office.cash.status_default"),
@@ -260,8 +267,8 @@ namespace BirimizKovulacak.Game
             if (!t.Revealed) { Big(p, T("task.not_revealed")); return; }
             var takers = new List<int>();
             foreach (var ch in t.Choices) if (ch.Choice == LineChoice.Take) takers.Add(ch.Player);
-            if (_whistledBy >= 0) Big(p, F("office.cash.out_whistled_me", Name(_whistledBy), _whistledLost), "pl-bad");
-            else if (_whistledTarget >= 0) Big(p, F("office.cash.out_whistled", Name(_whistledTarget), c.CashWhistleReward), "pl-good");
+            if (_whistledBy >= 0) Big(p, WhistledOnMeText(c), "pl-bad");
+            else if (_whistledTarget >= 0) Big(p, F("office.cash.out_whistled", Name(_whistledTarget), c.CashWhistleBlame), "pl-good");
             else if (Witness(v))
             {
                 foreach (int thief in v.Mine.WitnessOf)
@@ -269,7 +276,7 @@ namespace BirimizKovulacak.Game
                     int id = thief;
                     var box = Box("oc-confirm").AddTo(p);
                     Bold(T("office.cash.confirm_kicker"), "oc-confirm-kicker").AddTo(box);
-                    Big(box, F("break.witness", Name(id), c.CashWhistleBlame, c.CashWhistleReward));
+                    Big(box, F("break.witness", Name(id), c.CashWhistleBlame));
                     var row = Box("oc-buttons").AddTo(box);
                     Btn(F("break.whistle_btn", Name(id)), () => { Sfx.Play("alarm_btn", 0.7f); Send(LineVerb.Whistle, id); }, "pl-danger", "pl-big").AddTo(row);
                     Btn(T("office.cash.btn_not_now"), () => _ui.CloseFocus(), "pl-big").AddTo(row);
@@ -280,7 +287,7 @@ namespace BirimizKovulacak.Game
             else if (takers.Count == 1 && takers[0] == me)
             {
                 Big(p, F("office.cash.out_me", Math.Max(0, t.MyPayout)));
-                if (v.Phase == LinePhase.Break && v.Features.WhistleOpen) Line(p, T("focus.thief"), "oc-status-took");
+                if (v.Phase == LinePhase.Break && v.Features.WhistleOpen) Line(p, F("focus.thief", c.CashWhistleBlame), "oc-status-took");
                 else Line(p, T("office.cash.out_me_wait"), "pl-dim");
             }
             else if (takers.Count == 1)
@@ -304,10 +311,11 @@ namespace BirimizKovulacak.Game
             int needed = shift && t.Needed >= 0 ? t.Needed : LineConfig.ShiftNeeded(v.Players.Count);
             if (shift && v.Phase == LinePhase.TaskPlay)
             {
-                Big(p, F("focus.task.weekend_shift", c.ShiftSkipPay, needed));
+                Big(p, PlayText.ShiftFocus(c, needed));
                 Line(p, F("office.roster.needed", needed), "oc-needed");
                 bool signed = t.Submitted && t.MyChoice == LineChoice.Volunteer;
-                Line(p, signed ? T("office.roster.status_signed") : t.Submitted ? F("office.roster.status_skipped", c.ShiftSkipPay) : F("office.roster.status_default", c.ShiftSkipPay),
+                Line(p, signed ? F("office.roster.status_signed", c.ShiftVolunteerClean)
+                        : t.Submitted ? F("office.roster.status_skipped", c.ShiftSkipPay, c.ShiftFailSkipBlame) : F("office.roster.status_default", c.ShiftSkipPay, c.ShiftFailSkipBlame),
                      signed ? "oc-status-done" : t.Submitted ? "oc-status-done" : "oc-status-todo");
                 var row = Box("oc-buttons").AddTo(p);
                 if (signed) Btn(F("office.roster.btn_erase", e), () => Choose(LineChoice.Skip), "pl-big").AddTo(row);
@@ -322,7 +330,7 @@ namespace BirimizKovulacak.Game
             if (roster == null) { Big(p, T("office.roster.later_card")); return; }
             int need = shift ? needed : _lastNeeded;
             bool ok = roster.Count >= need;
-            Big(p, F(ok ? "office.roster.result_ok" : "office.roster.result_short", roster.Count, need), ok ? "pl-good" : "pl-bad");
+            Big(p, F(ok ? "office.roster.result_ok" : "office.roster.result_short", roster.Count, need, c.ShiftFailSkipBlame, c.ShiftVolunteerClean, c.ShiftSkipPay), ok ? "pl-good" : "pl-bad");
             var chips = Wrap(p);
             if (roster.Count == 0) Line(p, T("office.roster.nobody"), "pl-dim");
             foreach (int id in roster) Bold(Name(id), "pl-chip").AddTo(chips);
@@ -369,7 +377,9 @@ namespace BirimizKovulacak.Game
                 {
                     int takers = 0, taker = -1;
                     foreach (var ch in t.Choices) if (ch.Choice == LineChoice.Take) { takers++; taker = ch.Player; }
-                    if (takers == 1 && taker == me) { onDesk = _whistledBy < 0; gone = _whistledBy >= 0; }
+                    // whistled on: v5.1 the notes stay on my desk (nothing taken back); v5.0 they were taken
+                    bool takenBack = _whistledBy >= 0 && _whistledLost > 0;
+                    if (takers == 1 && taker == me) { onDesk = !takenBack; gone = takenBack; }
                     else if (takers == 1) gone = true;
                     else if (takers >= 2) seal = true;
                 }
@@ -384,7 +394,7 @@ namespace BirimizKovulacak.Game
             if (shift && _shiftTask != t.Number) { _shiftTask = t.Number; _signKnown = false; }
             var s = new RosterSheet.State
             {
-                Lines = v.Players.Count, SkipPay = c.ShiftSkipPay, MyName = Name(me), MyColor = lc.ColorOf(me),
+                Lines = v.Players.Count, SkipPay = c.ShiftSkipPay, Clean = c.ShiftVolunteerClean, FailBlame = c.ShiftFailSkipBlame, MyName = Name(me), MyColor = lc.ColorOf(me),
                 Needed = shift && t.Needed >= 0 ? t.Needed : LineConfig.ShiftNeeded(v.Players.Count),
             };
             bool startStroke = false;

@@ -109,7 +109,7 @@ namespace BirimizKovulacak.Core
         {
             // phone, every task
             { "bot.answer.h", "p" }, { "bot.answer.g", "" }, { "bot.answer.m", "" },
-            { "bot.refuse.g", "" }, { "bot.refuse.m", "" },
+            { "bot.refuse.m", "" },
             { "bot.bye.h", "" }, { "bot.bye.g", "" }, { "bot.bye.m", "" },
             { "bot.thanks.h", "" }, { "bot.thanks.g", "" }, { "bot.thanks.m", "" },
             // Client Bonus

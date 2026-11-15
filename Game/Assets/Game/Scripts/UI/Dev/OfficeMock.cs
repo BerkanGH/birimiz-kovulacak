@@ -117,10 +117,10 @@ namespace BirimizKovulacak.Game
                 .Do(3.0f, () => OfficeUi.I.OpenObject(OfficeUi.Focus.CashBox), true)
                 .Do(4.8f, () =>
                 {
+                    // v5.1: the whistle is free and earns nothing; the thief keeps the cash (A = 0 taken back)
                     var v = Cash(LinePhase.Break, 0, LineChoice.Take, true);
                     v.Mine.WitnessOf.Clear();
-                    v.Mine.Prim += 2;
-                    LineClient.I.ApplyEvents(new List<LineEvent> { new LineEvent { Type = LineEventType.Whistled, Actor = 0, Target = 1, A = 3, Audience = LineAudience.Player, AudiencePlayer = 0, Time = LineMock.Now } });
+                    LineClient.I.ApplyEvents(new List<LineEvent> { new LineEvent { Type = LineEventType.Whistled, Actor = 0, Target = 1, A = 0, Audience = LineAudience.Player, AudiencePlayer = 0, Time = LineMock.Now } });
                     Show(v);
                 }, true)
                 .Do(6.6f, () => { OfficeUi.I.CloseFocus(); AimAt(Presenter().Office.CashBox.position + Vector3.up * 0.09f); }, true));
@@ -131,10 +131,9 @@ namespace BirimizKovulacak.Game
                 .Do(2.4f, () => OfficeUi.I.OpenObject(OfficeUi.Focus.CashBox), true)
                 .Do(4.2f, () =>
                 {
-                    // the witness whistled: the notes on the desk are taken back
+                    // the witness whistled: v5.1 the notes stay on the desk (A = 0 taken back), the suç comes in meeting 1
                     var v = Cash(LinePhase.Break, LineChoice.Take, 0, true);
-                    v.Mine.Prim -= 3;
-                    LineClient.I.ApplyEvents(new List<LineEvent> { new LineEvent { Type = LineEventType.Whistled, Actor = 1, Target = 0, A = 3, Audience = LineAudience.Player, AudiencePlayer = 0, Time = LineMock.Now } });
+                    LineClient.I.ApplyEvents(new List<LineEvent> { new LineEvent { Type = LineEventType.Whistled, Actor = 1, Target = 0, A = 0, Audience = LineAudience.Player, AudiencePlayer = 0, Time = LineMock.Now } });
                     Show(v);
                 }, true));
 
@@ -287,13 +286,15 @@ namespace BirimizKovulacak.Game
             for (int i = 0; i < 6; i++) t.Group.Add(i);
             if (revealed && roster != null)
             {
+                // v5.1: the skippers of a short roster get nothing
+                int skipPay = roster.Length >= t.Needed ? c.ShiftSkipPay : c.ShiftFailSkipPay;
                 for (int i = 0; i < 6; i++)
                 {
                     bool on = System.Array.IndexOf(roster, i) >= 0;
-                    t.Choices.Add(new LineChoiceView { TaskNumber = 2, Task = TaskKind.WeekendShift, Player = i, Choice = on ? 1 : 0, Payout = i == 0 ? (on ? 0 : c.ShiftSkipPay) : -1 });
+                    t.Choices.Add(new LineChoiceView { TaskNumber = 2, Task = TaskKind.WeekendShift, Player = i, Choice = on ? 1 : 0, Payout = i == 0 ? (on ? 0 : skipPay) : -1 });
                 }
                 t.Roster.AddRange(roster);
-                t.MyPayout = System.Array.IndexOf(roster, 0) >= 0 ? 0 : c.ShiftSkipPay;
+                t.MyPayout = System.Array.IndexOf(roster, 0) >= 0 ? 0 : skipPay;
             }
             v.Task = t;
             v.Players[2].Submitted = true; v.Players[4].Submitted = true;
