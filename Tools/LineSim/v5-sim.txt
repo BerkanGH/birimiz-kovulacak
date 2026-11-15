@@ -1,19 +1,25 @@
 v5.0-kayit — SYNTHETIC BOT DATA (LineSim)
-Bots never call, text or record (spec §13). Honest: share, leave, volunteer by a simple count (the cleanest Needed+1 by suç volunteer), whistle as a witness, vote for a known culprit else the highest suç.
-Greedy: take, take, skip, whistle as a witness, investigate a Client Bonus partner who took, same voting rule. Mixed: honest or greedy per decision (50/50, seeded).
-Mixes: half = each seat Honest or Greedy 50/50 (seeded per match); one-greedy = one seeded Greedy seat, the rest Honest; mixed = every seat Mixed.
+Bots never call, text or record (spec §13). Honest: share, leave, volunteer by a simple count (the cleanest Needed+1 by suç volunteer), whistle as a witness.
+Greedy: take, take, skip, whistle as a witness, investigate a Client Bonus partner who took. Mixed: honest or greedy per decision (50/50, seeded).
+Votes (--vote richest, the game's bots): every policy votes for the rival it estimates to be the richest (LineBotLedger: its own views only, plus a fixed ±0.4 per-bot noise; seeded tie-break).
+Mixes: half = each seat Honest or Greedy 50/50 (seeded per match); one-greedy = one seeded Greedy seat, the rest Honest; mixed = every seat Mixed;
+lobby = seat % 3 Honest / Greedy / Mixed like the game's lobby, seats shuffled per match (seeded).
+Vote lines: true balances when each crisis / final vote starts. Fired = richest alive / richest candidate / suç leader; crisis suç to the richest / suç leader;
+estimate = each bot's ledger at the start of each final round (top-hit: its top rival is truly the richest; error: mean |estimate - truth| per rival); final vote top share = votes for the most-voted candidate.
 Default config and timings; bots act after a seeded 0..15.00 s think delay per phase. Match length = Intro start to Results start.
 1000 matches per cell; seeds 5000..5999.
 Command: dotnet run -c Release --project Tools/LineSim/LineSim.csproj -- --matches 1000 --output Tools/LineSim/v5-sim.txt
 
 3 players | half | 1000 matches | candidates 2, firings 1
-Match length s (to Results): mean 478.74; engine steps per match mean/max 79.46/95
-  Honest: players 1492; final prim mean 10.75 (before the desk reveal 7.25, surviving seats 11.72); suç mean 0.56; fired 123 (8.24% of Honest seats); win share 58.51% per seat
-  Greedy: players 1508; final prim mean 3.04 (before the desk reveal 7.09, surviving seats 7.26); suç mean 8.32; fired 877 (58.16% of Greedy seats); win share 8.42% per seat
-Greedy fired in 100.00% of matches with a greedy bot (877/877); firings 1000, greedy share 87.70%
-Suç: leader mean 9.34; total per match 13.39; distribution per player 0..15+: 0:31.27% 1:15.33% 2:1.37% 4:3.13% 5:2.03% 6:15.67% 7:2.27% 9:12.43% 10:0.53% 11:14.60% 13:1.37%
+Match length s (to Results): mean 479.27; engine steps per match mean/max 79.59/95
+  Honest: players 1492; final prim mean 8.48 (before the desk reveal 7.25, surviving seats 12.75); suç mean 2.08; fired 500 (33.51% of Honest seats); win share 33.24% per seat
+  Greedy: players 1508; final prim mean 5.30 (before the desk reveal 7.09, surviving seats 7.93); suç mean 6.81; fired 500 (33.16% of Greedy seats); win share 33.42% per seat
+Greedy fired in 57.01% of matches with a greedy bot (500/877); firings 1000, greedy share 50.00%
+Suç: leader mean 7.31; total per match 13.38; distribution per player 0..15+: 0:19.10% 1:14.73% 4:3.33% 5:16.07% 6:27.27% 7:3.57% 9:12.43% 10:1.37% 11:2.13%
 Meeting 1 vote held 41.40%; meeting 2 held 50.40%; per match: investigations 1.09 (guilty 100.00%), whistles 0.37, caught takers 1.14
-Firings decided by revote 0.60%, by tie-break 0.10%; desk mean 8.35, removed (remainder) mean 0.88; result aggregate hash 02F4037D2BFBDF52
+Firings decided by revote 0.00%, by tie-break 4.50%; desk mean 9.27, removed (remainder) mean 0.86; result aggregate hash 224AFF1498C2D733
+Votes: fired = richest alive 100.00%, richest candidate 100.00%, suç leader 100.00%; crisis suç to the richest 100.00%, to the suç leader 58.20%; final vote top share 63.80%
+Estimate: top-hit 100.00%, mean abs error 0.00 prim; winner prim mean 10.84, gap to 2nd 1.04, shared wins 58.20%
 
 3 players | one-greedy | 1000 matches | candidates 2, firings 1
 Match length s (to Results): mean 445.69; engine steps per match mean/max 76.11/81
@@ -22,92 +28,162 @@ Match length s (to Results): mean 445.69; engine steps per match mean/max 76.11/
 Greedy fired in 100.00% of matches with a greedy bot (1000/1000); firings 1000, greedy share 100.00%
 Suç: leader mean 9.00; total per match 10.00; distribution per player 0..15+: 0:33.33% 1:33.33% 9:33.33%
 Meeting 1 vote held 100.00%; meeting 2 held 0.00%; per match: investigations 0.00 (guilty 0.00%), whistles 1.00, caught takers 0.00
-Firings decided by revote 0.00%, by tie-break 0.00%; desk mean 13.00, removed (remainder) mean 1.00; result aggregate hash DA55278FC398E7DA
+Firings decided by revote 0.00%, by tie-break 0.00%; desk mean 13.00, removed (remainder) mean 1.00; result aggregate hash 214B477D2ED77AC2
+Votes: fired = richest alive 100.00%, richest candidate 100.00%, suç leader 100.00%; crisis suç to the richest 100.00%, to the suç leader 100.00%; final vote top share 66.67%
+Estimate: top-hit 100.00%, mean abs error 0.00 prim; winner prim mean 14.00, gap to 2nd 2.00, shared wins 0.00%
 
 3 players | mixed | 1000 matches | candidates 2, firings 1
-Match length s (to Results): mean 475.24; engine steps per match mean/max 78.54/95
-  Mixed: players 3000; final prim mean 6.03 (before the desk reveal 6.12, surviving seats 9.04); suç mean 5.08; fired 1000 (33.33% of Mixed seats); win share 33.33% per seat
+Match length s (to Results): mean 475.22; engine steps per match mean/max 78.55/95
+  Mixed: players 3000; final prim mean 6.01 (before the desk reveal 6.12, surviving seats 9.01); suç mean 5.09; fired 1000 (33.33% of Mixed seats); win share 33.33% per seat
 Greedy fired in 0.00% of matches with a greedy bot (0/0); firings 1000, greedy share 0.00%
-Suç: leader mean 10.62; total per match 15.25; distribution per player 0..15+: 0:20.23% 1:2.93% 2:11.03% 3:14.67% 4:8.80% 5:5.37% 6:4.27% 7:3.13% 8:0.40% 9:6.40% 10:4.40% 11:5.43% 12:7.77% 13:1.23% 14:3.43% 15:0.50%
+Suç: leader mean 7.70; total per match 15.26; distribution per player 0..15+: 0:7.23% 1:4.37% 2:2.90% 3:15.83% 4:11.03% 5:11.57% 6:20.63% 7:5.13% 8:11.10% 9:5.50% 10:1.87% 11:1.77% 12:1.03% 14:0.03%
 Meeting 1 vote held 25.20%; meeting 2 held 51.20%; per match: investigations 1.88 (guilty 66.58%), whistles 0.38, caught takers 1.10
-Firings decided by revote 0.00%, by tie-break 0.10%; desk mean 5.33, removed (remainder) mean 0.28; result aggregate hash 79F2B33171F2F2CC
+Firings decided by revote 0.00%, by tie-break 0.40%; desk mean 8.15, removed (remainder) mean 0.34; result aggregate hash 805BF65B74160EEA
+Votes: fired = richest alive 97.80%, richest candidate 100.00%, suç leader 83.60%; crisis suç to the richest 100.00%, to the suç leader 31.60%; final vote top share 66.40%
+Estimate: top-hit 100.00%, mean abs error 0.00 prim; winner prim mean 10.06, gap to 2nd 2.10, shared wins 14.60%
+
+3 players | lobby | 1000 matches | candidates 2, firings 1
+Match length s (to Results): mean 475.50; engine steps per match mean/max 78.62/95
+  Honest: players 1000; final prim mean 6.83 (before the desk reveal 7.02, surviving seats 10.63); suç mean 2.66; fired 358 (35.80% of Honest seats); win share 39.25% per seat
+  Greedy: players 1000; final prim mean 4.23 (before the desk reveal 7.26, surviving seats 8.88); suç mean 8.13; fired 524 (52.40% of Greedy seats); win share 28.35% per seat
+  Mixed: players 1000; final prim mean 8.36 (before the desk reveal 5.78, surviving seats 9.48); suç mean 3.53; fired 118 (11.80% of Mixed seats); win share 32.40% per seat
+Greedy fired in 52.40% of matches with a greedy bot (524/1000); firings 1000, greedy share 52.40%
+Suç: leader mean 8.41; total per match 14.32; distribution per player 0..15+: 0:15.13% 1:8.27% 2:5.67% 3:7.77% 4:10.67% 5:12.27% 6:15.90% 7:1.87% 8:6.77% 9:4.37% 10:3.30% 11:2.20% 12:4.60% 13:1.23%
+Meeting 1 vote held 25.80%; meeting 2 held 52.30%; per match: investigations 1.49 (guilty 83.86%), whistles 0.51, caught takers 0.99
+Firings decided by revote 0.00%, by tie-break 0.00%; desk mean 8.19, removed (remainder) mean 0.66; result aggregate hash 80B7C427E02403A4
+Votes: fired = richest alive 91.20%, richest candidate 100.00%, suç leader 80.20%; crisis suç to the richest 100.00%, to the suç leader 41.00%; final vote top share 66.67%
+Estimate: top-hit 100.00%, mean abs error 0.00 prim; winner prim mean 10.41, gap to 2nd 1.41, shared wins 34.50%
 
 4 players | half | 1000 matches | candidates 2, firings 1
-Match length s (to Results): mean 472.36; engine steps per match mean/max 96.54/118
-  Honest: players 2002; final prim mean 10.80 (before the desk reveal 8.06, surviving seats 11.10); suç mean 0.24; fired 54 (2.70% of Honest seats); win share 22.33% per seat
-  Greedy: players 1998; final prim mean 5.54 (before the desk reveal 9.00, surviving seats 10.52); suç mean 7.89; fired 946 (47.35% of Greedy seats); win share 27.68% per seat
+Match length s (to Results): mean 479.65; engine steps per match mean/max 98.00/118
+  Honest: players 2002; final prim mean 10.95 (before the desk reveal 8.06, surviving seats 11.25); suç mean 1.17; fired 54 (2.70% of Honest seats); win share 34.67% per seat
+  Greedy: players 1998; final prim mean 5.58 (before the desk reveal 9.00, surviving seats 10.60); suç mean 6.95; fired 946 (47.35% of Greedy seats); win share 15.32% per seat
 Greedy fired in 100.00% of matches with a greedy bot (946/946); firings 1000, greedy share 94.60%
-Suç: leader mean 10.64; total per match 16.23; distribution per player 0..15+: 0:41.38% 1:7.33% 2:6.63% 3:1.75% 4:2.93% 5:2.70% 6:5.35% 7:8.00% 8:4.23% 9:2.93% 10:9.50% 11:0.85% 12:0.28% 15:6.18%
+Suç: leader mean 7.74; total per match 16.23; distribution per player 0..15+: 0:24.98% 1:6.35% 2:8.20% 3:6.18% 4:4.35% 5:4.10% 6:27.48% 7:5.40% 8:0.38% 9:5.78% 10:6.18% 11:0.65%
 Meeting 1 vote held 75.20%; meeting 2 held 30.50%; per match: investigations 1.00 (guilty 100.00%), whistles 1.01, caught takers 0.99
-Firings decided by revote 3.10%, by tie-break 4.00%; desk mean 9.23, removed (remainder) mean 1.45; result aggregate hash 4AFE83250EA91441
+Firings decided by revote 0.00%, by tie-break 38.10%; desk mean 11.29, removed (remainder) mean 1.06; result aggregate hash 335F8A704AE1114A
+Votes: fired = richest alive 86.40%, richest candidate 100.00%, suç leader 100.00%; crisis suç to the richest 100.00%, to the suç leader 75.40%; final vote top share 60.08%
+Estimate: top-hit 93.83%, mean abs error 1.36 prim; winner prim mean 13.96, gap to 2nd 3.05, shared wins 16.80%
 
 4 players | one-greedy | 1000 matches | candidates 2, firings 1
-Match length s (to Results): mean 448.05; engine steps per match mean/max 92.85/100
-  Honest: players 3000; final prim mean 12.00 (before the desk reveal 8.00, surviving seats 12.00); suç mean 0.33; fired 0 (0.00% of Honest seats); win share 33.33% per seat
-  Greedy: players 1000; final prim mean 0.00 (before the desk reveal 13.00, surviving seats NaN); suç mean 10.00; fired 1000 (100.00% of Greedy seats); win share 0.00% per seat
+Match length s (to Results): mean 449.85; engine steps per match mean/max 93.42/103
+  Honest: players 3000; final prim mean 12.00 (before the desk reveal 8.00, surviving seats 12.00); suç mean 0.78; fired 0 (0.00% of Honest seats); win share 33.33% per seat
+  Greedy: players 1000; final prim mean 0.00 (before the desk reveal 13.00, surviving seats NaN); suç mean 8.66; fired 1000 (100.00% of Greedy seats); win share 0.00% per seat
 Greedy fired in 100.00% of matches with a greedy bot (1000/1000); firings 1000, greedy share 100.00%
-Suç: leader mean 10.00; total per match 11.00; distribution per player 0..15+: 0:50.00% 1:25.00% 10:25.00%
+Suç: leader mean 8.66; total per match 11.00; distribution per player 0..15+: 0:47.48% 1:2.53% 2:22.00% 4:3.00% 6:0.30% 7:2.70% 8:2.23% 9:19.78%
 Meeting 1 vote held 100.00%; meeting 2 held 0.00%; per match: investigations 0.00 (guilty 0.00%), whistles 1.00, caught takers 0.00
-Firings decided by revote 0.00%, by tie-break 0.00%; desk mean 13.00, removed (remainder) mean 1.00; result aggregate hash 632E7FC7CA824546
+Firings decided by revote 0.00%, by tie-break 12.00%; desk mean 13.00, removed (remainder) mean 1.00; result aggregate hash 98DBBF477BEEFE20
+Votes: fired = richest alive 100.00%, richest candidate 100.00%, suç leader 100.00%; crisis suç to the richest 100.00%, to the suç leader 100.00%; final vote top share 69.64%
+Estimate: top-hit 100.00%, mean abs error 0.69 prim; winner prim mean 14.24, gap to 2nd 2.24, shared wins 0.00%
 
 4 players | mixed | 1000 matches | candidates 2, firings 1
-Match length s (to Results): mean 481.43; engine steps per match mean/max 97.08/119
-  Mixed: players 4000; final prim mean 7.40 (before the desk reveal 7.59, surviving seats 9.86); suç mean 4.79; fired 1000 (25.00% of Mixed seats); win share 25.00% per seat
+Match length s (to Results): mean 485.11; engine steps per match mean/max 98.03/120
+  Mixed: players 4000; final prim mean 7.41 (before the desk reveal 7.59, surviving seats 9.89); suç mean 4.79; fired 1000 (25.00% of Mixed seats); win share 25.00% per seat
 Greedy fired in 0.00% of matches with a greedy bot (0/0); firings 1000, greedy share 0.00%
-Suç: leader mean 11.74; total per match 19.17; distribution per player 0..15+: 0:24.58% 1:1.13% 2:10.30% 3:18.53% 4:7.45% 5:6.58% 6:3.35% 7:4.15% 8:1.18% 9:1.93% 10:5.55% 11:0.63% 12:2.33% 13:7.80% 14:0.13% 15:4.43%
+Suç: leader mean 8.39; total per match 19.17; distribution per player 0..15+: 0:10.88% 1:3.18% 2:5.60% 3:19.73% 4:9.45% 5:9.73% 6:14.20% 7:10.35% 8:4.25% 9:5.03% 10:4.93% 11:0.55% 12:1.15% 13:0.85% 15:0.15%
 Meeting 1 vote held 41.80%; meeting 2 held 48.80%; per match: investigations 2.19 (guilty 67.41%), whistles 1.02, caught takers 0.96
-Firings decided by revote 1.80%, by tie-break 2.70%; desk mean 7.48, removed (remainder) mean 0.79; result aggregate hash 5A9B2DB529629A8C
+Firings decided by revote 0.00%, by tie-break 24.60%; desk mean 9.52, removed (remainder) mean 0.71; result aggregate hash 1040B8AFC5016423
+Votes: fired = richest alive 75.30%, richest candidate 86.60%, suç leader 87.50%; crisis suç to the richest 79.30%, to the suç leader 47.50%; final vote top share 64.45%
+Estimate: top-hit 77.98%, mean abs error 0.81 prim; winner prim mean 11.83, gap to 2nd 1.90, shared wins 20.30%
+
+4 players | lobby | 1000 matches | candidates 2, firings 1
+Match length s (to Results): mean 450.43; engine steps per match mean/max 92.92/111
+  Honest: players 2000; final prim mean 10.03 (before the desk reveal 8.01, surviving seats 11.04); suç mean 1.13; fired 182 (9.10% of Honest seats); win share 23.05% per seat
+  Greedy: players 1000; final prim mean 3.39 (before the desk reveal 11.06, surviving seats 11.13); suç mean 7.26; fired 695 (69.50% of Greedy seats); win share 8.40% per seat
+  Mixed: players 1000; final prim mean 11.87 (before the desk reveal 9.25, surviving seats 13.54); suç mean 3.18; fired 123 (12.30% of Mixed seats); win share 45.50% per seat
+Greedy fired in 69.50% of matches with a greedy bot (695/1000); firings 1000, greedy share 69.50%
+Suç: leader mean 7.48; total per match 12.69; distribution per player 0..15+: 0:29.15% 1:11.75% 2:10.10% 3:9.23% 4:8.93% 5:0.15% 6:13.65% 7:5.40% 8:3.93% 9:7.25% 10:0.48%
+Meeting 1 vote held 75.80%; meeting 2 held 0.40%; per match: investigations 0.50 (guilty 82.70%), whistles 1.16, caught takers 0.32
+Firings decided by revote 0.10%, by tie-break 42.40%; desk mean 11.65, removed (remainder) mean 0.99; result aggregate hash 066E4DF1ABD6A702
+Votes: fired = richest alive 86.10%, richest candidate 93.50%, suç leader 84.10%; crisis suç to the richest 99.90%, to the suç leader 75.40%; final vote top share 59.23%
+Estimate: top-hit 91.85%, mean abs error 0.94 prim; winner prim mean 15.20, gap to 2nd 3.34, shared wins 20.60%
 
 5 players | half | 1000 matches | candidates 3, firings 2
-Match length s (to Results): mean 553.46; engine steps per match mean/max 127.75/151
-  Honest: players 2514; final prim mean 11.46 (before the desk reveal 7.56, surviving seats 12.52); suç mean 0.11; fired 213 (8.47% of Honest seats); win share 24.74% per seat
-  Greedy: players 2486; final prim mean 3.42 (before the desk reveal 7.92, surviving seats 12.17); suç mean 8.14; fired 1787 (71.88% of Greedy seats); win share 15.21% per seat
-Greedy fired in 100.00% of matches with a greedy bot (970/970); firings 2000, greedy share 89.35%
-Suç: leader mean 12.80; total per match 20.49; distribution per player 0..15+: 0:46.42% 1:3.06% 2:7.42% 3:1.38% 4:2.24% 5:5.70% 6:6.44% 7:6.24% 8:1.50% 9:2.24% 10:4.12% 11:4.56% 12:0.60% 13:0.02% 14:1.02% 15:7.04%
+Match length s (to Results): mean 551.30; engine steps per match mean/max 129.53/154
+  Honest: players 2514; final prim mean 11.03 (before the desk reveal 7.56, surviving seats 13.02); suç mean 1.03; fired 383 (15.23% of Honest seats); win share 35.85% per seat
+  Greedy: players 2486; final prim mean 3.41 (before the desk reveal 7.92, surviving seats 9.76); suç mean 7.21; fired 1617 (65.04% of Greedy seats); win share 3.97% per seat
+Greedy fired in 100.00% of matches with a greedy bot (970/970); firings 2000, greedy share 80.85%
+Suç: leader mean 9.71; total per match 20.50; distribution per player 0..15+: 0:31.94% 1:5.40% 2:2.16% 3:4.34% 4:9.62% 5:11.96% 6:13.52% 7:3.64% 8:0.64% 9:7.30% 10:1.32% 11:2.92% 12:3.20% 13:0.72% 14:1.30% 15:0.02%
 Meeting 1 vote held 71.00%; meeting 2 held 48.70%; per match: investigations 1.56 (guilty 100.00%), whistles 0.88, caught takers 1.61
-Firings decided by revote 0.70%, by tie-break 0.45%; desk mean 8.33, removed (remainder) mean 0.68; result aggregate hash 0A788DD3F4702112
+Firings decided by revote 2.40%, by tie-break 14.75%; desk mean 10.79, removed (remainder) mean 1.23; result aggregate hash DA30B9E25A6DF0AE
+Votes: fired = richest alive 66.40%, richest candidate 95.55%, suç leader 87.05%; crisis suç to the richest 92.90%, to the suç leader 84.70%; final vote top share 66.26%
+Estimate: top-hit 83.64%, mean abs error 1.23 prim; winner prim mean 13.74, gap to 2nd 1.48, shared wins 31.40%
 
 5 players | one-greedy | 1000 matches | candidates 3, firings 2
-Match length s (to Results): mean 529.59; engine steps per match mean/max 119.99/129
-  Honest: players 4000; final prim mean 10.42 (before the desk reveal 7.69, surviving seats 13.89); suç mean 0.25; fired 1000 (25.00% of Honest seats); win share 25.00% per seat
-  Greedy: players 1000; final prim mean 0.00 (before the desk reveal 13.00, surviving seats NaN); suç mean 11.00; fired 1000 (100.00% of Greedy seats); win share 0.00% per seat
+Match length s (to Results): mean 524.60; engine steps per match mean/max 120.48/133
+  Honest: players 4000; final prim mean 10.39 (before the desk reveal 7.69, surviving seats 13.86); suç mean 0.67; fired 1000 (25.00% of Honest seats); win share 25.00% per seat
+  Greedy: players 1000; final prim mean 0.00 (before the desk reveal 13.00, surviving seats NaN); suç mean 9.31; fired 1000 (100.00% of Greedy seats); win share 0.00% per seat
 Greedy fired in 100.00% of matches with a greedy bot (1000/1000); firings 2000, greedy share 50.00%
-Suç: leader mean 11.00; total per match 12.00; distribution per player 0..15+: 0:60.00% 1:20.00% 11:20.00%
+Suç: leader mean 9.32; total per match 12.00; distribution per player 0..15+: 0:55.82% 1:4.18% 2:10.86% 3:9.04% 5:0.10% 7:0.10% 8:1.26% 9:10.70% 10:7.94%
 Meeting 1 vote held 100.00%; meeting 2 held 0.00%; per match: investigations 0.00 (guilty 0.00%), whistles 1.00, caught takers 0.00
-Firings decided by revote 0.00%, by tie-break 0.00%; desk mean 11.86, removed (remainder) mean 1.05; result aggregate hash 1A1E0588C3B34FED
+Firings decided by revote 0.00%, by tie-break 4.25%; desk mean 12.84, removed (remainder) mean 1.10; result aggregate hash 4268C68C5E5907CB
+Votes: fired = richest alive 99.75%, richest candidate 99.75%, suç leader 100.00%; crisis suç to the richest 99.50%, to the suç leader 99.50%; final vote top share 74.28%
+Estimate: top-hit 100.00%, mean abs error 0.58 prim; winner prim mean 15.08, gap to 2nd 0.98, shared wins 50.80%
 
 5 players | mixed | 1000 matches | candidates 3, firings 2
-Match length s (to Results): mean 557.06; engine steps per match mean/max 129.68/152
-  Mixed: players 5000; final prim mean 6.32 (before the desk reveal 6.81, surviving seats 10.53); suç mean 4.90; fired 2000 (40.00% of Mixed seats); win share 20.00% per seat
+Match length s (to Results): mean 556.64; engine steps per match mean/max 130.49/153
+  Mixed: players 5000; final prim mean 6.34 (before the desk reveal 6.81, surviving seats 10.57); suç mean 4.89; fired 2000 (40.00% of Mixed seats); win share 20.00% per seat
 Greedy fired in 0.00% of matches with a greedy bot (0/0); firings 2000, greedy share 0.00%
-Suç: leader mean 14.13; total per match 24.50; distribution per player 0..15+: 0:23.74% 1:0.24% 2:14.66% 3:20.24% 4:5.28% 5:6.82% 6:4.08% 7:3.28% 8:1.78% 9:0.98% 10:2.46% 11:0.52% 12:1.52% 13:2.28% 14:4.58% 15:7.54%
-Meeting 1 vote held 44.10%; meeting 2 held 69.40%; per match: investigations 2.98 (guilty 66.90%), whistles 0.89, caught takers 1.61
-Firings decided by revote 1.10%, by tie-break 1.05%; desk mean 6.92, removed (remainder) mean 1.24; result aggregate hash 3062A3F9E9DC28C1
+Suç: leader mean 9.95; total per match 24.47; distribution per player 0..15+: 0:11.14% 1:2.68% 2:8.04% 3:20.72% 4:7.80% 5:12.38% 6:11.12% 7:5.66% 8:5.82% 9:3.52% 10:3.84% 11:1.70% 12:2.28% 13:1.34% 14:1.04% 15:0.92%
+Meeting 1 vote held 44.10%; meeting 2 held 68.80%; per match: investigations 2.98 (guilty 66.90%), whistles 0.89, caught takers 1.61
+Firings decided by revote 2.30%, by tie-break 8.30%; desk mean 9.29, removed (remainder) mean 1.17; result aggregate hash 2C0046A2AFD22498
+Votes: fired = richest alive 66.60%, richest candidate 87.75%, suç leader 74.25%; crisis suç to the richest 80.30%, to the suç leader 55.70%; final vote top share 69.04%
+Estimate: top-hit 78.66%, mean abs error 0.82 prim; winner prim mean 12.46, gap to 2nd 1.73, shared wins 18.70%
+
+5 players | lobby | 1000 matches | candidates 3, firings 2
+Match length s (to Results): mean 548.88; engine steps per match mean/max 130.39/154
+  Honest: players 2000; final prim mean 10.18 (before the desk reveal 7.45, surviving seats 12.53); suç mean 1.52; fired 375 (18.75% of Honest seats); win share 35.87% per seat
+  Greedy: players 2000; final prim mean 3.76 (before the desk reveal 8.17, surviving seats 10.94); suç mean 7.38; fired 1313 (65.65% of Greedy seats); win share 5.33% per seat
+  Mixed: players 1000; final prim mean 8.11 (before the desk reveal 7.27, surviving seats 11.79); suç mean 3.94; fired 312 (31.20% of Mixed seats); win share 17.62% per seat
+Greedy fired in 95.50% of matches with a greedy bot (955/1000); firings 2000, greedy share 65.65%
+Suç: leader mean 9.69; total per match 21.72; distribution per player 0..15+: 0:21.52% 1:7.92% 2:5.46% 3:10.46% 4:7.58% 5:10.48% 6:14.92% 7:3.84% 8:4.90% 9:2.80% 10:1.98% 11:2.00% 12:3.04% 13:1.08% 14:1.88% 15:0.14%
+Meeting 1 vote held 77.90%; meeting 2 held 50.80%; per match: investigations 1.74 (guilty 89.82%), whistles 1.09, caught takers 1.40
+Firings decided by revote 1.90%, by tie-break 13.60%; desk mean 10.82, removed (remainder) mean 1.26; result aggregate hash CDFF446233737F78
+Votes: fired = richest alive 64.95%, richest candidate 96.00%, suç leader 75.20%; crisis suç to the richest 98.30%, to the suç leader 49.10%; final vote top share 69.35%
+Estimate: top-hit 80.08%, mean abs error 1.17 prim; winner prim mean 13.64, gap to 2nd 1.52, shared wins 19.10%
 
 6 players | half | 1000 matches | candidates 3, firings 2
-Match length s (to Results): mean 548.08; engine steps per match mean/max 145.14/172
-  Honest: players 3021; final prim mean 11.17 (before the desk reveal 8.10, surviving seats 11.66); suç mean 0.05; fired 126 (4.17% of Honest seats); win share 13.34% per seat
-  Greedy: players 2979; final prim mean 4.77 (before the desk reveal 8.99, surviving seats 12.85); suç mean 7.74; fired 1874 (62.91% of Greedy seats); win share 20.04% per seat
-Greedy fired in 100.00% of matches with a greedy bot (981/981); firings 2000, greedy share 93.70%
-Suç: leader mean 13.78; total per match 23.22; distribution per player 0..15+: 0:48.33% 1:1.62% 2:9.12% 3:4.92% 4:1.23% 5:7.23% 6:3.38% 7:3.85% 8:2.88% 9:1.20% 10:1.82% 11:2.70% 12:3.27% 13:0.73% 14:1.32% 15:6.40%
+Match length s (to Results): mean 543.86; engine steps per match mean/max 146.61/177
+  Honest: players 3021; final prim mean 11.74 (before the desk reveal 8.11, surviving seats 12.92); suç mean 1.44; fired 276 (9.14% of Honest seats); win share 26.46% per seat
+  Greedy: players 2979; final prim mean 4.49 (before the desk reveal 8.99, surviving seats 10.65); suç mean 6.33; fired 1724 (57.87% of Greedy seats); win share 6.73% per seat
+Greedy fired in 97.25% of matches with a greedy bot (954/981); firings 2000, greedy share 86.20%
+Suç: leader mean 8.54; total per match 23.19; distribution per player 0..15+: 0:25.82% 1:5.52% 2:9.15% 3:4.58% 4:6.72% 5:15.07% 6:17.23% 7:1.55% 8:8.63% 9:1.20% 10:1.18% 11:0.92% 12:1.70% 14:0.73%
 Meeting 1 vote held 87.50%; meeting 2 held 33.70%; per match: investigations 1.49 (guilty 100.00%), whistles 1.52, caught takers 1.46
-Firings decided by revote 1.15%, by tie-break 0.65%; desk mean 8.91, removed (remainder) mean 1.66; result aggregate hash B41931DFEB71C46B
+Firings decided by revote 0.65%, by tie-break 12.05%; desk mean 12.57, removed (remainder) mean 1.23; result aggregate hash 6B013FA85B9C6C19
+Votes: fired = richest alive 76.95%, richest candidate 95.60%, suç leader 89.85%; crisis suç to the richest 89.60%, to the suç leader 60.30%; final vote top share 66.70%
+Estimate: top-hit 94.76%, mean abs error 1.40 prim; winner prim mean 15.18, gap to 2nd 2.21, shared wins 29.50%
 
 6 players | one-greedy | 1000 matches | candidates 3, firings 2
-Match length s (to Results): mean 545.65; engine steps per match mean/max 138.13/148
-  Honest: players 5000; final prim mean 10.24 (before the desk reveal 8.40, surviving seats 12.80); suç mean 0.20; fired 1000 (20.00% of Honest seats); win share 20.00% per seat
-  Greedy: players 1000; final prim mean 0.00 (before the desk reveal 13.00, surviving seats NaN); suç mean 12.00; fired 1000 (100.00% of Greedy seats); win share 0.00% per seat
+Match length s (to Results): mean 543.49; engine steps per match mean/max 138.10/148
+  Honest: players 5000; final prim mean 11.00 (before the desk reveal 8.40, surviving seats 13.75); suç mean 1.61; fired 1000 (20.00% of Honest seats); win share 20.00% per seat
+  Greedy: players 1000; final prim mean 0.00 (before the desk reveal 13.00, surviving seats NaN); suç mean 4.95; fired 1000 (100.00% of Greedy seats); win share 0.00% per seat
 Greedy fired in 100.00% of matches with a greedy bot (1000/1000); firings 2000, greedy share 50.00%
-Suç: leader mean 12.00; total per match 13.00; distribution per player 0..15+: 0:66.67% 1:16.67% 12:16.67%
+Suç: leader mean 8.00; total per match 13.00; distribution per player 0..15+: 0:65.87% 1:0.80% 4:0.80% 5:15.87% 8:16.67%
 Meeting 1 vote held 100.00%; meeting 2 held 0.00%; per match: investigations 0.00 (guilty 0.00%), whistles 1.00, caught takers 0.00
-Firings decided by revote 0.00%, by tie-break 0.00%; desk mean 12.49, removed (remainder) mean 1.90; result aggregate hash 45D890E132205251
+Firings decided by revote 0.00%, by tie-break 0.00%; desk mean 14.00, removed (remainder) mean 0.00; result aggregate hash 6504DED0D672D6EE
+Votes: fired = richest alive 50.00%, richest candidate 50.00%, suç leader 100.00%; crisis suç to the richest 0.00%, to the suç leader 4.80%; final vote top share 73.33%
+Estimate: top-hit 72.73%, mean abs error 0.62 prim; winner prim mean 15.00, gap to 2nd 0.00, shared wins 100.00%
 
 6 players | mixed | 1000 matches | candidates 3, firings 2
-Match length s (to Results): mean 564.77; engine steps per match mean/max 150.46/172
-  Mixed: players 6000; final prim mean 7.12 (before the desk reveal 7.58, surviving seats 10.68); suç mean 4.84; fired 2000 (33.33% of Mixed seats); win share 16.67% per seat
+Match length s (to Results): mean 563.23; engine steps per match mean/max 151.67/176
+  Mixed: players 6000; final prim mean 7.17 (before the desk reveal 7.59, surviving seats 10.75); suç mean 4.84; fired 2000 (33.33% of Mixed seats); win share 16.67% per seat
 Greedy fired in 0.00% of matches with a greedy bot (0/0); firings 2000, greedy share 0.00%
-Suç: leader mean 15.53; total per match 29.02; distribution per player 0..15+: 0:25.35% 1:0.12% 2:12.42% 3:23.95% 4:4.25% 5:7.18% 6:3.30% 7:3.12% 8:2.40% 9:1.18% 10:1.73% 11:0.97% 12:0.88% 13:1.23% 14:1.30% 15:10.62%
-Meeting 1 vote held 57.00%; meeting 2 held 68.90%; per match: investigations 3.33 (guilty 66.25%), whistles 1.47, caught takers 1.53
-Firings decided by revote 1.00%, by tie-break 0.35%; desk mean 8.03, removed (remainder) mean 1.39; result aggregate hash 2A13CE35B97C51DC
+Suç: leader mean 10.51; total per match 29.04; distribution per player 0..15+: 0:10.45% 1:2.38% 2:8.80% 3:23.55% 4:6.12% 5:11.72% 6:13.98% 7:3.90% 8:5.17% 9:4.27% 10:1.53% 11:2.15% 12:2.10% 13:0.72% 14:2.25% 15:0.92%
+Meeting 1 vote held 57.00%; meeting 2 held 69.70%; per match: investigations 3.33 (guilty 66.25%), whistles 1.47, caught takers 1.53
+Firings decided by revote 1.80%, by tie-break 6.60%; desk mean 10.21, removed (remainder) mean 1.26; result aggregate hash CAC2324798D8E65F
+Votes: fired = richest alive 62.05%, richest candidate 78.30%, suç leader 74.45%; crisis suç to the richest 68.70%, to the suç leader 59.90%; final vote top share 69.80%
+Estimate: top-hit 69.86%, mean abs error 1.06 prim; winner prim mean 13.09, gap to 2nd 1.62, shared wins 23.30%
 
-Completed 12000 matches without a stall. Wall seconds: 31.47
+6 players | lobby | 1000 matches | candidates 3, firings 2
+Match length s (to Results): mean 542.40; engine steps per match mean/max 147.91/180
+  Honest: players 2000; final prim mean 10.36 (before the desk reveal 8.07, surviving seats 12.31); suç mean 2.01; fired 317 (15.85% of Honest seats); win share 22.21% per seat
+  Greedy: players 2000; final prim mean 5.36 (before the desk reveal 9.20, surviving seats 11.98); suç mean 6.40; fired 1105 (55.25% of Greedy seats); win share 9.89% per seat
+  Mixed: players 2000; final prim mean 8.77 (before the desk reveal 8.38, surviving seats 12.33); suç mean 3.90; fired 578 (28.90% of Mixed seats); win share 17.90% per seat
+Greedy fired in 91.40% of matches with a greedy bot (914/1000); firings 2000, greedy share 55.25%
+Suç: leader mean 9.07; total per match 24.63; distribution per player 0..15+: 0:18.85% 1:5.37% 2:10.55% 3:14.45% 4:6.80% 5:9.93% 6:15.37% 7:3.17% 8:5.60% 9:3.72% 10:2.13% 11:1.07% 12:1.83% 13:0.40% 14:0.63% 15:0.13%
+Meeting 1 vote held 86.20%; meeting 2 held 41.10%; per match: investigations 1.77 (guilty 84.82%), whistles 1.66, caught takers 1.36
+Firings decided by revote 0.45%, by tie-break 9.25%; desk mean 12.26, removed (remainder) mean 1.17; result aggregate hash 453CCFB8F8A789C2
+Votes: fired = richest alive 69.80%, richest candidate 87.70%, suç leader 70.10%; crisis suç to the richest 79.90%, to the suç leader 45.80%; final vote top share 68.90%
+Estimate: top-hit 81.86%, mean abs error 1.36 prim; winner prim mean 15.15, gap to 2nd 2.10, shared wins 19.40%
+
+Completed 16000 matches without a stall. Wall seconds: 81.90

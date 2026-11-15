@@ -10,7 +10,8 @@ using BirimizKovulacak.Core;
 /// <summary>
 /// v5 bot simulation (docs/V5_ENGINE_SPEC.md §15): seeded bot matches per head count and policy mix, reporting prim
 /// by policy, suç distribution and who gets fired, to sanity-check docs/V5_DESIGN.md §12. Synthetic data: bots do
-/// not talk, call or record.
+/// not talk, call or record. <c>--vote richest</c> (default, the game's bots) or <c>blame</c> (the old rule) picks
+/// <see cref="LineBotVoteStyle"/>; the vote lines report whether the votes found the richest player.
 /// </summary>
 internal static class Program
 {
@@ -33,6 +34,10 @@ internal static class Program
         internal int Meeting1Votes, Meeting2Held, Investigations, GuiltyInvestigations, Whistles, Caught, Revotes, TieBreaks;
         internal long DeskTotal, DeskRemoved;
         internal ulong Hash = 14695981039346656037UL;
+        // votes vs the true balances (taken when each crisis / final vote starts)
+        internal int FinalFirings, FiredRichestAlive, FiredRichestOption, FiredBlameLeader, CrisisVotes, CrisisRichest, CrisisBlameLeader;
+        internal int EstimateChecks, EstimateTopHits, EstimateErrors, VoteRounds, Shared;
+        internal double EstimateAbsError, VoteTopShare, WinnerPrim, WinnerGap;
 
         internal void Add<T>(Dictionary<LineBotPolicy, T> d, LineBotPolicy p, Func<T, T> f) { d.TryGetValue(p, out T v); d[p] = f(v); }
     }
@@ -48,12 +53,12 @@ internal static class Program
         {
             int matches = 1000, seed = 5000, players = 0;
             double think = 15;
-            string mix = "all", output = "Tools/LineSim/v5-sim.txt";
+            string mix = "all", output = "Tools/LineSim/v5-sim.txt", vote = "richest";
             for (int i = 0; i < args.Length; i++)
             {
                 if (args[i] == "--help")
                 {
-                    Console.WriteLine("LineSim --matches N --players all|3|4|5|6 --mix all|half|one-greedy|mixed --think seconds --seed N --output path");
+                    Console.WriteLine("LineSim --matches N --players all|3|4|5|6 --mix all|half|one-greedy|mixed|lobby --vote richest|blame --think seconds --seed N --output path");
                     return 0;
                 }
                 string flag = args[i];
@@ -66,18 +71,26 @@ internal static class Program
                     case "--mix": mix = args[i]; break;
                     case "--think": think = double.Parse(args[i], Inv); break;
                     case "--output": output = args[i]; break;
+                    case "--vote": vote = args[i]; break;
                     default: throw new ArgumentException("Unknown flag " + flag);
                 }
             }
-            var mixes = new[] { "half", "one-greedy", "mixed" };
-            if (matches < 1 || players != 0 && (players < 3 || players > 6) || think < 0 || think > 50 || mix != "all" && !mixes.Contains(mix))
+            var mixes = new[] { "half", "one-greedy", "mixed", "lobby" };
+            if (matches < 1 || players != 0 && (players < 3 || players > 6) || think < 0 || think > 50 || mix != "all" && !mixes.Contains(mix) || vote != "richest" && vote != "blame")
                 throw new ArgumentException("Invalid arguments.");
+            var style = vote == "blame" ? LineBotVoteStyle.MostBlame : LineBotVoteStyle.Richest;
             var report = new StringBuilder();
             var watch = Stopwatch.StartNew();
             report.AppendLine(LineProtocol.RulesetVersion + " — SYNTHETIC BOT DATA (LineSim)");
-            report.AppendLine("Bots never call, text or record (spec §13). Honest: share, leave, volunteer by a simple count (the cleanest Needed+1 by suç volunteer), whistle as a witness, vote for a known culprit else the highest suç.");
-            report.AppendLine("Greedy: take, take, skip, whistle as a witness, investigate a Client Bonus partner who took, same voting rule. Mixed: honest or greedy per decision (50/50, seeded).");
-            report.AppendLine("Mixes: half = each seat Honest or Greedy 50/50 (seeded per match); one-greedy = one seeded Greedy seat, the rest Honest; mixed = every seat Mixed.");
+            report.AppendLine("Bots never call, text or record (spec §13). Honest: share, leave, volunteer by a simple count (the cleanest Needed+1 by suç volunteer), whistle as a witness.");
+            report.AppendLine("Greedy: take, take, skip, whistle as a witness, investigate a Client Bonus partner who took. Mixed: honest or greedy per decision (50/50, seeded).");
+            report.AppendLine(style == LineBotVoteStyle.Richest
+                ? "Votes (--vote richest, the game's bots): every policy votes for the rival it estimates to be the richest (LineBotLedger: its own views only, plus a fixed ±0.4 per-bot noise; seeded tie-break)."
+                : "Votes (--vote blame, the old rule): every policy votes for a known culprit, else the highest suç (seeded tie-break).");
+            report.AppendLine("Mixes: half = each seat Honest or Greedy 50/50 (seeded per match); one-greedy = one seeded Greedy seat, the rest Honest; mixed = every seat Mixed;");
+            report.AppendLine("lobby = seat % 3 Honest / Greedy / Mixed like the game's lobby, seats shuffled per match (seeded).");
+            report.AppendLine("Vote lines: true balances when each crisis / final vote starts. Fired = richest alive / richest candidate / suç leader; crisis suç to the richest / suç leader;");
+            report.AppendLine("estimate = each bot's ledger at the start of each final round (top-hit: its top rival is truly the richest; error: mean |estimate - truth| per rival); final vote top share = votes for the most-voted candidate.");
             report.AppendLine("Default config and timings; bots act after a seeded 0.." + F(think) + " s think delay per phase. Match length = Intro start to Results start.");
             report.AppendLine(matches + " matches per cell; seeds " + seed + ".." + (seed + matches - 1) + ".");
             report.AppendLine("Command: dotnet run -c Release --project Tools/LineSim/LineSim.csproj -- " + string.Join(" ", args));
@@ -89,7 +102,7 @@ internal static class Program
                 {
                     if (mix != "all" && mix != m) continue;
                     var stats = new Stats();
-                    for (int i = 0; i < matches; i++) Run(n, m, seed + i, think, stats);
+                    for (int i = 0; i < matches; i++) Run(n, m, seed + i, think, style, stats);
                     total += matches;
                     Write(report, n, m, stats);
                     if (m != "mixed") Console.WriteLine(n + "p " + m + ": honest " + F(Avg(stats.Prim, stats.Players, LineBotPolicy.Honest)) + " / greedy " +
@@ -118,11 +131,40 @@ internal static class Program
         var p = new LineBotPolicy[n];
         if (mix == "mixed") { for (int i = 0; i < n; i++) p[i] = LineBotPolicy.Mixed; return p; }
         if (mix == "one-greedy") { int g = r.Next(n); for (int i = 0; i < n; i++) p[i] = i == g ? LineBotPolicy.Greedy : LineBotPolicy.Honest; return p; }
+        if (mix == "lobby")
+        {
+            for (int i = 0; i < n; i++) p[i] = (LineBotPolicy)(i % 3);
+            for (int i = n - 1; i > 0; i--) { int j = r.Next(i + 1); var t = p[i]; p[i] = p[j]; p[j] = t; }
+            return p;
+        }
         for (int i = 0; i < n; i++) p[i] = r.Next(2) == 0 ? LineBotPolicy.Honest : LineBotPolicy.Greedy;
         return p;
     }
 
-    private static void Run(int n, string mix, int seed, double think, Stats stats)
+    /// <summary>The true balances, suç and status at the start of a vote (for the vote lines only; read-only views).</summary>
+    private sealed class Snapshot
+    {
+        internal int[] Prim, Blame;
+        internal bool[] Alive, Option;
+    }
+
+    private static Snapshot Snap(ILineEngine engine, int n, double now, LineView v0)
+    {
+        var s = new Snapshot { Prim = new int[n], Blame = new int[n], Alive = new bool[n], Option = new bool[n] };
+        for (int j = 0; j < n; j++) s.Prim[j] = engine.BuildView(j, now).Mine.Prim;
+        foreach (var p in v0.Players) { s.Blame[p.Id] = p.Blame; s.Alive[p.Id] = !p.Fired; }
+        if (v0.Phase == LinePhase.FinalVote) foreach (int o in v0.Final.Options) s.Option[o] = true;
+        return s;
+    }
+
+    private static int Max(Snapshot s, int[] values, bool optionsOnly)
+    {
+        int best = int.MinValue;
+        for (int j = 0; j < values.Length; j++) if (optionsOnly ? s.Option[j] : s.Alive[j]) best = Math.Max(best, values[j]);
+        return best;
+    }
+
+    private static void Run(int n, string mix, int seed, double think, LineBotVoteStyle style, Stats stats)
     {
         var setup = new LineSetup { WeekId = 1, MatchId = "sim-" + n + "-" + mix + "-" + seed, Seed = seed };
         for (int i = 0; i < n; i++) setup.Players.Add(new LinePlayerInfo { Id = i, Name = "Bot " + i, IsBot = true });
@@ -130,13 +172,54 @@ internal static class Program
         var engine = LineEngineFactory.Create(setup, config);
         var policy = Assign(n, mix, seed);
         var bots = new LineBot[n];
-        for (int i = 0; i < n; i++) bots[i] = new LineBot(i, seed * 31 + i * 97, policy[i]) { ThinkSeconds = think };
+        for (int i = 0; i < n; i++) bots[i] = new LineBot(i, seed * 31 + i * 97, policy[i]) { ThinkSeconds = think, VoteStyle = style };
         double now = 0;
         int steps = 0;
+        double phaseKey = double.NaN;
+        Snapshot crisis = null;
+        var rounds = new Dictionary<int, Snapshot>();
+        var finalVotes = new Dictionary<double, Dictionary<int, int>>();
         while (!engine.IsFinished)
         {
             if (++steps > 5000) throw new InvalidOperationException("Stall: " + n + "p " + mix + " seed " + seed + " at " + engine.Phase);
             engine.Tick(now);
+            var v0 = engine.BuildView(0, now);
+            if (v0.PhaseStartTime != phaseKey)
+            {
+                phaseKey = v0.PhaseStartTime;
+                if (v0.Phase == LinePhase.CrisisVote) crisis = Snap(engine, n, now, v0);
+                if (v0.Phase == LinePhase.CrisisVerdict && crisis != null && v0.Final != null && v0.Final.Crisis.Count > 0)
+                {
+                    int top = v0.Final.Crisis.Max(x => x.Amount), richest = Max(crisis, crisis.Prim, false), blameTop = Max(crisis, crisis.Blame, false);
+                    var got = v0.Final.Crisis.Where(x => x.Amount == top).Select(x => x.Player).ToList();
+                    stats.CrisisVotes++;
+                    if (got.Any(x => crisis.Prim[x] == richest)) stats.CrisisRichest++;
+                    if (got.Any(x => crisis.Blame[x] == blameTop)) stats.CrisisBlameLeader++;
+                    crisis = null;
+                }
+                if (v0.Phase == LinePhase.FinalVote && !v0.Final.Revote && !rounds.ContainsKey(v0.Final.Round))
+                {
+                    var snap = rounds[v0.Final.Round] = Snap(engine, n, now, v0);
+                    for (int i = 0; i < n; i++)
+                    {
+                        if (!snap.Alive[i]) continue;
+                        var est = bots[i].EstimatedPrim(engine.BuildView(i, now));
+                        int top = -1, truth = int.MinValue;
+                        double best = double.NegativeInfinity;
+                        for (int j = 0; j < n; j++)
+                        {
+                            if (j == i || !snap.Alive[j]) continue;
+                            if (est[j] > best) { best = est[j]; top = j; }
+                            truth = Math.Max(truth, snap.Prim[j]);
+                            stats.EstimateAbsError += Math.Abs(est[j] - snap.Prim[j]);
+                            stats.EstimateErrors++;
+                        }
+                        if (top < 0) continue;
+                        stats.EstimateChecks++;
+                        if (snap.Prim[top] == truth) stats.EstimateTopHits++;
+                    }
+                }
+            }
             for (int round = 0; round < 8; round++)
             {
                 bool acted = false;
@@ -145,6 +228,12 @@ internal static class Program
                     var view = engine.BuildView(i, now);
                     var action = bots[i].Next(view, config, now);
                     if (action == null) continue;
+                    if (action.Verb == LineVerb.Vote && view.Phase == LinePhase.FinalVote && action.Target >= 0)
+                    {
+                        if (!finalVotes.TryGetValue(view.PhaseStartTime, out var tally)) finalVotes[view.PhaseStartTime] = tally = new Dictionary<int, int>();
+                        tally.TryGetValue(action.Target, out int had);
+                        tally[action.Target] = had + 1;
+                    }
                     var result = engine.Apply(i, action, now);
                     if (!result.Accepted && result.Failure != LineFailure.AlreadyResolved)
                         throw new InvalidOperationException("Bot " + i + " " + view.Phase + " " + action + " " + result);
@@ -202,6 +291,25 @@ internal static class Program
             if (d.Kind == DossierKind.CashCaught) stats.Caught++;
         }
         stats.Hash = unchecked((stats.Hash ^ r.ResultHash) * 1099511628211UL);
+        foreach (var f in r.Firings)
+        {
+            if (!rounds.TryGetValue(f.Round, out var snap)) continue;
+            stats.FinalFirings++;
+            if (snap.Prim[f.Player] == Max(snap, snap.Prim, false)) stats.FiredRichestAlive++;
+            if (snap.Prim[f.Player] == Max(snap, snap.Prim, true)) stats.FiredRichestOption++;
+            if (snap.Blame[f.Player] == Max(snap, snap.Blame, false)) stats.FiredBlameLeader++;
+        }
+        foreach (var tally in finalVotes.Values)
+        {
+            int total = tally.Values.Sum();
+            if (total == 0) continue;
+            stats.VoteRounds++;
+            stats.VoteTopShare += (double)tally.Values.Max() / total;
+        }
+        var prims = r.Players.Select(x => x.Prim).OrderByDescending(x => x).ToList();
+        stats.WinnerPrim += prims[0];
+        stats.WinnerGap += prims[0] - prims[1];
+        if (r.Winners.Count > 1) stats.Shared++;
     }
 
     private static double Avg<T>(Dictionary<LineBotPolicy, T> sum, Dictionary<LineBotPolicy, int> count, LineBotPolicy p)
@@ -233,5 +341,10 @@ internal static class Program
                      ", caught takers " + F((double)s.Caught / s.Matches));
         b.AppendLine("Firings decided by revote " + F(Pct(s.Revotes, s.Firings)) + "%, by tie-break " + F(Pct(s.TieBreaks, s.Firings)) + "%; desk mean " + F((double)s.DeskTotal / Math.Max(1, s.Firings)) +
                      ", removed (remainder) mean " + F((double)s.DeskRemoved / Math.Max(1, s.Firings)) + "; result aggregate hash " + s.Hash.ToString("X16", Inv));
+        b.AppendLine("Votes: fired = richest alive " + F(Pct(s.FiredRichestAlive, s.FinalFirings)) + "%, richest candidate " + F(Pct(s.FiredRichestOption, s.FinalFirings)) +
+                     "%, suç leader " + F(Pct(s.FiredBlameLeader, s.FinalFirings)) + "%; crisis suç to the richest " + F(Pct(s.CrisisRichest, s.CrisisVotes)) +
+                     "%, to the suç leader " + F(Pct(s.CrisisBlameLeader, s.CrisisVotes)) + "%; final vote top share " + F(Pct(s.VoteTopShare, s.VoteRounds)) + "%");
+        b.AppendLine("Estimate: top-hit " + F(Pct(s.EstimateTopHits, s.EstimateChecks)) + "%, mean abs error " + F(s.EstimateAbsError / Math.Max(1, s.EstimateErrors)) +
+                     " prim; winner prim mean " + F(s.WinnerPrim / s.Matches) + ", gap to 2nd " + F(s.WinnerGap / s.Matches) + ", shared wins " + F(Pct(s.Shared, s.Matches)) + "%");
     }
 }
