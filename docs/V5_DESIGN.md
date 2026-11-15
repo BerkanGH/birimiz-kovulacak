@@ -105,7 +105,7 @@ TOPLANTI 1: iki görevin hesabı
    ↓
 Görev 3: Grup görevi (ör. Hafta Sonu Nöbeti)
    ↓
-TOPLANTI 2 (grup görevi başarısız değilse atlanır)
+TOPLANTI 2 (grup görevi başarısız değilse atlanır; v5.1: oylama yok, §8.2)
    ↓
 KRİZ  → büyük suç gizli oyla birine yazılır, suç tahtası sarsılır
 FİNAL → en çok suçu olanlar oylamaya çıkar → kovulma
@@ -142,6 +142,9 @@ bir toplantı. Sebepler:
   sayısı dolunca biter.
 - Final toplantısı: herkes kısa bir savunma yapar, ardından **gizli oylama** olur.
 - Oylamaya en çok suçu olan oyuncular çıkar. "Kimseyi kovma" seçeneği **yok**.
+- **[KARAR 2026-11-15] 0 suç olan aday olmaz.** Daha az kişi bu şartı sağlıyorsa adaylar onlardır; kovulan sayısı
+  aday sayısını geçmez. Hiç aday yoksa (Kriz 4 suç dağıttığı için olmamalı) kimse kovulmaz ve maç doğrudan sonuçlara
+  geçer.
 
 | Oyuncu | Oylamaya çıkan | Kovulan |
 |---|---|---|
@@ -160,20 +163,44 @@ bir toplantı. Sebepler:
     suçlar da eşitse primi çok olan kovulur ("Müdür en yüksek maaşı keser"). Şans yok, her zaman biri kovulur.
   - Kazanmada: primi eşit olanlar birlikte kazanır.
 
-## 6. Soruşturma Hakkı [ÖNERİ]
+## 6. Soruşturma Hakkı [KARAR 2026-11-15]
 
-- Her oyuncunun maç başına **1 soruşturma hakkı** vardır ve kullanımı **≈5 prime** mal olur.
-- Toplantıda "Ahmet beni Müşteri Bonusu'nda soydu, soruşturma açıyorum" denir. Sistem o görevdeki seçimi
-  **herkese** açıklar.
-  - Haklıysan: Ahmet büyük suç puanı alır ve kaybettiğin prim iade edilir.
-  - İftira attıysan: **suç puanı sana yazılır.**
-- Bu mekanizmanın ortaya çıkardığı stratejiler:
-  - Gerçek mağdur kesin kazanır ama bedel öder: "5 prim harcayayım mı, sessiz mi kalayım?"
-  - Hırsız seçici olur: hakkını kullanmış ya da 5 primi olmayan birini soyar.
-  - Susma parası: "Sana 3 prim vereyim, soruşturma açma." Bu konuşma kayda girebilir.
-  - Blöf: "Soruşturma açacağım" diyen biri gerçekten açacak mı?
+**Tasarım fikri (v5.1).** Prim = para = puan, en zengin kazanır. Suç = risk: kovulma adayları en çok suçu olanlardır,
+kovma oylamasıyla olur ve kovulanın masası ona oy verenlere gider. Açgözlü hamle parasını tutar; bedeli suç riskidir.
+Cezalandırmak (soruşturma, ihbar) **bedava ve kazançsızdır**: cezalandıranın kazancı dolaylıdır (rakip aday olur,
+kovulursa masasını oy verenler paylaşır). Cezalandırmayı gerçek bir karar yapan **susma pazarlığıdır**: "Sus, sana 1
+prim göndereyim." Telefonda yapılır, havaleler bağlayıcı değildir.
+
+- Her oyuncunun maç başına **1 soruşturma hakkı** vardır; 1. toplantının dosya ve tartışma bölümünde açıktır.
+- **Sadece paylaşan soruşturabilir**, o da sadece Müşteri Bonusu grubunda **hepsini alanı**. Alan kimseyi
+  soruşturamaz; iki alan birbirini de soruşturamaz. **Haksız soruşturma yoktur:** arayüz sadece geçerli hedefleri
+  gösterir, motor diğerlerini reddeder (`NotEligible`).
+- **Bedava:** maliyet yok, iade yok. Alan 5 primi tutar.
+- Alan **+4 suç** alır. Dosya satırı herkese açıktır (kim kimi soruşturdu, almış).
+- Üçlüde iki paylaşan aynı alanı soruşturamaz (ilk soruşturma geçer); iki alanlı bir üçlüde paylaşan birini seçer.
+- Ortaya çıkan stratejiler:
+  - Mağdurun kararı: "Soruşturayım mı, susma parasını mı alayım?" Soruşturma bedava ama para getirmez; susmak
+    1 prim getirir ama rakibi temiz bırakır.
+  - Alanın kararı: "Ona 1 prim göndereyim mi?" Söz bağlayıcı değil: parayı alıp yine de soruşturabilir.
+  - Blöf: "Soruşturma açacağım" diyen biri gerçekten açacak mı? Kayıt cihazı bu konuşmayı kanıta çevirebilir.
 - v4'teki kanıt pazarı (satın alınan denetimler) **tamamen kalkar.** Kesin kanıt sadece soruşturmadır, yarı kanıt
   ise kayıt sızıntısıdır.
+
+**Neden böyle? (reddedilen seçenekler)**
+- **Eski ihbar (+2 ödül, hırsız parayı kaybeder):** ihbar bedava kâr, almak her zaman kayıptı; tanık için tek doğru
+  hamle vardı, ortada karar kalmıyordu.
+- **"Hırsız parayı tutar + ihbara +1":** hâlâ otomatik; ihbar etmemek için sebep yok.
+- **İhbar edene +1 suç:** yüzeysel bir yama; ihbar etmek yine her zaman doğru hamle olarak kalıyor.
+- **Cezalandırmanın 1 prim bedeli:** mağdurun zaten düşük olan şansını öldürüyor. Kararı yaratan bedel değil, susma
+  pazarlığıdır.
+- **Yakalanan alana kısmi ceza (para kesme):** paylaşmak baskın strateji olur, almak hiç denenmez.
+- **Nöbet tutana +1 prim:** herkes nöbet tutar, görev seçim olmaktan çıkar.
+- **Alan sayısını gizlemek:** reddedildi; "kaç kişi aldı" toplantının tartışma malzemesidir.
+- **Simülasyon kanıtı** (karar öncesi karalama simülasyonu, durum hesaplayan "akıllı" botlarla): zamanlı ya da karışık
+  oynayan bot 4–6 kişide adil payın ≈ 2 katı kazanır; saf Açgözlü %81–98 kovulur. Herkesin hesap yaptığı masalarda
+  kovulan oyuncu 4/5/6 kişide %88/%87/%63 oranında suç lideridir (eski kurallarda %100/%95/%91: kovulan hep belliydi).
+  Nöbette gönüllülerin −1 suç temizliği seçimi otomatik olmaktan çıkarır (eski kurallarda akıllı botların %74–88'i nöbet
+  tutuyordu). Oyunun kendi botlarıyla güncel sayılar: `Tools/LineSim/v5-sim.txt` (`V5_ENGINE_SPEC.md` §21).
 
 ## 7. Kayıt cihazı ve oy satın alma [KARAR, sayılar ÖNERİ]
 
@@ -227,6 +254,10 @@ Güvenceyi oyuncular kendileri arar:
 
 **Müşteri Bonusu (ikili)** [KARAR]: v4'teki `bonus_pool` görevinin yeni hali.
 - Her ikili gizlice **Paylaş** ya da **Hepsini al** seçer.
+- **[KARAR 2026-11-15]** İkisi paylaşırsa **3 / 3** (eskiden 2 / 2); biri alırsa alan 5, paylaşan 0; ikisi alırsa
+  1 / 1. Üçlüde kimse almazsa herkes **3** (eskiden 2); tek alan 5, diğerleri 0; iki ya da daha fazla alan varsa herkes
+  1. Herkese açık "N kişi hepsini aldı" satırı ve görevin başarısız sayılması değişmedi. Paylaşan mağdur, alanı 1.
+  toplantıda bedavaya soruşturabilir (§6).
 - Sadece ortak, diğerinin ne seçtiğini görür. Herkese sadece "kaç kişinin hepsini aldığı" gösterilir.
 - Başarısızlık: biri "hepsini al" dediyse müşteri ilişkisi zarar görür ve suç oluşur.
 - Üçlüde biri alırsa **iki mağdur** olur; iki kişinin aynı kişiyi suçlaması daha ikna edicidir, yani üçlüde çalmak
@@ -242,21 +273,25 @@ Güvenceyi oyuncular kendileri arar:
   - Konuşmak zorunlu olur: "Sen mi alacaksın, ben mi?"
   - Ortaklık doğar: "Ben alayım, sana 1 prim veririm, sen de sus."
   - Ortaklık ihanete açıktır: parayı alıp yine de ihbar etmek ya da anlaşmaya rağmen gizlice çalmak.
+- **[KARAR 2026-11-15]** Grubunda tek alan **+3 prim alır ve ihbar edilse bile tutar** (eskiden ihbar edilince
+  kaybediyordu). **İhbar bedava ve ödülsüzdür** (eskiden +2): hırsız +3 suç alır, ilk ihbar geçerlidir. İki ya da daha
+  fazla alan yakalanır: prim yok, kişi başı +2 suç (değişmedi). Çözülmemiş hırsızlık: kasa açığı satırı, görev
+  başarısız, 1. toplantıda suç oylaması (değişmedi).
 - Tanığın 3 seçeneği:
 
 | Seçenek | Kazanç | Bedel |
 |---|---|---|
-| **Sus** | Suçlu sana borçlu kalır | Hiçbir şey kazanmazsın |
-| **İhbar et** | Açık ödül primi | Herkes ihbar ettiğini ve ödül aldığını görür: hedef olursun, düşman kazanırsın |
-| **Şantaj yap** | Telefonda gizli prim | Söz bağlayıcı değil; suçlu seni kaydedip "bana şantaj yaptı" diye çalabilir |
+| **Sus** | Suçlu sana borçlu kalır | Hiçbir şey kazanmazsın; rakip temiz kalır |
+| **İhbar et** | Rakip +3 suç alır: aday olabilir, kovulursa masası oy verenlere | Para kazandırmaz; herkes ihbar ettiğini görür, düşman kazanırsın |
+| **Susma parası al** | Telefonda gizli prim ("Sus, sana 1 prim göndereyim.") | Söz bağlayıcı değil; parayı alıp yine de ihbar edebilirsin, suçlu da seni kaydedebilir |
 
-- **İhbar kesin kanıttır.** Sistem gerçeği bilir: suçlu çaldığı primi geri verir, suç ona yazılır, tanık ödül alır.
+- **İhbar kesin kanıttır.** Sistem gerçeği bilir: suç hırsıza yazılır; parası onda kalır, tanık bir şey kazanmaz.
 - İhbarın görünür olması Kriz'deki "görünür zenginlik" sorunu değildir: Kriz'de bedel herkese zorla geliyordu,
   burada tanık bu bedeli kendisi seçer. Gizli kalmak isteyen susar ya da şantaj yapar.
 - Toplantıda müdür sadece toplamı açıklar: "Kasalardan 3 prim eksik çıktı." İhbar yoksa suç oylanır ve çalan,
   suçu masum birine atmaya çalışabilir.
 - Üçlüde tek bir kişi alabilir (iki kişi alırsa yakalanırlar). Diğer ikisi hem tanık hem de pay isteyen konumdadır.
-  İhbar ödülünü önce ihbar eden alır.
+  Sadece ilk ihbar sayılır.
 - Akış: görev (≈ 60 sn, seçim) → grup içi açılış → mola (≈ 30 sn, ihbar/sus kararı ve şantaj telefonları) →
   toplantı.
 - [ÖNERİ] İhbar kararı prototipte görev sonundaki molada verilir. [İLERİDE] **İhbar kozu:** hak maç sonuna kadar
@@ -291,10 +326,16 @@ olduğu belirsiz kaldıkça bu, istediğimiz tartışmayı üretir: "Bence en ze
 - Nöbet tutmayan **+2 prim** alır (hafta sonu ek iş). Nöbet tutan bir şey almaz.
 - **Yeterli nöbetçi çıkmazsa** görev başarısız olur ve Toplantı 2'de suç oylaması yapılır. Yeterliyse Toplantı 2
   atlanır.
+- **[KARAR 2026-11-15, yukarıdaki iki maddenin yerine]** Nöbet tutan prim almaz ama **suçu 1 azalır** (0'ın altına
+  inmez), liste dolsa da dolmasa da; görev açıklanınca uygulanır. Liste dolarsa (nöbetçi ≥ gereken) tutmayan +2 prim
+  alır ve Toplantı 2 atlanır. **Liste dolmazsa tutmayan prim almaz ve +2 suç alır**; suç Toplantı 2 açılınca
+  kendiliğinden yazılır. Toplantı 2'de bu yüzden **oylama yoktur**: dosya ve tartışma olur ("Nöbet tutmayan N kişiye
+  otomatik +2 suç yazıldı"). Gereken nöbetçi ceil(N/2) (değişmedi).
 - **Nöbet listesi herkese açık.** İhanet açıkta yapılır.
 - Neden işe yarar:
   - Ayartma net: tutmayan +2 kazanır, herkes başkasının tutmasını ister.
-  - Risk net: nöbetçi yetmezse oylamada ilk hedef, listede görünen tutmayanlardır.
+  - Risk net: nöbetçi yetmezse listede görünen tutmayanlar suç alır (v5.1: oylamasız, hepsi birden).
+  - Temizlik net (v5.1): suçu olan, nöbet tutarak 1 suç siler; seçim otomatik olmaktan çıkar.
   - Pazarlık: "Kim tutacak?" Sözünü tutmayan herkesin önünde belli olur: "Bana söz vermiştin!"
   - Satın alma: "Benim yerime nöbet tut, sana 2 prim veririm."
   - Fazla nöbetçi çıkarsa tutanlar boşuna fedakârlık etmiş, diğerleri +2'yi almış olur.
@@ -364,33 +405,35 @@ Kodlamadan önce bu çekirdek, **4 arkadaşla Discord'da kâğıt prototip** ola
 dağıtılır, prim ve suç bir tabloda tutulur, "kayıt" Discord'un ses kaydıyla taklit edilir. Bakılacaklar:
 tartışma çıkıyor mu, oylar neye göre veriliyor, maç sonunda "bir daha" deniyor mu?
 
-## 12. Prototip sayıları (v0) [KARAR, test edilecek]
+## 12. Prototip sayıları [KARAR 2026-11-15: v5.1, test edilecek]
 
-Bunlar ilk test değerleridir; kâğıt prototip ve bot simülasyonuna göre değişecek. Kodda bir config dosyasında
-durmalı.
+İlk değerler (v0) kâğıt prototip ve bot simülasyonuna göre değişti; 2026-11-15'te v5.1 kuralları karara bağlandı
+(§6, §8.2; reddedilen seçenekler §6 "Neden böyle?"). Sayıların hepsi `LineConfig`'te (`StreamingAssets/Config/
+line_config.json`, `ConfigVersion` 7); her alanın yorumu eski (v5.0) değerini de söyler. Kural kimliği `v5.1-kayit`.
 
 ### Prim
 
-| Kalem | Değer |
-|---|---|
-| Başlangıç primi | **6** |
-| Müşteri Bonusu (ikili) | İkisi paylaşırsa 2 / 2. Biri alırsa alan 5, diğeri 0. İkisi alırsa 1 / 1 |
-| Müşteri Bonusu (üçlü) | Kimse almazsa herkes 2. Biri alırsa o 5, diğerleri 0. İki ya da daha fazla kişi alırsa herkes 1 |
-| Küçük Kasa | Kasadan alan +3. İki kişi alırsa ikisi de yakalanır ve hiçbir şey kazanmaz |
-| Kasa ihbar ödülü | Tanığa +2 |
-| Hafta Sonu Nöbeti | Nöbet tutmayan +2 |
-| Soruşturma maliyeti | 4 |
+| Kalem | Değer (v5.1) | v5.0 |
+|---|---|---|
+| Başlangıç primi | **6** | 6 |
+| Müşteri Bonusu (ikili) | İkisi paylaşırsa **3 / 3**. Biri alırsa alan 5, diğeri 0. İkisi alırsa 1 / 1 | 2 / 2 … |
+| Müşteri Bonusu (üçlü) | Kimse almazsa herkes **3**. Biri alırsa o 5, diğerleri 0. İki ya da daha fazla kişi alırsa herkes 1 | herkes 2 … |
+| Küçük Kasa | Grubunda tek alan +3 ve **ihbar edilse de tutar**. İki kişi alırsa ikisi de yakalanır ve hiçbir şey kazanmaz | ihbar edilen 3'ü kaybeder |
+| Kasa ihbar ödülü | **0** (ihbar bedava ve ödülsüz) | +2 |
+| Hafta Sonu Nöbeti | Liste dolarsa tutmayan +2; **dolmazsa tutmayan 0**; nöbet tutan 0 | tutmayan hep +2 |
+| Soruşturma maliyeti / iadesi | **0 / 0** (bedava; alan 5'i tutar) | 4 / haklıysa 3 |
 
 ### Suç
 
-| Kalem | Değer |
-|---|---|
-| Toplantı oylaması | Başarısız görev başına herkesin 1 oyu, her oy 1 suç |
-| İhbar edilen kasa hırsızı | +3 suç, çaldığı 3 primi geri verir |
-| İki kişi birden kasadan alırsa | İkisine de +2 suç (oylama yapılmaz) |
-| Soruşturma haklı çıkarsa | Suçlanan +3 suç ve mağdura 3 prim öder |
-| Soruşturma haksız çıkarsa | Açan +3 suç, ödediği 4 prim de gider |
-| Kriz | 4 suç, gizli oyla en çok oyu alana; beraberlikte eşit paylaşılır |
+| Kalem | Değer (v5.1) | v5.0 |
+|---|---|---|
+| Toplantı oylaması | Başarısız görev başına herkesin 1 oyu, her oy 1 suç (1. toplantı; 2. toplantıda oylama yok) | 2. toplantıda da |
+| İhbar edilen kasa hırsızı | +3 suç, çaldığı 3 prim **onda kalır** | +3, 3'ü geri verir |
+| İki kişi birden kasadan alırsa | İkisine de +2 suç (oylama yapılmaz) | aynı |
+| Soruşturma | Sadece paylaşan, hepsini alanı: alan **+4 suç** (haksız soruşturma yok) | +3 ve 3 prim öder; haksızsa açana +3 |
+| Nöbet tutan | **−1 suç** (0'ın altına inmez), liste dolsa da dolmasa da | yok |
+| Eksik nöbette tutmayan | **+2 suç**, Toplantı 2 açılınca, oylamasız | oylama |
+| Kriz | 4 suç, gizli oyla en çok oyu alana; beraberlikte eşit paylaşılır | aynı |
 
 ### Diğer
 
@@ -398,17 +441,18 @@ durmalı.
 |---|---|
 | Soruşturma hakkı | Maç başına 1 |
 | Kayıt cihazı | Maç başına 1 kullanım (4 kişide en fazla 4 sızıntı; az olduğu için her biri değerli) |
+| Aday olmak | En az **1 suç** (v5.1; eskiden 0 suç da aday olabiliyordu). Kovulan sayısı ≤ aday sayısı; aday yoksa kovulan yok |
 
-### Sağlama (4 oyuncu, kaba)
+### Sağlama (4 oyuncu, kaba, v5.1)
 
-- Dürüst oyuncu: 6 + 2 (Bonus) + 0–2 (Nöbet) ≈ **8–10 prim**.
-- Açgözlü oyuncu: 6 + 5 + 3 + 2 ≈ **15–16 prim**.
-- Açgözlü oyuncu kovulursa ona oy veren 3 kişi kişi başı ≈ **5 prim** alır: dürüst bir oyuncunun toplamının
-  yarısı. Kovmak için güçlü bir sebep.
-- Maçta dağıtılan suç: 2–3 başarısız görev × 4 oy + Kriz 4 ≈ **12–16**. Lider ≈ 5–6 suçta; Kriz'in 4 suçu
-  sıralamayı gerçekten değiştirebilir.
-- Soruşturma (4) başlangıç primiyle karşılanabilir ama harcayanı belirgin şekilde fakirleştirir.
+- Dürüst oyuncu: 6 + 3 (Bonus) + 0–2 (Nöbet) ≈ **9–11 prim**; nöbet tutarsa 1 suç siler.
+- Açgözlü oyuncu: 6 + 5 + 3 + 2 ≈ **16 prim**, ihbar ve soruşturmadan sonra da (para onda kalır); bedeli suçtur:
+  soruşturma +4, ihbar +3, eksik nöbet +2.
+- Açgözlü oyuncu kovulursa ona oy veren 3 kişi kişi başı ≈ **5 prim** alır. Kovmak için güçlü bir sebep; kovmak için
+  de önce aday olması (suç) gerekir.
+- Mağdur ve tanık için ceza bedava ama kazançsız; asıl soru susma parasıdır ("Sus, sana 1 prim göndereyim.").
 
-Bot simülasyonunun güncel sayıları: `Tools/LineSim/v5-sim.txt` (açıklaması `V5_ENGINE_SPEC.md` §20). 2026-11-15'ten beri
-botlar her oylamada kazanmak için en zengin olduğunu tahmin ettikleri rakibe oy verir (eski "bildiği suçlu, yoksa en
-yüksek suç" kuralının sayıları için LineSim `--vote blame`). Bu bir bot davranışıdır; buradaki kurallar ve sayılar değişmedi.
+Bot simülasyonunun güncel sayıları: `Tools/LineSim/v5-sim.txt` (açıklaması `V5_ENGINE_SPEC.md` §20, v5.1 için §21).
+2026-11-15'ten beri botlar her oylamada kazanmak için en zengin olduğunu tahmin ettikleri rakibe oy verir (eski "bildiği
+suçlu, yoksa en yüksek suç" kuralının sayıları için LineSim `--vote blame`); cezalandırmayı susma pazarlığına göre
+yaparlar (`V5_BOT_TALK.md` §4.1). v5.0 kurallarıyla sayılar: LineSim `--rules old`.

@@ -1048,7 +1048,7 @@ Envelope fields (every event, omitted when not applicable): schema_version, even
 |---|---|---|---|---|
 | `player` | slot (0-5) | yes | no |  |
 | `delta` | int | yes | no |  |
-| `reason` | enum | yes | no | @BlameReason (vote, cash_caught, whistled, investigation_guilty, investigation_false, crisis, tutanak) |
+| `reason` | enum | yes | no | @BlameReason (vote, cash_caught, whistled, investigation_guilty, investigation_false, crisis, tutanak, shift_clean, shift_fail_skip) |
 | `blame_after` | int | yes | no |  |
 
 ### final_started

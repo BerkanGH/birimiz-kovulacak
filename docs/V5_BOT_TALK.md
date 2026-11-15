@@ -13,6 +13,12 @@ oylarını artık parayla açıklar ve toplantıda kimin zengin olduğunu düş�
 ("bildiği suçlu, yoksa en yüksek suç") `LineBotVoteStyle.MostBlame` olarak duruyor (LineSim `--vote blame`); o kuraldaki
 botlar eski cümleleri söyler.
 
+**Güncelleme (2026-11-15, v5.1 kuralları): susma pazarlığı.** Ceza (soruşturma, ihbar) artık bedava ve kazançsız;
+alan parasını tutar (`V5_DESIGN.md` §6, §8.2). Botların ceza kararları buna göre değişti (§4.1): Dürüst cezalandırabildiği
+her zaman cezalandırır ve susma parasını geri gönderir; Açgözlü sadece para alırsa cezalandırır (parayı tutar, yarı
+yarıya yine de cezalandırır); Karışık her kişi için ikisinden birini oynar. Alan Açgözlü / Karışık bot, mağdurunu ya da
+tanığını molada arayıp 1 prim susma parası gönderir. Görev seçimleri ve oylar değişmedi.
+
 Botlar sadece test içindir; gerçek maçlar 3–6 insanla oynanır. Amaç, tek başına test ederken ofisin ve toplantının boş
 hissettirmemesi.
 
@@ -56,13 +62,13 @@ hissettirmemesi.
 | Durum | Dürüst | Açgözlü | Karışık |
 |---|---|---|---|
 | Telefonu açınca | "Alo {arayan}, dinliyorum." <br>*"Hello {caller}, I'm listening."* | "Hah, ben de tam seni arayacaktım!" <br>*"Ha, I was just about to call you!"* | "Efendim? Kısa olsun, müdür etrafta." <br>*"Yes? Keep it short, the boss is around."* |
-| Reddederken | (her zaman açar) | "Şu an çok yoğunum." <br>*"I'm really busy right now."* | "Sonra ararım." <br>*"I'll call you back."* |
+| Reddederken | (her zaman açar) | (v5.1: her zaman açar; soyduğu kişiye susma parası teklif edecek) | "Sonra ararım." <br>*"I'll call you back."* |
 | Kapatırken | "Tamam, anlaştık. Kolay gelsin." <br>*"Okay, deal. Take care."* | "Sen hiç merak etme, canım." <br>*"Don't you worry about a thing, dear."* | "Bakalım. Görüşürüz." <br>*"We'll see. Talk later."* |
 | Prim gelince | "Geldi, sağ ol. Sözüm söz." <br>*"Got it, thanks. A promise is a promise."* | "Geldi geldi, sen bir tanesin." <br>*"Got it, got it, you're one of a kind."* | "Gördüm. Tamam." <br>*"Seen it. Okay."* |
 
-Reddetme: Açgözlü molada soyduğu kişinin (Müşteri Bonusu'nda paylaşan ortağı) **ilk** aramasını reddeder; tekrar ararsa
-açar ve "Sistem hatası…" der. Karışık, söyleyecek bir derdi olmayan aramaların ~%30'unu "Sonra ararım." diyerek
-reddeder ve yaklaşık yarısında gerçekten geri arar (söz).
+Reddetme: Karışık, söyleyecek bir derdi olmayan aramaların ~%30'unu "Sonra ararım." diyerek reddeder ve yaklaşık
+yarısında gerçekten geri arar (söz). (v5.0'da Açgözlü molada soyduğu kişinin ilk aramasını reddedip ikincisine "Sistem
+hatası…" diyordu; v5.1'de o kişiye susma parası teklif ettiği için açar: §4.1. "Şu an çok yoğunum." cümlesi kalktı.)
 
 ## 3. Müşteri Bonusu (Paylaş / Hepsini al)
 
@@ -75,8 +81,8 @@ Soru düğmeleri: **[1] Ne seçeceksin?** *(What will you pick?)* · **[2] Payla
 | [1] | "Paylaş. Söz." <br>*"Share. I promise."* | "Paylaş tabii, ne sandın?" <br>*"Share, of course. What did you think?"* | "Paylaş." / "Önce sen söyle." <br>*"Share." / "You say first."* |
 | [2] | "Tamam, anlaştık." <br>*"Okay, deal."* | "Anlaştık! Telefondan elini sıkıyorum." <br>*"Deal! Shaking your hand over the phone."* | "Olur. Ama hepsini alırsan toplantıda söylerim." <br>*"Fine. But if you take it all, I'll say so in the meeting."* |
 | [3] | "Söz verdiysem tutarım." <br>*"If I gave my word, I keep it."* | "Bana güvenmeyeceksin de kime güveneceksin?" <br>*"If you can't trust me, who can you trust?"* | "Sen bana güvenirsen ben de sana." <br>*"You trust me and I'll trust you."* |
-| Molada, ortağı hepsini aldıysa (bot arar) | "Hepsini almışsın. Toplantıda söyleyeceğim." <br>*"You took it all. I'll say so in the meeting."* | "3 prim gönder, kimseye söylemem." <br>*"Send me 3 prim and I won't tell anyone."* | "Neden yaptın? Bir açıklaman var mı?" <br>*"Why did you do it? Got an explanation?"* |
-| Molada, bot hepsini aldıysa ve ortağı ararsa | (Dürüst almaz) | "Sistem hatası olmalı, ben paylaşa bastım." <br>*"Must be a system error, I pressed share."* | "Tamam, aldım. Sana 1 prim atayım, unutalım." <br>*"Fine, I took it. Let me send you 1 prim and we forget it."* |
+| Molada, ortağı hepsini aldıysa (bot arar) | "Hepsini almışsın. Toplantıda soruşturma açacağım." <br>*"You took it all. I'll open an investigation in the meeting."* | "3 prim gönder, kimseye söylemem." <br>*"Send me 3 prim and I won't tell anyone."* | "Neden yaptın? Bir açıklaman var mı?" <br>*"Why did you do it? Got an explanation?"* |
+| Molada, bot hepsini aldıysa (bot arar ya da ortağı ararsa; + 1 prim, §4.1) | (Dürüst almaz) | "Soruşturma açma, 1 prim senin." <br>*"Don't open an investigation. 1 prim is yours."* | "Tamam, aldım. Sana 1 prim atayım, unutalım." <br>*"Fine, I took it. Let me send you 1 prim and we forget it."* |
 
 Karışık hepsini alacaksa: yalan yazı-turası "yalan" derse "Paylaş." / "Olur…" / açılış cümlesini söyler; "doğru" derse
 [1]'de "Önce sen söyle.", [2]'de "Sen bana güvenirsen ben de sana." der ve ortağını aramaz. Dürüst bu cümleyi hep doğru
@@ -92,16 +98,51 @@ take it, will you keep quiet?)* · **[3] Sen alırsan bana ne verirsin?** *(If y
 |---|---|---|---|
 | Bot arar | "Kasaya dokunmuyorum. Sen de dokunma, ikimiz de temiz kalalım." <br>*"I'm not touching the box. Don't you either, let's both stay clean."* | "Bak, ben almıyorum. Kasa senin olsun." <br>*"Look, I'm not taking it. The box is all yours."* | "Biri alacaksa ikimiz birden almayalım, yoksa yakalanırız. Kim alıyor?" <br>*"If someone takes it, not both of us, or we get caught. Who's taking it?"* |
 | [1] | "Hayır." <br>*"No."* | "Yok canım, ben öyle şey yapar mıyım?" <br>*"Oh come on, would I ever do that?"* | "Belki. Sen?" <br>*"Maybe. You?"* |
-| [2] | "Hayır, ihbar ederim. Kusura bakma." <br>*"No, I'd report it. Sorry."* | "1 prim gönderirsen susarım." <br>*"Send me 1 prim and I'll keep quiet."* | "2 prim. Pazarlık yok." <br>*"2 prim. No haggling."* |
+| [2] | "Hayır, ihbar ederim. Para gönderirsen de geri yollarım." <br>*"No, I'd report it. Send me money and I'll send it back."* | "1 prim gönderirsen susarım." <br>*"Send me 1 prim and I'll keep quiet."* | "2 prim. Pazarlık yok." <br>*"2 prim. No haggling."* |
 | [3] | "Almayacağım ki." <br>*"But I'm not taking it."* | "1 prim, ama önce sen söz ver." <br>*"1 prim, but you promise first."* | "Alırsam 1 prim." <br>*"If I take it, 1 prim."* |
 | Molada, bot tanıksa (bot arar) | "Gördüm. İhbar ediyorum, haberin olsun." <br>*"I saw it. I'm reporting it, just so you know."* | "2 prim gönder, düğmeye basmam." <br>*"Send me 2 prim and I won't press the button."* | "Bir sebebin varsa dinliyorum." <br>*"If you have a reason, I'm listening."* |
-| Molada, bot hırsızsa (bot arar) | (Dürüst almaz) | "Sus, sana 1 prim gönderiyorum." <br>*"Keep quiet, I'm sending you 1 prim."* | "1 prim gönderiyorum, aramızda kalsın." <br>*"I'm sending you 1 prim, let's keep this between us."* |
+| Molada, bot hırsızsa (bot arar; + 1 prim, §4.1) | (Dürüst almaz) | "Sus, sana 1 prim göndereyim." <br>*"Keep quiet and let me send you 1 prim."* | "1 prim gönderiyorum, aramızda kalsın." <br>*"I'm sending you 1 prim, let's keep this between us."* |
 
-**Her bot gördüğü hırsızlığı ihbar eder** (`LineBot`: tanık her politikada molada ihbar eder). Bu yüzden susma sözleri
-("1 prim gönderirsen susarım", "2 prim. Pazarlık yok.", "2 prim gönder, düğmeye basmam") hiç tutulmaz: Açgözlü'de hep
-yalan, Karışık'ta ise yalan yazı-turası "doğru" derse bunun yerine "Bir sebebin varsa dinliyorum." der. "Alırsam 1 prim"
-(Karışık) ve "1 prim, ama önce sen söz ver" (Açgözlü) kasadan aldıysa ödenecek sözlerdir: Karışık yarı yarıya öder,
-Açgözlü ödemez.
+**v5.1: ihbar susma pazarlığına bağlı** (§4.1). Dürüst gördüğü her hırsızlığı ihbar eder (parayı geri yollar). Açgözlü
+para almadan ihbar etmez; aldıysa yarı yarıya yine de eder. Bu yüzden Açgözlü'nün susma sözleri ("1 prim gönderirsen
+susarım", "2 prim gönder, düğmeye basmam") **para gelince ihanet yazı-turası "sus" diyorsa doğrudur**, "ihbar" diyorsa
+yalandır (`truthful` buna göre). Karışık Açgözlü modundaysa "2 prim. Pazarlık yok." aynı kurala uyar; Dürüst modundaysa
+yalan yazı-turası "yalan" derse bu cümleyi (yalan) söyler, "doğru" derse "Bir sebebin varsa dinliyorum." der. "Alırsam 1
+prim" (Karışık) ve "1 prim, ama önce sen söz ver" (Açgözlü) kasadan aldıysa ödenecek sözlerdir: Karışık yarı yarıya
+öder, Açgözlü ödemez (susma parası bu sözü ödemiş sayılmaz).
+
+### 4.1 Susma pazarlığı (v5.1, 2026-11-15)
+
+Ceza bedava ve kazançsız olduğu için karar susma parasında. Botların ceza kararı (`LineBot`, `LineBotPunishStyle.Deals`):
+
+| | Dürüst | Açgözlü | Karışık |
+|---|---|---|---|
+| Ceza (ihbar / soruşturma) | Cezalandırabildiği her zaman | Sadece para aldıysa, o zaman da yarı yarıya (ihanet yazı-turası) | Her kişi için yazı-tura: Dürüst modu ya da Açgözlü modu |
+| Susma parası gelirse | Geri gönderir (kendi havalesi) ve yine cezalandırır; rüşvet almaz | Tutar; yazı-turası "ihbar" derse yine cezalandırır | Moduna göre |
+| Kendisi aldıysa | (Dürüst almaz) | Her mağdura / tanığa 1 prim susma parası | Her mağdura / tanığa 1 prim susma parası |
+
+- **Teklif.** Müşteri Bonusu'nda alan (ortağı paylaştıysa) ya da Küçük Kasa'da grubunda tek alan Açgözlü / Karışık bot,
+  molada her mağdurunu / tanığını arar: "Soruşturma açma, 1 prim senin." / "Tamam, aldım. Sana 1 prim atayım, unutalım."
+  (Bonus), "Sus, sana 1 prim göndereyim." / "1 prim gönderiyorum, aramızda kalsın." (Kasa); cümleden hemen sonra 1
+  prim gönderir. Mağdur önce ararsa aynı cümleyi orada söyler (bir kez). Arama zamanında olmazsa (meşgul, reddedildi,
+  cevapsız) cümleyi mesajla yazar ve primi yine gönderir: Bonus'ta molanın %85'inde, Kasa'da %55'inde (tanık molada
+  karar verir). Bu bir söz değil, peşin ödemedir: Açgözlü de öder (anlaşmayı satın alır).
+- **Cevap.** Cezalandırabileceği kişiden para gelen bot, LineBot'un gerçekten yapacağını söyler (telefondaysa telefonda,
+  değilse mesajla; kişi başına bir kez): Dürüst modu "Paranı geri gönderiyorum. Susmam, kusura bakma." / Karışık
+  "Paranı geri yolladım. Bu iş parayla kapanmaz." (doğru: geri gönderir, cezalandırır); Açgözlü modu "Geldi. Merak etme,
+  ağzımı açmam." / Karışık "Tamam. Bu sefer görmezden geliyorum." (ihanet yazı-turası "ihbar" diyorsa yalan).
+- **İnsanlar.** Bir insan bota susma parası gönderirse bot aynı kurallarla davranır. Paranın sayıldığı aralık: o görevin
+  seçim süresi başından 1. toplantının sonuna kadar.
+- **Toplantı.** Parayı alıp yine de cezalandıran biri varsa ödeyen bot 1. toplantıda söyler: "{0} paramı aldı, yine de
+  beni yaktı!" / *"{0} took my money and still turned me in!"* (Açgözlü), "{0} ile anlaşmıştık. Sözünü tutmadı." /
+  *"{0} and I had a deal. They didn't keep their word."* (Karışık); {0} = {cezalandıran}. Para geri geldiyse söylemez. Bu cümle adı geçeni
+  suçlar: o da bir kez cevap verir.
+- **Kayıt (sonuç ekranında):** `bottalk hush seat policy kind to amount=1 via=phone|text|none punished returned` (her
+  susma parası) ve `bottalk punish seat policy kind=whistle|investigation target mode=honest|greedy paid returned punished
+  by_other spent outcome=none|refused|kept|betrayed` (cezalandırabileceği her kişi), `bottalk deal …` (para geldiği an).
+  `verify_logs.py` bunları politika başına sayar; Dürüst para tutarsa ya da susma parası öderse, Dürüst modu
+  cezalandırabildiği birini cezalandırmazsa (başkası etmediyse, soruşturma hakkını başka alana harcamadıysa) ya da
+  Açgözlü modu parasız cezalandırırsa FAIL verir.
 
 ## 5. Hafta Sonu Nöbeti
 
@@ -112,8 +153,8 @@ I don't sign?)*
 |---|---|---|---|
 | Bot arar | "Ben yazıyorum. {K} kişi lazım, sen de yaz." <br>*"I'm signing up. We need {K}, sign up too."* <br>Yazmayacaksa: "Bu sefer ben yazmıyorum, {K} kişi lazım. Sen yazarsan sana 1 prim gönderirim." <br>*"I'm not signing up this time; we need {K}. Sign up and I'll send you 1 prim."* | "Ben yazdım bile, sıra sende." <br>*"I've already signed, your turn."* | "Kaç kişi yazdı acaba? Ben son dakikaya bakacağım." <br>*"I wonder how many signed up. I'll check at the last minute."* |
 | [1] | "Evet, yazacağım." <br>*"Yes, I'll sign up."* <br>Yazmayacaksa: "Hayır, bu sefer yazmıyorum." <br>*"No, I'm not signing up this time."* | "Tabii, hafta sonu zaten boşum." <br>*"Of course, my weekend is free anyway."* | "Sen yazarsan ben de yazarım." <br>*"If you sign up, I'll sign up."* |
-| [2] | "Olmaz, {K} kişi lazım. Yazmazsan görev batar." <br>*"No, we need {K}. If you don't sign, the task fails."* | "Yazma yazma, biz hallederiz." <br>*"Don't, don't, we'll handle it."* | "1 prim gönder, senin yerine ben yazarım." <br>*"Send me 1 prim and I'll sign in your place."* |
-| Sonuç eksikse (bot arar) | "Yazmayanlar belli. Toplantıda konuşuruz." <br>*"We can see who didn't sign. Let's talk in the meeting."* | "Ben yazmıştım, liste mi bozuk?" <br>*"I signed it, is the roster broken?"* | "Bu sefer kim kaçtı acaba?" <br>*"I wonder who ran off this time?"* |
+| [2] | "Olmaz, {K} kişi lazım. Yazmazsan görev batar, yazmayanlara suç yazılır." <br>*"No, we need {K}. If you don't sign, the task fails and the skippers get suç."* | "Yazma yazma, biz hallederiz." <br>*"Don't, don't, we'll handle it."* | "1 prim gönder, senin yerine ben yazarım." <br>*"Send me 1 prim and I'll sign in your place."* |
+| Sonuç eksikse (bot arar) | "Yazmayanlar belli. Toplantıda hepsine suç yazılacak." <br>*"We can see who didn't sign. They all get suç in the meeting."* | "Ben yazmıştım, liste mi bozuk?" <br>*"I signed it, is the roster broken?"* | "Bu sefer kim kaçtı acaba?" <br>*"I wonder who ran off this time?"* |
 
 Dürüst, `LineBot`'un basit sayımına göre yazar: suçu en az olan Gerekli+1 kişiden biriyse yazar, değilse yazmaz. Yazmadığı
 durumda "ben yazıyorum" diyemez; yazmadığını söyler ve yazan kişiye 1 prim sözü verir, liste açılınca o kişi yazdıysa
@@ -160,13 +201,14 @@ Sadece kendi görüşü (`LineView`) ve hatırladıkları (toplantı dosyası he
 - Herkes başlangıç primiyle (6) başlar; kendi primini kesin bilir; kovulan 0 sayılır.
 - **Müşteri Bonusu:** kendi grubu kesin. Diğerleri: herkese açık "alan sayısı"ndan beklenen ödeme; bilinmeyen alanlar
   kalan kişilere dağıtılır, kasadan aldığı bilinenlere daha çok. Soruşturmanın sonucu (aldı / paylaştı) kesin bilgidir.
-- **Küçük Kasa:** yakalananlar 0, ihbar edilen hırsız 0 (aldığını geri verdi), ihbar eden +2, kendi grubu kesin.
+- **Küçük Kasa:** yakalananlar 0, ihbar edilen hırsız +3 (v5.1: parayı tutar; v5.0: 0), ihbar eden +0 (v5.0: +2),
+  kendi grubu kesin.
   Dosyadaki çözülmemiş hırsızlık sayısı (kendi grubundaki hariç) alabilecek kişilere dağıtılır (yakalanan, ihbar edilen ve
   ihbar eden alamaz), Müşteri Bonusu'nda alma olasılığına göre.
-- **Hafta Sonu Nöbeti:** listede olmayan herkese +2.
-- **Soruşturma:** açan −4, haklı çıktıysa +3; haklı çıktığı kişi −3.
+- **Hafta Sonu Nöbeti:** liste dolduysa listede olmayan herkese +2; dolmadıysa 0 (v5.1).
+- **Soruşturma:** v5.1'de para hareketi yok (v5.0: açan −4, haklı çıktıysa +3; haklı çıktığı kişi −3).
 - **Final:** kovulanların masa payı alanlara eklenir.
-- **Kendi havaleleri:** X'e N gönderdiysem X +N; X bana N gönderdiyse X −N.
+- **Kendi havaleleri:** X'e N gönderdiysem X +N; X bana N gönderdiyse X −N (susma parası ve iadesi dahil).
 - **Yaramazlıklar:** herkese açık listede yapanı belli olan şakanın maliyeti yapanından düşülür (telefon çaldırmanın
   yapanı sonuç ekranına kadar gizli: sayılmaz).
 
@@ -181,7 +223,8 @@ LineSim'de (`Tools/LineSim/v5-sim.txt`) tahminin en zengini bulma oranı 3 kişi
 | Mağdurken | "{hırsız} Müşteri Bonusu'nda hepsini aldı. Ben paylaşmıştım." <br>*"{thief} took the whole Client Bonus. I had shared."* | Para aldıysa: "Benim bir şikâyetim yok." <br>*"I have no complaints."* <br>Almadıysa: "{hırsız} beni soydu, herkes bilsin!" <br>*"{thief} robbed me, everyone should know!"* | "{hırsız} ile bir sorunum var. Soruşturma açabilirim." <br>*"I have a problem with {thief}. I might open an investigation."* |
 | Tanıkken | "Kasadan {hırsız} aldı. Gördüm." <br>*"{thief} took from the petty cash. I saw it."* | İhbar ettiyse ve para aldıysa: "Kasadan {hırsız} aldı, ihbar ettim. Benimle bir pazarlık falan olmadı." <br>*"{thief} took from the petty cash and I reported it. There was no deal with me or anything."* <br>İhbar ettiyse, para almadıysa: "Kasadan {hırsız} aldı. İhbar ettim, herkes bilsin." <br>*"{thief} took from the petty cash. I reported it, everyone should know."* <br>İhbar etmediyse ve para aldıysa: "Ben bir şey görmedim." <br>*"I didn't see anything."* | "Kasayla ilgili bildiğim bir şey var. Soran olursa." <br>*"I know something about the petty cash. If anyone asks."* |
 | Suçluyken (dikkat dağıtma) | — | "{masum} çok sessiz. Bence asıl o bir şey saklıyor." <br>*"{innocent} is very quiet. I think they're the one hiding something."* | "Hepimizin bir hatası var, değil mi?" <br>*"We all make mistakes, right?"* |
-| Suçlanınca | "Ben bir şey yapmadım. Soruşturma açın, görürsünüz." <br>*"I didn't do anything. Open an investigation and you'll see."* | "Yalan! {suçlayan} benden prim istedi, vermedim diye konuşuyor." <br>*"Lies! {accuser} asked me for prim and is talking because I said no."* | Aldıysa: "Evet aldım, ama {başkası} daha fazlasını yaptı." <br>*"Yes, I took it, but {someone else} did worse."* |
+| Suçlanınca | "Ben bir şey yapmadım. Grubuma sorun, görürsünüz." <br>*"I didn't do anything. Ask my group, you'll see."* (v5.1: paylaşan soruşturulamaz) | "Yalan! {suçlayan} benden prim istedi, vermedim diye konuşuyor." <br>*"Lies! {accuser} asked me for prim and is talking because I said no."* | Aldıysa: "Evet aldım, ama {başkası} daha fazlasını yaptı." <br>*"Yes, I took it, but {someone else} did worse."* |
+| Parayı alıp yine de cezalandırıldıysa (v5.1, §4.1) | — | "{cezalandıran} paramı aldı, yine de beni yaktı!" <br>*"{0} took my money and still turned me in!"* | "{cezalandıran} ile anlaşmıştık. Sözünü tutmadı." <br>*"{0} and I had a deal. They didn't keep their word."* |
 | Kendi kaydı sızınca | "Evet, o benim. Söylediğimin arkasındayım." <br>*"Yes, that's me. I stand by what I said."* | "Bu kayıt bağlamından koparılmış!" <br>*"That recording is taken out of context!"* | "Hmm. Bunu açıklayabilirim." <br>*"Hmm. I can explain that."* |
 | Final oyu (eski kural) | "Suç tahtasında lider {lider}. Oyum ona." <br>*"{leader} leads the suç board. My vote goes there."* <br>Lider değilse: "Ben {hedef} diyorum. Ne yaptığını biliyorum." | "Çekmecesi en dolu olanı kovalım, primi bize kalır." <br>*"Let's fire the one with the fullest drawer, the prim stays with us."* | "Bu sefer {hedef} diyorum." <br>*"This time I'm saying {target}."* |
 | Final oyu (para ile oy) | "Hesabıma göre adaylar içinde en zengin {hedef}. Oyum ona." <br>*"By my count {target} is the richest candidate. My vote goes there."* <br>Bazen (ya da kendini daha zengin sanan aday ise her zaman): "Görevlerde dürüst oynadım ama kazanmak da istiyorum: oyum {hedef}." | (değişmedi) "Çekmecesi en dolu olanı kovalım, primi bize kalır." | "Paranın çoğu {hedef} tarafında, gönderelim." <br>*"Most of the money is on {target}'s side. Let's send them off."* (yalan yazı-turası "yalan" derse başka bir aday) |
@@ -207,7 +250,7 @@ LineSim'de (`Tools/LineSim/v5-sim.txt`) tahminin en zengini bulma oranı 3 kişi
   oylamasına kadar bilgi değişebilir); kimseyi hırsızlıkla suçlamaz, bu yüzden adı geçen bot "suçlandım" diye cevap vermez.
 
 Yer tutucular: {arayan} arayan kişi, {ortak} ortak, {hırsız} çalan, {masum} suçsuz biri, {suçlayan} botu suçlayan,
-{başkası} başka bir suçlu, {lider} suç tahtası lideri (aynı zamanda botun gerçek oyu), {hedef} botun oy hedefi, {K}
+{başkası} başka bir suçlu, {cezalandıran} parayı alıp yine de cezalandıran (v5.1), {lider} suç tahtası lideri (aynı zamanda botun gerçek oyu), {hedef} botun oy hedefi, {K}
 gereken nöbetçi sayısı. Kodda her anahtarın yer tutucuları sırayla `{0}`, `{1}` (`LineBotLines`).
 
 ## 8. Taslaktan değişenler (gerçek davranış farklı olduğu için)
@@ -241,6 +284,15 @@ gereken nöbetçi sayısı. Kodda her anahtarın yer tutucuları sırayla `{0}`,
    görünmeye başladıysa [2]'ye "Oyumu söyledim, değiştirmem. Sana değil." der (söylenen oy değişmez, ama "o sen
    değilsin" artık inandığı şey olmazdı). Renk adından sonra ek yok ("Oyum: {X}." / "{X} — …" kalıbı).
 
+9. **v5.1 kuralları (2026-11-15).** Ceza bedava ve kazançsız olunca "her bot ihbar eder" kuralı kalktı (§4.1). Değişen
+   cümleler: Dürüst'ün mağdur araması "…Toplantıda soruşturma açacağım.", [2] cevabı "…Para gönderirsen de geri
+   yollarım.", suçlanınca "…Grubuma sorun, görürsünüz." (paylaşan artık soruşturulamaz), nöbet cümleleri ("yazmayanlara
+   suç yazılır"); Açgözlü'nün kasa cümlesi "Sus, sana 1 prim göndereyim." (artık gerçekten öder). Yeni: "Soruşturma
+   açma, 1 prim senin." (Açgözlü, Bonus), susma parasına cevaplar (`bot.deal.*`), "paramı aldı, yine de beni yaktı"
+   (`bot.meet.betrayed.*`). Kalkan: "Sistem hatası olmalı, ben paylaşa bastım." ve "Şu an çok yoğunum." (Açgözlü artık
+   soyduğu kişiyi reddetmez, ona para teklif eder). Açgözlü'nün susma sözlerinin doğruluğu artık ihanet yazı-turasına
+   bağlı (önceden hep yalandı).
+
 ## 9. Teknik
 
 | Parça | Dosya |
@@ -248,6 +300,7 @@ gereken nöbetçi sayısı. Kodda her anahtarın yer tutucuları sırayla `{0}`,
 | Cümle kataloğu, soru düğmeleri, sohbet jetonu | `Core/Line/Engine/LineBotTalk.cs` (`LineBotLines`, `BotLine`, `BotAsk`) |
 | Konuşma beyni (arama, cevap, toplantı, söz, kayıt) | `Core/Line/Engine/LineBotTalker.cs` (saf C#, testli) |
 | Kararların önizlemesi | `LineBot.PlannedTaskChoice`, `LineBot.PlannedVote`: aynı politika, botun rastgele durumunun kopyasıyla; kararı değiştirmez (LineSim sonuçları birebir aynı) |
+| Ceza ve susma pazarlığı (v5.1) | `LineBot.PunishStyle` (`Deals` varsayılan, `Legacy` v5.0), `HonestMode` / `Betrays` / `SilenceMoney` / `WillPunish` / `Owed` / `Victim` / `Witness` (tohum karması yazı-turaları; rastgele akıştan çekmez), `TransferHoldUntil` / `NoteTransfer` (botun iadesi ile konuşmanın ödemesi çakışmasın); konuşma tarafı `LineBotTalker` (hush, `DealOpen`, `DealReaction`, `BetrayedLine`, `LogDeals`) |
 | Para ile oy | `LineBot.VoteStyle` (`Richest` varsayılan, `MostBlame` eski kural), `Core/Line/Engine/LineBotLedger.cs` (defter), `LineBot.EstimatedPrim` / `RichestRival` (konuşma için tahmin), `LineBot.CommitVote` (söylenen oy bağlanır) |
 | Ağ | `Scripts/Net/BotSpeech.cs` (paketler, döküm, mırıltı, konuşma seviyesi), `NetSession.BotTalkRpc` / `BotTalkToRpc`, `HostLineController.OnBotTalk` (sadece aynı görüşmenin iki ucu arasında iletir) |
 | Host botları / `-bot` süreçleri | `HostLineController.TickBots` → `Talk`; `LineBotDriver.Talk` |
@@ -273,9 +326,13 @@ gereken nöbetçi sayısı. Kodda her anahtarın yer tutucuları sırayla `{0}`,
 - **Testler:** `Tests/Line/LineBotTalkTests.cs`: önizlemeler kararı değiştirmez ve gerçek seçimi / oyu bilir; Dürüst hiç
   yalan söylemez ve her iddia sonuçla tutarlıdır; Açgözlü aldığında iddiası hep yalandır, Karışık bazen; cümleler sadece
   botun görebildiği kişileri suçlar, yer tutucular hep dolu; motor bot işlemlerini hatasız alır; tohum aynıysa konuşma
-  aynıdır; her soru düğmesine cevap gelir. `Tests/Line/LineBotVoteTests.cs`: defterin her kalemi (ortak, alan sayısı,
+  aynıdır; her soru düğmesine cevap gelir. `Tests/Line/LineBotDealTests.cs` (v5.1): Dürüst her seferinde cezalandırır ve
+  parayı geri gönderir; Karışık'ın Açgözlü modu sadece parayla cezalandırır, parayı tutar, yazı-turasıyla ihanet eder;
+  önizleme kararın kendisidir; yazı-turaları rastgele akışı bozmaz; konuşan maçlarda susma parası ödenir, Dürüst geri
+  gönderir, Açgözlü modu tutar. `Tests/Line/LineBotVoteTests.cs`: defterin her kalemi (ortak, alan sayısı,
   yakalanma / ihbar / açık hırsızlık, nöbet listesi, soruşturma, masa payı, havaleler, yaramazlık maliyeti), en zengin
   seçimi ve sapma, eski kuralın aynen kalması, önizlemenin her evrede gerçek oya eşit olması, söylenen oyun değişmemesi
   (bot "oyum X" dedikten sonra X ona prim gönderse de oy X'e gider), belirlenimcilik, para cümleleri ve oy kaydı.
 - **Mock'lar:** `-uimock "v5.office_botcall*"` (gelen arama, sorular, Açgözlü yalanı, Dürüst'ün ödenen sözü, reddetme,
-  Kriz soruları), `"v5.meeting_botchat*"` (suçlamalar, cevap, sohbet, savunma altyazısı, final oyu), `_en` sürümleri.
+  Kriz soruları; v5.1: `v5.office_botcall_hush` Açgözlü'nün susma parası araması ve havalesi, `v5.office_botcall_deal`
+  Dürüst tanığa gönderilen paranın geri gelmesi, ikisinin de `_en` sürümü), `"v5.meeting_botchat*"` (suçlamalar, cevap, sohbet, savunma altyazısı, final oyu), `_en` sürümleri.

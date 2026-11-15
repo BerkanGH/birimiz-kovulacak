@@ -10,12 +10,13 @@ Developed together by **Lucestdra** and **BerkanGH**.
 
 Development was AI-assisted (Claude Code; earlier versions also used OpenAI Codex).
 
-> **v5 is the current version.** The game runs the v5 ruleset "Her Şey Kayıtta" (`v5.0-kayit`): 3 tasks (Client
-> Bonus, Petty Cash, Weekend Shift), 1–2 meetings with blame votes, investigations and leaked call recordings, a crisis
-> vote and a final firing vote whose desk goes to the voters. Rules: `docs/V5_ENGINE_SPEC.md` (design
-> `docs/V5_DESIGN.md`, plan `docs/V5_IMPLEMENTATION_PLAN.md`); play UI: `Game/Assets/Game/Scripts/UI/Play`. The v4 text
-> below and the tester steps about the desk/monitor, Short/Full weeks and task tutorials describe v4 and are history
-> (tag `v4.0-hybrid`).
+> **v5 is the current version.** The game runs the v5 ruleset "Her Şey Kayıtta" (`v5.1-kayit` since 2026-11-15: free
+> sharer-only investigation, the whistled thief keeps the cash, shift cleaning, candidates need suç;
+> `docs/V5_ENGINE_SPEC.md` §21): 3 tasks (Client Bonus, Petty Cash, Weekend Shift), 1–2 meetings (blame votes in
+> meeting 1), investigations and leaked call recordings, a crisis vote and a final firing vote whose desk goes to the
+> voters. Rules: `docs/V5_ENGINE_SPEC.md` (design `docs/V5_DESIGN.md`, plan `docs/V5_IMPLEMENTATION_PLAN.md`); play
+> UI: `Game/Assets/Game/Scripts/UI/Play`. The v4 text below and the tester steps about the desk/monitor, Short/Full
+> weeks and task tutorials describe v4 and are history (tag `v4.0-hybrid`).
 
 **v4 "Hybrid Office"** (ruleset `v4.0-hybrid`): everyone sits alone in a first-person office and talks through the desk
 phone (private 1:1 calls) or by text (messages, email with replies, meeting chat, anonymous complaints). Each match is

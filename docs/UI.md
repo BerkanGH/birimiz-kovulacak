@@ -344,6 +344,31 @@ overflowing coffee, the stamp, the board), `v5.meeting_prank_flatter` (the manag
 a slurp), `v5.meeting_prank_cake` (results: the cake in flight, the cream, cake at me, the reveal tab),
 `v5.meeting_prank_lobby` (the lobby checkbox, the how-to page), each with `_en`.
 
+### v5.1 rules on screen (2026-11-15)
+
+The v5.1 rules (`V5_DESIGN.md` §6, §8.2; `V5_ENGINE_SPEC.md` §21) change texts, not layouts. Every number comes from the
+host's `LineConfig`; the texts describe the v5.1 switches (free sharer-only investigation, the whistled thief keeps the
+cash, the shift's cleaning and automatic suç, candidates need suç).
+
+| Screen | Change |
+|---|---|
+| Task cards (`PlayBlocks.FocusTask`, the office Görev app, the cash box and roster cards) | Client Bonus: "{share} each; the taker gets {5} and keeps it, a sharer can investigate them for free (+4 suç)"; Petty Cash: "the only taker keeps +3 even if whistled on (+3 suç); two takers: no prim, +2 suç"; Weekend Shift (`PlayText.ShiftFocus`): "the shift pays nothing but lowers your suç by 1; skippers +2 if staffed, else no prim and +2 suç". Rules text (`PlayText.TaskRules`) the same, with the full trio / pair numbers. |
+| Whistle confirm card (cash box, break) and `break.witness` | "İhbar bedavadır ve sana prim kazandırmaz: {thief} parayı tutar ama +3 suç alır." The whistler's result: "+3 suç in meeting 1; the prim stays with them, you get nothing". |
+| Whistled on (thief) | `Whistled.A` = 0: "{whistler} seni ihbar etti. 3 prim sende kalıyor; 1. toplantıda +3 suç alacaksın." (card, Şimdi line, toast). The notes stay on the desk (v5.0: taken back). The thief's break warning (`focus.thief`) names the +3 suç and the silence money. |
+| Investigation (folder Eylemler, play UI, player list) | Buttons "Soruştur: {name} (bedava)"; only valid targets are offered (I shared, they took); rules "O +4 suç alır; aldığı prim onda kalır, sana prim gelmez"; "nobody to investigate" explains the sharer-only rule. |
+| Roster (sheet, card, results) | Sheet note "Yazan −1 suç · Yazmayan +2 prim (eksikse +2 suç)"; status lines name the cleaning and the short roster's suç; results "full: the volunteers' suç −1, the others +2 prim" / "short: no prim, +2 suç in meeting 2 without a vote". |
+| Meeting 2 | Focus "Nöbet tutmayanlara otomatik +2 suç yazıldı, oylama yok"; agenda / whiteboard / meeting info use `PlayText.NoVote` ("Oylama yok: nöbet tutmayanlara otomatik +2 suç yazıldı."); the projector's new slide for `DossierKind.ShiftSkipBlame` (stamp "NÖBET CEZASI", the skippers' faces "tutmadı"). |
+| Events / toasts | `BlameAdded` with a negative amount reads "{name}: −1 suç (nöbet tuttu)"; new reasons `blame.ShiftClean` "nöbet tuttu", `blame.ShiftFailSkip` "eksik nöbeti tutmadı". |
+| Candidates | "0 suç olan aday olmaz" in the crisis rule, the intro and the cork board legend; with no candidate the crisis verdict card says "Kimsenin suçu yok: aday yok, kimse kovulmayacak." (the match then goes straight to Results). |
+| Results reveal (Bakiyeler) | A second line per player: the suç by reason ("Suç: oylama +3 · soruşturma: almış +4 · nöbet tuttu −1"). The prim line hides the whistle / investigation parts when they are 0. |
+| How-to (`howto.1..6`, `howto.9`) | Flow (meeting 2 without a vote), Client Bonus (the free investigation), Petty Cash (free whistle, the thief keeps the cash, the silence deal), Weekend Shift, the blame vote (no meeting 2 vote), investigation, candidates (0 suç never). |
+
+Mocks (`Builds/mock/s7_1920`, `s7_1600`): `v5.office_botcall_hush` (a Greedy taker calls with "Soruşturma açma, 1 prim
+senin." and its prim arrives), `v5.office_botcall_deal` (I took the cash; my 1 prim to the Honest witness comes straight
+back with "Paranı geri gönderiyorum. Susmam, kusura bakma."), `v5.meeting_projector_shift` (meeting 2's agenda and the
+penalty slide), each with `_en`; the refusal mock now shows only Mixed ("Sonra ararım."); the cash box witness / thief
+and roster mocks, the results reveal (suç by reason) and the dossier (a guilty investigation) follow v5.1.
+
 ---
 
 # History: UI / UX v2 — "kurumsal hiciv"
