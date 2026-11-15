@@ -11,7 +11,9 @@ using BirimizKovulacak.Core;
 /// v5 bot simulation (docs/V5_ENGINE_SPEC.md §15): seeded bot matches per head count and policy mix, reporting prim
 /// by policy, suç distribution and who gets fired, to sanity-check docs/V5_DESIGN.md §12. Synthetic data: bots do
 /// not talk, call or record. <c>--vote richest</c> (default, the game's bots) or <c>blame</c> (the old rule) picks
-/// <see cref="LineBotVoteStyle"/>; the vote lines report whether the votes found the richest player.
+/// <see cref="LineBotVoteStyle"/>; the vote lines report whether the votes found the richest player. <c>--rules new</c>
+/// (default: the v5.1 config defaults, bots with <see cref="LineBotPunishStyle.Deals"/>) or <c>old</c> (every v5.0 number
+/// and switch, <see cref="LineBotPunishStyle.Legacy"/>: reproduces the v5.0 result hashes).
 /// </summary>
 internal static class Program
 {
@@ -32,6 +34,9 @@ internal static class Program
         internal long LeaderBlame, TotalBlame;
         internal readonly long[] BlameHistogram = new long[16];
         internal int Meeting1Votes, Meeting2Held, Investigations, GuiltyInvestigations, Whistles, Caught, Revotes, TieBreaks;
+        // v5.1: the shift, candidates and firings
+        internal long ShiftVolunteers, ShiftCleaned, ShiftSkipBlame, Candidates;
+        internal int FewerFirings, NoFiring;
         internal long DeskTotal, DeskRemoved;
         internal ulong Hash = 14695981039346656037UL;
         // votes vs the true balances (taken when each crisis / final vote starts)
@@ -53,12 +58,12 @@ internal static class Program
         {
             int matches = 1000, seed = 5000, players = 0;
             double think = 15;
-            string mix = "all", output = "Tools/LineSim/v5-sim.txt", vote = "richest";
+            string mix = "all", output = "Tools/LineSim/v5-sim.txt", vote = "richest", rules = "new";
             for (int i = 0; i < args.Length; i++)
             {
                 if (args[i] == "--help")
                 {
-                    Console.WriteLine("LineSim --matches N --players all|3|4|5|6 --mix all|half|one-greedy|mixed|lobby --vote richest|blame --think seconds --seed N --output path");
+                    Console.WriteLine("LineSim --matches N --players all|3|4|5|6 --mix all|half|one-greedy|mixed|lobby --vote richest|blame --rules new|old --think seconds --seed N --output path");
                     return 0;
                 }
                 string flag = args[i];
@@ -72,18 +77,32 @@ internal static class Program
                     case "--think": think = double.Parse(args[i], Inv); break;
                     case "--output": output = args[i]; break;
                     case "--vote": vote = args[i]; break;
+                    case "--rules": rules = args[i]; break;
                     default: throw new ArgumentException("Unknown flag " + flag);
                 }
             }
             var mixes = new[] { "half", "one-greedy", "mixed", "lobby" };
-            if (matches < 1 || players != 0 && (players < 3 || players > 6) || think < 0 || think > 50 || mix != "all" && !mixes.Contains(mix) || vote != "richest" && vote != "blame")
+            if (matches < 1 || players != 0 && (players < 3 || players > 6) || think < 0 || think > 50 || mix != "all" && !mixes.Contains(mix) || vote != "richest" && vote != "blame" || rules != "new" && rules != "old")
                 throw new ArgumentException("Invalid arguments.");
             var style = vote == "blame" ? LineBotVoteStyle.MostBlame : LineBotVoteStyle.Richest;
+            bool old = rules == "old";
             var report = new StringBuilder();
             var watch = Stopwatch.StartNew();
-            report.AppendLine(LineProtocol.RulesetVersion + " — SYNTHETIC BOT DATA (LineSim)");
-            report.AppendLine("Bots never call, text or record (spec §13). Honest: share, leave, volunteer by a simple count (the cleanest Needed+1 by suç volunteer), whistle as a witness.");
-            report.AppendLine("Greedy: take, take, skip, whistle as a witness, investigate a Client Bonus partner who took. Mixed: honest or greedy per decision (50/50, seeded).");
+            report.AppendLine((old ? "v5.0-kayit rules (--rules old) on " : "") + LineProtocol.RulesetVersion + " — SYNTHETIC BOT DATA (LineSim)");
+            if (old)
+            {
+                report.AppendLine("Bots never call, text or record (spec §13). Honest: share, leave, volunteer by a simple count (the cleanest Needed+1 by suç volunteer), whistle as a witness.");
+                report.AppendLine("Greedy: take, take, skip, whistle as a witness, investigate a Client Bonus partner who took. Mixed: honest or greedy per decision (50/50, seeded).");
+                report.AppendLine("Rules: every v5.0 number and switch (Client Bonus 2/2, investigation 4 prim / refund 3 / +3 suç / false +3, whistle +2 and the cash taken back, skippers +2 always, meeting 2 vote, 0 suç can be a candidate).");
+            }
+            else
+            {
+                report.AppendLine("Bots never call, text or record (spec §13), so nobody pays for silence here. Honest: share, leave, volunteer by a simple count (the cleanest Needed+1 by suç volunteer),");
+                report.AppendLine("punish whenever eligible (whistle as a witness, investigate a Client Bonus partner who took). Greedy: take, take, skip; punish only when paid (never here).");
+                report.AppendLine("Mixed: honest or greedy per task decision (50/50, seeded) and per punishment (Honest or Greedy mode, seeded coin).");
+                report.AppendLine("Rules: the v5.1 defaults (Client Bonus 3/3, free sharer-only investigation +4 suç, free whistle +3 suç and the thief keeps the cash, volunteers −1 suç,");
+                report.AppendLine("an unstaffed shift: skippers 0 prim and +2 suç with no meeting 2 vote, 0 suç is never a candidate, firings ≤ candidates).");
+            }
             report.AppendLine(style == LineBotVoteStyle.Richest
                 ? "Votes (--vote richest, the game's bots): every policy votes for the rival it estimates to be the richest (LineBotLedger: its own views only, plus a fixed ±0.4 per-bot noise; seeded tie-break)."
                 : "Votes (--vote blame, the old rule): every policy votes for a known culprit, else the highest suç (seeded tie-break).");
@@ -102,7 +121,7 @@ internal static class Program
                 {
                     if (mix != "all" && mix != m) continue;
                     var stats = new Stats();
-                    for (int i = 0; i < matches; i++) Run(n, m, seed + i, think, style, stats);
+                    for (int i = 0; i < matches; i++) Run(n, m, seed + i, think, style, old, stats);
                     total += matches;
                     Write(report, n, m, stats);
                     if (m != "mixed") Console.WriteLine(n + "p " + m + ": honest " + F(Avg(stats.Prim, stats.Players, LineBotPolicy.Honest)) + " / greedy " +
@@ -164,15 +183,28 @@ internal static class Program
         return best;
     }
 
-    private static void Run(int n, string mix, int seed, double think, LineBotVoteStyle style, Stats stats)
+    /// <summary>Every v5.0 number and switch (--rules old).</summary>
+    private static void OldRules(LineConfig c)
+    {
+        c.BonusPairShare = 2; c.BonusTrioNone = 2;
+        c.CashWhistleReward = 2; c.CashWhistledKeeps = false;
+        c.ShiftFailSkipPay = c.ShiftSkipPay; c.ShiftFailSkipBlame = 0; c.ShiftFailVote = true; c.ShiftVolunteerClean = 0;
+        c.InvestigationSharerOnly = false; c.InvestigationCost = 4; c.InvestigationGuiltyBlame = 3; c.InvestigationRefund = 3;
+        c.CandidateMinBlame = 0;
+    }
+
+    private static void Run(int n, string mix, int seed, double think, LineBotVoteStyle style, bool old, Stats stats)
     {
         var setup = new LineSetup { WeekId = 1, MatchId = "sim-" + n + "-" + mix + "-" + seed, Seed = seed };
         for (int i = 0; i < n; i++) setup.Players.Add(new LinePlayerInfo { Id = i, Name = "Bot " + i, IsBot = true });
         var config = LineConfig.CreateDefault();
+        if (old) OldRules(config);
         var engine = LineEngineFactory.Create(setup, config);
         var policy = Assign(n, mix, seed);
         var bots = new LineBot[n];
-        for (int i = 0; i < n; i++) bots[i] = new LineBot(i, seed * 31 + i * 97, policy[i]) { ThinkSeconds = think, VoteStyle = style };
+        for (int i = 0; i < n; i++)
+            bots[i] = new LineBot(i, seed * 31 + i * 97, policy[i])
+            { ThinkSeconds = think, VoteStyle = style, PunishStyle = old ? LineBotPunishStyle.Legacy : LineBotPunishStyle.Deals };
         double now = 0;
         int steps = 0;
         double phaseKey = double.NaN;
@@ -284,6 +316,12 @@ internal static class Program
             if (f.Decision == FiringDecision.Revote) stats.Revotes++;
             if (f.Decision >= FiringDecision.HigherBlame) stats.TieBreaks++;
         }
+        stats.ShiftVolunteers += r.Choices.Count(c => c.Task == TaskKind.WeekendShift && c.Choice == LineChoice.Volunteer);
+        stats.ShiftCleaned -= r.BlameLog.Where(b => b.Reason == BlameReason.ShiftClean).Sum(b => b.Delta);
+        stats.ShiftSkipBlame += r.BlameLog.Where(b => b.Reason == BlameReason.ShiftFailSkip).Sum(b => b.Delta);
+        stats.Candidates += r.Players.Count(p => p.WasCandidate);
+        if (r.Firings.Count < config.FiringsFor(n)) stats.FewerFirings++;
+        if (r.Firings.Count == 0) stats.NoFiring++;
         foreach (var d in r.Incidents)
         {
             if (d.Kind == DossierKind.Investigation) { stats.Investigations++; if (d.N1 == 1) stats.GuiltyInvestigations++; }
@@ -339,6 +377,9 @@ internal static class Program
         b.AppendLine("Meeting 1 vote held " + F(Pct(s.Meeting1Votes, s.Matches)) + "%; meeting 2 held " + F(Pct(s.Meeting2Held, s.Matches)) + "%; per match: investigations " +
                      F((double)s.Investigations / s.Matches) + " (guilty " + F(Pct(s.GuiltyInvestigations, s.Investigations)) + "%), whistles " + F((double)s.Whistles / s.Matches) +
                      ", caught takers " + F((double)s.Caught / s.Matches));
+        b.AppendLine("Shift: volunteers per match " + F((double)s.ShiftVolunteers / s.Matches) + " (needed " + LineConfig.ShiftNeeded(n) + "); suç cleaned per match " +
+                     F((double)s.ShiftCleaned / s.Matches) + ", skipper suç per match " + F((double)s.ShiftSkipBlame / s.Matches) + "; candidates per match " +
+                     F((double)s.Candidates / s.Matches) + "; fewer firings than planned " + F(Pct(s.FewerFirings, s.Matches)) + "%, no firing " + F(Pct(s.NoFiring, s.Matches)) + "%");
         b.AppendLine("Firings decided by revote " + F(Pct(s.Revotes, s.Firings)) + "%, by tie-break " + F(Pct(s.TieBreaks, s.Firings)) + "%; desk mean " + F((double)s.DeskTotal / Math.Max(1, s.Firings)) +
                      ", removed (remainder) mean " + F((double)s.DeskRemoved / Math.Max(1, s.Firings)) + "; result aggregate hash " + s.Hash.ToString("X16", Inv));
         b.AppendLine("Votes: fired = richest alive " + F(Pct(s.FiredRichestAlive, s.FinalFirings)) + "%, richest candidate " + F(Pct(s.FiredRichestOption, s.FinalFirings)) +
