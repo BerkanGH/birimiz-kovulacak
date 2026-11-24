@@ -32,6 +32,8 @@ namespace BirimizKovulacak.Core
         Innocent = 9,
         /// <summary>"I'll call you back."</summary>
         Callback = 10,
+        /// <summary>"My declaration: N prim, nothing more" (v5.2): ClaimValue = N; true when N is the bot's real prim.</summary>
+        Declare = 11,
     }
 
     /// <summary>The question buttons a human gets while on the phone with a bot (keys 1/2/3).</summary>
@@ -152,6 +154,13 @@ namespace BirimizKovulacak.Core
             // Richest votes: the wealth suspicion in the meeting chat, the final vote by money
             { "bot.meet.rich.h", "p" }, { "bot.meet.richc.h", "p" }, { "bot.meet.rich.g", "p" }, { "bot.meet.rich.m", "p" },
             { "bot.vote.h_rich", "p" }, { "bot.vote.h_win", "p" }, { "bot.vote.m_rich", "p" },
+            // prim declarations (v5.2): a candidate's own claim in its defence; a colleague who counts more than a claim says
+            { "bot.declare.own.h", "n" }, { "bot.declare.own.g", "n" }, { "bot.declare.own.m", "n" },
+            { "bot.declare.doubt.h", "pn" }, { "bot.declare.doubt.g", "pn" }, { "bot.declare.doubt.m", "pn" },
+            // awards at the results (v5.2, LineStory): the owner's line out loud, one per award
+            { "bot.award.wrongman", "" }, { "bot.award.liar", "" }, { "bot.award.sellout", "" }, { "bot.award.loyal", "" },
+            { "bot.award.robber", "" }, { "bot.award.cashrat", "" }, { "bot.award.snitch", "" }, { "bot.award.goat", "" },
+            { "bot.award.blackbox", "" }, { "bot.award.tutanak", "" }, { "bot.award.dodger", "" }, { "bot.award.clean", "" },
             // Yaramazlıklar (docs/V5_YARAMAZLIKLAR.md §7): reactions over the head when pranked, a paper plane's note
             { "bot.prank.coffee.h", "" }, { "bot.prank.coffee.g", "" }, { "bot.prank.coffee.m", "" },
             { "bot.prank.postit.h", "" }, { "bot.prank.postit.g", "" }, { "bot.prank.postit.m", "" },

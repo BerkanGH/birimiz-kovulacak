@@ -54,6 +54,10 @@ namespace BirimizKovulacak.Core
     /// estimates to be the richest, from its own <see cref="LineBotLedger"/> (fed every view in <see cref="Next"/>). Once the
     /// talker has announced a crisis / final vote (<see cref="CommitVote"/>), the bot casts exactly that target even if a
     /// transfer or a prank changes its estimate before the ballot (an announced vote never silently changes).
+    /// Prim declarations (v5.2, <see cref="PlannedDeclaration"/>): a candidate bot declares once, as soon as it may. Honest
+    /// declares its real prim; Greedy understates it (roughly 40% less, at least 2 less, never below 3); Mixed does one or
+    /// the other on a seeded coin. The coins are hashes like the silence deals', so the talk can preview them and no
+    /// draw is taken from the random stream. Votes never use anybody's declaration.
     /// </summary>
     public sealed class LineBot
     {
@@ -91,6 +95,8 @@ namespace BirimizKovulacak.Core
         private readonly Dictionary<int, int> committed = new Dictionary<int, int>();
         private int commitWeek = int.MinValue;
         private const int CrisisKey = -1;
+        /// <summary>The prim declaration this bot sent (v5.2): the amount and the prim it really had then; -1 = none yet.</summary>
+        private int declaredAmount = -1, declaredPrim = -1;
 
         /// <summary>Maximum seeded delay before acting in a phase (0 = act immediately).</summary>
         public double ThinkSeconds;
@@ -146,6 +152,7 @@ namespace BirimizKovulacak.Core
             {
                 week = v.WeekId; culprits.Clear(); phaseStart = double.NaN;
                 punished.Clear(); returned.Clear(); refundTo = -1; refundWaitUntil = TransferHoldUntil = double.NegativeInfinity;
+                declaredAmount = declaredPrim = -1;
                 for (int i = 0; i < kindStart.Length; i++) { kindStart[i] = double.NaN; groupChoices[i] = null; }
             }
             if (v.Phase == LinePhase.TaskPlay && v.Task != null && (int)v.Task.Kind < kindStart.Length && double.IsNaN(kindStart[(int)v.Task.Kind]))
@@ -237,6 +244,18 @@ namespace BirimizKovulacak.Core
                             : Richest(v, options, rng, Committed(v, v.Phase == LinePhase.FinalVote));
                         if (i == 0) { decidedVote = target; decidedAt = phaseStart; }
                         return Action(v, LineVerb.Vote, target, i);
+                    }
+                    break;
+                case LinePhase.CrisisVerdict:
+                case LinePhase.FinalDiscussion:
+                    // v5.2: a candidate declares its prim once (a client's view lags: never sent twice)
+                    if (v.Features.DeclareOpen && declaredAmount < 0)
+                    {
+                        int amount = PlannedDeclaration(v);
+                        if (amount < 0) break;
+                        declaredAmount = amount;
+                        declaredPrim = m.Prim;
+                        return Action(v, LineVerb.Declare, a: amount);
                     }
                     break;
             }
@@ -426,6 +445,41 @@ namespace BirimizKovulacak.Core
             if (HonestMode(v, whistle, target)) return true;
             return (assumePaid || SilenceMoney(v, whistle, target) > 0) && Betrays(v, whistle, target);
         }
+
+        // ---- prim declarations (v5.2; docs/V5_BOT_TALK.md §7.1)
+
+        /// <summary>Whether this bot declares its real prim: Honest always, Greedy never (unless the truth is all it can
+        /// say), Mixed on a seeded coin per match.</summary>
+        public bool DeclaresTruth(LineView v)
+        {
+            if (policy == LineBotPolicy.Honest) return true;
+            if (policy == LineBotPolicy.Greedy || v == null) return false;
+            return Coin(v.WeekId, "declare", 0, seat) < 0.5;
+        }
+
+        /// <summary>
+        /// The prim this bot declares as a candidate (or has declared), without changing anything: its real prim, or a
+        /// seeded understatement (35–45% less, at least 2 less, never below 3 and never above the truth). The same answer
+        /// the bot acts on. -1 without a view.
+        /// </summary>
+        public int PlannedDeclaration(LineView v)
+        {
+            if (v == null || v.Me != seat) return -1;
+            if (declaredAmount >= 0 && week == v.WeekId) return declaredAmount;
+            if (v.Final != null && v.Final.MyDeclaration >= 0) return v.Final.MyDeclaration;
+            int max = (config ?? LineConfig.CreateDefault()).DeclareMax;
+            int prim = Math.Max(0, v.Mine.Prim);
+            if (DeclaresTruth(v)) return Math.Min(prim, max);
+            double cut = 0.35 + 0.10 * Coin(v.WeekId, "declarecut", 0, seat);
+            int claim = (int)Math.Floor(prim * (1 - cut) + 0.5);
+            claim = Math.Max(3, Math.Min(claim, prim - 2));
+            return Math.Min(Math.Min(claim, prim), max);
+        }
+
+        /// <summary>The prim this bot really had when it declared (-1 before it declares).</summary>
+        public int DeclaredPrim { get { return declaredPrim; } }
+        /// <summary>The amount this bot declared (-1 before it declares).</summary>
+        public int DeclaredAmount { get { return declaredAmount; } }
 
         private List<int> VoteOptions(LineView v, bool final)
         {

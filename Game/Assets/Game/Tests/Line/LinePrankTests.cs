@@ -597,6 +597,8 @@ namespace BirimizKovulacak.Core.Tests
                 foreach (var s in run.Shouts)
                 {
                     Assert.IsTrue(LineBotLines.Valid(s), s.ToString());
+                    // (v5.2: the owner of an award also says its line out loud at the results)
+                    if (s.Key.StartsWith("bot.award.", StringComparison.Ordinal)) continue;
                     Assert.IsTrue(s.Key.StartsWith("bot.prank.", StringComparison.Ordinal));
                     reactions++;
                 }

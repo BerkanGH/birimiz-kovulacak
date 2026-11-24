@@ -36,6 +36,9 @@ namespace BirimizKovulacak.Core.Tests.Line
         /// <summary>A talking bot-only match (LineBotDealTests: the silence deals).</summary>
         internal static Sim RunForDeals(int players, int seed, Func<int, LineBotPolicy> policy) { return Run(players, seed, policy); }
 
+        /// <summary>A talking bot-only match (LineDeclarationTests / LineStoryTests: declarations, doubts, award lines).</summary>
+        internal static Sim RunTalking(int players, int seed, Func<int, LineBotPolicy> policy, float scale = 0.3f) { return Run(players, seed, policy, scale: scale); }
+
         static Sim Run(int players, int seed, Func<int, LineBotPolicy> policy, bool talk = true, bool previews = false, double think = 4, float scale = 0.3f)
         {
             var setup = new LineSetup { WeekId = 1, MatchId = "talk-" + players + "-" + seed, Seed = seed };

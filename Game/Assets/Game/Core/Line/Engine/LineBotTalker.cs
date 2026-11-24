@@ -22,6 +22,9 @@ namespace BirimizKovulacak.Core
     /// victim / witness 1 prim for silence in the break (a call, else a text); a bot that is paid by the colleague it could
     /// punish answers with what its <see cref="LineBot"/> will really do (<see cref="LineBot.WillPunish"/>): Honest sends
     /// the money back (the bot's own transfer) and punishes, Greedy keeps it and may still punish.
+    /// Prim declarations and awards (v5.2): a candidate repeats its declaration in its defence (a lie when its
+    /// <see cref="LineBot"/> understated it), a colleague whose ledger counts at least 3 more than a declaration says so,
+    /// and at the results the owner of an award (<see cref="LineStory"/>) says one line out loud.
     /// </summary>
     public sealed partial class LineBotTalker
     {
@@ -152,10 +155,16 @@ namespace BirimizKovulacak.Core
         double nextChatAt, nextPayAt;
         readonly List<Due> chat = new List<Due>();
         long msgSeen;
-        bool accusedAnswered, situationPlanned, defended, wealthPlanned;
+        bool accusedAnswered, situationPlanned, defended, wealthPlanned, doubtPlanned;
+        /// <summary>The results: my award line (LineStory), said once when the awards slide is on.</summary>
+        bool awardPlanned;
+        double awardAt;
+        BotLine awardLine;
         int lastAccuser = -1;
         double voteKey = double.NaN;
         readonly HashSet<int> leakReacted = new HashSet<int>();
+        /// <summary>Candidates whose declaration a colleague has already doubted in the chat (one doubt each is enough).</summary>
+        readonly HashSet<int> doubted = new HashSet<int>();
         readonly HashSet<string> chatSaid = new HashSet<string>();
         readonly Dictionary<int, int> chatsBy = new Dictionary<int, int>();
 
@@ -214,8 +223,8 @@ namespace BirimizKovulacak.Core
             if (v.Phase == LinePhase.Results || v.Phase == LinePhase.Abandoned)
             {
                 if (!flushed) Finish(v, o);
-                // Yaramazlıklar: the cake (and reactions to it) run on through the results
-                if (v.Phase == LinePhase.Results) Pranks(v, now, o);
+                // v5.2: the owner of an award says its line; Yaramazlıklar: the cake (and reactions to it) run on
+                if (v.Phase == LinePhase.Results) { AwardShout(v, now, o); Pranks(v, now, o); }
                 return;
             }
             var me = P(v, Seat);
@@ -253,11 +262,14 @@ namespace BirimizKovulacak.Core
             chat.Clear();
             msgSeen = 0;
             leakReacted.Clear();
+            doubted.Clear();
             chatSaid.Clear();
             chatsBy.Clear();
             pendingLog.Clear();
             claims.Clear();
             voteStarts.Clear();
+            awardPlanned = false;
+            awardLine = null;
             flushed = false;
             lines = lies = calls = answeredCalls = refusedCalls = answers = chats = paid = broken = 0;
             ringCount = callCount = 0;
@@ -358,8 +370,9 @@ namespace BirimizKovulacak.Core
                 case LinePhase.TaskPlay: return end + d.TaskReveal + (more ? d.Break : 0);
                 case LinePhase.TaskReveal:
                     if (more) return end + d.Break;
-                    // after the last task the crisis calls follow unless the shift came up short (meeting 2)
-                    return v.Task != null && v.Task.Revealed && v.Task.Kind == TaskKind.WeekendShift && v.Task.Roster.Count >= v.Task.Needed ? end + d.CrisisCalls : end;
+                    // after the last task the crisis calls follow (v5.2); with ShiftMeeting a short shift goes to meeting 2
+                    if (v.Task == null || !v.Task.Revealed || v.Task.Kind != TaskKind.WeekendShift) return end;
+                    return config.ShiftMeeting && v.Task.Roster.Count < v.Task.Needed ? end : end + d.CrisisCalls;
                 case LinePhase.Break: return end + (v.TaskNumber == 0 ? d.TaskPlay : 0);
                 default: return end;
             }
@@ -1312,7 +1325,7 @@ namespace BirimizKovulacak.Core
             {
                 segment = seg;
                 chatCount = 0;
-                accusedAnswered = situationPlanned = defended = wealthPlanned = false;
+                accusedAnswered = situationPlanned = defended = wealthPlanned = doubtPlanned = false;
                 lastAccuser = -1;
                 chatsBy.Clear();
                 chat.RemoveAll(d => d.Line == null || !d.Line.Text || d.Line.Listener < 0);
@@ -1341,6 +1354,14 @@ namespace BirimizKovulacak.Core
                 defended = true;
                 var l = Defence(v);
                 if (l != null) chat.Insert(0, new Due { At = now + 1.0 * k, Line = l });
+                // v5.2: then my prim declaration, while I still have the floor (built when it is said)
+                chat.Add(new Due { At = now + 1.0 * k + (l != null ? config.MessageMinInterval + 0.6 : 0), Make = ClaimLine });
+            }
+            // v5.2: the declarations are out: a colleague whose count is well above one of them says so, once
+            if (!doubtPlanned && v.Phase == LinePhase.FinalDiscussion && v.Final != null && v.Final.DeclarationsRevealed)
+            {
+                doubtPlanned = true;
+                chat.Add(new Due { At = now + (1.2 + 1.3 * rank + 0.8 * U("doubt" + seg)) * k, Make = DoubtLine });
             }
             // the final vote: say where the vote goes before casting it
             if (v.Phase == LinePhase.FinalVote && v.Final != null && !v.Final.Revote && v.PhaseStartTime != voteKey)
@@ -1427,7 +1448,9 @@ namespace BirimizKovulacak.Core
                 string key;
                 List<int> args;
                 // (a -bot player is not flagged as a bot by the engine: any colleague's token is a bot line)
-                if (LineBotLines.TryParse(m.Text, out key, out args))
+                if (LineBotLines.TryParse(m.Text, out key, out args) && key.StartsWith("bot.declare.doubt", StringComparison.Ordinal))
+                    doubted.Add(args[0]);
+                else if (LineBotLines.TryParse(m.Text, out key, out args))
                     accuses = args.Count > 0 && args[0] == Seat && (key.StartsWith("bot.meet.victim", StringComparison.Ordinal) || key.StartsWith("bot.meet.witness", StringComparison.Ordinal)
                               || key.StartsWith("bot.meet.deflect", StringComparison.Ordinal) || key.StartsWith("bot.meet.accused", StringComparison.Ordinal)
                               || key.StartsWith("bot.meet.betrayed", StringComparison.Ordinal));
@@ -1677,6 +1700,90 @@ namespace BirimizKovulacak.Core
             }
         }
 
+        // ================================================================== prim declarations and awards (v5.2)
+
+        /// <summary>
+        /// My declaration, said in my defence: "Beyanım ortada: N prim. Fazlası yok." Truthful when N is what I have right
+        /// now; a lie when my <see cref="LineBot"/> understated it. A claim that was true when it was made but is not any
+        /// more (prim came in since) is not repeated: nobody says "nothing more" by accident.
+        /// </summary>
+        BotLine ClaimLine(LineView v)
+        {
+            if (bot == null || v.Phase != LinePhase.FinalDefense || v.Final == null || v.Final.Defender != Seat || !v.Final.DeclarationsRevealed) return null;
+            int amount = v.Final.MyDeclaration;
+            if (amount < 0) return null;
+            bool truthful = amount == v.Mine.Prim;
+            if (!truthful && !(bot.DeclaredPrim > amount)) return null;
+            return Claim(Line(Key("bot.declare.own"), -1, amount), BotClaimKind.Declare, amount, truthful);
+        }
+
+        /// <summary>
+        /// "X az söylüyor. Hesabıma göre en az N primi var.": the candidate whose declaration is furthest under my own
+        /// estimate (at least 3 under; N = my estimate rounded down) and that nobody has doubted in the chat yet. Everyone
+        /// states the estimate they really have; Mixed keeps about half of its doubts to itself. Not an accusation of a
+        /// theft and not a vote.
+        /// </summary>
+        BotLine DoubtLine(LineView v)
+        {
+            if (bot == null || v.Final == null || !v.Final.DeclarationsRevealed) return null;
+            if (v.Phase != LinePhase.FinalDiscussion && v.Phase != LinePhase.FinalDefense) return null;
+            var me = P(v, Seat);
+            if (me == null || me.Fired) return null;
+            if (Policy == LineBotPolicy.Mixed && MixedLies("doubt")) return null;
+            var est = bot.EstimatedPrim(v);
+            int who = -1, least = 0, widest = 0;
+            foreach (var d in v.Final.Declarations)
+            {
+                if (d.Player == Seat || d.Amount < 0 || doubted.Contains(d.Player)) continue;
+                var p = P(v, d.Player);
+                double e;
+                if (p == null || p.Fired || !est.TryGetValue(d.Player, out e)) continue;
+                int count = (int)Math.Floor(e + 1e-9), gap = count - d.Amount;
+                if (gap >= 3 && gap > widest) { widest = gap; who = d.Player; least = Math.Min(999, count); }
+            }
+            return who < 0 ? null : Line(Key("bot.declare.doubt"), -1, who, least);
+        }
+
+        /// <summary>The results: when the awards slide is on, the owner of an award says its line out loud (over its head,
+        /// never in the chat), one bot after another in the order of the awards.</summary>
+        void AwardShout(LineView v, double now, BotTalkOutput o)
+        {
+            if (v.Results == null) return;
+            if (!awardPlanned)
+            {
+                awardPlanned = true;
+                var story = LineStory.Build(v.Results, config);
+                var a = story.AwardOf(Seat);
+                if (a == null) return;
+                awardLine = Line("bot.award." + LineAwards.Id(a.Kind), -1);
+                awardLine.Shout = true;
+                awardAt = v.PhaseStartTime + LineStory.AwardsAt(v.PhaseEndTime - v.PhaseStartTime) + 1.2 + 1.5 * story.Awards.IndexOf(a);
+            }
+            if (awardLine == null || now < awardAt) return;
+            var l = awardLine;
+            awardLine = null;
+            if (!LineBotLines.Valid(l)) return;
+            l.Time = now;
+            o.Said.Add(l);
+            o.Shouts.Add(l);
+            // (the log was released when the results began: this line goes straight out)
+            o.Log.Add(string.Format(CultureInfo.InvariantCulture, "bottalk award seat={0} policy={1} key={2} t={3:0.0}", Seat, Policy, l.Key, now));
+        }
+
+        /// <summary>My prim declaration at Results (verify_logs.py): what I declared, what I really had then, and what the
+        /// results say I had at the reveal. Honest: declared = had.</summary>
+        void LogDeclaration(LineView v, LineWeekResult r)
+        {
+            if (r.Declarations == null) return;
+            foreach (var d in r.Declarations)
+            {
+                if (d.Player != Seat) continue;
+                int had = bot != null ? bot.DeclaredPrim : -1;
+                Log(string.Format(CultureInfo.InvariantCulture, "declare seat={0} policy={1} declared={2} had={3} actual={4} truthful={5}",
+                    Seat, Policy, d.Amount, d.Amount < 0 ? -1 : had, d.Actual, d.Amount < 0 ? "none" : Yes(d.Amount == had)));
+            }
+        }
+
         BotLine FinalVoteLine(LineView v)
         {
             var me = P(v, Seat);
@@ -1734,7 +1841,7 @@ namespace BirimizKovulacak.Core
             Log(string.Format(CultureInfo.InvariantCulture,
                 "summary seat={0} policy={1} lines={2} truthful={3} lies={4} calls={5} answered={6} refused={7} answers={8} chat={9} paid={10} broken={11} checks={12} mismatches={13}",
                 Seat, Policy, lines, lines - lies, lies, calls, answeredCalls, refusedCalls, answers, chats, paid, broken, checks, mismatches));
-            if (r != null) { LogVotes(r); LogDeals(v, r); }
+            if (r != null) { LogVotes(r); LogDeals(v, r); LogDeclaration(v, r); }
             FinishPranks(v);
             o.Log.AddRange(pendingLog);
             pendingLog.Clear();
@@ -1888,6 +1995,10 @@ namespace BirimizKovulacak.Core
                     if (l.Truthful) { known = false; return false; }
                     return false;
                 }
+                case BotClaimKind.Declare:
+                    // "N prim, nothing more": against my real prim when the declarations were revealed
+                    if (r.Declarations != null) foreach (var d in r.Declarations) if (d.Player == Seat) return d.Actual == l.ClaimValue;
+                    break;
             }
             known = false;
             return false;
