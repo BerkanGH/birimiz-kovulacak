@@ -247,6 +247,7 @@ namespace BirimizKovulacak.Core
             {
                 Player = fired, Round = final.Round, Decision = decision, Votes = votes, Desk = s.Prim, Time = time,
                 Declared = final.DeclarationsRevealed ? final.Declared[fired] : -1,
+                DeclaredActual = final.DeclarationsRevealed ? final.DeclaredActual[fired] : -1,
             };
             foreach (int id in ids) if (ballots[id] == fired) firing.Recipients.Add(id);
             firing.Share = firing.Recipients.Count == 0 ? 0 : firing.Desk / firing.Recipients.Count;

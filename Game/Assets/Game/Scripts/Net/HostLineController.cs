@@ -683,7 +683,7 @@ namespace BirimizKovulacak.Game
             {
                 if (fired.Length > 0) fired.Append(',');
                 fired.Append(f.Player).Append(':').Append(f.Declared < 0 ? "-" : f.Declared.ToString(inv)).Append('/').Append(f.Desk.ToString(inv))
-                    .Append(':').Append(f.Declared < 0 ? "none" : f.Declared == f.Desk ? "true" : "lie");
+                    .Append(':').Append(f.Declared < 0 ? "none" : LineStory.Truthful(f) ? "true" : "lie");
             }
             MatchLog.Write("host: declarations week=" + r.WeekId + " enabled=" + (config.DeclarationsEnabled ? "yes" : "no") + " candidates=" + candidates
                 + " made=" + made + " truthful=" + truthful + " understated=" + low + " list=" + (list.Length > 0 ? list.ToString() : "-")

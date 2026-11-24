@@ -252,9 +252,12 @@ namespace BirimizKovulacak.Core.Tests
             // and the full wire format carries every new field
             result.Declarations[0].Actual = 9;
             result.Firings[0].Declared = 7;
+            result.Firings[0].DeclaredActual = 9;
+            Assert.AreEqual(declared, hash(result), "the firing's copy of the declaration is not hashed twice");
             var view = new LineView { Results = result };
             var back = LineCodec.DecodeView(LineCodec.EncodeView(view)).Results;
             Assert.AreEqual(7, back.Firings[0].Declared);
+            Assert.AreEqual(9, back.Firings[0].DeclaredActual);
             Assert.AreEqual(321.5, back.Firings[0].Time);
             Assert.AreEqual(9, back.Declarations[0].Actual);
             CollectionAssert.AreEqual(new[] { 0, 1 }, back.Groups[0].Members);

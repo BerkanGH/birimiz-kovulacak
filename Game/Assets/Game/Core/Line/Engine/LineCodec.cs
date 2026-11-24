@@ -1206,6 +1206,7 @@ namespace BirimizKovulacak.Core
             w.Write(v.Removed);
             if (hashSchema) return;
             w.Write(v.Declared);
+            w.Write(v.DeclaredActual);
             w.Write(v.Time);
         }
         internal static LineFiringView ReadLineFiringView(BinaryReader r)
@@ -1221,6 +1222,7 @@ namespace BirimizKovulacak.Core
             v.Share = r.ReadInt32();
             v.Removed = r.ReadInt32();
             v.Declared = r.ReadInt32();
+            v.DeclaredActual = r.ReadInt32();
             v.Time = r.ReadDouble();
             return v;
         }

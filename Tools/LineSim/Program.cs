@@ -349,7 +349,7 @@ internal static class Program
         {
             if (f.Declared < 0) continue;
             stats.FiredDeclared++;
-            if (f.Declared == f.Desk) stats.FiredTrue++;
+            if (LineStory.Truthful(f)) stats.FiredTrue++;
         }
         var story = LineStory.Build(r, config);
         stats.Awards += story.Awards.Count;

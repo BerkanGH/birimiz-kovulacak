@@ -11,7 +11,8 @@ namespace BirimizKovulacak.Core
     public enum AwardKind : byte
     {
         None = 0,
-        /// <summary>"Yanlış Adam": fired although the declaration was true. N1 = the declared prim (= the desk).</summary>
+        /// <summary>"Yanlış Adam": fired although the declaration was true (<see cref="LineStory.Truthful"/>). N1 = the
+        /// declared prim.</summary>
         WrongMan = 1,
         /// <summary>"En Pahalı Yalan": the candidate whose declaration understated their prim the most (at least
         /// <see cref="LineStory.LieGap"/>). N1 = declared, N2 = real prim at the reveal, N3 = the gap.</summary>
@@ -66,7 +67,8 @@ namespace BirimizKovulacak.Core
         DealBroken = 1,
         /// <summary>Client Bonus: Player took it all (N1 prim); Other (and Other2 in a trio) had shared.</summary>
         BonusBetrayal = 2,
-        /// <summary>Player was fired: N1 = the desk, N2 = the declared prim (-1 none), N3 = the firing round.</summary>
+        /// <summary>Player was fired: N1 = the desk, N2 = the declared prim (-1 none), N3 = the firing round, N4 = the
+        /// prim at the reveal (what the declaration is judged against; -1 unknown: the desk then).</summary>
         Firing = 3,
         /// <summary>The crisis: Player got it alone (N1 suç, N3 votes), or -1 when N2 colleagues split it (N1 each).</summary>
         Crisis = 4,
@@ -85,7 +87,7 @@ namespace BirimizKovulacak.Core
     {
         public HeadlineKind Kind;
         public int Player = LineIds.None, Other = LineIds.None, Other2 = LineIds.None;
-        public int N1 = -1, N2 = -1, N3 = -1;
+        public int N1 = -1, N2 = -1, N3 = -1, N4 = -1;
     }
 
     /// <summary>
@@ -105,6 +107,16 @@ namespace BirimizKovulacak.Core
 
         public readonly List<LineAward> Awards = new List<LineAward>();
         public readonly List<LineHeadline> Headlines = new List<LineHeadline>();
+
+        /// <summary>
+        /// The desk opening's stamp: true ("DOĞRU") when the fired candidate's declaration was their real prim when the
+        /// declarations were revealed (<see cref="LineFiringView.DeclaredActual"/>; a result without it is judged against
+        /// the desk). False without a declaration.
+        /// </summary>
+        public static bool Truthful(LineFiringView f)
+        {
+            return f != null && f.Declared >= 0 && f.Declared == (f.DeclaredActual >= 0 ? f.DeclaredActual : f.Desk);
+        }
 
         /// <summary>The (highest-priority) award of a player, or null.</summary>
         public LineAward AwardOf(int player)
@@ -304,7 +316,7 @@ namespace BirimizKovulacak.Core
                     case AwardKind.WrongMan:
                         if (r.Firings != null)
                             foreach (var f in r.Firings)
-                                if (f != null && Seat(f.Player) && f.Declared >= 0 && f.Declared == f.Desk)
+                                if (f != null && Seat(f.Player) && Truthful(f))
                                     list.Add(new LineAward { Kind = kind, Player = f.Player, N1 = f.Declared });
                         break;
                     case AwardKind.Liar:
@@ -492,7 +504,8 @@ namespace BirimizKovulacak.Core
                 var list = new List<LineHeadline>();
                 if (r.Firings != null)
                     foreach (var f in r.Firings)
-                        if (f != null && Seat(f.Player)) list.Add(new LineHeadline { Kind = HeadlineKind.Firing, Player = f.Player, N1 = f.Desk, N2 = f.Declared, N3 = f.Round });
+                        if (f != null && Seat(f.Player))
+                            list.Add(new LineHeadline { Kind = HeadlineKind.Firing, Player = f.Player, N1 = f.Desk, N2 = f.Declared, N3 = f.Round, N4 = f.DeclaredActual });
                 return list;
             }
 

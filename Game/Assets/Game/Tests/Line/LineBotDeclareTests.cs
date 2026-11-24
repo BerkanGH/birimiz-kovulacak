@@ -19,7 +19,7 @@ namespace BirimizKovulacak.Core.Tests
         [Test]
         public void Bots_HonestDeclaresTheTruth_GreedyUnderstates_MixedDoesEither()
         {
-            int honest = 0, greedy = 0, mixedTrue = 0, mixedLow = 0, none = 0, liars = 0, wrongMen = 0;
+            int honest = 0, greedy = 0, mixedTrue = 0, mixedLow = 0, none = 0, liars = 0, wrongMen = 0, grew = 0;
             for (int n = 3; n <= 6; n++)
                 for (int seed = 1; seed <= 70; seed++)
                 {
@@ -54,7 +54,15 @@ namespace BirimizKovulacak.Core.Tests
                         }
                     }
                     foreach (var f in r.Firings)
-                        Assert.AreEqual(r.Declarations.Single(d => d.Player == f.Player).Amount, f.Declared);
+                    {
+                        var d = r.Declarations.Single(x => x.Player == f.Player);
+                        Assert.AreEqual(d.Amount, f.Declared);
+                        Assert.AreEqual(d.Actual, f.DeclaredActual);
+                        // the stamp follows the declaration, whatever the desk collected afterwards (the second firing of
+                        // a 5–6 player match: a candidate who voted for the first one got a share of that desk)
+                        Assert.AreEqual(d.Amount >= 0 && d.Amount == d.Actual, LineStory.Truthful(f), n + "p seed " + seed + " seat " + f.Player);
+                        if (f.Desk != f.DeclaredActual) grew++;
+                    }
                     // the story of the match: an understatement of 3 or more is "En Pahalı Yalan", a true claim that
                     // still got fired is "Yanlış Adam"
                     var story = LineStory.Build(r, LineConfig.CreateDefault());
@@ -66,10 +74,11 @@ namespace BirimizKovulacak.Core.Tests
                     }
                     else Assert.IsFalse(story.Awards.Any(a => a.Kind == AwardKind.Liar));
                     var wrong = story.Awards.SingleOrDefault(a => a.Kind == AwardKind.WrongMan);
-                    if (wrong != null) { wrongMen++; Assert.AreEqual(r.Firings.First(f => f.Declared >= 0 && f.Declared == f.Desk).Player, wrong.Player); }
+                    if (wrong != null) { wrongMen++; Assert.AreEqual(r.Firings.First(f => LineStory.Truthful(f)).Player, wrong.Player); }
                 }
             Assert.Greater(liars, 100, "Greedy's understatement is the priciest lie of most matches");
             Assert.Greater(wrongMen, 3, "now and then a candidate who told the truth is fired");
+            Assert.Greater(grew, 3, "desks that grew after the reveal were part of the sample");
             TestContext.WriteLine("declarations: honest " + honest + ", greedy " + greedy + ", mixed true " + mixedTrue + " / low " + mixedLow + ", none " + none);
             Assert.Greater(honest, 20);
             Assert.Greater(greedy, 50);

@@ -138,8 +138,8 @@ Shift: volunteers per match 2.48 (needed 3); suç cleaned per match 0.10, skippe
 Firings decided by revote 2.20%, by tie-break 6.55%; desk mean 12.70, removed (remainder) mean 1.04; result aggregate hash 5CF654787954921E
 Votes: fired = richest alive 98.90%, richest candidate 100.00%, suç leader 93.12%; crisis suç to the richest 100.00%, to the suç leader 97.90%; final vote top share 74.25%
 Estimate: top-hit 93.54%, mean abs error 0.71 prim; winner prim mean 14.26, gap to 2nd 0.37, shared wins 77.90%
-Declarations: short shift (suç at its reveal) 48.70%; candidates per match 2.48, declared 100.00%; truthful 2.59% (Honest 64/64, Greedy 0/2411), understated 97.41%; mean claim 6.18 of 10.22 prim; fired with a true claim (DOĞRU stamp) 1.93% of 1817
-Story: awards per match 3.88 (wrongman 3.50%, liar 97.00%, robber 68.90%, snitch 93.90%, goat 33.00%, dodger 1.80%, clean 89.90%); headlines per match 3.70 (bonus 0.88, firing 1.82, crisis 1.00)
+Declarations: short shift (suç at its reveal) 48.70%; candidates per match 2.48, declared 100.00%; truthful 2.59% (Honest 64/64, Greedy 0/2411), understated 97.41%; mean claim 6.18 of 10.22 prim; fired with a true claim (DOĞRU stamp) 2.81% of 1817
+Story: awards per match 3.88 (wrongman 5.10%, liar 97.00%, robber 68.90%, snitch 93.90%, goat 32.60%, dodger 1.30%, clean 89.20%); headlines per match 3.70 (bonus 0.88, firing 1.82, crisis 1.00)
 
 5 players | one-greedy | 1000 matches | candidates 3, firings 2
 Match length s (to Results): mean 408.55; engine steps per match mean/max 99.50/108
@@ -165,8 +165,8 @@ Shift: volunteers per match 1.98 (needed 3); suç cleaned per match 1.17, skippe
 Firings decided by revote 3.83%, by tie-break 11.88%; desk mean 11.71, removed (remainder) mean 1.05; result aggregate hash F256E76289E63D03
 Votes: fired = richest alive 78.65%, richest candidate 87.06%, suç leader 88.82%; crisis suç to the richest 84.80%, to the suç leader 88.70%; final vote top share 67.82%
 Estimate: top-hit 81.88%, mean abs error 0.87 prim; winner prim mean 15.10, gap to 2nd 1.22, shared wins 54.60%
-Declarations: short shift (suç at its reveal) 68.60%; candidates per match 3.25, declared 100.00%; truthful 50.75% (Mixed 1651/3253), understated 49.25%; mean claim 7.35 of 9.16 prim; fired with a true claim (DOĞRU stamp) 25.18% of 1986
-Story: awards per match 3.84 (wrongman 50.00%, liar 83.10%, robber 55.70%, cashrat 24.50%, snitch 79.80%, goat 37.00%, dodger 8.20%, clean 45.70%); headlines per match 3.86 (bonus 0.87, firing 1.99, crisis 1.00)
+Declarations: short shift (suç at its reveal) 68.60%; candidates per match 3.25, declared 100.00%; truthful 50.75% (Mixed 1651/3253), understated 49.25%; mean claim 7.35 of 9.16 prim; fired with a true claim (DOĞRU stamp) 51.26% of 1986
+Story: awards per match 3.88 (wrongman 76.80%, liar 83.10%, robber 49.10%, cashrat 21.30%, snitch 77.90%, goat 29.10%, dodger 8.10%, clean 42.90%); headlines per match 3.86 (bonus 0.87, firing 1.99, crisis 1.00)
 
 5 players | lobby | 1000 matches | candidates 3, firings 2
 Match length s (to Results): mean 493.20; engine steps per match mean/max 118.56/134
@@ -180,8 +180,8 @@ Shift: volunteers per match 2.41 (needed 3); suç cleaned per match 0.38, skippe
 Firings decided by revote 1.00%, by tie-break 6.50%; desk mean 12.92, removed (remainder) mean 1.14; result aggregate hash 4927697D40A4C0A5
 Votes: fired = richest alive 95.35%, richest candidate 98.35%, suç leader 94.45%; crisis suç to the richest 98.70%, to the suç leader 95.20%; final vote top share 72.56%
 Estimate: top-hit 91.24%, mean abs error 0.87 prim; winner prim mean 15.03, gap to 2nd 0.78, shared wins 63.60%
-Declarations: short shift (suç at its reveal) 59.00%; candidates per match 2.85, declared 100.00%; truthful 14.86% (Honest 23/23, Greedy 0/1999, Mixed 401/832), understated 85.14%; mean claim 6.61 of 10.23 prim; fired with a true claim (DOĞRU stamp) 5.10% of 2000
-Story: awards per match 3.99 (wrongman 10.20%, liar 99.90%, robber 66.90%, cashrat 2.10%, snitch 99.30%, goat 21.00%, dodger 3.80%, clean 96.00%); headlines per match 4.07 (bonus 1.07, firing 2.00, crisis 1.00)
+Declarations: short shift (suç at its reveal) 59.00%; candidates per match 2.85, declared 100.00%; truthful 14.86% (Honest 23/23, Greedy 0/1999, Mixed 401/832), understated 85.14%; mean claim 6.61 of 10.23 prim; fired with a true claim (DOĞRU stamp) 8.50% of 2000
+Story: awards per match 3.99 (wrongman 16.90%, liar 99.90%, robber 64.10%, cashrat 2.10%, snitch 99.30%, goat 19.40%, dodger 3.50%, clean 94.00%); headlines per match 4.07 (bonus 1.07, firing 2.00, crisis 1.00)
 
 6 players | half | 1000 matches | candidates 3, firings 2
 Match length s (to Results): mean 485.57; engine steps per match mean/max 133.64/153
@@ -194,7 +194,7 @@ Shift: volunteers per match 2.90 (needed 3); suç cleaned per match 0.00, skippe
 Firings decided by revote 0.84%, by tie-break 9.50%; desk mean 14.55, removed (remainder) mean 0.99; result aggregate hash 77D91CD25792700E
 Votes: fired = richest alive 86.40%, richest candidate 86.40%, suç leader 93.44%; crisis suç to the richest 80.60%, to the suç leader 84.20%; final vote top share 70.58%
 Estimate: top-hit 89.69%, mean abs error 0.95 prim; winner prim mean 16.68, gap to 2nd 2.33, shared wins 40.80%
-Declarations: short shift (suç at its reveal) 33.70%; candidates per match 2.76, declared 100.00%; truthful 1.12% (Honest 31/31, Greedy 0/2730), understated 98.88%; mean claim 7.16 of 11.90 prim; fired with a true claim (DOĞRU stamp) 1.00% of 1905
+Declarations: short shift (suç at its reveal) 33.70%; candidates per match 2.76, declared 100.00%; truthful 1.12% (Honest 31/31, Greedy 0/2730), understated 98.88%; mean claim 7.16 of 11.90 prim; fired with a true claim (DOĞRU stamp) 1.63% of 1905
 Story: awards per match 3.89 (wrongman 1.90%, liar 98.10%, robber 60.60%, snitch 96.40%, goat 26.40%, dodger 27.60%, clean 78.00%); headlines per match 4.28 (bonus 1.38, firing 1.91, crisis 1.00)
 
 6 players | one-greedy | 1000 matches | candidates 3, firings 2
@@ -221,8 +221,8 @@ Shift: volunteers per match 1.97 (needed 3); suç cleaned per match 0.92, skippe
 Firings decided by revote 3.20%, by tie-break 7.25%; desk mean 12.73, removed (remainder) mean 1.48; result aggregate hash 564ACE342D929BEE
 Votes: fired = richest alive 70.10%, richest candidate 78.15%, suç leader 89.65%; crisis suç to the richest 71.10%, to the suç leader 95.30%; final vote top share 66.77%
 Estimate: top-hit 68.03%, mean abs error 1.26 prim; winner prim mean 15.90, gap to 2nd 1.93, shared wins 27.70%
-Declarations: short shift (suç at its reveal) 71.10%; candidates per match 3.49, declared 100.00%; truthful 50.19% (Mixed 1750/3487), understated 49.81%; mean claim 8.17 of 10.20 prim; fired with a true claim (DOĞRU stamp) 26.60% of 2000
-Story: awards per match 3.93 (wrongman 52.50%, liar 88.20%, robber 69.00%, cashrat 43.70%, snitch 73.10%, goat 21.90%, dodger 11.30%, clean 32.90%); headlines per match 4.33 (bonus 1.33, firing 2.00, crisis 1.00)
+Declarations: short shift (suç at its reveal) 71.10%; candidates per match 3.49, declared 100.00%; truthful 50.19% (Mixed 1750/3487), understated 49.81%; mean claim 8.17 of 10.20 prim; fired with a true claim (DOĞRU stamp) 50.75% of 2000
+Story: awards per match 3.95 (wrongman 76.30%, liar 88.20%, robber 64.50%, cashrat 40.20%, snitch 70.20%, goat 16.00%, dodger 10.20%, clean 29.40%); headlines per match 4.33 (bonus 1.33, firing 2.00, crisis 1.00)
 
 6 players | lobby | 1000 matches | candidates 3, firings 2
 Match length s (to Results): mean 500.10; engine steps per match mean/max 137.58/152
@@ -236,7 +236,7 @@ Shift: volunteers per match 2.72 (needed 3); suç cleaned per match 0.42, skippe
 Firings decided by revote 0.30%, by tie-break 9.55%; desk mean 14.39, removed (remainder) mean 1.17; result aggregate hash 1896B05AEAFF6EA4
 Votes: fired = richest alive 86.70%, richest candidate 87.90%, suç leader 93.00%; crisis suç to the richest 84.70%, to the suç leader 90.60%; final vote top share 68.72%
 Estimate: top-hit 83.08%, mean abs error 1.18 prim; winner prim mean 17.12, gap to 2nd 2.43, shared wins 27.70%
-Declarations: short shift (suç at its reveal) 40.90%; candidates per match 3.05, declared 100.00%; truthful 19.84% (Honest 14/14, Greedy 0/1902, Mixed 591/1133), understated 80.16%; mean claim 7.95 of 11.84 prim; fired with a true claim (DOĞRU stamp) 7.85% of 2000
-Story: awards per match 3.98 (wrongman 15.70%, liar 100.00%, robber 66.70%, cashrat 10.60%, snitch 99.00%, goat 16.80%, dodger 27.50%, clean 62.10%); headlines per match 4.52 (bonus 1.52, firing 2.00, crisis 1.00)
+Declarations: short shift (suç at its reveal) 40.90%; candidates per match 3.05, declared 100.00%; truthful 19.84% (Honest 14/14, Greedy 0/1902, Mixed 591/1133), understated 80.16%; mean claim 7.95 of 11.84 prim; fired with a true claim (DOĞRU stamp) 14.55% of 2000
+Story: awards per match 3.99 (wrongman 28.10%, liar 100.00%, robber 62.60%, cashrat 10.20%, snitch 98.90%, goat 16.10%, dodger 27.20%, clean 55.50%); headlines per match 4.52 (bonus 1.52, firing 2.00, crisis 1.00)
 
-Completed 16000 matches without a stall. Wall seconds: 124.00
+Completed 16000 matches without a stall. Wall seconds: 111.43

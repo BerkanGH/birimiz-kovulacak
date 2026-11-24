@@ -214,7 +214,9 @@ namespace BirimizKovulacak.Core.Tests
             var firing = m.View(3).Final.Firings.Single();
             Assert.AreEqual(0, firing.Player);
             Assert.AreEqual(5, firing.Declared, "what the desk opening stamps");
+            Assert.AreEqual(9, firing.DeclaredActual, "against the prim at the reveal");
             Assert.AreEqual(12, firing.Desk, "9 + the 3 that came in after the reveal");
+            Assert.IsFalse(LineStory.Truthful(firing));
             Assert.AreEqual(m.Now, firing.Time, 1e-9);
             m.Next();
             var r = m.View().Results;
@@ -227,6 +229,41 @@ namespace BirimizKovulacak.Core.Tests
             Assert.AreEqual(4, r.Groups.Count);
             foreach (var kind in new[] { TaskKind.ClientBonus, TaskKind.PettyCash })
                 CollectionAssert.AreEquivalent(m.Ids, r.Groups.Where(g => g.Task == kind).SelectMany(g => g.Members));
+        }
+
+        [Test]
+        public void PrimThatArrivesAfterTheRevealNeverTurnsATrueDeclarationIntoALie()
+        {
+            var m = AtVerdict();
+            m.Ok(0, Declare, a: 9);     // the truth
+            m.Ok(1, Declare, a: 9);
+            m.Next();
+            m.Advance(2);
+            Assert.IsTrue(m.View().Final.DeclarationsRevealed);
+            m.Ok(2, LineVerb.Transfer, 0, 3);   // a candidate cannot send, but still receives
+            m.Until(LinePhase.FinalVote);
+            foreach (int id in m.Ids) if (id != 0) m.Ok(id, LineVerb.Vote, 0);
+            m.Next();
+            var firing = m.View(3).Final.Firings.Single();
+            Assert.AreEqual(12, firing.Desk);
+            Assert.AreEqual(9, firing.Declared);
+            Assert.AreEqual(9, firing.DeclaredActual);
+            Assert.IsTrue(LineStory.Truthful(firing), "DOĞRU: judged against the prim at the reveal, not the desk");
+            m.Next();
+            var r = m.View().Results;
+            var back = LineCodec.DecodeView(LineCodec.EncodeView(new LineView { Results = r })).Results;
+            Assert.AreEqual(9, back.Firings.Single().DeclaredActual);
+            var story = LineStory.Build(r, m.Engine.Config);
+            Assert.AreEqual(0, story.Awards.Single(a => a.Kind == AwardKind.WrongMan).Player, "told the truth and was fired");
+            var head = story.Headlines.Single(h => h.Kind == HeadlineKind.Firing);
+            CollectionAssert.AreEqual(new[] { 12, 9, 9 }, new[] { head.N1, head.N2, head.N4 });
+            // without declarations nothing is stamped
+            var off = new LineFiringView { Player = 0, Desk = 12 };
+            Assert.IsFalse(LineStory.Truthful(off));
+            Assert.IsFalse(LineStory.Truthful(null));
+            // (an older / hand-made firing without the snapshot is judged against the desk)
+            Assert.IsTrue(LineStory.Truthful(new LineFiringView { Player = 0, Desk = 7, Declared = 7 }));
+            Assert.IsFalse(LineStory.Truthful(new LineFiringView { Player = 0, Desk = 8, Declared = 7 }));
         }
 
         [Test]
@@ -257,6 +294,7 @@ namespace BirimizKovulacak.Core.Tests
             foreach (int id in m.Ids) if (id > 1) m.Ok(id, LineVerb.Vote, 1);
             m.Next();
             Assert.AreEqual(-1, m.View().Final.Firings[1].Declared, "no declaration: nothing to stamp");
+            Assert.IsFalse(LineStory.Truthful(m.View().Final.Firings[1]));
             m.Finish();
             CollectionAssert.AreEqual(new[] { 3, -1 }, m.Engine.Result.Firings.Select(x => x.Declared));
         }

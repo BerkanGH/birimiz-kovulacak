@@ -40,9 +40,9 @@ namespace BirimizKovulacak.Core.Tests
             public Made Vote(BallotKind kind, int voter, int target, int round = 0, bool self = false) { R.Ballots.Add(new LineBallotView { Kind = kind, Voter = voter, Target = target, Round = round, SelfAssigned = self }); return this; }
             public Made Declare(int id, int amount, int actual) { R.Declarations.Add(new LineDeclarationView { Player = id, Amount = amount, Actual = actual }); return this; }
 
-            public Made Fire(int id, int desk, int declared = -1, int round = 0, double time = 500)
+            public Made Fire(int id, int desk, int declared = -1, int round = 0, double time = 500, int had = -1)
             {
-                R.Firings.Add(new LineFiringView { Player = id, Desk = desk, Declared = declared, Round = round, Time = time });
+                R.Firings.Add(new LineFiringView { Player = id, Desk = desk, Declared = declared, DeclaredActual = had, Round = round, Time = time });
                 R.Fired.Add(id);
                 R.Players[id].Fired = true;
                 R.Players[id].Prim = 0;
@@ -98,6 +98,10 @@ namespace BirimizKovulacak.Core.Tests
             Assert.IsNull(new Made(4).Fire(1, desk: 9, declared: 7).Award(AwardKind.WrongMan), "a false declaration");
             Assert.IsNull(new Made(4).Fire(1, desk: 9).Award(AwardKind.WrongMan), "no declaration");
             Assert.IsNull(new Made(4).Declare(1, 9, 9).Award(AwardKind.WrongMan), "not fired");
+            // judged against the prim at the reveal: a desk that grew afterwards (a share, a transfer) is still the truth,
+            // and a desk that happens to match a lie is still a lie
+            Assert.AreEqual(1, new Made(6).Declare(1, 8, 8).Fire(1, desk: 13, declared: 8, had: 8).Award(AwardKind.WrongMan).Player);
+            Assert.IsNull(new Made(6).Declare(1, 8, 5).Fire(1, desk: 8, declared: 8, had: 5).Award(AwardKind.WrongMan), "overstated, then topped up");
             // two firings: the first one fired takes it
             var two = new Made(6).Fire(4, 3, 3, round: 0, time: 500).Fire(2, 8, 8, round: 1, time: 540).Story();
             Assert.AreEqual(4, two.Awards.First(x => x.Kind == AwardKind.WrongMan).Player);

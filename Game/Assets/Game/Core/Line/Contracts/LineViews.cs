@@ -327,9 +327,13 @@ namespace BirimizKovulacak.Core
         public int Share;
         /// <summary>Prim removed from the game (remainder or no recipients).</summary>
         public int Removed;
-        /// <summary>The prim the fired candidate had declared (v5.2, stamped against <see cref="Desk"/>); -1 = no
-        /// declaration (or declarations are off).</summary>
+        /// <summary>The prim the fired candidate had declared (v5.2); -1 = no declaration (or declarations are off).</summary>
         public int Declared = -1;
+        /// <summary>The fired candidate's real prim when the declarations were revealed (v5.2): what
+        /// <see cref="Declared"/> is judged against (<see cref="LineStory.Truthful"/>). The desk can hold more: a
+        /// candidate still receives prim after the reveal (a share of an earlier desk, a transfer), and that never
+        /// turns a true declaration into a lie. -1 = declarations were not revealed (or are off).</summary>
+        public int DeclaredActual = -1;
         /// <summary>Host time of the firing (v5.2; the deciding vote's end).</summary>
         public double Time;
     }
