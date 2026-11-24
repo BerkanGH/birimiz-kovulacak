@@ -55,6 +55,11 @@
 .pl-focus .pl-wrap { align-items: center; }
 .pl-chip { font-size: 19px; padding: 3px 10px; margin: 3px 6px 3px 0; border-radius: 8px; background-color: rgba(255, 255, 255, 0.12); color: rgb(236, 238, 245); }
 .pl-chip-bad { background-color: rgba(190, 50, 42, 0.45); }
+.pl-chip-good { background-color: rgba(60, 170, 100, 0.4); }
+/* v5.2: the story of the match in the results (headlines, awards) */
+.pl-headline { white-space: normal; margin: 2px 0; }
+.pl-award-chip { background-color: rgba(210, 56, 47, 0.5); margin-right: 10px; letter-spacing: 1px; }
+.pl-award-text { margin: 0 0 6px 4px; white-space: normal; }
 .pl-chip-warn { background-color: rgba(220, 120, 40, 0.4); }
 .pl-chip-me { background-color: rgba(120, 222, 150, 0.35); border-width: 1px; border-color: rgb(150, 236, 180); }
 

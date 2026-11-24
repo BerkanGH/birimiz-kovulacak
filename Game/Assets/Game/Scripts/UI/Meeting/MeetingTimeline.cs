@@ -13,10 +13,11 @@ namespace BirimizKovulacak.Game
     /// </summary>
     public static class DeskOpening
     {
-        // the drawer opens, the bundles are counted, "23 PRİM" is stamped, who shares it; the camera comes back to the
-        // table, the fired colleague takes the box, the bundles appear at their place and the shares slide to the voters
-        public const float DrawerOpen = 0.7f, CountStart = 1.1f, CountEnd = 3.3f, StampAt = 3.45f, ChipsAt = 3.8f,
-            BoxAt = 4.9f, PileAt = 5.2f, SlideAt = 5.9f, SlideTime = 1.2f;
+        // the drawer opens, the bundles are counted, "23 PRİM" is stamped, the declaration is stamped against it (v5.2:
+        // YALAN / DOĞRU), who shares it; the camera comes back to the table, the fired colleague takes the box, the
+        // bundles appear at their place and the shares slide to the voters
+        public const float DrawerOpen = 0.7f, CountStart = 1.1f, CountEnd = 3.3f, StampAt = 3.45f, VerdictAt = 4.05f, ChipsAt = 4.6f,
+            BoxAt = 5.7f, PileAt = 6.0f, SlideAt = 6.7f, SlideTime = 1.2f;
 
         /// <summary>The latest firing while its verdict runs, else null.</summary>
         public static LineFiringView Current(LineView v)

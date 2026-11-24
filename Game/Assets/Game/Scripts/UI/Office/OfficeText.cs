@@ -37,6 +37,11 @@ namespace BirimizKovulacak.Game
                     }
                     return F("office.now.chosen", PlayText.Choice(t.Kind, t.MyChoice));
                 case LinePhase.TaskReveal:
+                {
+                    // v5.2: an unstaffed shift blames its skippers at the reveal (no meeting 2): say it here
+                    string shortShift = PlayText.ShiftShort(t, lc.Config, v.Players.Count);
+                    if (shortShift != null) return shortShift + " " + T("office.now.shift_short_roster");
+                }
                     if (t != null && t.MyPayout >= 0)
                         return t.Kind == TaskKind.PettyCash ? F("office.now.reveal_payout_cash", t.MyPayout)
                             : t.Kind == TaskKind.WeekendShift ? F("office.now.reveal_payout_shift", t.MyPayout)

@@ -14,8 +14,8 @@ namespace BirimizKovulacak.Game
     /// </summary>
     public sealed class MeetingSlide
     {
-        readonly VisualElement _bar;
-        readonly Label _line;
+        readonly VisualElement _bar, _award;
+        readonly Label _line, _awardName, _awardText;
         readonly PlaySection _buttons;
         readonly Func<string, string, float, bool> _toast;
         readonly Action _openReveal, _toggleProjector;
@@ -30,7 +30,15 @@ namespace BirimizKovulacak.Game
             _openReveal = openReveal;
             _toggleProjector = toggleProjector;
             _bar = Box("mt-results").AddTo(parent);
-            _line = Bold("", "mt-results-line").NoPick().AddTo(_bar);
+            // my place, and next to it (v5.2) my award of the match (LineStory) when I got one: one row, so the bar never
+            // grows over the projector's footer in the close-up
+            var top = Box("mt-results-top").NoPick().AddTo(_bar);
+            _line = Bold("", "mt-results-line").NoPick().AddTo(top);
+            _award = Box("mt-award").NoPick().AddTo(top);
+            Bold(T("results.my_award"), "mt-award-kicker").NoPick().AddTo(_award);
+            _awardName = UiKit.StampText("", "mt-award-name").NoPick().AddTo(_award);
+            _awardText = Text("", "mt-award-text").NoPick().AddTo(_award);
+            _award.Show(false);
             _buttons = new PlaySection(_bar, "mt-results-buttons");
             _bar.Show(false);
         }
@@ -53,6 +61,20 @@ namespace BirimizKovulacak.Game
             if (!show) return;
             _bar.EnableInClassList("mt-results-abandoned", abandoned);
             _line.SetText(abandoned ? T("abandoned.text") : MyLine(lc, v));
+            // my title appears with the projector's awards slide (not before the ranking has been read out)
+            var story = results ? StoryText.Of(v) : null;
+            var mine = story != null ? story.AwardOf(lc.MySlot) : null;
+            bool showAward = mine != null && now - v.PhaseStartTime >= LineStory.AwardsAt(v.PhaseEndTime - v.PhaseStartTime) + 0.4;
+            if (showAward != _award.IsShown())
+            {
+                _award.Show(showAward);
+                if (showAward) { UiMotion.PopIn(_award, 0.3f); Sfx.Play("stamp", 0.5f); }
+            }
+            if (showAward)
+            {
+                _awardName.SetText(Loc.Upper(StoryText.AwardName(mine.Kind)));
+                _awardText.SetText(StoryText.AwardText(mine));
+            }
             if (dirty || _dirty)
             {
                 _dirty = false;

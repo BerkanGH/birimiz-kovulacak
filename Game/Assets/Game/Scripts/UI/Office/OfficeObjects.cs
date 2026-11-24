@@ -330,7 +330,10 @@ namespace BirimizKovulacak.Game
             if (roster == null) { Big(p, T("office.roster.later_card")); return; }
             int need = shift ? needed : _lastNeeded;
             bool ok = roster.Count >= need;
-            Big(p, F(ok ? "office.roster.result_ok" : "office.roster.result_short", roster.Count, need, c.ShiftFailSkipBlame, c.ShiftVolunteerClean, c.ShiftSkipPay), ok ? "pl-good" : "pl-bad");
+            // v5.2: a short roster's suç is written right at the reveal (no meeting 2); the old flow (ShiftMeeting) waits for it
+            string shortKey = c.ShiftMeeting ? "office.roster.result_short_meeting" : "office.roster.result_short";
+            Big(p, F(ok ? "office.roster.result_ok" : shortKey, roster.Count, need, c.ShiftFailSkipBlame, c.ShiftVolunteerClean, c.ShiftSkipPay,
+                Math.Max(0, v.Players.Count - roster.Count)), ok ? "pl-good" : "pl-bad");
             var chips = Wrap(p);
             if (roster.Count == 0) Line(p, T("office.roster.nobody"), "pl-dim");
             foreach (int id in roster) Bold(Name(id), "pl-chip").AddTo(chips);

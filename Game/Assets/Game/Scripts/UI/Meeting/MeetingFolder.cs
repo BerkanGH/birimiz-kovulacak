@@ -34,7 +34,7 @@ namespace BirimizKovulacak.Game
         Tab _tab;
         bool _open, _dirty = true, _scrollBottom;
         int _rulesPage, _seenChat;
-        string _revealTab = MeetingReveal.TabSummary;
+        string _revealTab = MeetingReveal.TabStory;
         float _alpha;
 
         public bool IsOpen => _open;
@@ -122,7 +122,7 @@ namespace BirimizKovulacak.Game
 
         public void FocusField() { if (_tab == Tab.Chat) _field.Focus(); }
         public void MarkDirty() { _dirty = true; }
-        public void ResetWeek() { _seenChat = 0; _rulesPage = 0; _revealTab = MeetingReveal.TabSummary; SetTab(Tab.Actions); }
+        public void ResetWeek() { _seenChat = 0; _rulesPage = 0; _revealTab = MeetingReveal.TabStory; SetTab(Tab.Actions); }
 
         /// <summary>v5 step 3b: the results' full reveal on one of its tabs (<see cref="MeetingReveal"/> tab ids).</summary>
         public void ShowReveal(string tab)

@@ -473,6 +473,8 @@ namespace BirimizKovulacak.Game
             Line(card, T("focus.sealed_note"));
             var meP = lc.Player(lc.MySlot);
             if (meP != null && meP.Candidate) Line(card, T("final.you_candidate"), "pl-bad");
+            // v5.2: a candidate declares their prim
+            PlayBlocks.DeclareRow(card, lc, v, _st);
         }
 
         void FocusFinalDiscussion(VisualElement card, LineClient lc, LineView v)
@@ -482,6 +484,7 @@ namespace BirimizKovulacak.Game
             if (fv != null && fv.DefenseOrder.Count > 0) Line(card, F("focus.candidates", PlayText.Names(fv.DefenseOrder), fv.FiringsTotal), "pl-warn");
             var meP = lc.Player(lc.MySlot);
             if (meP != null && meP.Candidate) Line(card, T("final.you_candidate"), "pl-bad");
+            PlayBlocks.DeclareRow(card, lc, v, _st);
             if (LeakableCount(v) == 0) return;
             Sub(card, T("focus.optional"));
             LeakButtons(Wrap(card), v);

@@ -9,7 +9,8 @@
 /* the results bar (MeetingSlide.cs): my place and the buttons; the ceremony itself is on the projector */
 .mt-results { position: absolute; left: 50%; bottom: 22px; translate: -50% 0; max-width: 1600px; align-items: center;
     background-color: rgba(23, 31, 52, 0.9); border-radius: 18px; border-width: 2px; border-color: rgba(244, 239, 227, 0.2); padding: 10px 18px 4px 18px; }
-.mt-results-line { font-size: 22px; color: rgb(255, 224, 102); margin: 0 0 6px 0; -unity-text-align: middle-center; white-space: normal; }
+.mt-results-top { flex-direction: row; align-items: center; justify-content: center; margin: 0 0 6px 0; }
+.mt-results-line { font-size: 22px; color: rgb(255, 224, 102); margin: 0; -unity-text-align: middle-center; white-space: normal; }
 .mt-results-buttons { flex-direction: row; justify-content: center; }
 .mt-results .pl-wrap { justify-content: center; }
 .mt-results .pl-btn { margin: 0 6px 8px 6px; }
@@ -67,6 +68,9 @@
 .mt-tablet .pl-focus-text { color: rgb(31, 42, 68); white-space: normal; font-size: 21px; }
 .mt-tablet .pl-chip { background-color: rgba(31, 42, 68, 0.1); color: rgb(31, 42, 68); }
 .mt-tablet .pl-chip-bad { background-color: rgba(210, 56, 47, 0.2); }
+.mt-tablet .pl-chip-good { background-color: rgba(36, 120, 74, 0.22); }
+.mt-tablet .pl-award-chip { background-color: rgba(210, 56, 47, 0.18); color: rgb(170, 40, 34); }
+.mt-tablet .pl-headline { color: rgb(31, 42, 68); font-size: 20px; }
 .mt-tablet .pl-chip-warn { background-color: rgba(232, 140, 40, 0.25); }
 .mt-tablet .pl-tag { background-color: rgba(31, 42, 68, 0.8); }
 .mt-tablet .pl-fire { background-color: rgba(210, 56, 47, 0.08); }
@@ -228,6 +232,39 @@
 .pk-note-field { font-size: 22px; margin: 4px 0 6px 0; min-height: 44px; }
 .pk-targets { flex-direction: row; flex-wrap: wrap; }
 .pk-dialog-buttons { flex-direction: row; justify-content: flex-end; margin-top: 12px; }
+/* v5.2: the prim declaration card of a candidate (MeetingDeclare) and its chip */
+.dc-card { position: absolute; left: 50%; bottom: 150px; translate: -50% 0; width: 700px; background-color: rgb(252, 248, 238); border-radius: 16px;
+    border-width: 3px; border-bottom-width: 7px; border-color: rgb(31, 42, 68); padding: 14px 24px 14px 24px; }
+.dc-head { flex-direction: row; align-items: center; }
+.dc-title { font-size: 32px; color: rgb(200, 52, 44); margin: 0; flex-grow: 1; letter-spacing: 2px; }
+.dc-timer { font-size: 24px; color: rgb(31, 42, 68); margin: 0; background-color: rgba(31, 42, 68, 0.08); padding: 2px 12px; border-radius: 16px; }
+.dc-timer-low { color: rgb(255, 255, 255); background-color: rgb(210, 56, 47); }
+.dc-info { font-size: 18px; color: rgb(80, 86, 108); white-space: normal; margin: 4px 0 8px 0; }
+.dc-stepper { flex-direction: row; align-items: center; justify-content: center; }
+.dc-step { font-size: 30px; min-width: 70px; min-height: 60px; margin: 0 6px; background-color: rgb(52, 62, 92); }
+.dc-step-big { background-color: rgb(86, 94, 116); }
+.dc-value-box { width: 190px; height: 126px; margin: 0 12px; align-items: center; justify-content: center; background-color: rgb(255, 255, 255);
+    border-width: 3px; border-color: rgb(31, 42, 68); border-radius: 10px; }
+.dc-value { font-size: 70px; color: rgb(31, 42, 68); margin: -6px 0 -12px 0; -unity-text-align: middle-center; }
+.dc-unit { font-size: 17px; color: rgb(107, 111, 128); letter-spacing: 3px; margin: 0; }
+.dc-real { font-size: 20px; color: rgb(36, 120, 74); -unity-text-align: middle-center; margin: 8px 0 2px 0; }
+.dc-real-lie { color: rgb(196, 102, 18); }
+.dc-foot { flex-direction: row; align-items: center; margin-top: 6px; }
+.dc-keys { font-size: 16px; color: rgb(107, 111, 128); flex-grow: 1; flex-shrink: 1; white-space: normal; margin: 0 10px 0 0; }
+.dc-foot .pl-btn { margin: 0 0 0 10px; }
+.dc-chip { position: absolute; left: 50%; bottom: 96px; translate: -50% 0; flex-direction: row; align-items: center; padding: 7px 18px 7px 12px;
+    background-color: rgba(23, 31, 52, 0.9); border-radius: 22px; border-width: 2px; border-color: rgba(244, 239, 227, 0.4); }
+.dc-chip-todo { border-color: rgb(255, 170, 60); }
+.dc-chip-seal { width: 14px; height: 14px; border-radius: 7px; background-color: rgb(110, 200, 130); margin-right: 10px; }
+.dc-chip-todo .dc-chip-seal { background-color: rgb(255, 170, 60); }
+.dc-chip-text { font-size: 19px; color: rgb(244, 239, 227); margin: 0; }
+/* v5.2: my award on the results bar */
+/* (negative vertical margins: the card is taller than the place line, and the bar must not grow over the folder) */
+.mt-award { flex-direction: row; align-items: center; margin: -4px 0 -4px 18px; padding: 1px 14px; background-color: rgba(252, 248, 238, 0.96); border-radius: 10px;
+    border-width: 2px; border-color: rgb(31, 42, 68); }
+.mt-award-kicker { font-size: 17px; color: rgb(80, 86, 108); margin: 0 10px 0 0; }
+.mt-award-name { font-size: 23px; color: rgb(200, 52, 44); border-width: 3px; border-color: rgb(200, 52, 44); border-radius: 6px; padding: 0 8px; rotate: -2deg; margin: 0 12px 0 0; }
+.mt-award-text { font-size: 17px; color: rgb(31, 42, 68); margin: 0; white-space: normal; max-width: 640px; }
 /* aiming */
 .pk-aim { position: absolute; bottom: 150px; left: 50%; translate: -50% 0; background-color: rgba(23, 31, 52, 0.9); border-width: 2px;
     border-color: rgb(255, 140, 60); border-radius: 18px; padding: 8px 22px; }

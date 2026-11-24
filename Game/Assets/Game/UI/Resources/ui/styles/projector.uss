@@ -112,6 +112,15 @@
 .pj-counter { font-size: 74px; color: rgb(31, 42, 68); margin: 0; }
 .pj-counter-done { color: rgb(200, 52, 44); }
 .pj-desk-stamp { position: absolute; right: 24px; top: 56px; font-size: 68px; border-width: 7px; rotate: -9deg; opacity: 0; }
+/* v5.2: the fired colleague's declaration beside the count, stamped YALAN (red) / DOĞRU (green) */
+.pj-claim { margin-left: 30px; justify-content: center; }
+.pj-claim-text { font-size: 36px; color: rgb(31, 42, 68); margin: 0; white-space: nowrap; }
+.pj-claim-note { font-size: 22px; color: rgb(86, 94, 116); margin: -2px 0 0 0; white-space: normal; max-width: 300px; }
+.pj-claim-stamp { font-size: 66px; border-width: 8px; border-radius: 8px; padding: 0 16px; margin-left: 26px; align-self: center; rotate: -7deg; opacity: 0; }
+
+/* ---------------------------------------------------------------- v5.2: prim declarations */
+.pj-declare-n { font-size: 58px; height: 92px; color: rgb(200, 52, 44); margin: 4px 0 0 0; white-space: nowrap; -unity-text-align: middle-center; }
+.pj-declare-none { font-size: 34px; height: 92px; color: rgb(120, 126, 146); margin: 4px 0 0 0; white-space: nowrap; -unity-text-align: middle-center; }
 
 /* ---------------------------------------------------------------- results */
 .pj-winner { width: 360px; align-items: center; margin-right: 36px; }
@@ -126,6 +135,14 @@
 .pj-rank-prim { font-size: 40px; color: rgb(31, 42, 68); width: 150px; -unity-text-align: middle-right; margin: 0 18px 0 0; }
 .pj-rank-blame { font-size: 27px; color: rgb(120, 126, 146); width: 100px; margin: 0; }
 .pj-rank-tag { font-size: 25px; border-width: 3px; padding: 0 8px; margin: 0; }
+/* v5.2: the awards slide (one row per award: face, name, the stamped title, why) */
+.pj-awards-title { margin-bottom: 2px; }
+.pj-award { flex-direction: row; align-items: center; height: 104px; border-bottom-width: 2px; border-color: rgba(31, 42, 68, 0.15); opacity: 0; }
+.pj-award-me { background-color: rgba(255, 224, 102, 0.55); border-radius: 10px; }
+.pj-award .pj-col { margin-left: 18px; }
+.pj-award-name { font-size: 36px; color: rgb(31, 42, 68); margin: 0 20px 0 0; white-space: nowrap; }
+.pj-award-stamp { font-size: 32px; border-width: 4px; padding: 0 10px; rotate: -3deg; align-self: center; opacity: 0; }
+.pj-award-text { font-size: 27px; color: rgb(86, 94, 116); margin: 2px 0 0 0; white-space: normal; }
 
 /* ---------------------------------------------------------------- the leaked recording (TapeDeck on the projector) */
 .pj-tape { position: absolute; left: 0; right: 0; top: 103px; bottom: 50px; align-items: center; justify-content: center; }

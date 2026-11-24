@@ -29,7 +29,12 @@ namespace BirimizKovulacak.Game
     public sealed class MeetingProjector
     {
         public const int PanelW = 1280, PanelH = 720;
-        public enum Show { None, Dossier, Vote, Verdict, Crisis, Defense, Desk, Results, Tape, Abandoned }
+        public enum Show { None, Dossier, Vote, Verdict, Crisis, Defense, Desk, Results, Tape, Abandoned, Penalty }
+
+        /// <summary>UI mocks: pin the results on the ranking (0) or the awards (1) slide; -1 = by the clock.</summary>
+        public static int MockResultsSlide = -1;
+        /// <summary>Seconds each results slide stays once the awards have come up (they alternate with the ranking).</summary>
+        const double AwardsHold = 14.0;
 
         readonly WorldPanel _panel = new WorldPanel();
         VisualElement _root, _content, _dots, _tapeHost;
@@ -47,8 +52,11 @@ namespace BirimizKovulacak.Game
         int _deckIndex, _deckEntries;
         double _deckNext;
         bool _deckNew;
+        /// <summary>v5.2 declarations: their slide has jumped in this discussion; the sealed note was on before (so the
+        /// reveal happened in front of us); the next build of the slide pops its numbers in.</summary>
+        bool _deckDeclared, _deckSeenSealed, _declFresh;
         // one-shots of the current slide
-        bool _stamped, _cheered;
+        bool _stamped, _cheered, _verdicted;
 
         /// <summary>UI mocks: stop paging the dossier (and show this slide).</summary>
         public static int MockDeckIndex = -1;
@@ -185,7 +193,7 @@ namespace BirimizKovulacak.Game
             var show = Pick(v, now, out _pick);
             _clock.SetText(v.Phase == LinePhase.Abandoned ? "" : UiKit.Clock(Math.Max(0, v.PhaseEndTime - now)));
             UpdatePatience(lc, v);
-            _kicker.SetText(Loc.Upper(Kicker(show, lc, v)));
+            _kicker.SetText(Loc.Upper(Kicker(show, lc, v, now)));
             bool tape = show == Show.Tape;
             if (_tapeHost.IsShown() != tape) { _tapeHost.Show(tape); if (tape) UiMotion.FadeIn(_tapeHost, 0.3f); }
             _content.Show(!tape);
@@ -196,7 +204,8 @@ namespace BirimizKovulacak.Game
             }
             int deckCount = 0;
             if (show == Show.Dossier) deckCount = AdvanceDeck(v, now);
-            string sig = Signature(show, lc, v);
+            // (one clock sample per frame: the signature, the kicker and the build must agree on which results slide is on)
+            string sig = Signature(show, lc, v, now);
             if (sig != _sig)
             {
                 bool slide = _sig != null && show == _show;
@@ -224,6 +233,8 @@ namespace BirimizKovulacak.Game
             if (v.Meeting != null)
                 foreach (var p in v.Meeting.Recordings)
                     if (now >= p.PlayAt - 4 && now < p.PlayAt + Math.Max(1f, p.Seconds) + 3) { pick = p; return Show.Tape; }
+            // v5.2: no meeting 2: when the room gathers for the crisis vote, the unstaffed shift's penalty comes first
+            if (v.Phase == LinePhase.CrisisVote && ShiftPenalty(v) != null && now - v.PhaseStartTime < PenaltySeconds(v)) return Show.Penalty;
             switch (v.Phase)
             {
                 case LinePhase.FinalDefense: return Show.Defense;
@@ -239,7 +250,36 @@ namespace BirimizKovulacak.Game
             }
         }
 
-        static string Kicker(Show show, LineClient lc, LineView v)
+        /// <summary>The crisis segment's "NÖBET CEZASI" line (the skippers of an unstaffed shift got their suç at its reveal).</summary>
+        static LineDossierEntry ShiftPenalty(LineView v)
+        {
+            if (v.Meeting == null) return null;
+            foreach (var d in v.Meeting.Dossier) if (d.Kind == DossierKind.ShiftSkipBlame) return d;
+            return null;
+        }
+
+        /// <summary>How long the penalty slide holds the screen before the crisis vote's own slide (a third of the vote, 2.4–6 s).</summary>
+        public static float PenaltySeconds(LineView v) { return Mathf.Clamp((float)(v.PhaseEndTime - v.PhaseStartTime) * 0.3f, 2.4f, 6f); }
+
+        /// <summary>The results: the ranking first, then the awards slide (LineStory); after that they take turns.</summary>
+        static int ResultsSlide(LineView v, double now)
+        {
+            if (MockResultsSlide >= 0) return MockResultsSlide;
+            var story = StoryText.Of(v);
+            if (story == null || story.Awards.Count == 0) return 0;
+            double t = now - v.PhaseStartTime, at = LineStory.AwardsAt(v.PhaseEndTime - v.PhaseStartTime);
+            return t < at ? 0 : (int)((t - at) / AwardsHold) % 2 == 0 ? 1 : 0;
+        }
+
+        /// <summary>When the awards slide that is on now came up (its awards appear one by one from there).</summary>
+        static double AwardsStart(LineView v, double now)
+        {
+            double at = v.PhaseStartTime + LineStory.AwardsAt(v.PhaseEndTime - v.PhaseStartTime);
+            if (MockResultsSlide >= 0 || now < at) return at;
+            return at + Math.Floor((now - at) / AwardsHold) * AwardsHold;
+        }
+
+        static string Kicker(Show show, LineClient lc, LineView v, double now)
         {
             int meeting = v.Meeting != null ? v.Meeting.Index + 1 : 1;
             var fv = v.Final;
@@ -255,7 +295,8 @@ namespace BirimizKovulacak.Game
                 case Show.Crisis: return T("projector.kicker.crisis");
                 case Show.Defense: return T("projector.kicker.defense");
                 case Show.Desk: return F("projector.kicker.desk", fv != null ? fv.Firings.Count : 1, fv != null ? Math.Max(1, fv.FiringsTotal) : 1);
-                case Show.Results: return T("projector.kicker.results");
+                case Show.Results: return T(ResultsSlide(v, now) == 1 ? "projector.kicker.awards" : "projector.kicker.results");
+                case Show.Penalty: return T("projector.kicker.penalty");
                 case Show.Abandoned: return T("projector.kicker.abandoned");
                 default: return PlayText.PhaseTitle(v);
             }
@@ -267,7 +308,7 @@ namespace BirimizKovulacak.Game
             for (int i = 0; i < n && n > 1; i++) Box("pj-dot", i == _deckIndex ? "pj-dot-on" : null).NoPick().AddTo(_dots);
         }
 
-        string Signature(Show show, LineClient lc, LineView v)
+        string Signature(Show show, LineClient lc, LineView v, double now)
         {
             var sb = new StringBuilder(128);
             sb.Append((int)show).Append('|').Append(Loc.Language).Append('|').Append(lc.MySlot).Append('|').Append((int)v.Phase).Append('|').Append(v.PhaseStartTime);
@@ -284,9 +325,11 @@ namespace BirimizKovulacak.Game
                         foreach (var r in mt.Recordings) sb.Append(',').Append(r.Index).Append(r.Played ? 'p' : '-').Append(r.Empty ? 'e' : '-');
                     }
                     if (fv != null) foreach (var g in fv.Crisis) sb.Append(";k").Append(g.Player).Append('=').Append(g.Amount);
+                    Declared(sb, fv);
                     break;
                 case Show.Vote:
                     if (fv != null) { sb.Append("|f").Append(fv.Round).Append(fv.Revote).Append(fv.Firings.Count); foreach (int o in fv.Options) sb.Append(',').Append(o); }
+                    Declared(sb, fv);
                     if (mt != null) sb.Append("|m").Append(mt.VoteableCount).Append(mt.FailedTasks.Count);
                     break;
                 case Show.Verdict:
@@ -297,15 +340,27 @@ namespace BirimizKovulacak.Game
                     break;
                 case Show.Defense:
                     if (fv != null) { sb.Append("|").Append(fv.Defender).Append('@').Append(fv.DefenderEndTime); foreach (int c in fv.DefenseOrder) sb.Append(',').Append(c); }
+                    Declared(sb, fv);
                     break;
                 case Show.Desk:
                     if (fv != null) sb.Append("|n").Append(fv.Firings.Count);
                     break;
                 case Show.Results:
-                    sb.Append(v.Results != null ? "|r" : "|-");
+                    sb.Append(v.Results != null ? "|r" : "|-").Append(ResultsSlide(v, now)).Append('@').Append(AwardsStart(v, now));
+                    break;
+                case Show.Penalty:
+                    if (mt != null) sb.Append("|p").Append(mt.Dossier.Count).Append(':').Append(mt.Roster.Count);
                     break;
             }
             return sb.ToString();
+        }
+
+        /// <summary>The public declarations are part of what several slides show.</summary>
+        static void Declared(StringBuilder sb, LineFinalView fv)
+        {
+            if (fv == null) return;
+            sb.Append(fv.DeclarationsRevealed ? "|D" : fv.DeclareUntil > 0 ? "|s" : "|-");
+            foreach (var d in fv.Declarations) sb.Append(d.Player).Append('=').Append(d.Amount).Append(',');
         }
 
         void Build(Show show, LineClient lc, LineView v, double now)
@@ -318,7 +373,19 @@ namespace BirimizKovulacak.Game
                 case Show.Crisis: BuildCrisis(lc, v, true); break;
                 case Show.Defense: BuildDefense(lc, v, now); break;
                 case Show.Desk: BuildDesk(lc, v, now); break;
-                case Show.Results: BuildResults(lc, v, now); break;
+                case Show.Results:
+                    if (ResultsSlide(v, now) == 1) BuildAwards(lc, v, now);
+                    else BuildResults(lc, v, now);
+                    break;
+                case Show.Penalty:
+                {
+                    var e = ShiftPenalty(v);
+                    if (e == null) break;
+                    _deckNew = true;   // it stamps itself in with a thud
+                    BuildEntry(lc, v, e);
+                    L(_content, F("projector.penalty.next", lc.Config.CrisisBlame), "pj-small");
+                    break;
+                }
                 case Show.Abandoned:
                     Title(T("projector.abandoned"), "pj-title").NoPick().AddTo(_content);
                     Text(T("abandoned.text"), "pj-line").NoPick().AddTo(_content);
@@ -378,21 +445,29 @@ namespace BirimizKovulacak.Game
 
         // ------------------------------------------------------------------ dossier deck
 
-        enum Deck { Agenda, Candidates, Crisis, Entry, Leaks }
+        enum Deck { Agenda, Candidates, Crisis, Entry, Leaks, Declarations }
 
         static List<KeyValuePair<Deck, int>> DeckSlides(LineView v)
         {
             var list = new List<KeyValuePair<Deck, int>>();
             var mt = v.Meeting;
-            if (v.Phase == LinePhase.FinalDiscussion)
+            bool final = v.Phase == LinePhase.FinalDiscussion;
+            if (final)
             {
                 list.Add(new KeyValuePair<Deck, int>(Deck.Candidates, 0));
+                // v5.2: the candidates' prim declarations, once they are revealed
+                if (v.Final != null && v.Final.DeclarationsRevealed) list.Add(new KeyValuePair<Deck, int>(Deck.Declarations, 0));
                 if (v.Final != null && v.Final.Crisis.Count > 0) list.Add(new KeyValuePair<Deck, int>(Deck.Crisis, 0));
             }
             else list.Add(new KeyValuePair<Deck, int>(Deck.Agenda, 0));
             if (mt != null)
             {
-                for (int i = 0; i < mt.Dossier.Count; i++) list.Add(new KeyValuePair<Deck, int>(Deck.Entry, i));
+                for (int i = 0; i < mt.Dossier.Count; i++)
+                {
+                    // (the short shift's roster and penalty were shown when the crisis vote began; the folder keeps them)
+                    if (final && (mt.Dossier[i].Kind == DossierKind.ShiftRoster || mt.Dossier[i].Kind == DossierKind.ShiftSkipBlame)) continue;
+                    list.Add(new KeyValuePair<Deck, int>(Deck.Entry, i));
+                }
                 if (mt.Recordings.Count > 0) list.Add(new KeyValuePair<Deck, int>(Deck.Leaks, 0));
             }
             return list;
@@ -411,7 +486,24 @@ namespace BirimizKovulacak.Game
                 _deckPhase = v.Phase;
                 if (!cont) { _deckIndex = 0; _deckNext = now + 7.0; }
                 _deckEntries = entries;
+                _deckDeclared = false;
             }
+            // the declarations are revealed: their slide jumps in and stays (also when the discussion opens with them)
+            bool revealed = v.Final != null && v.Final.DeclarationsRevealed && v.Phase == LinePhase.FinalDiscussion;
+            if (revealed && !_deckDeclared)
+            {
+                _deckDeclared = true;
+                int at = deck.FindIndex(s => s.Key == Deck.Declarations);
+                if (at >= 0)
+                {
+                    _deckIndex = at;
+                    _deckNext = now + 9.0;
+                    // (fresh only when it happens in front of us: a late join shows it at rest)
+                    _declFresh = now - v.PhaseStartTime < 1.5 || _deckSeenSealed;
+                }
+            }
+            if (v.Phase == LinePhase.FinalDiscussion && v.Final != null && !v.Final.DeclarationsRevealed && v.Final.DeclareUntil > 0) _deckSeenSealed = true;
+            else if (v.Phase != LinePhase.FinalDiscussion) _deckSeenSealed = false;
             if (entries > _deckEntries)
             {
                 _deckEntries = entries;
@@ -438,6 +530,7 @@ namespace BirimizKovulacak.Game
                 case Deck.Agenda: BuildAgenda(lc, v); break;
                 case Deck.Candidates: BuildCandidates(lc, v); break;
                 case Deck.Crisis: BuildCrisis(lc, v, false); break;
+                case Deck.Declarations: BuildDeclarations(lc, v); break;
                 case Deck.Entry: BuildEntry(lc, v, v.Meeting.Dossier[s.Value]); break;
                 case Deck.Leaks: BuildLeaks(lc, v, now); break;
             }
@@ -483,6 +576,45 @@ namespace BirimizKovulacak.Game
                 Stamp(col, T("players.sealed"), "pj-stamp-navy", "pj-stamp-small");
             }
             L(_content, T("projector.candidates_sealed"), "pj-small");
+            // v5.2: the prim declarations are still sealed (a live countdown to the reveal)
+            if (!fv.DeclarationsRevealed && fv.DeclareUntil > 0)
+            {
+                double until = fv.DeclareUntil;
+                var note = B(_content, "", "pj-small", "pj-warn");
+                _anims.Add((t, dt) => note.SetText(F("projector.declare.sealed", UiKit.Clock(Math.Max(0, until - t)))));
+            }
+        }
+
+        /// <summary>v5.2 "PRİM BEYANLARI": what every candidate says they have (or "BEYAN YOK"), revealed together. The
+        /// truth comes out only for whoever is fired (the desk opening) and for everyone at the results.</summary>
+        void BuildDeclarations(LineClient lc, LineView v)
+        {
+            var fv = v.Final;
+            H(_content, T("projector.declare.title"), "pj-title");
+            if (fv == null) return;
+            bool fresh = _declFresh;
+            _declFresh = false;
+            var row = Bx(_content, "pj-row");
+            row.style.marginTop = 10;
+            row.style.alignItems = Align.FlexStart;
+            int i = 0;
+            foreach (var d in fv.Declarations)
+            {
+                var pl = lc.Player(d.Player);
+                var col = Person(row, lc, d.Player, "pj-face-l");
+                col.style.marginRight = 44;
+                Label amount = d.Amount >= 0 ? H(col, F("projector.declare.amount", d.Amount), "pj-declare-n") : B(col, T("projector.declare.none"), "pj-declare-none");
+                if (pl != null && pl.Fired) Stamp(col, T("players.fired"), "pj-stamp-small");
+                if (fresh)
+                {
+                    float delay = 0.5f + 0.55f * i;
+                    amount.style.opacity = 0f;
+                    UiMotion.PopIn(amount, 0.3f, delay, 0.5f);
+                    UiMotion.Tween(col, 0.01f, x => { }, UiMotion.Ease.OutCubic, () => Sfx.Play("stamp", 0.45f), delay, "declare");
+                }
+                i++;
+            }
+            L(_content, T("projector.declare.sub"), "pj-small");
         }
 
         /// <summary>The crisis result: who got its suç, and how the board moved (suç before → after; the candidates).</summary>
@@ -619,7 +751,12 @@ namespace BirimizKovulacak.Game
             if (v.Phase == LinePhase.FinalVote && fv != null && fv.Options.Count > 0)
             {
                 var row = Bx(_content, "pj-row");
-                foreach (int id in fv.Options) Chip(row, lc, id, Name(id));
+                foreach (int id in fv.Options)
+                {
+                    // v5.2: next to each name what they declared (the whiteboard's short form: three chips fit one row)
+                    var d = StoryText.Of(v, id);
+                    Chip(row, lc, id, d == null ? Name(id) : d.Amount >= 0 ? F("meeting.board.declared", Name(id), d.Amount) : F("meeting.board.declared_none", Name(id)));
+                }
                 L(_content, T("projector.vote.blank_ok"), "pj-small");
             }
             else L(_content, T("projector.vote.secret"), "pj-small");
@@ -711,6 +848,8 @@ namespace BirimizKovulacak.Game
             var bars = Bx(timerRow, "pj-bars");
             var bar = new VisualElement[5];
             for (int i = 0; i < bar.Length; i++) bar[i] = Bx(bars, "pj-bar");
+            var declared = StoryText.Of(v, id);
+            if (declared != null) B(mid, StoryText.Claim(declared.Amount), "pj-small");
             if (id == lc.MySlot) L(mid, T("focus.your_turn"), "pj-line", "pj-bad");
             // the order (done / now / waiting)
             var order = Bx(row, "pj-order");
@@ -778,7 +917,19 @@ namespace BirimizKovulacak.Game
             for (int i = 0; i < loose; i++) items.Add(Bx(tray, "pj-note"));
             foreach (var it in items) it.style.opacity = 0f;
             var stamp = Stamp(desk, F("projector.desk.count", f.Desk), "pj-desk-stamp");
-            var counter = H(right, "", "pj-counter");
+            var countRow = Bx(right, "pj-row");
+            var counter = H(countRow, "", "pj-counter");
+            // v5.2: what the fired colleague had declared, stamped against their prim when the declarations were revealed
+            Label claimStamp = null;
+            bool truthful = StoryText.Truthful(f);
+            if (lc.Config.DeclarationsEnabled && fv != null && fv.DeclarationsRevealed)
+            {
+                var claim = Bx(countRow, "pj-claim");
+                L(claim, StoryText.Claim(f.Declared), "pj-claim-text", f.Declared < 0 ? "pj-dim" : null);
+                string then = StoryText.Then(f);
+                if (then != null) L(claim, then, "pj-claim-note");
+                if (f.Declared >= 0) claimStamp = Stamp(countRow, StoryText.Stamp(f), "pj-claim-stamp", truthful ? "pj-stamp-green" : null);
+            }
             // after the count: who shares it
             var shares = Bx(right, "pj-col");
             if (f.Recipients.Count > 0)
@@ -794,9 +945,11 @@ namespace BirimizKovulacak.Game
             shares.style.opacity = 0f;
             float t0 = DeskOpening.Time(v, now);
             _stamped = t0 >= DeskOpening.StampAt;
+            _verdicted = t0 >= DeskOpening.VerdictAt;
             bool chipsIn = t0 >= DeskOpening.ChipsAt, drawerSound = t0 >= DeskOpening.DrawerOpen * 0.3f;
             // built after the moment (a late join, a language switch): show it at rest, no replay
             if (_stamped) stamp.style.opacity = 1f;
+            if (claimStamp != null) claimStamp.style.opacity = _verdicted ? 1f : 0f;
             if (chipsIn) shares.style.opacity = 1f;
             int lastShown = -1;
             if (DeskOpening.Count(t0) >= 1f) { foreach (var it in items) it.style.opacity = 1f; lastShown = items.Count - 1; }
@@ -821,11 +974,81 @@ namespace BirimizKovulacak.Game
                     _stamped = true;
                     UiMotion.Stamp(stamp, -9f, 0.24f, 0f, () => { Sfx.Play("stamp", 0.7f); Sfx.Play("fired", 0.45f); });
                 }
+                if (claimStamp != null && !_verdicted && u >= DeskOpening.VerdictAt)
+                {
+                    _verdicted = true;
+                    UiMotion.Stamp(claimStamp, truthful ? 4f : -7f, 0.24f, 0f, () => { Sfx.Play("stamp", 0.85f); Sfx.Play(truthful ? "complete" : "deny", 0.45f); });
+                }
                 if (!chipsIn && u >= DeskOpening.ChipsAt) { chipsIn = true; shares.style.opacity = 1f; UiMotion.FadeIn(shares, 0.35f); }
             });
         }
 
         // ------------------------------------------------------------------ results
+
+        /// <summary>v5.2 "ÖDÜLLER": the awards of the match (LineStory), stamped in one by one: the award, its owner and
+        /// one line about why.</summary>
+        void BuildAwards(LineClient lc, LineView v, double now)
+        {
+            var story = StoryText.Of(v);
+            H(_content, T("projector.awards.title"), "pj-title", "pj-awards-title");
+            if (story == null || story.Awards.Count == 0) { L(_content, T("reveal.no_awards"), "pj-line", "pj-dim"); return; }
+            int me = lc.MySlot;
+            var list = Bx(_content, "pj-col");
+            var rows = new List<VisualElement>();
+            var stamps = new List<Label>();
+            foreach (var a in story.Awards)
+            {
+                var row = Bx(list, "pj-award", a.Player == me ? "pj-award-me" : null);
+                Face(row, lc, a.Player, "pj-face-s");
+                var col = Bx(row, "pj-col", "pj-grow");
+                var top = Bx(col, "pj-row");
+                var n = B(top, Name(a.Player) + (a.Player == me ? " (" + T("players.me") + ")" : ""), "pj-award-name");
+                n.style.color = Color.Lerp(PlayerColor(lc.ColorOf(a.Player)), UiKit.Navy, 0.55f);
+                stamps.Add(Stamp(top, StoryText.AwardName(a.Kind), "pj-award-stamp", AwardStampClass(a.Kind)));
+                L(col, StoryText.AwardText(a), "pj-award-text");
+                rows.Add(row);
+            }
+            double start = AwardsStart(v, now);
+            const float Step = 1.15f, First = 0.45f;
+            int count = rows.Count;
+            var hit = new bool[count];
+            float t0 = (float)(now - start);
+            for (int i = 0; i < count; i++) hit[i] = t0 >= First + i * Step + 0.3f;
+            _anims.Add((t, dt) =>
+            {
+                float u = (float)(t - start);
+                for (int i = 0; i < count; i++)
+                {
+                    float at = First + i * Step;
+                    float k = Mathf.Clamp01((u - at) / 0.3f);
+                    rows[i].style.opacity = k;
+                    rows[i].style.translate = new Translate(50f * (1f - k), 0);
+                    if (hit[i]) { stamps[i].style.opacity = 1f; continue; }
+                    stamps[i].style.opacity = 0f;
+                    if (u < at + 0.3f) continue;
+                    hit[i] = true;
+                    UiMotion.Stamp(stamps[i], -4f, 0.2f, 0f, () => Sfx.Play("stamp", 0.55f));
+                }
+            });
+        }
+
+        /// <summary>The awards about a lie or a broken word are stamped red, the good ones green, the rest navy.</summary>
+        static string AwardStampClass(AwardKind k)
+        {
+            switch (k)
+            {
+                case AwardKind.Loyal:
+                case AwardKind.Clean:
+                case AwardKind.WrongMan: return "pj-stamp-green";
+                case AwardKind.Liar:
+                case AwardKind.Sellout:
+                case AwardKind.Robber:
+                case AwardKind.CashRat: return null;
+                case AwardKind.Scapegoat:
+                case AwardKind.Tutanak: return "pj-stamp-orange";
+                default: return "pj-stamp-navy";
+            }
+        }
 
         void BuildResults(LineClient lc, LineView v, double now)
         {

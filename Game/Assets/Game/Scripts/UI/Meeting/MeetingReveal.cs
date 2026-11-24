@@ -13,12 +13,14 @@ namespace BirimizKovulacak.Game
     /// every balance and how it came about, who robbed whom ("Sarı benden 2 prim aldı ve yine de beni kovdu!"), every vote
     /// per round, the desk openings, the transfers, the task choices and the incidents. Only <see cref="LineWeekResult"/>
     /// (public at Results) and what this client saw itself during the match (its own task groups, <see cref="RevealMemory"/>).
+    /// v5.2: the first tab is the story of the match (<see cref="LineStory"/>): "Manşetler", "Ödüller" and "Beyanlar" (every
+    /// candidate's prim declaration against the truth); the results now carry the task groups, so who robbed whom is exact.
     /// </summary>
     public static class MeetingReveal
     {
-        public const string TabSummary = "summary", TabRobbed = "robbed", TabBallots = "ballots", TabFirings = "firings",
+        public const string TabStory = "story", TabSummary = "summary", TabRobbed = "robbed", TabBallots = "ballots", TabFirings = "firings",
             TabTransfers = "transfers", TabChoices = "choices", TabIncidents = "incidents", TabPranks = "pranks";
-        static readonly string[] Tabs = { TabSummary, TabRobbed, TabBallots, TabFirings, TabTransfers, TabChoices, TabIncidents, TabPranks };
+        static readonly string[] Tabs = { TabStory, TabSummary, TabRobbed, TabBallots, TabFirings, TabTransfers, TabChoices, TabIncidents, TabPranks };
 
         public static void Build(VisualElement p, LineClient lc, LineView v, string tab, Action<string> setTab)
         {
@@ -37,11 +39,12 @@ namespace BirimizKovulacak.Game
                     mine.Winner ? "pl-good" : mine.Fired ? "pl-bad" : null);
             }
             var robbed = Robberies(lc, r);
+            var story = StoryText.Of(v);
             var tabs = Wrap(p);
             foreach (var id in Tabs)
             {
                 if (id == TabPranks && v.Pranks == null) continue;
-                int n = id == TabPranks ? v.Pranks.Log.Count : id == TabSummary ? r.Players.Count : id == TabRobbed ? robbed.Count : id == TabBallots ? r.Ballots.Count : id == TabFirings ? r.Firings.Count
+                int n = id == TabPranks ? v.Pranks.Log.Count : id == TabStory ? (story != null ? story.Headlines.Count : 0) : id == TabSummary ? r.Players.Count : id == TabRobbed ? robbed.Count : id == TabBallots ? r.Ballots.Count : id == TabFirings ? r.Firings.Count
                     : id == TabTransfers ? r.Transfers.Count : id == TabChoices ? r.Choices.Count : r.Incidents.Count;
                 string tid = id;
                 Btn(F("reveal.tab." + id, n), () => setTab(tid), tab == id ? "pl-on" : null).AddTo(tabs);
@@ -76,8 +79,44 @@ namespace BirimizKovulacak.Game
                     foreach (var e in r.Incidents) Line(body, "• " + PlayText.Dossier(e));
                     break;
                 case TabPranks: BuildPranks(body, lc, v); break;
-                default: BuildSummary(body, lc, r, players); break;
+                case TabSummary: BuildSummary(body, lc, r, players); break;
+                default: BuildStory(body, lc, v, story); break;
             }
+        }
+
+        // ------------------------------------------------------------------ the story: headlines, awards, declarations
+
+        /// <summary>v5.2: what happened in a few lines ("Manşetler"), who earned which title ("Ödüller") and every
+        /// candidate's prim declaration against the truth ("Beyanlar").</summary>
+        static void BuildStory(VisualElement p, LineClient lc, LineView v, LineStory story)
+        {
+            var r = v.Results;
+            int me = lc.MySlot;
+            Sub(p, T("reveal.headlines"));
+            if (story == null || story.Headlines.Count == 0) Line(p, T("reveal.no_headlines"), "pl-dim");
+            else
+                foreach (var h in story.Headlines)
+                    Bold("• " + StoryText.Headline(h, r), "pl-text", "pl-headline", h.Player == me || h.Other == me || h.Other2 == me ? "pl-private" : null).AddTo(p);
+            Sub(p, T("reveal.awards"));
+            if (story == null || story.Awards.Count == 0) Line(p, T("reveal.no_awards"), "pl-dim");
+            else
+                foreach (var a in story.Awards)
+                {
+                    var row = Row(p);
+                    Bold(StoryText.AwardName(a.Kind), "pl-chip", "pl-award-chip").AddTo(row);
+                    Bold(Name(a.Player) + (a.Player == me ? " (" + T("players.me") + ")" : ""), "pl-text", a.Player == me ? "pl-private" : null).AddTo(row);
+                    Line(p, StoryText.AwardText(a), "pl-dim", "pl-award-text");
+                }
+            if (r.Declarations == null || r.Declarations.Count == 0) return;
+            Sub(p, T("reveal.declarations"));
+            foreach (var d in r.Declarations)
+            {
+                var row = Row(p);
+                if (d.Amount < 0) { Line(row, F("reveal.declaration_none", Name(d.Player), d.Actual), "pl-dim"); continue; }
+                Line(row, F("reveal.declaration", Name(d.Player), d.Amount, d.Actual), d.Player == me ? "pl-private" : null);
+                Bold(T(d.Amount == d.Actual ? "declare.stamp.true" : "declare.stamp.lie"), "pl-chip", d.Amount == d.Actual ? "pl-chip-good" : "pl-chip-bad").AddTo(row);
+            }
+            Line(p, T("reveal.declarations_note"), "pl-dim");
         }
 
         // ------------------------------------------------------------------ balances
@@ -221,7 +260,21 @@ namespace BirimizKovulacak.Game
                     continue;
                 }
                 if (kind != TaskKind.ClientBonus) continue;
-                // a sole taker gets the taker share, the partners who shared get the sharer share
+                // v5.2: the results carry the groups: the only taker of a group robbed its sharers
+                var groups = r.Groups != null ? r.Groups.FindAll(g => g != null && g.TaskNumber == kv.Key && g.Members != null) : null;
+                if (groups != null && groups.Count > 0)
+                {
+                    foreach (var g in groups)
+                    {
+                        var took = choices.FindAll(ch => g.Members.Contains(ch.Player) && ch.Choice == LineChoice.Take);
+                        if (took.Count != 1) continue;
+                        foreach (var vct in choices.FindAll(ch => g.Members.Contains(ch.Player) && ch.Choice != LineChoice.Take))
+                            list.Add(new Robbery { TaskNumber = kv.Key, Kind = kind, Taker = took[0].Player, Victim = vct.Player, Lost = Lost(c, g.Members.Count, vct.Payout) });
+                    }
+                    continue;
+                }
+                // (a result without groups: a hand-made one) a sole taker gets the taker share, the partners who shared get
+                // the sharer share
                 var takers = choices.FindAll(ch => ch.Choice == LineChoice.Take && (ch.Payout == c.BonusPairTaker || ch.Payout == c.BonusTrioTaker) && ch.Payout != c.BonusPairBothTake);
                 var victims = choices.FindAll(ch => ch.Choice == LineChoice.Share && (ch.Payout == c.BonusPairSharer || ch.Payout == c.BonusTrioOthers) && ch.Payout < c.BonusPairShare);
                 var mine = RevealMemory.GroupOf(kv.Key);

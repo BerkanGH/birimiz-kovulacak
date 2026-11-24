@@ -36,7 +36,8 @@ namespace BirimizKovulacak.Game
             string title = Phase(v.Phase);
             if (v.Task != null && (v.Phase == LinePhase.TaskPlay || v.Phase == LinePhase.TaskReveal || v.Phase == LinePhase.Break))
                 title = F("header.task", v.Task.Number + 1, LineTasks.Count, Task(v.Task.Kind)) + " · " + title;
-            else if (v.Meeting != null && v.Meeting.Index < 2 && v.Phase >= LinePhase.MeetingDossier && v.Phase <= LinePhase.MeetingVerdict)
+            // (v5.2: one meeting before the final, so the phase names say it all; the old flow's meeting 2 is numbered)
+            else if (v.Meeting != null && v.Meeting.Index == 1 && v.Phase >= LinePhase.MeetingDossier && v.Phase <= LinePhase.MeetingVerdict)
                 title = F("header.meeting", v.Meeting.Index + 1) + " · " + title;
             if (v.Phase == LinePhase.FinalVote && v.Final != null)
                 title += " · " + F(v.Final.Revote ? "header.final_revote" : "header.final_round", v.Final.Round + 1, System.Math.Max(1, v.Final.FiringsTotal));
@@ -72,6 +73,16 @@ namespace BirimizKovulacak.Game
         public static string ShiftFocus(LineConfig c, int needed)
         {
             return F("focus.task.weekend_shift", c.ShiftSkipPay, needed, c.ShiftVolunteerClean, c.ShiftFailSkipBlame);
+        }
+
+        /// <summary>The Weekend Shift came up short (v5.2: every consequence lands at its reveal): "Nöbet tutulmadı: tutmayan N
+        /// kişiye +2 suç yazıldı", or null when the shift was staffed / the old flow waits for meeting 2.</summary>
+        public static string ShiftShort(LineTaskView t, LineConfig c, int players)
+        {
+            if (t == null || t.Kind != TaskKind.WeekendShift || !t.Revealed || c.ShiftMeeting || c.ShiftFailSkipBlame <= 0) return null;
+            int needed = t.Needed >= 0 ? t.Needed : LineConfig.ShiftNeeded(players);
+            if (t.Roster.Count >= needed) return null;
+            return F("task.shift_short", System.Math.Max(0, players - t.Roster.Count), c.ShiftFailSkipBlame);
         }
 
         /// <summary>A meeting without a vote: meeting 2 of a short shift (the skippers' suç is automatic) or nothing to vote on.</summary>
@@ -129,6 +140,7 @@ namespace BirimizKovulacak.Game
                         : F("event.blame", Name(e.Target), e.A, T("blame." + (BlameReason)e.B));
                 case LineEventType.CrisisResolved: return e.Target >= 0 ? F("event.crisis_one", Name(e.Target), e.A) : F("event.crisis_tie", e.B, e.A);
                 case LineEventType.Fired: return F("event.fired", Name(e.Target), e.A);
+                case LineEventType.DeclarationsRevealed: return F("event.declarations", e.A, e.B);
                 case LineEventType.RecordingPlayed:
                 {
                     // "played" in Turkish ("çalındı") also reads "was stolen": name the call and the leaker instead

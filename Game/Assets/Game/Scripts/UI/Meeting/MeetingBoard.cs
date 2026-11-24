@@ -119,6 +119,7 @@ namespace BirimizKovulacak.Game
                 sb.Append("|f").Append(fv.Round).Append(fv.Revote ? 'r' : '-').Append(fv.Defender);
                 foreach (var c in fv.DefenseOrder) sb.Append(',').Append(c);
                 foreach (var g in fv.Crisis) sb.Append(";k").Append(g.Player).Append('=').Append(g.Amount);
+                foreach (var d in fv.Declarations) sb.Append(";d").Append(d.Player).Append('=').Append(d.Amount);
             }
             return sb.ToString();
         }
@@ -209,7 +210,11 @@ namespace BirimizKovulacak.Game
                 foreach (int id in fv.DefenseOrder)
                 {
                     var pl = lc.Player(id);
-                    string line = (id == fv.Defender ? "> " : "- ") + PlayText.Name(id);
+                    // v5.2: once the prim declarations are revealed each candidate's is written next to the name
+                    var declared = StoryText.Of(v, id);
+                    string who = declared == null ? PlayText.Name(id)
+                        : declared.Amount >= 0 ? PlayText.F("meeting.board.declared", PlayText.Name(id), declared.Amount) : PlayText.F("meeting.board.declared_none", PlayText.Name(id));
+                    string line = (id == fv.Defender ? "> " : "- ") + who;
                     var l = Ink(line, hand, "wb-side-line", pl != null && pl.Fired ? "wb-struck" : id == fv.Defender ? "wb-side-hot" : null).AddTo(col);
                     if (pl != null) l.style.color = Color.Lerp(UiKit.PlayerColor(pl.ColorIndex), Navy, 0.7f);
                 }

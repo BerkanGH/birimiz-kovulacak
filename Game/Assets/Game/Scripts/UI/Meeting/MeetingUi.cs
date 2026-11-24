@@ -34,6 +34,7 @@ namespace BirimizKovulacak.Game
         readonly MeetingProjector _projector = new MeetingProjector();
         readonly MeetingSubtitles _subs;
         readonly MeetingPranks _pranks;
+        readonly MeetingDeclare _declare;
         readonly PlayState _st = new PlayState();
         bool _bound, _dirty = true, _boardZoom, _projZoom, _projAuto;
         int _week = int.MinValue;
@@ -50,8 +51,9 @@ namespace BirimizKovulacak.Game
         public MeetingProjector Projector => _projector;
         public MeetingSubtitles Subs => _subs;
         public MeetingPranks Pranks => _pranks;
+        public MeetingDeclare Declare => _declare;
         /// <summary>The folder, the ballot paper or the results bar is up: the cursor is free (no mouse-look).</summary>
-        public bool WantsCursor => !_pranks.Aiming && (_folder.IsOpen || _ballot.IsOpen || _slide.WantsCursor || _pranks.WantsCursor);
+        public bool WantsCursor => !_pranks.Aiming && (_folder.IsOpen || _ballot.IsOpen || _slide.WantsCursor || _pranks.WantsCursor || _declare.WantsCursor);
         /// <summary>UI mocks / automated runs: the desk opening and the results do not move the camera by themselves.</summary>
         public static bool NoAutoCamera;
 
@@ -118,6 +120,8 @@ namespace BirimizKovulacak.Game
             _pjHint.Show(false);
             // v5 Yaramazlıklar: the wheel, aiming, the word / note card, a plane's note, the splashes
             _pranks = new MeetingPranks(this, Root);
+            // v5.2: a candidate's prim declaration card (and its chip)
+            _declare = new MeetingDeclare(Root);
         }
 
         public void Toast(string text, string kind = null, float seconds = 5f) { _toasts.Show(text, kind, seconds); }
@@ -129,6 +133,7 @@ namespace BirimizKovulacak.Game
         protected override void OnHide()
         {
             CloseAll(false);
+            _declare.Close();
             _prompt.Show(false);
             _nameTag.Show(false);
             _pjHint.Show(false);
@@ -242,12 +247,13 @@ namespace BirimizKovulacak.Game
                 case LineEventType.Whistled:
                 case LineEventType.Presence:
                 case LineEventType.RecordingPlayed:
+                case LineEventType.DeclarationsRevealed:
                 {
                     // the firing is the projector's moment (the desk opening): no toast on top of it
                     if (e.Type == LineEventType.Fired) break;
                     string line = PlayText.Event(e, me);
                     if (line != null) Toast(line, e.Type == LineEventType.Presence ? null : e.Type == LineEventType.BlameAdded ? "of-toast-warn" : "of-toast-call", 6f);
-                    if (e.Type == LineEventType.Investigated || e.Type == LineEventType.Whistled) Sfx.Play("stamp", 0.6f);
+                    if (e.Type == LineEventType.Investigated || e.Type == LineEventType.Whistled || e.Type == LineEventType.DeclarationsRevealed) Sfx.Play("stamp", 0.6f);
                     break;
                 }
             }
@@ -269,6 +275,7 @@ namespace BirimizKovulacak.Game
             {
                 CloseAll(false);
                 _pranks.Close();
+                _declare.Close();
                 _pendingPhaseToast = null;
                 _toasts.Clear();
                 _subs.Clear();
@@ -404,6 +411,8 @@ namespace BirimizKovulacak.Game
         public bool Back()
         {
             if (Visible && _pranks.Close()) return true;
+            // v5.2: Esc puts the declaration card away (its chip stays; Enter brings it back)
+            if (Visible && _declare.Minimise()) return true;
             if (!Visible || !(_folder.IsOpen || _ballot.IsOpen || _boardZoom || _projZoom)) return false;
             CloseAll();
             return true;
@@ -471,6 +480,7 @@ namespace BirimizKovulacak.Game
             }
             _toasts.Tick();
             _subs.Tick(v, Root, _folder.IsOpen || _ballot.IsOpen || _boardZoom || _projZoom || _pranks.WantsCursor);
+            _declare.Tick(lc, v, now, _folder.IsOpen || _ballot.IsOpen || _boardZoom || _projZoom || _pranks.WantsCursor || _pranks.Aiming);
             _pranks.Tick(lc, v, now, UIRoot.I == null || (!UIRoot.I.TextInputFocused && !UIRoot.I.OverlayOpen));
         }
 
@@ -495,6 +505,24 @@ namespace BirimizKovulacak.Game
                 if (e && Rooms.HoveredSeat < 0) { Consume(); return; }
                 if (q || tab) _pranks.Close();
                 else return;
+            }
+            // v5.2 prim declaration: while the card is up the arrows, the digits and Enter are its own (Q / Tab / E put it
+            // away and do their usual thing); with only the chip left, Enter brings the card back from wherever I am
+            if (_declare.Open)
+            {
+                if (_declare.Keys()) { Consume(); return; }
+                if (e || q || tab) _declare.Minimise();
+            }
+            else if (_declare.Waiting)
+            {
+                var kb = UnityEngine.InputSystem.Keyboard.current;
+                if (kb != null && (kb.enterKey.wasPressedThisFrame || kb.numpadEnterKey.wasPressedThisFrame))
+                {
+                    if (_folder.IsOpen || _ballot.IsOpen || _boardZoom || _projZoom) CloseAll();
+                    _declare.Reopen();
+                    Consume();
+                    return;
+                }
             }
             if (_folder.IsOpen)
             {
@@ -600,7 +628,8 @@ namespace BirimizKovulacak.Game
         void UpdatePrompt(LineClient lc, LineView v)
         {
             var rooms = RoomsPresenter.Instance;
-            bool looking = rooms != null && rooms.Mode == PovMode.Meeting && !_folder.IsOpen && !_ballot.IsOpen && !_boardZoom && !_projZoom && !_pranks.WantsCursor;
+            bool looking = rooms != null && rooms.Mode == PovMode.Meeting && !_folder.IsOpen && !_ballot.IsOpen && !_boardZoom && !_projZoom && !_pranks.WantsCursor
+                           && !_declare.WantsCursor;
             int seat = looking ? Rooms.HoveredSeat : -1;
             var target = looking ? Rooms.HoveredMeeting : MeetingTarget.None;
             // a colleague: name tag (name in their colour, suç and tags, what E does)

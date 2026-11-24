@@ -45,9 +45,15 @@ namespace BirimizKovulacak.Game
                 case LinePhase.MeetingVerdict:
                     return T("meeting.now.verdict");
                 case LinePhase.CrisisVerdict:
-                    return T(meP != null && meP.Candidate ? "meeting.now.crisis_verdict_me" : "meeting.now.crisis_verdict");
+                    // v5.2: a candidate declares their prim (the card is up; Enter brings it back)
+                    if (v.Features.DeclareOpen) { todo = true; return F("meeting.now.declare", Clock(lc, fv)); }
+                    if (fv != null && fv.MyDeclaration >= 0) return F("meeting.now.declared", fv.MyDeclaration);
+                    if (meP != null && meP.Candidate) return T("meeting.now.crisis_verdict_me");
+                    return T(fv != null && fv.DeclareUntil > 0 ? "meeting.now.crisis_verdict_declare" : "meeting.now.crisis_verdict");
                 case LinePhase.FinalDiscussion:
+                    if (v.Features.DeclareOpen) { todo = true; return F("meeting.now.declare", Clock(lc, fv)); }
                     if (meP != null && meP.Candidate) { todo = true; return T("meeting.now.final_me"); }
+                    if (fv != null && fv.DeclareUntil > 0 && !fv.DeclarationsRevealed) return F("meeting.now.final_declaring", Clock(lc, fv), q);
                     return F("meeting.now.final", q);
                 case LinePhase.FinalDefense:
                     if (fv != null && fv.Defender == lc.MySlot) { todo = true; return T("meeting.now.defend_me"); }
@@ -60,6 +66,12 @@ namespace BirimizKovulacak.Game
                 default:
                     return PlayText.Hint(v.Phase);
             }
+        }
+
+        /// <summary>Time left until the declarations are revealed.</summary>
+        static string Clock(LineClient lc, LineFinalView fv)
+        {
+            return UiKit.Clock(System.Math.Max(0, (fv != null ? fv.DeclareUntil : 0) - lc.Now));
         }
 
         /// <summary>Prompt for a meeting object under the crosshair ("E — …").</summary>

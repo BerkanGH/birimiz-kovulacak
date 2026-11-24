@@ -17,11 +17,13 @@ namespace BirimizKovulacak.Game
         public int TransferTarget = LineIds.None, TransferAmount = 1;
         /// <summary>-2 = nobody chosen, -1 = meeting chat (everyone), else a player id.</summary>
         public int MsgTarget = -2;
+        /// <summary>v5.2: the prim the fallback screen's declaration row shows (-1 = start from my real prim).</summary>
+        public int DeclareAmount = -1;
         public Action Dirty;
         public Action<string> Toast;
         public Action FocusMessageField;
 
-        public void ResetWeek() { TransferTarget = LineIds.None; TransferAmount = 1; MsgTarget = -2; }
+        public void ResetWeek() { TransferTarget = LineIds.None; TransferAmount = 1; MsgTarget = -2; DeclareAmount = -1; }
         public void MarkDirty() { Dirty?.Invoke(); }
     }
 
@@ -109,6 +111,9 @@ namespace BirimizKovulacak.Game
                 Bold(Name(ch.Player) + ": " + PlayText.Choice(t.Kind, ch.Choice), "pl-chip", bad ? "pl-chip-bad" : null).AddTo(row);
             }
             if (t.MyPayout >= 0) Bold(F("task.my_payout", t.MyPayout), "pl-good", "pl-sub").AddTo(card);
+            // v5.2: a short shift blames its skippers right here (there is no meeting 2)
+            string shortShift = PlayText.ShiftShort(t, c, v.Players.Count);
+            if (shortShift != null) Line(card, shortShift, "pl-bad");
             return state;
         }
 
@@ -210,6 +215,15 @@ namespace BirimizKovulacak.Game
             if (!big) card.AddToClassList("pl-fire-small");
             Title(F("fire.title", Name(f.Player)), "pl-fire-title").AddTo(card);
             Bold(F("fire.desk", f.Desk), "pl-fire-desk").AddTo(card);
+            // v5.2: what they had declared, against their prim when the declarations were revealed
+            if (f.Declared >= 0)
+            {
+                var claim = Row(card);
+                Line(claim, StoryText.Claim(f.Declared));
+                Bold(StoryText.Stamp(f), "pl-chip", StoryText.Truthful(f) ? "pl-chip-good" : "pl-chip-bad").AddTo(claim);
+                string then = StoryText.Then(f);
+                if (then != null) Line(card, then, "pl-dim");
+            }
             Line(card, F("fire.decision." + f.Decision, f.Votes));
             if (f.Recipients.Count > 0)
             {
@@ -290,6 +304,34 @@ namespace BirimizKovulacak.Game
             else if (v.Features.InvestigationOpen && m.Prim < lc.Config.InvestigationCost) Line(p, F("investigate.poor", m.Prim), "pl-bad");
         }
 
+        /// <summary>v5.2, the fallback screen (the meeting room has its own card, <see cref="MeetingDeclare"/>): a candidate's
+        /// prim declaration as a row of buttons; true while a declaration is still expected of me.</summary>
+        public static bool DeclareRow(VisualElement card, LineClient lc, LineView v, PlayState st)
+        {
+            var fv = v.Final;
+            if (fv == null || fv.DeclareUntil <= 0) return false;
+            if (!v.Features.DeclareOpen)
+            {
+                if (fv.MyDeclaration >= 0 && !fv.DeclarationsRevealed) Line(card, F("declare.mine", fv.MyDeclaration), "pl-private");
+                return false;
+            }
+            int max = Math.Max(0, lc.Config.DeclareMax);
+            if (st.DeclareAmount < 0) st.DeclareAmount = Math.Min(max, v.Mine.Prim);
+            Sub(card, T("declare.card.title"));
+            Line(card, T("declare.card.info"));
+            var row = Row(card);
+            foreach (int step in new[] { -5, -1, 1, 5 })
+            {
+                int d = step;
+                if (d == 1) Bold(F("declare.amount", st.DeclareAmount), "pl-chip", st.DeclareAmount != v.Mine.Prim ? "pl-chip-warn" : null).AddTo(row);
+                Btn((d > 0 ? "+" : "−") + Math.Abs(d), () => { st.DeclareAmount = Math.Max(0, Math.Min(max, st.DeclareAmount + d)); st.MarkDirty(); }).AddTo(row);
+            }
+            Btn(T("declare.card.ok"), () => Send(LineVerb.Declare, a: st.DeclareAmount), "pl-primary").AddTo(row);
+            double until = fv.DeclareUntil;
+            Live(card, "declare-left:" + until.ToString("0.0"), lc.Now, t => F("declare.card.timer", UiKit.Clock(Math.Max(0, until - t))), "pl-text", "pl-warn");
+            return true;
+        }
+
         public static string LeakState(LineRecordingPick r, double now)
         {
             if (r.Played) return T("leak.played");
@@ -325,6 +367,20 @@ namespace BirimizKovulacak.Game
                     Line(p, line, pl != null && pl.Fired ? "pl-dim" : null);
                 }
                 Line(p, T("focus.sealed_note"), "pl-dim");
+            }
+            // v5.2 prim declarations: public once revealed (sealed before: only how long is left)
+            if (fv.DeclarationsRevealed)
+            {
+                Sub(p, T("declare.title"));
+                foreach (var d in fv.Declarations) Line(p, StoryText.Line(d), d.Amount < 0 ? "pl-dim" : null);
+                Line(p, T("declare.note"), "pl-dim");
+            }
+            else if (fv.DeclareUntil > 0)
+            {
+                Sub(p, T("declare.title"));
+                if (fv.MyDeclaration >= 0) Line(p, F("declare.mine", fv.MyDeclaration), "pl-private");
+                double until = fv.DeclareUntil;
+                Live(p, "declare:" + until.ToString("0.0"), lc.Now, t => F("declare.sealed", UiKit.Clock(Math.Max(0, until - t))), "pl-text", "pl-warn");
             }
             // earlier firings (the latest one is the focus card in FinalVerdict)
             int shown = v.Phase == LinePhase.FinalVerdict ? fv.Firings.Count - 1 : fv.Firings.Count;
