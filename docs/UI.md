@@ -48,6 +48,9 @@ needed.
 | `Scripts/UI/Meeting/MeetingSubtitles.cs` | v5 bot talk: a bot's chat line as a bubble over its head; the defending bot's line as a subtitle over its standing character. |
 | `Scripts/Net/BotSpeech.cs` | v5 bot talk, presentation side: phone-line / question packets, my call transcript, bot chat tokens → text in my language, the bots' mumble and talk level. |
 | `Scripts/UI/Dev/BotTalkMock.cs` | Bot talk mocks (`-uimock "v5.office_botcall*"`, `"v5.meeting_botchat*"`). |
+| `Scripts/UI/Play/StoryText.cs` | v5.2 texts from typed data: prim declarations ("Beyanı: 7 prim", the YALAN / DOĞRU stamp) and the results story (`LineStory`: award names and reasons, headlines); the story is built once per result. |
+| `Scripts/UI/Meeting/MeetingDeclare.cs` | v5.2 declaration card of a candidate (stepper, keyboard, countdown, confirm) and its chip (waiting / sealed). |
+| `Scripts/UI/Dev/StoryMock.cs` | v5.2 mocks (`-uimock "v5.meeting_declare*"`, `"v5.meeting_penalty*"`, `"v5.meeting_awards*"`, `"v5.lobby_options*"`). |
 | `Scripts/UI/Dev/MeetingMock.cs`, `MeetingMock3b.cs`, `UI/Resources/ui/styles/meeting.uss`, `projector.uss` | Meeting room mocks (`-uimock "v5.meeting*"`, `"v5.office_partner*"`); meeting room, tablet, paper, whiteboard, results bar and projector styles. |
 
 **Office (v5 step 1).** Cursor locked, mouse look; WASD stands up from the chair and walks (2 m/s, local only:
@@ -368,6 +371,55 @@ senin." and its prim arrives), `v5.office_botcall_deal` (I took the cash; my 1 p
 back with "Paranı geri gönderiyorum. Susmam, kusura bakma."), `v5.meeting_projector_shift` (meeting 2's agenda and the
 penalty slide), each with `_en`; the refusal mock now shows only Mixed ("Sonra ararım."); the cash box witness / thief
 and roster mocks, the results reveal (suç by reason) and the dossier (a guilty investigation) follow v5.1.
+
+### v5.2 on screen (2026-11-24)
+
+Rules: `V5_DESIGN.md` §4.1, §5, §8.2 ([KARAR 2026-11-24]); engine: `V5_ENGINE_SPEC.md` §22. Three additions (the prim
+declaration, the results story, the lobby's talk time) and one removal (meeting 2). Names never carry a Turkish suffix:
+"Sarı: 7 prim", "Beyanı: 6 prim", "Sarı gönderdi: 1 prim".
+
+**Prim declaration ("prim beyanı").**
+
+| Where | What |
+|---|---|
+| Card (`MeetingDeclare`, `dc-*` in `meeting.uss`) | Opens by itself for a candidate when the crisis verdict names them (`Features.DeclareOpen`), bottom centre over the table. Title "PRİM BEYANI", countdown "Kalan: 0:18" (to `Final.DeclareUntil`), two lines of rules ("doğruyu söylemek zorunda değilsin"), a stepper −5 / −1 / value / +1 / +5 (0–99, starts at the real prim), "Gerçek primin: 12" (orange when the value differs), "Sonra" and "Beyan et (Enter)". Keys: ← → ±1, ↑ ↓ ±5, digits type a number, Backspace, Enter seals, Esc minimises. The card takes the cursor; the folder, the ballot and a prank aim close it to a chip. |
+| Chip (bottom centre) | Minimised and waiting: orange "Prim beyanın bekleniyor · kalan 0:16 · aç: Enter". Sealed: green "Beyanın mühürlendi: 7 prim · açılış: 0:19" until the reveal. |
+| "Şimdi" line (`MeetingText`) | Candidate: "Adaysın: prim beyanını ver (kart önünde; Enter). Kalan: 0:18." then "Beyanın mühürlendi: 7 prim. Savunmanı hazırla."; everyone else in the final discussion: "Final: adaylar prim beyan ediyor, 0:06 sonra açılır." |
+| Projector, final deck | The candidates slide carries the sealed note with the countdown; at the reveal (`LineEventType.DeclarationsRevealed`) the deck jumps to the new slide **"PRİM BEYANLARI"**: every candidate's face, name and "8 PRİM" popping in one by one (or "BEYAN YOK"), "Doğru mu, yalan mı? Kovulanın masası açılınca belli olur." A toast says "Prim beyanları açıldı: 3 adaydan 2 beyan. Projektöre bak." |
+| Defence, vote, whiteboard, folder | The defender's slide shows "Beyanı: 14 prim"; the firing vote's candidate chips read "Pembe: beyan 8" / "Yeşil: beyan yok" (the short form, so three chips fit one row); the whiteboard lists the same next to the candidates; the folder's Dosya (final) has a "Prim beyanları" section; the fallback play UI has the same lines and a plain stepper. |
+| Desk opening (`FinalVerdict`) | Next to the desk's amount ("11 PRİM") the line "Beyanı: 6 prim" and, at `DeskOpening.VerdictAt` (4.05 s), the stamp **YALAN** (red) or **DOĞRU** (green), in the TUTANAK stamp style (`pj-claim-stamp`), with the stamp sound; without a declaration "Beyan yok". The stamp follows `LineStory.Truthful` (the declaration against the prim at the reveal); when the desk grew afterwards a small line under the claim says "Beyanlar açılırken: 8 prim" (`pj-claim-note`). The rest of the opening moved 0.8 s later (`MeetingTimeline`: chips 4.6, box 5.7, pile 6.0, slide 6.7). |
+| Results | Dosya → "Masa açılışları": "Beyanı: 8 prim [YALAN]" on each desk; "Manşetler" tab: a "Beyanlar" section with declared → real for every candidate. |
+
+**Meeting 2 removed.** The roster's result in the office says "Nöbet tutulmadı: tutmayan N kişiye +2 suç yazıldı" (sheet,
+card, Şimdi line; `OfficeObjects`, `task.shift_short`); the suç board shows the new suç when the meeting room opens; the
+projector opens the crisis vote with the **"NÖBET CEZASI"** slide (`Show.Penalty`: the stamp, the sentence, the skippers'
+faces "tutmadı", "Sırada: Kriz oylaması (4 suç kime?)") for the first 30% of the vote (2.4–6 s), then the vote's own slide.
+All texts say "Toplantı" without a number (phase title, focus lines, how-to, rules tab, bot lines).
+
+**Results story.**
+
+| Where | What |
+|---|---|
+| Projector | After the ranking (at `LineStory.AwardsAt`, 8 s of a 45 s Results) the slide **"ÖDÜLLER"** (kicker "SONUÇLAR · ÖDÜLLER"): up to four rows, each a face, the name, the award as a stamp (red for a lie or a broken word, green for the good ones, orange / navy otherwise) and one line of why ("Beyan 8, çekmece 12: 4 prim saklamış."), stamped in one by one; my row is highlighted. Ranking and awards then take turns every 14 s. |
+| Results bar | Next to "Sen 2. oldun · 15 prim": "Senin unvanın: [SATILMIŞ] Sarı gönderdi: 1 prim. Parayı tuttu, yine de soruşturma açtı." (appears with the awards slide; one row with the place line, so the bar stays clear of the projector's footer in the close-up). |
+| Folder, Dosya | A new first tab **"Manşetler (n)"**, open by default at Results: "Manşetler" (up to five bullet lines), "Ödüller" (award chip, owner, reason) and "Beyanlar". "Kim kimi soydu" now uses the results' task groups, so every robbery names its victim. |
+| Bots | The owner of an award says its line over its head once the slide is on (`bot.award.*`). |
+
+**Lobby** (`MenuScreens`, `Game.uss` `lobby-talk-*`). Host options: "Konuşma süresi: Kısa / Normal / Uzun" next to the
+two checkboxes (guests see the choice in the note: "Konuşma süresi: Uzun (toplantı tartışması, Kriz telefonları, final
+tartışması ve savunma ×1,5)"). With fewer than four occupied seats "Maçı Başlat" is disabled and the status reads "En az
+4 kişi gerekli; bot ekleyebilirsin."
+
+**How-to.** Pages 2 (flow: one meeting), 3 and 5–7 ("Toplantı"), 10 (candidates) and 11 ("Final ve kovulma": the
+declaration paragraph, DOĞRU / YALAN, awards and headlines).
+
+Mocks (`Builds/mock/s8_1920`, `s8_1600`; each with `_en`): `v5.meeting_declare` (the card at the real prim, lowered to 7,
+minimised chip, sealed chip, the sealed note on the projector), `v5.meeting_declare_reveal` ("PRİM BEYANLARI" from the
+seat and zoomed, the vote and the defence with the claims, the folder's Dosya), `v5.meeting_penalty` ("NÖBET CEZASI"
+from the seat and zoomed, then the crisis vote's slide), `v5.meeting_awards` (ranking, "ÖDÜLLER", "Senin unvanın", the
+folder's Manşetler / Masa açılışları / Kim kimi soydu), `v5.lobby_options` (three seats with the hint, the talk-time
+buttons, the changed how-to pages), `v5.meeting_reveal` (the desk opening with a YALAN stamp) and
+`v5.meeting_reveal_true` (DOĞRU), `v5.meeting_reveal_later` (a desk that grew after the reveal: DOĞRU with the note).
 
 ---
 

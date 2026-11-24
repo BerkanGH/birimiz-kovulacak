@@ -2,7 +2,7 @@
 
 *Ofisi birlikte kurtar. Sonra suçu arkadaşına at.*
 
-A 3–6 player online social-deduction office comedy for Windows (Turkish + English) with **built-in voice**.
+A 4–6 player online social-deduction office comedy for Windows (Turkish + English) with **built-in voice**.
 
 ## Developers
 
@@ -10,11 +10,12 @@ Developed together by **Lucestdra** and **BerkanGH**.
 
 Development was AI-assisted (Claude Code; earlier versions also used OpenAI Codex).
 
-> **v5 is the current version.** The game runs the v5 ruleset "Her Şey Kayıtta" (`v5.1-kayit` since 2026-11-15: free
-> sharer-only investigation, the whistled thief keeps the cash, shift cleaning, candidates need suç;
-> `docs/V5_ENGINE_SPEC.md` §21): 3 tasks (Client Bonus, Petty Cash, Weekend Shift), 1–2 meetings (blame votes in
-> meeting 1), investigations and leaked call recordings, a crisis vote and a final firing vote whose desk goes to the
-> voters. Rules: `docs/V5_ENGINE_SPEC.md` (design `docs/V5_DESIGN.md`, plan `docs/V5_IMPLEMENTATION_PLAN.md`); play
+> **v5 is the current version.** The game runs the v5 ruleset "Her Şey Kayıtta" (`v5.2-kayit` since 2026-11-24: the
+> candidates' prim declarations, one meeting, a talk-time option, awards and headlines at the results,
+> `docs/V5_ENGINE_SPEC.md` §22; on top of v5.1's free sharer-only investigation, the whistled thief keeping the cash,
+> shift cleaning and candidates needing suç, §21): 3 tasks (Client Bonus, Petty Cash, Weekend Shift), one meeting with a
+> blame vote, investigations and leaked call recordings, a crisis vote and a final firing vote whose desk goes to the
+> voters. A match needs 4–6 seats (bots can fill them). Rules: `docs/V5_ENGINE_SPEC.md` (design `docs/V5_DESIGN.md`, plan `docs/V5_IMPLEMENTATION_PLAN.md`); play
 > UI: `Game/Assets/Game/Scripts/UI/Play`. The v4 text below and the tester steps about the desk/monitor, Short/Full
 > weeks and task tutorials describe v4 and are history (tag `v4.0-hybrid`).
 
@@ -37,7 +38,7 @@ playtest plan `docs/PLAYTEST_KPI_GUIDE.md` · music `docs/AUDIO_MUSIC.md` · sta
    English, answer the optional playtest-analytics question (default No; Settings → Privacy changes, deletes, exports).
 2. Settings → Microphone: pick your mic (push-to-talk **V**). Voice is in-game — no Discord. Headphones recommended.
 3. One player: **Lobi Kur / Host** (Short / Full; call recordings can be switched off; optional playtest group code).
-   Others: host's IP + port 7777 → **Join** → **Ready**. 3–6 players; bots fill seats.
+   Others: host's IP + port 7777 → **Join** → **Ready**. 4–6 players; bots fill seats.
 4. In the office: mouse look, monitor (**E**) or phone (**Tab**), **Y/N** answer/decline, **V** talk, **Esc** back,
    **F8** bookmark a moment (playtest only). Every task has a 5-step tutorial (the **?** button reopens it).
 

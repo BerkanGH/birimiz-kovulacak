@@ -89,7 +89,8 @@ Vampir köylünün bir kopyası olmamalı: iyi/kötü takımı yok, rol kartı y
 ## 4.1 Maç yapısı [ÖNERİ]
 
 Oyuncu sayısı ne olursa olsun **2 ikili görev + 1 grup görevi + Kriz**. Oyuncu sayısı arttıkça görev değil,
-toplantı ve final süresi uzar.
+toplantı ve final süresi uzar. **[KARAR 2026-11-24]** Finalden önce **tek toplantı** var (Toplantı 2 kalktı), maç **en az
+4 oyuncuyla** başlar ve lobide bir **konuşma süresi** seçeneği bulunur; ayrıntılar bu bölümün sonunda.
 
 - **İkili görev:** oyuncular ikişer eşleşir (Müşteri Bonusu, Küçük Kasa). "Sadece mağdur/tanık bilir" mantığı en
   iyi burada işlediği için maçta iki tane var.
@@ -101,14 +102,13 @@ Görev 1: İkili görev (ör. Müşteri Bonusu)
    ↓ mola (telefonlar)
 Görev 2: İkili görev (ör. Küçük Kasa, yeni ortakla)
    ↓ mola (ihbar kararı, şantaj)
-TOPLANTI 1: iki görevin hesabı
+TOPLANTI: iki görevin hesabı
    ↓
-Görev 3: Grup görevi (ör. Hafta Sonu Nöbeti)
+Görev 3: Grup görevi (ör. Hafta Sonu Nöbeti); sonucu açıklandığı anda işler (v5.2: Toplantı 2 yok, §8.2)
    ↓
-TOPLANTI 2 (grup görevi başarısız değilse atlanır; v5.1: oylama yok, §8.2)
-   ↓
-KRİZ  → büyük suç gizli oyla birine yazılır, suç tahtası sarsılır
-FİNAL → en çok suçu olanlar oylamaya çıkar → kovulma
+KRİZ  → telefon pazarlığı, sonra büyük suç gizli oyla birine yazılır, suç tahtası sarsılır
+FİNAL → en çok suçu olanlar aday olur → prim beyanı (§5) → savunma → kovulma
+SONUÇ → tam açılış, ödüller ve manşetler (§5)
 ```
 
 **Toplantı sayısı [KARAR]:** Her görevden sonra değil, **iki ikili görevden sonra bir** ve grup görevinden sonra
@@ -119,6 +119,18 @@ bir toplantı. Sebepler:
 - Görevler arası mola entrika alanıdır: Bonus'ta soyulan biri, kasa turunda yeni ortağıyla ittifak kurar.
 - Toplantı 2'nin grup görevi başarısız olmadığında atlanması dürüstlüğü ödüllendirir ve maçı kısaltır.
 
+**[KARAR 2026-11-24] Toplantı 2 kaldırıldı.** Hafta Sonu Nöbeti açıklanınca maç doğrudan Kriz telefonlarına geçer.
+Nöbetin bütün sonuçları açıklandığı anda işler: nöbet tutanın suçu 1 azalır; liste eksikse tutmayan prim almaz ve
+**hemen +2 suç** alır. Oyuncular bunu üç yerde görür: ofiste nöbet çizelgesinde ("Nöbet tutulmadı: tutmayan N kişiye
++2 suç yazıldı"), suç tahtasında ve Kriz oylaması açılırken toplantı odasındaki projektörde ("NÖBET CEZASI" slaytı).
+- *Neden:* v5.1'de Toplantı 2'nin oylaması kalkmıştı; geriye dosya + tartışmadan ibaret, oylamasız **ölü bir bölüm**
+  kalmıştı (ceza zaten otomatikti, konuşulacak karar yoktu). Kaldırınca maç kısalır ve nöbetin sonucu, sıcağı sıcağına
+  Kriz telefonlarının pazarlık malzemesi olur.
+- Artık finalden önce tek toplantı olduğu için arayüz, "Nasıl oynanır" sayfaları ve bot cümleleri "1. toplantı /
+  2. toplantı" demez, sadece **"Toplantı"** der.
+- Eski akış bir ayar anahtarının arkasında duruyor (`LineConfig.ShiftMeeting`, varsayılan kapalı): LineSim
+  `--rules old` ve eski testler onu kullanır.
+
 **Eşleşme [KARAR]:**
 - Rastgele ama tekrarsız: ikinci ikili görevde kimse ilk ortağıyla eşleşmez.
 - Tek sayıda oyuncuda bir grup **üçlü** olur (5 kişi: bir ikili + bir üçlü; 3 kişi: tek üçlü). Üçlü her turda
@@ -126,15 +138,28 @@ bir toplantı. Sebepler:
 
 | Oyuncu | Normal görev | Kriz | Kovulan | Tahmini süre |
 |---|---|---|---|---|
-| 4 | 3 | 1 | 1 | ≈ 11–12 dk |
-| 5 | 3 | 1 | 2 | ≈ 13–14 dk |
-| 6 | 3 | 1 | 2 | ≈ 15–16 dk |
+| 4 | 3 | 1 | 1 | ≈ 10 dk |
+| 5 | 3 | 1 | 2 | ≈ 11 dk |
+| 6 | 3 | 1 | 2 | ≈ 11–12 dk |
 
-- Süreler kaba tahmindir: görev ≈ 60–90 sn, mola ≈ 30 sn, toplantı ≈ 90 sn, Kriz ≈ 2 dk, final ≈ 3–4 dk.
+- Süreler kaba tahmindir (v5.2, "Normal" konuşma süresi): görev ≈ 60–70 sn, mola 30 sn, toplantı ≈ 90 sn, Kriz ≈ 1,5–2 dk,
+  final ≈ 2–2,5 dk. Hızlı seçen botlarla maç ≈ 7–8,5 dk sürüyor (`Tools/LineSim/v5-sim.txt`).
 - 4 oyuncuda herkes 3 kişiden 2'siyle eşleşir, 6 oyuncuda 5 kişiden 2'siyle. Kimse herkes hakkında birinci elden
   bilgi sahibi olmaz; bu dedikoduyu artırır ("Seni de soydu mu?").
 - Kriz her maçta sabittir. Maçlar birbirine benzemesin diye her türde en az 2 görev olmalı.
 - İleride: 5 görev + Kriz'lik bir "Uzun mod".
+
+**[KARAR 2026-11-24] En az 4 oyuncu.** Lobide maç, insan + bot toplamı en az 4 dolu koltukla başlar; daha azsa
+"Maçı Başlat" düğmesi kapalıdır ve "En az 4 kişi gerekli; bot ekleyebilirsin." yazar.
+- *Neden:* 3 kişilik maçta iki ikili görevi de **aynı üçlü** oynar: ortak değişmez, "yeni ortakla ittifak" ve çapraz
+  kontrol ("Seni de soydu mu?") ortadan kalkar; herkes her şeyi görür.
+- Motor, testler ve LineSim 3 oyuncuyu desteklemeye devam eder (otomatik koşular 3 kişilik maç başlatabilir).
+
+**[KARAR 2026-11-24] Konuşma süresi (lobi seçeneği): Kısa / Normal / Uzun.** Kurucu seçer, varsayılan Normal.
+Toplantı tartışmasını, Kriz telefonlarını, final tartışmasını ve savunmayı **×0,7 / ×1 / ×1,5** ile çarpar; başka hiçbir
+süreyi ve kuralı değiştirmez.
+- *Neden:* aynı süreler her gruba uymaz: tanışık, hızlı konuşan bir grup süreyi doldurmaz; yeni ya da kalabalık bir
+  grup pazarlığa yetişemez. Tek bir seçenek, kural eklemeden ikisine de yer açar.
 
 ## 5. Final ve kovulma [ÖNERİ]
 
@@ -155,8 +180,43 @@ bir toplantı. Sebepler:
   etkiler.
 - **Masa mühürü [KARAR]:** Adaylar belli olduğu anda (Kriz sonucu) adayların masası mühürlenir: prim gönderemezler, ama prim alabilirler (oy satın alma mümkün kalır). Yoksa kovulacağını anlayan aday tüm primini bir arkadaşına aktarıp oy verenleri eli boş bırakabilirdi.
 - **Masa açılışı:** "Ahmet'in çekmecesinden 23 prim çıktı!" Herkes doğru kişiyi kovup kovmadığını o an görür.
+- **[KARAR 2026-11-24] Prim beyanı.** Adaylar belli olunca (Kriz sonucu) her aday **bir kez**, kaç primi olduğunu
+  beyan eder (0–99); **yalan söyleyebilir**. Beyan, Kriz sonucundan final tartışmasının ilk 12 saniyesinin sonuna kadar
+  verilir ve **mühürlüdür**: aday sadece kendi beyanını görür. Bütün beyanlar **aynı anda** açılır: final tartışması
+  başlarken (herkes beyan ettiyse), son aday beyan ettiği an ya da en geç süre dolunca. Beyan etmeyen "BEYAN YOK"
+  görünür. Beyanlar maçın sonuna kadar (5–6 kişide ikinci kovma turu dahil) herkese açık kalır; değiştirilemez.
+  - Kovulan adayın masası açılırken beyanı çıkan primin yanına yazılır ve damgalanır: "16 PRİM · Beyanı: 7 prim" ve
+    üstüne **YALAN** ya da **DOĞRU** damgası.
+  - **Prim, suç ve oylar üzerinde mekanik etkisi yoktur.** Beyan sadece bilgidir (ya da dezenformasyondur).
+  - *Neden:* gizli bakiye oyunun temel belirsizliğiydi ama oynanabilir bir hamlesi yoktu: "Bence en zengin Ahmet"
+    tartışması tahminden ibaretti. Beyan, gizli bakiyeyi **defter tutmadan oynanabilen kısa bir yalan-ve-açığa-çıkma
+    döngüsüne** çevirir: aday az söyleyerek hedef olmaktan kaçmayı dener, oy verenler inanıp inanmamaya karar verir,
+    masa açılınca herkes gerçeği görür. Maçlar arası itibar da buradan doğar ("Geçen maç da 7 demiştin!").
+  - Açılış anında her adayın gerçek primi kaydedilir; damga **o kayda göre** vurulur ve sonuç ekranında bütün adaylar
+    için "beyan → gerçek" gösterilir. Beyanlar açıldıktan sonra gelen prim (5–6 kişide ilk kovulanın masasından pay,
+    bir havale) doğru beyanı yalana çevirmez: masa o durumda "Beyanlar açılırken: 8 prim" notunu da gösterir.
+    Aksi halde ilk kovulana oy verip pay alan dürüst bir aday ikinci turda "YALAN" damgası yerdi; biri de dürüst
+    adaya prim gönderip onu yalancı çıkarabilirdi.
 - **Final açılışı:** Tüm bakiyeler, **tüm oylar** ve kim kimi soymuş bilgisi açıklanır. Örnek an: "Ahmet benden
   4 prim aldı ve yine de beni kovdu!"
+- **[KARAR 2026-11-24] Ödüller ve manşetler (final açılışı).** Sonuç ekranı maçın hikâyesini anlatır; hepsi zaten
+  açıklanmış veriden, kural değiştirmeden türetilir (`LineStory`).
+  - **Manşetler** (en çok 5; önce her türden bir tane): bozulan anlaşmalar (parayı aldı, yine de cezalandırdı ya da
+    aleyhte oy verdi), Müşteri Bonusu ihanetleri, kovulmalar ("Sarı kovuldu: masasından 15 prim çıktı, beyanı 8.
+    Yalan!"), Kriz ve maçın en büyük havalesi.
+  - **Ödüller** (en çok 4; sabit öncelik sırası; mümkün oldukça kişi başı bir tane): **Yanlış Adam** (beyanı doğruydu,
+    yine de kovuldu) · **En Pahalı Yalan** (primini en çok, en az 3 eksik beyan eden aday) · **Satılmış** (parayı
+    tuttu, sonra ödeyeni ihbar etti / soruşturdu ya da Kriz'de ya da finalde ona oy verdi) · **Sözünün Eri** (sus
+    payını aldı ve gerçekten sustu) · **Soyguncu** (Müşteri Bonusu'nda paylaşan ortağından hepsini aldı) ·
+    **Kasa Faresi** (kasadan tek başına aldı, ihbar edilmedi) · **Ayın İspiyoncusu** (en çok ihbar + soruşturma) ·
+    **Günah Keçisi** (Kriz suçunu tek başına aldı) · **Kara Kutu** (kayıt sızdırdı) · **Tutanak Kralı** (yaramazlıktan
+    tutanak yedi) · **Nöbet Kaçağı** (dolu nöbeti tutmadı, parayı cebe attı, kovulmadı; birden çoksa en zengini) ·
+    **Temiz Sicil** (0 suçla bitirdi, kovulmadı; birden çoksa en zengini).
+  - Projektörde sıralamadan sonra "ÖDÜLLER" slaytı gelir; klasörün Dosya sekmesi "Manşetler" ile açılır; herkes kendi
+    unvanını sonuç çubuğunda görür ("Senin unvanın: SATILMIŞ"). Botlar ödüllerine birer cümleyle tepki verir.
+  - *Neden:* §1'deki hedef "her maç kişisel bir hikâyeyle biter ve rövanş isteği doğurur". Tam açılış bunu veriyordu
+    ama okunması gereken bir tabloydu. Unvan ve manşet, o tabloyu **rövanş hikâyesine** çevirir ("Bir daha oynayalım,
+    bu sefer Satılmış sen ol").
 - **Beraberlik kuralları [KARAR, prototip]:**
   - Adaylıkta: suçta son aday sırasını paylaşan herkes aday olur (ör. 4 kişide 3 aday).
   - Final oylamasında: berabere kalanlar arasında 15 sn yeniden oylama → yine berabereyse suçu çok olan kovulur →
@@ -331,6 +391,9 @@ olduğu belirsiz kaldıkça bu, istediğimiz tartışmayı üretir: "Bence en ze
   alır ve Toplantı 2 atlanır. **Liste dolmazsa tutmayan prim almaz ve +2 suç alır**; suç Toplantı 2 açılınca
   kendiliğinden yazılır. Toplantı 2'de bu yüzden **oylama yoktur**: dosya ve tartışma olur ("Nöbet tutmayan N kişiye
   otomatik +2 suç yazıldı"). Gereken nöbetçi ceil(N/2) (değişmedi).
+- **[KARAR 2026-11-24, Toplantı 2 kaldırıldı]** Yukarıdaki "Toplantı 2" cümlelerinin yerine: liste dolmazsa tutmayanın
+  +2 suçu **nöbet açıklandığı anda** yazılır ve maç doğrudan Kriz'e geçer (§4.1). Nöbet tutanın −1 suçu da aynı anda
+  işler. Ceza ofiste nöbet çizelgesinde, suç tahtasında ve Kriz oylaması açılırken projektörde ("NÖBET CEZASI") görünür.
 - **Nöbet listesi herkese açık.** İhanet açıkta yapılır.
 - Neden işe yarar:
   - Ayartma net: tutmayan +2 kazanır, herkes başkasının tutmasını ister.
@@ -408,8 +471,10 @@ tartışma çıkıyor mu, oylar neye göre veriliyor, maç sonunda "bir daha" de
 ## 12. Prototip sayıları [KARAR 2026-11-15: v5.1, test edilecek]
 
 İlk değerler (v0) kâğıt prototip ve bot simülasyonuna göre değişti; 2026-11-15'te v5.1 kuralları karara bağlandı
-(§6, §8.2; reddedilen seçenekler §6 "Neden böyle?"). Sayıların hepsi `LineConfig`'te (`StreamingAssets/Config/
-line_config.json`, `ConfigVersion` 7); her alanın yorumu eski (v5.0) değerini de söyler. Kural kimliği `v5.1-kayit`.
+(§6, §8.2; reddedilen seçenekler §6 "Neden böyle?"). **[KARAR 2026-11-24] v5.2:** prim beyanı (§5), Toplantı 2'nin
+kalkması, en az 4 oyuncu ve konuşma süresi seçeneği (§4.1), ödüller ve manşetler (§5); prim ve suç sayıları değişmedi.
+Sayıların hepsi `LineConfig`'te (`StreamingAssets/Config/line_config.json`, `ConfigVersion` 8); her alanın yorumu eski
+(v5.0) değerini de söyler. Kural kimliği `v5.2-kayit` (v5.1 ve v5.0 verileriyle birleştirilmez).
 
 ### Prim
 
@@ -427,12 +492,12 @@ line_config.json`, `ConfigVersion` 7); her alanın yorumu eski (v5.0) değerini 
 
 | Kalem | Değer (v5.1) | v5.0 |
 |---|---|---|
-| Toplantı oylaması | Başarısız görev başına herkesin 1 oyu, her oy 1 suç (1. toplantı; 2. toplantıda oylama yok) | 2. toplantıda da |
+| Toplantı oylaması | Başarısız görev başına herkesin 1 oyu, her oy 1 suç (tek toplantı; v5.2'de Toplantı 2 yok) | 2. toplantıda da |
 | İhbar edilen kasa hırsızı | +3 suç, çaldığı 3 prim **onda kalır** | +3, 3'ü geri verir |
 | İki kişi birden kasadan alırsa | İkisine de +2 suç (oylama yapılmaz) | aynı |
 | Soruşturma | Sadece paylaşan, hepsini alanı: alan **+4 suç** (haksız soruşturma yok) | +3 ve 3 prim öder; haksızsa açana +3 |
 | Nöbet tutan | **−1 suç** (0'ın altına inmez), liste dolsa da dolmasa da | yok |
-| Eksik nöbette tutmayan | **+2 suç**, Toplantı 2 açılınca, oylamasız | oylama |
+| Eksik nöbette tutmayan | **+2 suç**, nöbet açıklandığı anda, oylamasız (v5.1: Toplantı 2 açılınca) | oylama |
 | Kriz | 4 suç, gizli oyla en çok oyu alana; beraberlikte eşit paylaşılır | aynı |
 
 ### Diğer
@@ -442,6 +507,11 @@ line_config.json`, `ConfigVersion` 7); her alanın yorumu eski (v5.0) değerini 
 | Soruşturma hakkı | Maç başına 1 |
 | Kayıt cihazı | Maç başına 1 kullanım (4 kişide en fazla 4 sızıntı; az olduğu için her biri değerli) |
 | Aday olmak | En az **1 suç** (v5.1; eskiden 0 suç da aday olabiliyordu). Kovulan sayısı ≤ aday sayısı; aday yoksa kovulan yok |
+| Prim beyanı (v5.2) | Aday başına 1 kez, 0–99; Kriz sonucundan final tartışmasının 12. saniyesine kadar; etkisi yok (`DeclarationsEnabled`, `DeclareSeconds`, `DeclareMax`) |
+| Toplantı 2 (v5.2) | Yok (`ShiftMeeting` kapalı); eski akış için açılabilir |
+| Konuşma süresi (v5.2) | Kısa ×0,7 · Normal ×1 · Uzun ×1,5: toplantı tartışması, Kriz telefonları, final tartışması, savunma (`TalkTimeShort`, `TalkTimeLong`) |
+| En az oyuncu (v5.2) | Lobide 4 dolu koltuk (insan + bot); motor 3'ü destekler |
+| Ödüller / manşetler (v5.2) | En çok 4 ödül, en çok 5 manşet; beyan yalanı en az 3 prim eksikse "En Pahalı Yalan" |
 
 ### Sağlama (4 oyuncu, kaba, v5.1)
 
@@ -452,7 +522,8 @@ line_config.json`, `ConfigVersion` 7); her alanın yorumu eski (v5.0) değerini 
   de önce aday olması (suç) gerekir.
 - Mağdur ve tanık için ceza bedava ama kazançsız; asıl soru susma parasıdır ("Sus, sana 1 prim göndereyim.").
 
-Bot simülasyonunun güncel sayıları: `Tools/LineSim/v5-sim.txt` (açıklaması `V5_ENGINE_SPEC.md` §20, v5.1 için §21).
+Bot simülasyonunun güncel sayıları: `Tools/LineSim/v5-sim.txt` (açıklaması `V5_ENGINE_SPEC.md` §20, v5.1 için §21, v5.2
+için §22: beyan ve ödül satırları).
 2026-11-15'ten beri botlar her oylamada kazanmak için en zengin olduğunu tahmin ettikleri rakibe oy verir (eski "bildiği
 suçlu, yoksa en yüksek suç" kuralının sayıları için LineSim `--vote blame`); cezalandırmayı susma pazarlığına göre
 yaparlar (`V5_BOT_TALK.md` §4.1). v5.0 kurallarıyla sayılar: LineSim `--rules old`.

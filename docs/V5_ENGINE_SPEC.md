@@ -21,7 +21,8 @@ odd.
 - Request ids, duplicate rejection, `LineActionResult`, `LineFailure`, presence (`SetConnected`), the 60 s
   "fewer than two connected ⇒ Abandoned" rule, `LineText.Sanitize`: keep v4 behaviour.
 - `LineProtocol.Version = 5`, `RulesetVersion = "v5.0-kayit"`, `ConfigVersion = 5`. Players 3–6. (Yaramazlıklar, §19: wire 6, config 6.
-  v5.1 rules, §21: wire 7, config 7, `RulesetVersion = "v5.1-kayit"`.)
+  v5.1 rules, §21: wire 7, config 7, `RulesetVersion = "v5.1-kayit"`. v5.2, §22: wire 8, config 8,
+  `RulesetVersion = "v5.2-kayit"`; the lobby needs 4 seats, the engine still plays 3–6.)
 
 ## 2. Removed v4 systems
 
@@ -45,7 +46,10 @@ Meeting 1:      MeetingDossier → MeetingDiscussion → [MeetingVote → Meetin
 Task 3 (group): TaskPlay → TaskReveal
 Meeting 2:      only if task 3 failed: MeetingDossier → MeetingDiscussion [→ MeetingVote → MeetingVerdict]
                 (v5.1: no vote, the skippers' suç is automatic, §21)
+                (v5.2: no meeting 2 at all; the skippers' suç lands at the shift's reveal, §22;
+                 the block above is the legacy flow behind `LineConfig.ShiftMeeting`)
 Crisis:         CrisisCalls → CrisisVote → CrisisVerdict
+                (v5.2: the candidates declare their prim from CrisisVerdict into FinalDiscussion, §22)
 Final:          FinalDiscussion → FinalDefense (one slot per candidate) → FinalVote → FinalVerdict
                 (v5.1: no candidate ⇒ CrisisVerdict goes straight to Results, §21)
                 [5–6 players: FinalVote → FinalVerdict again for the second firing]
@@ -54,7 +58,7 @@ Results
 ```
 
 - `MeetingVote`/`MeetingVerdict` are skipped when the meeting has zero vote-able failures (§7). Meeting 2 is skipped
-  entirely when task 3 succeeded.
+  entirely when task 3 succeeded (v5.2: always, §22).
 - Prototype task order is fixed: task 1 = `ClientBonus`, task 2 = `PettyCash`, task 3 = `WeekendShift`.
   `LineSetup.ForceTasks` may override for tests; keep a `TaskKind` enum (`None, ClientBonus, PettyCash,
   WeekendShift`) so more tasks can be added.
@@ -62,6 +66,7 @@ Results
   (+ 8 per leak queued during it is **not** added; leaks play during discussion too), MeetingDiscussion 50,
   MeetingVote 20, MeetingVerdict 6, CrisisCalls 75, CrisisVote 20, CrisisVerdict 8, FinalDiscussion 40,
   FinalDefense 15 per candidate, FinalVote 25, FinalRevote 15, FinalVerdict 10, Results 45, Ring 12.
+  v5.2: `LineSetup.TalkTime` scales MeetingDiscussion, CrisisCalls, FinalDiscussion and FinalDefense (§22).
 - Early finish: when every connected player has submitted the task's required choice, `TaskPlay` ends 3 s later
   (*config* `EarlyFinishSeconds`). No time carry.
 - `HostContinue` ends `Results` early (v4 behaviour).
@@ -121,7 +126,8 @@ Absent players take the default. No blame for missing choices.
 - Needed volunteers K = ceil(N / 2) (3→2, 4→2, 5→3, 6→3).
 - Choice: `Skip 0` (default) / `Volunteer 1`.
 - Non-volunteers +2 prim (*config* `ShiftSkipPay`) when the shift is staffed; when it is not, 0 (*config*
-  `ShiftFailSkipPay`; v5.0: 2) and +2 suç each when Meeting 2 opens (*config* `ShiftFailSkipBlame`; v5.0: 0).
+  `ShiftFailSkipPay`; v5.0: 2) and +2 suç each (*config* `ShiftFailSkipBlame`; v5.0: 0): at the reveal in v5.2
+  (§22), when Meeting 2 opens with *config* `ShiftMeeting` (v5.1).
   Volunteers 0 prim and −1 suç at the reveal, staffed or not, never below 0 (*config* `ShiftVolunteerClean`; v5.0: 0).
 - Reveal: the roster (who volunteered) is **public**.
 - Failure: volunteers < K.
@@ -133,6 +139,8 @@ Absent players take the default. No blame for missing choices.
   transfer, firing) for the final reveal.
 
 ## 7. Meetings (1 and 2)
+
+v5.2 holds one meeting (index 0); meeting 2 below exists only with *config* `ShiftMeeting` (§22).
 
 - **Dossier content** (public): failed tasks of this meeting; ClientBonus taker count; PettyCash caught groups,
   whistles (who whistled whom) and unresolved missing total; WeekendShift roster; investigations and leaks as they
@@ -170,6 +178,8 @@ Absent players take the default. No blame for missing choices.
   among the players with at least `CandidateMinBlame` suç (v5.1: 1, so 0 suç is never a candidate; v5.0: 0);
   everyone tied with the last included candidate is also a candidate. Fewer qualify ⇒ those; none ⇒ no final (§21).
 - **Firings**: `FiringsFor(N)` (*config*: 3–4 ⇒ 1, 5–6 ⇒ 2), sequential.
+- **Declarations** (v5.2, §22): every candidate may `Declare` a prim amount once, sealed until all are revealed
+  together in `FinalDiscussion`; information only.
 - **FinalDiscussion**: everyone hears everyone; leaks allowed.
 - **FinalDefense**: candidates only, in order suç desc then seat id; `MaySpeak` gives the floor to the defender.
 - **FinalVote**: each connected player (candidates included) votes one candidate other than themselves (`Vote`,
@@ -211,7 +221,8 @@ Absent players take the default. No blame for missing choices.
   part: ClientBonus taker count / WeekendShift roster.
 - `Meeting`: index, failed tasks, vote-able count, dossier lines (typed, with player ids and numbers — no prose),
   investigations, whistles, caught groups, missing total, leaks, suç gained this meeting (after verdict).
-- `Final`: crisis result (who got how much), candidates, defender, firings so far with desk amounts and recipients.
+- `Final`: crisis result (who got how much), candidates, defender, firings so far with desk amounts and recipients
+  (v5.2: the declaration window, my sealed declaration, the revealed declarations, the fired desk's declaration; §22).
 - `Results` (everyone, full disclosure): final prim per player, fired flags, winners, every ballot of every vote
   (meetings, crisis, final), every transfer, every task choice, every whistle/investigation/leak, prim and suç logs.
 - `LineSessionHistory` (v5): `WeeksPlayed`, `Wins` per seat, `TimesFired` per seat.
@@ -222,7 +233,7 @@ Keep `PhaseChanged`, call events (`CallIncoming, CallConnected, CallEnded, CallB
 `Presence`, `VoteCast`. Add: `TaskSubmitted`, `TransferReceived` (recipient only), `Whistled`, `Investigated`,
 `Leaked`, `BlameAdded`, `CrisisResolved`, `Fired`, `RecordingPlayed`. Host-only telemetry events are not needed in
 Phase 1. (v5.1: `BlameAdded.A` is negative for a volunteer's cleaning, `BlameReason.ShiftClean`; `Whistled.A` = 0 when
-the thief keeps the cash.)
+the thief keeps the cash. v5.2: `DeclarationsRevealed`, A = declarations made, B = candidates.)
 
 ## 13. Bots (`LineBot`)
 
@@ -232,7 +243,8 @@ v5.1 (§21): whistles and investigations follow the silence deals (`LineBotPunis
 `LineBotPunishStyle.Legacy` (LineSim `--rules old`).
 Bots must reach `Results` in every phase without stalling; they do not call or use the recorder (Phase 3).
 Since 2026-11-15 every policy votes for the rival it estimates to be the richest (`LineBotVoteStyle.Richest`, §20); the
-suç rule above is kept as `LineBotVoteStyle.MostBlame`.
+suç rule above is kept as `LineBotVoteStyle.MostBlame`. v5.2 (§22): a candidate bot declares its prim (Honest the truth,
+Greedy an understatement, Mixed on a seeded coin); declarations never change a bot's vote.
 
 ## 14. Codec
 
@@ -250,7 +262,7 @@ revote, tie chain, payout to voters, second firing at 5–6; transfers privacy a
 pick timing; privacy (no other player's prim/choices/votes/transfers/recorder marks before reveal); determinism (two
 runs, same hash); codec round-trip for every contract type; bots finish 1,000 seeded matches per head count.
 The bot simulation `Tools/LineSim` (seeded bot matches per head count and policy mix, `Tools/LineSim/v5-sim.txt`) is
-described in §20.
+described in §20 (v5.1 numbers §21, v5.2 numbers §22).
 
 ## 16. Out of scope for Phase 1
 
@@ -596,3 +608,192 @@ when the round started. Greedy (always takes, never pays in LineSim) is the suç
 a 50% short shift (two Greedy of three never staff it). The design's numbers from the smart-bot scratch simulation
 (timed / mixed play ≈ 2× fair, pure Greedy fired 81–98%, suç leader fired 88/87/63% at 4/5/6 players vs 100/95/91% in
 v5.0) are in `V5_DESIGN.md` §6; LineSim's bots are the simple game bots, not that calculating player.
+
+## 22. v5.2: prim declarations, one meeting, talk time, results story (2026-11-24, decided by the user)
+
+Design: `V5_DESIGN.md` §4.1 (one meeting, at least 4 players, talk time), §5 (prim beyanı, ödüller ve manşetler), §8.2
+(the shift's consequences at its reveal), §12. Prim and suç numbers are the v5.1 ones; nothing here changes who wins.
+
+### 22.1 Prim declarations (`Declare`)
+
+- Verb `LineVerb.Declare = 16` (A = amount). Candidates only (alive, not fired), once per match, `0..DeclareMax`
+  (*config*, 99). *Config* `DeclarationsEnabled` (true); off ⇒ `NotAvailable` and no declaration data anywhere.
+- **Window**: from the start of `CrisisVerdict` (the candidates are fixed there) until `FinalDiscussion` start +
+  `DeclareWindow`, where `DeclareWindow = max(0, min(DeclareSeconds, FinalDiscussion))` (*config* `DeclareSeconds` 12;
+  0 reveals at the start of the discussion). `LineFeaturesView.DeclareOpen` is true for a candidate who may still declare.
+- **Failure order**: `NotAvailable` (feature off), `WrongPhase` (outside the window, also after the reveal),
+  `NotEligible` (not a candidate), `AlreadyUsed`, `BadParam` (amount out of range).
+- **Sealed**: until the reveal a view carries only the viewer's own amount (`LineFinalView.MyDeclaration`, −1 = none)
+  and the deadline (`DeclareUntil`); `Declarations` is empty for everyone, and no event tells who has declared.
+- **Reveal** (`RevealDeclarations`): all at once, at max(`FinalDiscussion` start, the last candidate's declaration),
+  at the deadline at the latest (a `Tick` due time), and in any case before `FinalDefense` starts. It snapshots every
+  candidate's real prim (`DeclaredActual`), sets `DeclarationsRevealed`, fills `LineFinalView.Declarations` (one
+  `LineDeclarationView {Player, Amount (−1 = none), Actual −1}` per candidate, in candidate order) and emits
+  `LineEventType.DeclarationsRevealed = 22` to everyone (A = declarations made, B = candidates). All candidates
+  declaring during `CrisisVerdict` still reveals only when `FinalDiscussion` starts.
+- **After the reveal**: public for the rest of the match (both firing rounds), never editable.
+  `LineFiringView.Declared` (−1 = none) and `LineFiringView.DeclaredActual` (the fired candidate's snapshot; −1 when
+  nothing was revealed) ride with the desk, so the opening can stamp it: `LineStory.Truthful(f)` ⇔ `Declared ≥ 0 &&
+  Declared == DeclaredActual`. The stamp is judged against the snapshot, not the desk: a candidate cannot send prim but
+  still receives it (a share of the first fired desk at 5–6 players, a transfer), and prim that arrives after the reveal
+  must not turn a true declaration into a lie, nor let a colleague frame an honest candidate with a late transfer. The
+  fired player's own snapshot is the only one a view carries before Results.
+- **Results**: `LineWeekResult.Declarations` with `Actual` = the snapshot (declared vs real for every candidate).
+- **No mechanical effect** on prim, suç, votes, candidates or the winner.
+- No final (no candidate, §21): no window, no reveal, no declarations in the results.
+
+### 22.2 One meeting (`ShiftMeeting` false)
+
+- `TaskReveal` of task 3 always goes to `CrisisCalls` (`PhaseEndReason.Timer`). With *config* `ShiftMeeting = true`
+  the v5.1 flow is back (meeting 2 when the shift failed; `Skipped` when it did not).
+- The short shift's consequences land when the shift resolves (start of its `TaskReveal`): volunteers are cleaned
+  first (−1 suç, §21), then every skipper gets `AddBlame(+ShiftFailSkipBlame, BlameReason.ShiftFailSkip)` (public
+  `BlameAdded` events) and 0 prim. The match's rule counters (`skip_blamed`) count them there.
+- The dossier lines `ShiftRoster` and `ShiftSkipBlame` (N1 = suç each, N2 = skippers) and the roster
+  (`LineMeetingView.Roster`) are attached to the **crisis segment** (meeting view index 2), so clients can show
+  "NÖBET CEZASI" while the crisis vote opens. The first meeting's dossier never contains shift lines.
+- Texts say "Toplantı" (no number); `PlayText.PhaseTitle` numbers a meeting only when its index is 1 (legacy flow).
+
+### 22.3 Lobby: talk time and four seats
+
+- `LineSetup.TalkTime` / `LineLobbyView.TalkTime`: `LineTalkTime.Short 0 / Normal 1 / Long 2` (default Normal; an
+  invalid value fails `Setup` validation). The engine applies `Durations.ScaleTalk(c.TalkFactor(level))` to its own
+  copy of the config: MeetingDiscussion, CrisisCalls, FinalDiscussion, FinalDefense × `TalkTimeShort` 0.7 / 1 /
+  `TalkTimeLong` 1.5 (*config*). `Engine.Config` is the **effective** config; the host sends that one to the clients
+  (`ConfigJson`), so every countdown and rule text agrees. `DeclareWindow` follows the scaled `FinalDiscussion`.
+- Host-only option next to the lobby's checkboxes, synced through the lobby view like them; `-talktime
+  short|normal|long` for scripted runs.
+- `LineProtocol.LobbyMinPlayers = 4`: the lobby's start button needs 4 occupied seats (humans + bots).
+  `LineProtocol.MinPlayers` stays 3: the engine, the tests, LineSim and `-expectplayers 3` autostart keep 3 players.
+
+### 22.4 Results story (`LineStory`)
+
+`LineStory.Build(LineWeekResult, LineConfig)` is a pure function of the full disclosure: every client builds the same
+story; nothing is sent, nothing changes prim, suç or the winner. For it the results gained `LineWeekResult.Groups`
+(`LineGroupView {TaskNumber, Task, Members}` of the pair tasks: who robbed whom) and `LineFiringView.Time`.
+
+**Awards** (`AwardKind`, at most `MaxAwards` 4). Priority = enum order, the rarest story first; a kind's candidates are
+ranked (best first); pass 1 gives each kind to its best candidate who has no award yet; kinds whose candidates all
+have one already wait as leftovers and fill free places afterwards (so a player gets a second award only when no other
+player qualifies for anything). The list is sorted by priority.
+
+| # | Kind (id) | Who | Ranking |
+|---|---|---|---|
+| 1 | `WrongMan` (wrongman) "Yanlış Adam" | fired with a true declaration (`LineStory.Truthful`: declared = the snapshot) | firing order |
+| 2 | `Liar` (liar) "En Pahalı Yalan" | a candidate whose declaration is at least `LieGap` 3 under the snapshot | biggest gap, then richest |
+| 3 | `Sellout` (sellout) "Satılmış" | kept (net) prim from a colleague, then whistled / investigated them after a payment, or voted for them in the crisis or a firing vote decided after a payment | most prim kept |
+| 4 | `Loyal` (loyal) "Sözünün Eri" | kept (net) prim from a colleague they could have punished (a Client Bonus victim of that taker, or a Petty Cash witness who left the box) and neither punished nor broke the deal | most prim kept |
+| 5 | `Robber` (robber) "Soyguncu" | the only taker of a Client Bonus group | most victims, then richest |
+| 6 | `CashRat` (cashrat) "Kasa Faresi" | took the Petty Cash with a payout and was not whistled | richest |
+| 7 | `Snitch` (snitch) "Ayın İspiyoncusu" | most whistles + investigations (at least 1) | count, then earliest |
+| 8 | `Scapegoat` (goat) "Günah Keçisi" | the only receiver of the crisis suç (no award on a split) | – |
+| 9 | `BlackBox` (blackbox) "Kara Kutu" | leaked a recording | count, then earliest |
+| 10 | `Tutanak` (tutanak) "Tutanak Kralı" | got a prank tutanak | count, then earliest |
+| 11 | `Dodger` (dodger) "Nöbet Kaçağı" | skipped a staffed shift with a payout and was not fired | richest |
+| 12 | `Clean` (clean) "Temiz Sicil" | ended with 0 suç and was not fired | richest |
+
+Ties end on the lower seat id. "Kept" is sent minus sent back, so an Honest bot returning silence money is neither a
+sellout nor loyal. `LineAward {Kind, Player, Other, N1..N3}` carries the numbers the texts need.
+
+**Headlines** (`HeadlineKind`, at most `MaxHeadlines` 5): `DealBroken` (every broken deal, biggest first),
+`BonusBetrayal` (every sole Client Bonus taker with the sharers), `Firing` (each firing: desk, declaration, round, the
+snapshot the declaration is judged against),
+`Crisis` (the receiver, or the split) and `BigTransfer` (the biggest single transfer of at least `BigTransferMin` 2).
+The first of every kind is taken in that order, then the second of every kind, and so on; the list is sorted by kind.
+
+`LineStory.AwardsAt(resultsSeconds) = clamp(0.55 · Results, 0, 8 s)`: when the projector's awards slide follows the
+ranking; the bots' award lines wait for it.
+
+### 22.5 Versions, codec, hash
+
+- `LineProtocol.Version` 8 (verb 16, event 22, `TalkTime` in the setup and lobby view, the declaration fields and
+  types, `Groups`, `LineFiringView.Declared/DeclaredActual/Time`; the codec's enum limits), `LineConfig.CurrentVersion` 8 (`ShiftMeeting`,
+  `DeclarationsEnabled`, `DeclareSeconds`, `DeclareMax`, `TalkTimeShort`, `TalkTimeLong`; `line_config.json` regenerated
+  by the builder), `RulesetVersion` `"v5.2-kayit"` (never pool with v5.1 / v5.0 data).
+- `LineCodec`: writers/readers for `LineDeclarationView` and `LineGroupView`. The **result hash** keeps its frozen v5.0
+  field list (`WriteWeekResult(…, hashSchema: true)` skips `Groups`, `LineFiringView.Declared/DeclaredActual/Time`); declarations are
+  mixed in after it as (player, amount, actual) only when the result has any. A match without declarations therefore
+  hashes exactly like v5.1 apart from the ruleset id.
+- Analytics: verb `declare` in the event catalogue (`docs/ANALYTICS_EVENT_CATALOG.md`, `docs/analytics/
+  event_catalog.json`).
+
+### 22.6 Bots
+
+- **Declaring** (`LineBot`): in `CrisisVerdict` / `FinalDiscussion` when `Features.DeclareOpen` and not yet declared,
+  after the phase's usual think delay (no extra draw from `LineRandom`; the coins hash seed, week, topic and target).
+  Honest: its real prim. Greedy: an understatement, `cut = 0.35 + 0.10 · coin`, `claim = max(3, min(round(prim · (1 −
+  cut)), prim − 2))`, never above its prim or `DeclareMax` (a Greedy with 3 prim or less ends up telling the truth or
+  close to it: there is nothing to hide). Mixed: the truth or the Greedy claim on a seeded 50% coin (`DeclaresTruth`).
+  `PlannedDeclaration`, `DeclaredPrim`, `DeclaredAmount` expose it to the talk.
+- **Votes ignore declarations**: `LineBotVoteStyle.Richest` still reads the ledger estimate only (a declaration is
+  cheap talk; the estimate was right about the richest 83–100% of the time, §20).
+- **Talk** (`LineBotTalker`, `V5_BOT_TALK.md` §4.2): a candidate bot states its claim once in its defence
+  (`bot.declare.own.*`, `BotClaimKind.Declare`, checked against the amount it declared: never a lie about the
+  declaration itself); a bot whose ledger estimate of a candidate is at least 3 above that candidate's claim says so in
+  the final discussion (`bot.declare.doubt.*`: at most one doubt per bot, the widest gap, and never about a candidate
+  somebody already doubted in the chat; Honest and Greedy always, Mixed on a coin); every award gets one shout
+  at Results after `AwardsAt` (`bot.award.<id>`).
+- Logs at Results: `bottalk declare seat policy declared had actual truthful`, `bottalk award seat policy key t`.
+
+### 22.7 Host log and checks
+
+- `host: declarations week= enabled= candidates= made= truthful= understated= list=seat:declared/actual
+  fired=seat:declared/desk:true|lie|none` (true / lie by the snapshot), `host: awards week= count= list=id:seat`, `host: headlines week= count=
+  list=id:seat` (after the `host: rules` line of §21).
+- `Tools/scripts/verify_logs.py`: a `v5.2-kayit` match that holds meeting 2 fails; `story` check: the host's
+  declarations line is consistent (made ≤ candidates, none when the feature is off), every Honest bot's `bottalk
+  declare` is truthful, every bot's declaration is the one the host lists for its seat, at most 4 awards (no kind
+  twice) and 5 headlines, a bot says an award line only for an award the host gave its seat. It reports the
+  declarations per policy (truthful / understated / none) and the awards and headlines of the match.
+
+### 22.8 Tests
+
+`LineDeclarationTests` (candidates only, once, the range; sealed views until the reveal; the reveal at the start of
+the final discussion, at the last declaration and at the deadline, reached within one tick and never past the
+discussion; the snapshot and `LineFiringView.Declared` / `DeclaredActual`; prim that arrives after the reveal never turns a true
+declaration into a lie; public through the second firing; off by config and without candidates; declaring changes no
+prim, suç, vote or winner), `LineRulesV52Tests` (a short shift blames its skippers at
+the reveal and the crisis follows, cleaning first and the suç counts for the candidates, a staffed shift, the old
+switch keeps the v5.1 and v5.0 flows, talk time scales only the talking phases, is validated and never changes the
+outcome), `LineStoryTests` (every award and headline kind, priority, one per player, the next candidate, leftovers,
+the caps, the same story whatever the list order, the slide timing, consistency over real bot matches),
+`LineBotDeclareTests` (Honest the truth, Greedy understates, Mixed either; no draw from the random stream; talk about
+declarations where Honest never lies; award owners say their line at Results), the codec tests for the new types, the
+`V51*` variants of the old meeting-2 tests through `LineTest.V51` / `Meeting2Vote`. CoreTests 278 → 337;
+TelemetryTests 51, MusicTests 20, VoiceTests 109.
+
+### 22.9 LineSim
+
+`--rules new` (default) plays v5.2 and prints a `Declarations:` and a `Story:` line per cell; `--rules old` sets
+`ShiftMeeting = true`, `DeclarationsEnabled = false` and the v5.0 numbers and prints neither. **Identity:** `--rules old
+--matches 300 --seed 7000 --think 15` reproduces every statistic line of f4c349e (v5.1 tooling) in all 16 cells; a
+throw-away build stamped `v5.1-kayit` reproduces all 16 aggregate hashes (`571936ADCC6B9E66 75F3BFE1F26C8E4A …`). With
+the new rules the cells without short shifts are identical to v5.1 line for line; the others differ in match length and
+"meeting 2 held" (now 0%), because the think-delay draws of the removed phases shift the random stream.
+
+1000 matches per cell, seeds 5000..5999, think 15 (`v5-sim.txt`). Win shares and firings are the v5.1 table's (§21)
+within noise; new columns:
+
+| Mix | Players | To Results (s) | Short shift | Candidates | Truthful declarations | Mean claim of real prim | Fired with a true claim | Awards | Headlines |
+|---|---|---|---|---|---|---|---|---|---|
+| lobby | 3 | 431 | 47.7% | 1.83 | 24.9% | 6.20 of 9.28 | 4.8% | 3.90 | 2.49 |
+| lobby | 4 | 427 | 0.0% | 1.66 | 21.5% | 9.24 of 13.72 | 6.3% | 4.00 | 3.15 |
+| lobby | 5 | 493 | 59.0% | 2.85 | 14.9% | 6.61 of 10.23 | 8.5% | 3.99 | 4.07 |
+| lobby | 6 | 500 | 40.9% | 3.05 | 19.8% | 7.95 of 11.84 | 14.6% | 3.99 | 4.52 |
+| half | 3 | 428 | 50.4% | 1.63 | 16.3% | 6.01 of 9.27 | 21.9% | 3.35 | 2.37 |
+| half | 4 | 433 | 30.5% | 1.73 | 3.1% | 7.53 of 12.36 | 5.4% | 3.81 | 3.00 |
+| half | 5 | 478 | 48.7% | 2.48 | 2.6% | 6.18 of 10.22 | 2.8% | 3.88 | 3.70 |
+| half | 6 | 486 | 33.7% | 2.76 | 1.1% | 7.16 of 11.90 | 1.6% | 3.89 | 4.28 |
+| mixed | 3 | 437 | 50.9% | 2.05 | 53.2% | 6.97 of 8.61 | 53.3% | 3.50 | 2.38 |
+| mixed | 4 | 450 | 51.1% | 2.17 | 51.2% | 8.63 of 10.71 | 50.2% | 3.86 | 3.06 |
+| mixed | 5 | 504 | 68.6% | 3.25 | 50.8% | 7.35 of 9.16 | 51.3% | 3.88 | 3.86 |
+| mixed | 6 | 510 | 71.1% | 3.49 | 50.2% | 8.17 of 10.20 | 50.8% | 3.95 | 4.33 |
+| one-greedy | 3–6 | 405–410 | 0.0% | 1.00 | 0.0% | ≈ 9.6 of 16.00 | 0.0% | 4.00 | 3.00 |
+
+Notes: every candidate bot declares (100%); Honest is truthful every time (it is rarely a candidate: 14–265 of the
+1000-match cells), Greedy never, Mixed about half. "Fired with a true claim" is per firing (the DOĞRU stamp; the
+"Yanlış Adam" award). Awards hit the cap of 4 in almost every match: `liar` goes out in 67–100% of matches (any
+Greedy / lying Mixed candidate), `snitch` 66–100%, `clean` 31–100%, `robber` 20–100%; `sellout`, `loyal`, `blackbox`
+and `tutanak` never appear here because LineSim's bots do not pay, record or prank (the game's talking bots do).
+A 4-player bot match reaches Results after ≈ 7–7.5 minutes; with players who use the whole of every phase it is
+≈ 10 minutes plus Results.

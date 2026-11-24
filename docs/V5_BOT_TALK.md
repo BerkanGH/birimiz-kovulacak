@@ -132,8 +132,8 @@ Ceza bedava ve kazançsız olduğu için karar susma parasında. Botların ceza 
   "Paranı geri yolladım. Bu iş parayla kapanmaz." (doğru: geri gönderir, cezalandırır); Açgözlü modu "Geldi. Merak etme,
   ağzımı açmam." / Karışık "Tamam. Bu sefer görmezden geliyorum." (ihanet yazı-turası "ihbar" diyorsa yalan).
 - **İnsanlar.** Bir insan bota susma parası gönderirse bot aynı kurallarla davranır. Paranın sayıldığı aralık: o görevin
-  seçim süresi başından 1. toplantının sonuna kadar.
-- **Toplantı.** Parayı alıp yine de cezalandıran biri varsa ödeyen bot 1. toplantıda söyler: "{0} paramı aldı, yine de
+  seçim süresi başından toplantının sonuna kadar.
+- **Toplantı.** Parayı alıp yine de cezalandıran biri varsa ödeyen bot toplantıda söyler: "{0} paramı aldı, yine de
   beni yaktı!" / *"{0} took my money and still turned me in!"* (Açgözlü), "{0} ile anlaşmıştık. Sözünü tutmadı." /
   *"{0} and I had a deal. They didn't keep their word."* (Karışık); {0} = {cezalandıran}. Para geri geldiyse söylemez. Bu cümle adı geçeni
   suçlar: o da bir kez cevap verir.
@@ -143,6 +143,38 @@ Ceza bedava ve kazançsız olduğu için karar susma parasında. Botların ceza 
   `verify_logs.py` bunları politika başına sayar; Dürüst para tutarsa ya da susma parası öderse, Dürüst modu
   cezalandırabildiği birini cezalandırmazsa (başkası etmediyse, soruşturma hakkını başka alana harcamadıysa) ya da
   Açgözlü modu parasız cezalandırırsa FAIL verir.
+
+### 4.2 Prim beyanı ve ödüller (v5.2, 2026-11-24)
+
+Kurallar: `V5_DESIGN.md` §5, `V5_ENGINE_SPEC.md` §22. Aday olan bot primini bir kez beyan eder (Kriz sonucunda ya da
+final tartışmasının başında, her zamanki düşünme gecikmesiyle):
+
+| | Dürüst | Açgözlü | Karışık |
+|---|---|---|---|
+| Beyan | Gerçek primi | Eksik: %35–45 az (en az 2 eksik, 3'ün altına inmez; tohumlu) | Yazı-tura: gerçek ya da Açgözlü'nün beyanı |
+| Savunmada kendi beyanı (`bot.declare.own.*`) | "Beyanım ortada: {0} prim. Fazlası yok." <br>*"My declaration is on the table: {0} prim. There is nothing more."* | "{0} prim dedim, {0} prim var. Çekmecemde gözünüz kalmasın." <br>*"I said {0} prim and {0} prim it is. Keep your eyes off my drawer."* | "Beyanım belli: {0} prim. İnanan inanır." <br>*"My declaration is clear: {0} prim. Believe it or not."* |
+| Başkasının beyanına şüphe (`bot.declare.doubt.*`) | "{0} az söylüyor. Hesabıma göre en az {1} primi var." <br>*"{0} is lowballing. By my count they have at least {1} prim."* | "{0} masasını küçük gösteriyor. Orada en az {1} prim var." <br>*"{0} is playing that desk down. There's at least {1} prim in there."* | "{0}: beyan bana az geldi. En az {1} prim bekliyorum." <br>*"{0}: that declaration looks low to me. I expect at least {1} prim."* |
+
+- **Kendi beyanı.** Aday bot savunmasında, ilk cümlesinden sonra bir kez söyler. Sayı her zaman gerçekten beyan ettiği
+  sayıdır (beyan hakkında yalan yok; Açgözlü'nün yalanı beyanın kendisidir: "{0} prim var" cümlesi `truthful=no`
+  sayılır). Dürüst, beyandan sonra primi değiştiyse (ör. havale aldı) "Fazlası yok" demez: cümleyi atlar.
+- **Şüphe.** Beyanlar açıldıktan sonra, oy verecek bot bir adayın beyanını kendi defter tahminiyle (§6.1)
+  karşılaştırır: tahmini beyandan **en az 3 prim** fazlaysa final tartışmasında söyler ({1} = tahmini, aşağı
+  yuvarlanmış; birden çok aday varsa farkı en büyük olan). Her bot en fazla bir şüphe söyler ve bir aday hakkında
+  sohbette zaten şüphe söylendiyse tekrarlanmaz; Dürüst ve Açgözlü inandığını söyler, Karışık yalan yazı-turası
+  "yalan" derse susar. Cümle hırsızlık suçlaması değildir: adı geçen bot "suçlandım" cevabı vermez.
+- **Oylar beyana bakmaz.** Bot yine defter tahminine göre en zengin sandığı adaya oy verir; beyan ucuz laftır.
+- **Ödül cümlesi.** Sonuç ekranında ödül alan her bot, "ÖDÜLLER" slaytı geldikten sonra bir kez bağırır
+  (`bot.award.<id>`): Yanlış Adam "Doğruyu söyledim, yine de kovuldum!" · En Pahalı Yalan "Biraz yuvarlamışım." ·
+  Satılmış "Para paradır, oy oydur." · Sözünün Eri "Sus dediler, sustum." · Soyguncu "Fırsat ayağıma geldi." ·
+  Kasa Faresi "Kasa açıktı, ben ne yapayım?" · Ayın İspiyoncusu "Görevimi yaptım, o kadar." · Günah Keçisi "Hep bana,
+  hep bana." · Kara Kutu "Kayıtlar yalan söylemez." · Tutanak Kralı "Müdür beni seviyor aslında." · Nöbet Kaçağı "Hafta
+  sonu benim için kutsaldır." · Temiz Sicil "Tertemiz. Sicilime bakın." (İngilizceleri `en.v5.json`.) Politikaya göre
+  değişmez; doğruluk iddiası taşımaz.
+- **Kayıt (sonuç ekranında):** `bottalk declare seat policy declared had actual truthful=yes|no|none` (aday olan her
+  bot; `had` = beyan anındaki primi, `actual` = açılış anındaki) ve `bottalk award seat policy key t`. Sunucu:
+  `host: declarations …`, `host: awards …`, `host: headlines …`. `verify_logs.py`: Dürüst bir bot yanlış beyan ederse,
+  botun beyanı sunucunun listesiyle uyuşmazsa ya da bot almadığı bir ödülün cümlesini söylerse FAIL.
 
 ## 5. Hafta Sonu Nöbeti
 
@@ -154,12 +186,14 @@ I don't sign?)*
 | Bot arar | "Ben yazıyorum. {K} kişi lazım, sen de yaz." <br>*"I'm signing up. We need {K}, sign up too."* <br>Yazmayacaksa: "Bu sefer ben yazmıyorum, {K} kişi lazım. Sen yazarsan sana 1 prim gönderirim." <br>*"I'm not signing up this time; we need {K}. Sign up and I'll send you 1 prim."* | "Ben yazdım bile, sıra sende." <br>*"I've already signed, your turn."* | "Kaç kişi yazdı acaba? Ben son dakikaya bakacağım." <br>*"I wonder how many signed up. I'll check at the last minute."* |
 | [1] | "Evet, yazacağım." <br>*"Yes, I'll sign up."* <br>Yazmayacaksa: "Hayır, bu sefer yazmıyorum." <br>*"No, I'm not signing up this time."* | "Tabii, hafta sonu zaten boşum." <br>*"Of course, my weekend is free anyway."* | "Sen yazarsan ben de yazarım." <br>*"If you sign up, I'll sign up."* |
 | [2] | "Olmaz, {K} kişi lazım. Yazmazsan görev batar, yazmayanlara suç yazılır." <br>*"No, we need {K}. If you don't sign, the task fails and the skippers get suç."* | "Yazma yazma, biz hallederiz." <br>*"Don't, don't, we'll handle it."* | "1 prim gönder, senin yerine ben yazarım." <br>*"Send me 1 prim and I'll sign in your place."* |
-| Sonuç eksikse (bot arar) | "Yazmayanlar belli. Toplantıda hepsine suç yazılacak." <br>*"We can see who didn't sign. They all get suç in the meeting."* | "Ben yazmıştım, liste mi bozuk?" <br>*"I signed it, is the roster broken?"* | "Bu sefer kim kaçtı acaba?" <br>*"I wonder who ran off this time?"* |
+| Sonuç eksikse (bot arar) | "Yazmayanlar belli. Hepsine suç yazıldı." <br>*"We can see who didn't sign. They all got suç."* | "Ben yazmıştım, liste mi bozuk?" <br>*"I signed it, is the roster broken?"* | "Bu sefer kim kaçtı acaba?" <br>*"I wonder who ran off this time?"* |
 
 Dürüst, `LineBot`'un basit sayımına göre yazar: suçu en az olan Gerekli+1 kişiden biriyse yazar, değilse yazmaz. Yazmadığı
 durumda "ben yazıyorum" diyemez; yazmadığını söyler ve yazan kişiye 1 prim sözü verir, liste açılınca o kişi yazdıysa
 öder. Karışık yazmayacaksa ve yalan yazı-turası "doğru" derse [1] ve [2]'ye "Kaç kişi yazdı acaba?…" ile kaçamak cevap
-verir. "Sonuç eksikse" araması sadece sonuç ekranında bir görüşmeye yetecek süre kaldıysa yapılır.
+verir. "Sonuç eksikse" araması sadece sonuç ekranında bir görüşmeye yetecek süre kaldıysa yapılır. v5.2'de Toplantı 2
+olmadığı için suç nöbet açıklandığı anda yazılır (cümle geçmiş zamanda); sonuç ekranında başlayan arama, hemen ardından
+gelen Kriz telefonlarının içine uzayabilir.
 
 ## 6. Kriz
 
@@ -230,9 +264,10 @@ LineSim'de (`Tools/LineSim/v5-sim.txt`) tahminin en zengini bulma oranı 3 kişi
 | Final oyu (para ile oy) | "Hesabıma göre adaylar içinde en zengin {hedef}. Oyum ona." <br>*"By my count {target} is the richest candidate. My vote goes there."* <br>Bazen (ya da kendini daha zengin sanan aday ise her zaman): "Görevlerde dürüst oynadım ama kazanmak da istiyorum: oyum {hedef}." | (değişmedi) "Çekmecesi en dolu olanı kovalım, primi bize kalır." | "Paranın çoğu {hedef} tarafında, gönderelim." <br>*"Most of the money is on {target}'s side. Let's send them off."* (yalan yazı-turası "yalan" derse başka bir aday) |
 | Zenginlik şüphesi (para ile oy; her toplantının tartışmasında ~%70) | "Bence bu maçı en çok {hedef} kazandı." <br>*"I think {target} has earned the most this match."* <br>Final tartışmasında: "Adaylar arasında en çok {hedef} kazandı bence." <br>*"Of the candidates, I think {target} has earned the most."* <br>Kendini daha zengin sanıyorsa söylemez. | "{hedef} — masası dolu gibi duruyor." <br>*"{target} — that desk looks pretty full."* | "Paranın çoğu {hedef} tarafında gibi. Yanılıyor muyum?" <br>*"Most of the money seems to be on {target}'s side. Am I wrong?"* |
 
-- **Sıra ve tempo.** Toplantı 1: mağdur > tanık > suçlu (dikkat dağıtma). Toplantı 2 (nöbet eksikse): yazmayan Açgözlü /
-  Karışık dikkat dağıtır. Final tartışması: aday olan ve almış bir bot dikkat dağıtır; yoksa toplantı 1'de söyleyemediği
-  mağdur / tanık cümlesini söyler. Cümleler tartışmanın içine koltuk sırasına göre yayılır (aynı anda düşmez; sızan bir
+- **Sıra ve tempo.** Toplantı: mağdur > tanık > suçlu (dikkat dağıtma). (v5.2'de Toplantı 2 yok; eski akışta, nöbet
+  eksikse, yazmayan Açgözlü / Karışık orada dikkat dağıtırdı.) Final tartışması: aday olan ve almış bir bot dikkat
+  dağıtır; yoksa toplantıda söyleyemediği mağdur / tanık cümlesini söyler; beyanlar açıldıysa şüphe cümlesi de burada
+  gelir (§4.2). Cümleler tartışmanın içine koltuk sırasına göre yayılır (aynı anda düşmez; sızan bir
   görüşmenin iki ucu da sırayla tepki verir); dosya
   okunurken suçlanan bot tartışmanın başını bekler; final oy cümleleri oylamanın başında bot sırasıyla gelir (çoğu bot
   pusulasını atmadan önce; cümle botun gerçek oyuyla karşılaştırılır, attıktan sonra gelse de doğru kalır).
@@ -244,7 +279,7 @@ LineSim'de (`Tools/LineSim/v5-sim.txt`) tahminin en zengini bulma oranı 3 kişi
 - **Karışık suçlanınca:** almadıysa Dürüst'ün cümlesini söyler (doğru); aldıysa ve bildiği başka bir suçlu varsa "Evet
   aldım, ama {başkası}…", yoksa "Hepimizin bir hatası var, değil mi?".
 - **{masum}:** Açgözlü'nün suçlu olduğunu bilmediği, sohbette en az konuşmuş kişi (iftira: her zaman yalan sayılır).
-- **Zenginlik şüphesi:** cümle söyleneceği anda kurulur (o anki defterle); toplantı 1 ve 2'de bütün rakipler arasından,
+- **Zenginlik şüphesi:** cümle söyleneceği anda kurulur (o anki defterle); toplantıda bütün rakipler arasından,
   final tartışmasında adaylar arasından. Dürüst ve Açgözlü gerçek tahminini söyler (Açgözlü o masayı istiyor); Karışık
   toplantı başına yalan yazı-turası "yalan" derse başka birinin adını verir. Bu cümle bir oy sözü değildir (toplantı
   oylamasına kadar bilgi değişebilir); kimseyi hırsızlıkla suçlamaz, bu yüzden adı geçen bot "suçlandım" diye cevap vermez.
@@ -292,6 +327,10 @@ gereken nöbetçi sayısı. Kodda her anahtarın yer tutucuları sırayla `{0}`,
    (`bot.meet.betrayed.*`). Kalkan: "Sistem hatası olmalı, ben paylaşa bastım." ve "Şu an çok yoğunum." (Açgözlü artık
    soyduğu kişiyi reddetmez, ona para teklif eder). Açgözlü'nün susma sözlerinin doğruluğu artık ihanet yazı-turasına
    bağlı (önceden hep yalandı).
+
+10. **v5.2 (2026-11-24).** Toplantı 2 kalktı: cümleler "1. toplantı / 2. toplantı" demez, "toplantı" der; nöbet eksik
+    kalınca Dürüst'ün cümlesi "Yazmayanlar belli. Hepsine suç yazıldı." oldu. Yeni: prim beyanı cümleleri
+    (`bot.declare.own.*`, `bot.declare.doubt.*`) ve ödül cümleleri (`bot.award.*`), §4.2.
 
 ## 9. Teknik
 
