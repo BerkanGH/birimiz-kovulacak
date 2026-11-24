@@ -68,13 +68,29 @@ namespace BirimizKovulacak.Core.Tests
             m.Until(LinePhase.TaskPlay);
             m.Ok(0, LineVerb.Call, 1);
             m.Ok(1, LineVerb.Answer);
+            // v5.2: the shift's reveal is followed by the crisis calls: a call runs on through both
+            m.Until(LinePhase.CrisisCalls);
+            Assert.AreEqual(m.Engine.ConnectedCallId(0), m.Engine.ConnectedCallId(1));
+            Assert.AreNotEqual(-1, m.Engine.ConnectedCallId(0));
+            m.Ok(2, LineVerb.Call, 3);
+            m.Next();
+            Assert.AreEqual(LinePhase.CrisisVote, m.Engine.Phase);
+            Assert.AreEqual(-1, m.Engine.ConnectedCallId(0));
+            Assert.AreEqual(CallEndReason.PhaseEnd, m.View(0).Mine.CallLog.Last().EndReason);
+            Assert.AreEqual(CallStatus.Idle, m.View(2).Mine.Phone.Status);
+        }
+
+        [Test]
+        public void V51Meeting2EndsTheCallsOfTheShift()
+        {
+            var m = new LineTest(configure: LineTest.V51);
+            m.ToMeeting1();
+            m.Until(LinePhase.TaskPlay);
+            m.Ok(0, LineVerb.Call, 1);
+            m.Ok(1, LineVerb.Answer);
             m.Until(LinePhase.MeetingDossier);
             Assert.AreEqual(-1, m.Engine.ConnectedCallId(0));
             Assert.AreEqual(CallEndReason.PhaseEnd, m.View(0).Mine.CallLog.Last().EndReason);
-            m.Until(LinePhase.CrisisCalls);
-            m.Ok(2, LineVerb.Call, 3);
-            m.Next();
-            Assert.AreEqual(CallStatus.Idle, m.View(2).Mine.Phone.Status);
         }
 
         [Test]
@@ -280,8 +296,9 @@ namespace BirimizKovulacak.Core.Tests
             m.Drain();
             Assert.IsTrue(m.Events.Any(e => e.Type == LineEventType.RecordingPlayed && e.B == 0));
             m.Until(LinePhase.TaskPlay);
-            m.Until(LinePhase.MeetingDossier);
-            Assert.AreEqual(0, m.Engine.RecordingPicks.Count, "cleared when a meeting starts");
+            Assert.AreEqual(1, m.Engine.RecordingPicks.Count, "kept until the next meeting room segment starts");
+            m.Until(LinePhase.CrisisCalls);
+            Assert.AreEqual(0, m.Engine.RecordingPicks.Count, "cleared when the crisis / final segment starts");
         }
 
         [Test]

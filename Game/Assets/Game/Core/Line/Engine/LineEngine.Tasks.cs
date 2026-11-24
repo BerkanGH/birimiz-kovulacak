@@ -32,6 +32,8 @@ namespace BirimizKovulacak.Core
             /// <summary>Weekend Shift: volunteers needed and the public roster.</summary>
             internal int Needed = -1;
             internal readonly List<int> Roster = new List<int>();
+            /// <summary>Weekend Shift: skippers who got the unstaffed shift's suç at the reveal (v5.2, no meeting 2).</summary>
+            internal int SkipBlamed;
             /// <summary>Petty Cash: sole-taker thefts and caught takers (suç applied when meeting 1 opens).</summary>
             internal readonly List<Theft> Thefts = new List<Theft>();
             internal readonly List<int> Caught = new List<int>();
@@ -181,9 +183,21 @@ namespace BirimizKovulacak.Core
                 case TaskKind.PettyCash: ResolvePettyCash(t); break;
                 case TaskKind.WeekendShift: ResolveWeekendShift(t); break;
             }
-            // v5.1: every volunteer's suç goes down, staffed or not (never below 0)
-            if (t.Kind == TaskKind.WeekendShift && c.ShiftVolunteerClean > 0)
-                foreach (int id in t.Roster) RemoveBlame(id, c.ShiftVolunteerClean, BlameReason.ShiftClean, time);
+            if (t.Kind == TaskKind.WeekendShift)
+            {
+                // v5.1: every volunteer's suç goes down, staffed or not (never below 0)
+                if (c.ShiftVolunteerClean > 0)
+                    foreach (int id in t.Roster) RemoveBlame(id, c.ShiftVolunteerClean, BlameReason.ShiftClean, time);
+                // v5.2: there is no meeting 2, so the skippers of an unstaffed shift get their suç right here, publicly
+                // (with ShiftMeeting it waits for meeting 2 to open, as in v5.1)
+                if (t.Failed && !c.ShiftMeeting && c.ShiftFailSkipBlame > 0)
+                    foreach (int id in ids)
+                    {
+                        if (t.Roster.Contains(id)) continue;
+                        AddBlame(id, c.ShiftFailSkipBlame, BlameReason.ShiftFailSkip, time);
+                        t.SkipBlamed++;
+                    }
+            }
             foreach (int id in ids)
             {
                 AddPrim(id, t.Payout[id], PrimReason.Task, time);
@@ -230,7 +244,8 @@ namespace BirimizKovulacak.Core
         }
 
         /// <summary>Volunteers get 0; skippers get <see cref="LineConfig.ShiftSkipPay"/> when the shift is staffed, else
-        /// <see cref="LineConfig.ShiftFailSkipPay"/> (and their suç when meeting 2 opens).</summary>
+        /// <see cref="LineConfig.ShiftFailSkipPay"/> (and their suç: at this reveal, or when meeting 2 opens with
+        /// <see cref="LineConfig.ShiftMeeting"/>).</summary>
         private void ResolveWeekendShift(TaskState t)
         {
             foreach (int id in ids) if (t.Choice[id] == LineChoice.Volunteer) t.Roster.Add(id);

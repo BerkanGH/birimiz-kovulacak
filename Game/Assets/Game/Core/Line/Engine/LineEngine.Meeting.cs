@@ -3,7 +3,8 @@ using System.Collections.Generic;
 
 namespace BirimizKovulacak.Core
 {
-    /// <summary>Meetings 1 and 2 (spec §7), investigations (§8), leaks and recording picks (§10).</summary>
+    /// <summary>The meeting (meeting 1; meeting 2 only with <see cref="LineConfig.ShiftMeeting"/>) (spec §7), investigations
+    /// (§8), leaks and recording picks (§10).</summary>
     internal sealed partial class LineEngine
     {
         private sealed class MeetingState

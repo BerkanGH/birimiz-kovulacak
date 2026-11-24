@@ -243,7 +243,7 @@ namespace BirimizKovulacak.Core.Tests
         [Test]
         public void InvestigationIsOnlyForMeeting1()
         {
-            var m = new LineTest();
+            var m = new LineTest(configure: LineTest.V51);
             m.PlayTask(0, id => id == 0 ? Take : 0);
             int partner = m.Group(0).Single(x => x != 0);
             m.ToMeeting1Continue(id => 0);
@@ -256,9 +256,25 @@ namespace BirimizKovulacak.Core.Tests
         }
 
         [Test]
-        public void Meeting2HasNoVoteTheSkippersGetTheSucWhenItOpens()
+        public void InvestigationClosesWithTheMeeting()
         {
-            var m = new LineTest(5);
+            var m = new LineTest();
+            m.PlayTask(0, id => id == 0 ? Take : 0);
+            int partner = m.Group(0).Single(x => x != 0);
+            m.ToMeeting1Continue(id => 0);
+            m.Until(LinePhase.MeetingVote);
+            m.Fail(LineFailure.WrongPhase, partner, LineVerb.Investigate, 0);
+            m.Until(LinePhase.CrisisCalls);
+            Assert.IsFalse(m.View(partner).Features.InvestigationOpen);
+            m.Fail(LineFailure.WrongPhase, partner, LineVerb.Investigate, 0);
+            m.Until(LinePhase.FinalDiscussion);
+            m.Fail(LineFailure.WrongPhase, partner, LineVerb.Investigate, 0);
+        }
+
+        [Test]
+        public void V51Meeting2HasNoVoteTheSkippersGetTheSucWhenItOpens()
+        {
+            var m = new LineTest(5, configure: LineTest.V51);
             m.ToMeeting1();
             int before = m.Prim(4);
             m.PlayTask(2, id => id < 2 ? LineChoice.Volunteer : LineChoice.Skip);

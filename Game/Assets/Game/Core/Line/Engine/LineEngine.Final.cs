@@ -3,7 +3,7 @@ using System.Collections.Generic;
 
 namespace BirimizKovulacak.Core
 {
-    /// <summary>Crisis, candidates, defense, final votes, firings, desk split and results (spec §9).</summary>
+    /// <summary>Crisis, candidates, prim declarations (v5.2), defense, final votes, firings, desk split and results (spec §9).</summary>
     internal sealed partial class LineEngine
     {
         private sealed class FinalState
@@ -16,6 +16,12 @@ namespace BirimizKovulacak.Core
             internal int Round;
             internal bool Revote;
             internal int FiringsTotal;
+            /// <summary>Prim declarations per seat id: the amount (-1 none) and the real prim at the reveal (-1 before it).</summary>
+            internal readonly int[] Declared = { -1, -1, -1, -1, -1, -1 };
+            internal readonly int[] DeclaredActual = { -1, -1, -1, -1, -1, -1 };
+            internal bool DeclarationsRevealed;
+            /// <summary>Set when the final discussion starts: its start + the declaration window.</summary>
+            internal double DeclareUntil;
         }
 
         private FinalState final = new FinalState();
@@ -29,6 +35,15 @@ namespace BirimizKovulacak.Core
             meeting = new MeetingState { Index = 2 };
             picks.Clear();
             final = new FinalState { FiringsTotal = c.FiringsFor(PlayerCount) };
+            // v5.2 (no meeting 2): an unstaffed shift's roster and the suç its skippers got at the reveal belong to this
+            // segment's dossier, so the meeting room shows them with the crisis vote
+            var shift = tasks[2];
+            if (!c.ShiftMeeting && shift != null && shift.Kind == TaskKind.WeekendShift && shift.Failed)
+            {
+                meeting.Roster.AddRange(shift.Roster);
+                Line(DossierKind.ShiftRoster, time, n1: shift.Roster.Count, n2: shift.Needed, task: shift.Kind);
+                if (shift.SkipBlamed > 0) Line(DossierKind.ShiftSkipBlame, time, n1: c.ShiftFailSkipBlame, n2: shift.SkipBlamed, task: shift.Kind);
+            }
             Enter(LinePhase.CrisisCalls, time, c.Durations.CrisisCalls);
         }
 
@@ -98,6 +113,59 @@ namespace BirimizKovulacak.Core
         {
             picks.Clear();
             Enter(LinePhase.FinalDiscussion, time, c.Durations.FinalDiscussion);
+            if (!DeclarationsOn) return;
+            final.DeclareUntil = time + DeclareWindow;
+            // everyone already declared during the crisis verdict (or there is no time left to): revealed at once
+            if (AllDeclared() || DeclareWindow <= 0) RevealDeclarations(time);
+        }
+
+        // ---- prim declarations ("prim beyanı", v5.2): candidates state their prim (they may lie); sealed until revealed
+        // together at max(final discussion start, the last candidate's declaration), at the deadline at the latest
+
+        /// <summary>Declarations exist in this match: the config flag, and a final with candidates.</summary>
+        private bool DeclarationsOn { get { return c.DeclarationsEnabled && final.Candidates.Count > 0 && final.FiringsTotal > 0; } }
+        private bool DeclarationsPending { get { return DeclarationsOn && !final.DeclarationsRevealed; } }
+        /// <summary>How long into the final discussion declaring stays open (never past its end).</summary>
+        private double DeclareWindow { get { return Math.Max(0, Math.Min(c.DeclareSeconds, c.Durations.FinalDiscussion)); } }
+        /// <summary>The deadline as a host time: known from the crisis verdict on (its end is the final discussion's start).</summary>
+        private double DeclareDeadline { get { return Phase == LinePhase.CrisisVerdict ? PhaseEndTime + DeclareWindow : final.DeclareUntil; } }
+        private bool DeclareWindowOpen
+        {
+            get { return DeclarationsPending && (Phase == LinePhase.CrisisVerdict || Phase == LinePhase.FinalDiscussion); }
+        }
+
+        private bool AllDeclared()
+        {
+            foreach (int id in final.Candidates) if (final.Declared[id] < 0) return false;
+            return true;
+        }
+
+        private LineFailure Declare(int id, LineAction a, double time)
+        {
+            if (!c.DeclarationsEnabled) return LineFailure.NotAvailable;
+            if (!DeclareWindowOpen) return LineFailure.WrongPhase;
+            if (!seats[id].Candidate) return LineFailure.NotEligible;
+            if (final.Declared[id] >= 0) return LineFailure.AlreadyUsed;
+            if (a.A < 0 || a.A > c.DeclareMax) return LineFailure.BadParam;
+            final.Declared[id] = a.A;
+            // the last declaration of the final discussion opens them all (during the crisis verdict they wait for it)
+            if (Phase == LinePhase.FinalDiscussion && AllDeclared()) RevealDeclarations(time);
+            return LineFailure.None;
+        }
+
+        /// <summary>All declarations become public at once; each candidate's real prim is noted for the results.</summary>
+        private void RevealDeclarations(double time)
+        {
+            if (!DeclarationsPending) return;
+            final.DeclarationsRevealed = true;
+            int made = 0;
+            foreach (int id in final.Candidates)
+            {
+                final.DeclaredActual[id] = seats[id].Prim;
+                if (final.Declared[id] >= 0) made++;
+            }
+            Emit(LineEventType.DeclarationsRevealed, time, a: made, b: final.Candidates.Count);
+            Changed();
         }
 
         private void StartDefense(double time)
@@ -175,7 +243,11 @@ namespace BirimizKovulacak.Core
         private void Fire(int fired, FiringDecision decision, int votes, int[] ballots, double time)
         {
             var s = seats[fired];
-            var firing = new LineFiringView { Player = fired, Round = final.Round, Decision = decision, Votes = votes, Desk = s.Prim };
+            var firing = new LineFiringView
+            {
+                Player = fired, Round = final.Round, Decision = decision, Votes = votes, Desk = s.Prim, Time = time,
+                Declared = final.DeclarationsRevealed ? final.Declared[fired] : -1,
+            };
             foreach (int id in ids) if (ballots[id] == fired) firing.Recipients.Add(id);
             firing.Share = firing.Recipients.Count == 0 ? 0 : firing.Desk / firing.Recipients.Count;
             firing.Removed = firing.Desk - firing.Share * firing.Recipients.Count;
@@ -233,6 +305,14 @@ namespace BirimizKovulacak.Core
             r.Incidents.AddRange(incidents);
             r.PrimLog.AddRange(primLog);
             r.BlameLog.AddRange(blameLog);
+            if (final.DeclarationsRevealed)
+                foreach (int id in final.Candidates)
+                    r.Declarations.Add(new LineDeclarationView { Player = id, Amount = final.Declared[id], Actual = final.DeclaredActual[id] });
+            foreach (var t in tasks)
+            {
+                if (t == null || LineTasks.Family(t.Kind) != TaskFamily.Pair) continue;
+                foreach (var g in t.Groups) r.Groups.Add(new LineGroupView { TaskNumber = t.Number, Task = t.Kind, Members = new List<int>(g) });
+            }
             result = LineCodec.Clone(r);
             result.ResultHash = LineCodec.HashResult(result);
         }

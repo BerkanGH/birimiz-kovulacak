@@ -13,10 +13,12 @@ namespace BirimizKovulacak.Core.Tests
         /// Event-driven bot match: bots act until they return null, then time jumps to the next deadline (phase end or a
         /// bot's wake time). Returns the engine; asserts it finished without stalling and without invalid bot actions.
         /// </summary>
-        internal static ILineEngine Run(int n, int seed, Func<int, LineBotPolicy> policy, double think = 0, Action<byte[]> trace = null, int disconnect = -1)
+        internal static ILineEngine Run(int n, int seed, Func<int, LineBotPolicy> policy, double think = 0, Action<byte[]> trace = null, int disconnect = -1,
+            Action<LineConfig> configure = null, Action<LineBot[], LineView> watch = null)
         {
             var setup = LineTest.MakeSetup(n, seed);
             var config = LineConfig.CreateDefault();
+            configure?.Invoke(config);
             var engine = LineEngineFactory.Create(setup, config);
             var bots = Enumerable.Range(0, n).Select(i => new LineBot(i, seed * 31 + i * 97, policy(i)) { ThinkSeconds = think }).ToArray();
             double now = 0;
@@ -33,6 +35,7 @@ namespace BirimizKovulacak.Core.Tests
                     {
                         var view = engine.BuildView(i, now);
                         if (trace != null) trace(LineCodec.EncodeView(view));
+                        watch?.Invoke(bots, view);
                         var action = bots[i].Next(view, config, now);
                         if (action == null) continue;
                         var result = engine.Apply(i, action, now);
@@ -131,7 +134,7 @@ namespace BirimizKovulacak.Core.Tests
             {
                 if (bytes.Length > 3 && bytes[3] == 2) verbs.Add(LineCodec.DecodeAction(bytes).Verb);
             });
-            CollectionAssert.IsSubsetOf(verbs, new[] { LineVerb.SubmitTask, LineVerb.Whistle, LineVerb.Investigate, LineVerb.Vote });
+            CollectionAssert.IsSubsetOf(verbs, new[] { LineVerb.SubmitTask, LineVerb.Whistle, LineVerb.Investigate, LineVerb.Vote, LineVerb.Declare });
             Assert.Throws<ArgumentException>(() => new LineBot(6, 1));
         }
     }

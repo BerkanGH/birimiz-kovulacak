@@ -34,6 +34,7 @@ namespace BirimizKovulacak.Core
                 WhistleOpen = WhistleWindow, InvestigationOpen = InvestigationOpen, LeakOpen = LeakOpen && RecordingsOn,
                 VoteOpen = (Phase == LinePhase.MeetingVote || Phase == LinePhase.CrisisVote || Phase == LinePhase.FinalVote) && !s.Fired,
                 PranksEnabled = PranksOn, PranksOpen = PrankSessionNow != LinePranks.SessionNone,
+                DeclareOpen = DeclareWindowOpen && !IsFinished && s.Candidate && final.Declared[player] < 0,
             };
             foreach (int id in ids)
             {
@@ -50,7 +51,7 @@ namespace BirimizKovulacak.Core
             v.Mine = MineView(player, s);
             if (TaskVisible) v.Task = TaskView(player);
             if (MeetingVisible) v.Meeting = MeetingView();
-            if (Phase >= LinePhase.CrisisVote && Phase <= LinePhase.Results) v.Final = FinalView();
+            if (Phase >= LinePhase.CrisisVote && Phase <= LinePhase.Results) v.Final = FinalView(player);
             if (Phase == LinePhase.Results && result != null) v.Results = result;
             v.Pranks = PranksView(player, time);
             return LineCodec.Clone(v);
@@ -99,7 +100,7 @@ namespace BirimizKovulacak.Core
             return v;
         }
 
-        private LineFinalView FinalView()
+        private LineFinalView FinalView(int player)
         {
             var v = new LineFinalView { Round = final.Round, Revote = final.Revote, FiringsTotal = final.FiringsTotal };
             if (Phase != LinePhase.CrisisVote) v.Crisis.AddRange(final.Crisis);
@@ -112,6 +113,16 @@ namespace BirimizKovulacak.Core
             }
             if (Phase == LinePhase.FinalVote) v.Options.AddRange(final.Options);
             v.Firings.AddRange(final.Firings);
+            // prim declarations: sealed (only my own) until the reveal, then public for the rest of the match; the real
+            // prim behind them is in the results only
+            if (DeclarationsOn && Phase >= LinePhase.CrisisVerdict)
+            {
+                v.DeclareUntil = DeclareDeadline;
+                if (seats[player].Candidate) v.MyDeclaration = final.Declared[player];
+                v.DeclarationsRevealed = final.DeclarationsRevealed;
+                if (final.DeclarationsRevealed)
+                    foreach (int id in final.Candidates) v.Declarations.Add(new LineDeclarationView { Player = id, Amount = final.Declared[id] });
+            }
             return v;
         }
     }

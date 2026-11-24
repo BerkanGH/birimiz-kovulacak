@@ -11,10 +11,17 @@ namespace BirimizKovulacak.Core.Tests
         [Test]
         public void VersionsAndDefaultsMatchTheSpec()
         {
-            Assert.AreEqual(7, LineProtocol.Version);
-            Assert.AreEqual("v5.1-kayit", LineProtocol.RulesetVersion);
+            Assert.AreEqual(8, LineProtocol.Version);
+            Assert.AreEqual("v5.2-kayit", LineProtocol.RulesetVersion);
+            Assert.AreEqual(new[] { 3, 6, 4 }, new[] { LineProtocol.MinPlayers, LineProtocol.MaxPlayers, LineProtocol.LobbyMinPlayers });
             var c = LineConfig.CreateDefault();
-            Assert.AreEqual(7, c.ConfigVersion);
+            Assert.AreEqual(8, c.ConfigVersion);
+            // v5.2: no meeting 2, prim declarations, the talk-time factors
+            Assert.IsFalse(c.ShiftMeeting);
+            Assert.IsTrue(c.DeclarationsEnabled);
+            Assert.AreEqual(12f, c.DeclareSeconds);
+            Assert.AreEqual(99, c.DeclareMax);
+            Assert.AreEqual(new[] { 0.7f, 1f, 1.5f }, new[] { c.TalkFactor(LineTalkTime.Short), c.TalkFactor(LineTalkTime.Normal), c.TalkFactor(LineTalkTime.Long) });
             Assert.AreEqual(6, c.StartPrim);
             Assert.AreEqual(new[] { 3, 5, 0, 1 }, new[] { c.BonusPairShare, c.BonusPairTaker, c.BonusPairSharer, c.BonusPairBothTake });
             Assert.AreEqual(new[] { 3, 5, 0, 1 }, new[] { c.BonusTrioNone, c.BonusTrioTaker, c.BonusTrioOthers, c.BonusTrioMany });

@@ -8,15 +8,22 @@ namespace BirimizKovulacak.Core
     public static class LineProtocol
     {
         /// <summary>Wire format version (6: Yaramazlıklar added the Prank verb and the pranks view; 7: the v5.1 rules added
-        /// BlameReason.ShiftClean / ShiftFailSkip and DossierKind.ShiftSkipBlame).</summary>
-        public const int Version = 7;
+        /// BlameReason.ShiftClean / ShiftFailSkip and DossierKind.ShiftSkipBlame; 8: v5.2 added the Declare verb, the
+        /// DeclarationsRevealed event, the declaration / group views, the talk-time option and the new config fields).</summary>
+        public const int Version = 8;
         /// <summary>Ruleset identity for analytics and results; never pool data across different values. Yaramazlıklar is a
         /// lobby option (like recordings) and does not change it. v5.1 (2026-11-15): Client Bonus 3/3, free sharer-only
         /// investigation (+4 suç), the whistled thief keeps the cash (no whistle reward), shift cleaning (−1 suç) and the
-        /// failed shift's automatic suç (no meeting 2 vote), 0 suç is never a candidate.</summary>
-        public const string RulesetVersion = "v5.1-kayit";
+        /// failed shift's automatic suç (no meeting 2 vote), 0 suç is never a candidate. v5.2 (2026-11-24): the candidates'
+        /// prim declarations ("prim beyanı"), no meeting 2 (the short shift's suç lands at its reveal): one meeting before
+        /// the final.</summary>
+        public const string RulesetVersion = "v5.2-kayit";
+        /// <summary>What the engine, the tests and LineSim support.</summary>
         public const int MinPlayers = 3;
         public const int MaxPlayers = 6;
+        /// <summary>Occupied seats (people + bots) the lobby needs to start a match (v5.2): with three players both pair
+        /// tasks are played by the same trio.</summary>
+        public const int LobbyMinPlayers = 4;
     }
 
     /// <summary>Special participant ids (player ids are 0..5).</summary>
@@ -145,6 +152,10 @@ namespace BirimizKovulacak.Core
         /// Slurp and Flatter, optional for StandUp), B = post-it word (0..<see cref="LinePranks.WordCount"/>-1), Text = the
         /// paper plane's note, C = the patience the sender saw (optional guard: -1 = no check).</summary>
         Prank = 15,
+        /// <summary>Prim declaration ("prim beyanı", v5.2): A = the prim I claim to have (0..<see cref="LineConfig.DeclareMax"/>;
+        /// it may be a lie). Candidates only, once each, from CrisisVerdict until the declaration deadline in the final
+        /// discussion. No effect on prim, suç or votes.</summary>
+        Declare = 16,
     }
 
     public enum LineFailure : byte
@@ -235,6 +246,9 @@ namespace BirimizKovulacak.Core
         /// <summary>Public: the manager's patience overflowed: Target gets a tutanak (+B suç); A = (int)PrankKind that did it,
         /// Actor = its actor (-1 when hidden).</summary>
         Tutanak = 21,
+        /// <summary>Public: the candidates' prim declarations are revealed (all at once): A = declarations made,
+        /// B = candidates. The amounts are in <see cref="LineFinalView.Declarations"/>.</summary>
+        DeclarationsRevealed = 22,
     }
 
     public enum BlameReason : byte
@@ -253,7 +267,8 @@ namespace BirimizKovulacak.Core
         Tutanak = 7,
         /// <summary>Weekend Shift volunteer: suç removed (a negative change, never below 0) when the shift resolves.</summary>
         ShiftClean = 8,
-        /// <summary>Skipped a Weekend Shift that was not staffed (applied when meeting 2 opens).</summary>
+        /// <summary>Skipped a Weekend Shift that was not staffed (v5.2: applied at the shift's reveal; with
+        /// <see cref="LineConfig.ShiftMeeting"/>: when meeting 2 opens).</summary>
         ShiftFailSkip = 9,
     }
 
@@ -305,8 +320,9 @@ namespace BirimizKovulacak.Core
         Investigation = 7,
         /// <summary>Player leaked a call between N1 (caller) and N2 (callee); Other = recording pick index.</summary>
         Leak = 8,
-        /// <summary>Weekend Shift not staffed (meeting 2): every skipper got N1 suç; N2 = skippers (everyone not in
-        /// <see cref="LineMeetingView.Roster"/>).</summary>
+        /// <summary>Weekend Shift not staffed: every skipper got N1 suç; N2 = skippers (everyone not in
+        /// <see cref="LineMeetingView.Roster"/>). v5.2: in the crisis / final segment's dossier (the suç landed at the
+        /// shift's reveal); with <see cref="LineConfig.ShiftMeeting"/>: in meeting 2's.</summary>
         ShiftSkipBlame = 9,
     }
 
@@ -321,6 +337,18 @@ namespace BirimizKovulacak.Core
         HigherBlame = 3,
         HigherPrim = 4,
         Random = 5,
+    }
+
+    /// <summary>Lobby option "Konuşma süresi" (v5.2): how long the talking phases last
+    /// (<see cref="LineDurations.ScaleTalk"/>: MeetingDiscussion, CrisisCalls, FinalDiscussion, FinalDefense).</summary>
+    public static class LineTalkTime
+    {
+        public const int Short = 0, Normal = 1, Long = 2;
+        public const int Count = 3;
+        static readonly string[] Ids = { "short", "normal", "long" };
+        public static bool Valid(int level) { return level >= Short && level <= Long; }
+        /// <summary>Stable string id (localisation lobby.talk.&lt;id&gt;, logs).</summary>
+        public static string Id(int level) { return Valid(level) ? Ids[level] : ""; }
     }
 
     /// <summary>Meeting room pranks (docs/V5_YARAMAZLIKLAR.md). Localisation id: <see cref="LinePranks.Id"/>.</summary>
@@ -351,7 +379,8 @@ namespace BirimizKovulacak.Core
         /// <summary>Post-it words (localisation v5.prank.word.&lt;id&gt;): YALANCI, HIRSIZ?, MASUM, ZENGİN, SESSİZ.</summary>
         public const int WordCount = 5;
         public const int WordLiar = 0, WordThief = 1, WordInnocent = 2, WordRich = 3, WordQuiet = 4;
-        /// <summary>Sessions: meeting 1, meeting 2, the crisis vote (vote + verdict), the final (discussion .. last verdict), Results.</summary>
+        /// <summary>Sessions: the meeting (meeting 1), meeting 2 (only with <see cref="LineConfig.ShiftMeeting"/>), the crisis
+        /// vote (vote + verdict), the final (discussion .. last verdict), Results.</summary>
         public const int SessionNone = -1, SessionMeeting1 = 0, SessionMeeting2 = 1, SessionCrisis = 2, SessionFinal = 3, SessionResults = 4;
         static readonly string[] Ids = { "", "coffee", "plane", "postit", "phone", "slurp", "standup", "flatter", "cake" };
         static readonly string[] Words = { "liar", "thief", "innocent", "rich", "quiet" };

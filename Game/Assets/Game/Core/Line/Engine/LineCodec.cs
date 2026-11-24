@@ -41,8 +41,10 @@ namespace BirimizKovulacak.Core
         internal static LineSessionHistory Clone(LineSessionHistory value) { return Decode(10, value, WriteLineSessionHistory, ReadLineSessionHistory); }
         internal static LineWeekResult Clone(LineWeekResult value) { return Decode(11, value, WriteLineWeekResult, ReadLineWeekResult); }
 
-        /// <summary>The outcome hash has its own frozen header (the v5.0 wire version): bumping the wire format for new
-        /// features (6: Yaramazlıklar) must not move the hashes of outcomes that did not change (LineSim, automated runs).</summary>
+        /// <summary>The outcome hash has its own frozen header and field list (the v5.0 wire schema): bumping the wire format
+        /// for new features (6: Yaramazlıklar, 8: v5.2) must not move the hashes of outcomes that did not change (LineSim,
+        /// automated runs). Fields added later are left out of the frozen part (the task groups and a firing's time follow
+        /// from what is hashed); the prim declarations (v5.2) are mixed in after it, only when a match has them.</summary>
         private const ushort ResultHashSchema = 5;
 
         internal static ulong HashResult(LineWeekResult value)
@@ -50,9 +52,20 @@ namespace BirimizKovulacak.Core
             if (value == null) throw new ArgumentNullException(nameof(value));
             var copy = Clone(value);
             copy.ResultHash = 0; copy.MatchId = "";
-            byte[] bytes = Encode(11, w => WriteLineWeekResult(w, copy), ResultHashSchema);
+            byte[] bytes = Encode(11, w => WriteWeekResult(w, copy, true), ResultHashSchema);
             ulong hash = 14695981039346656037UL;
-            unchecked { for (int i = 0; i < bytes.Length; i++) hash = (hash ^ bytes[i]) * 1099511628211UL; }
+            unchecked
+            {
+                for (int i = 0; i < bytes.Length; i++) hash = (hash ^ bytes[i]) * 1099511628211UL;
+                if (copy.Declarations != null)
+                    foreach (var d in copy.Declarations)
+                    {
+                        if (d == null) continue;
+                        hash = (hash ^ (uint)d.Player) * 1099511628211UL;
+                        hash = (hash ^ (uint)d.Amount) * 1099511628211UL;
+                        hash = (hash ^ (uint)d.Actual) * 1099511628211UL;
+                    }
+            }
             return hash;
         }
 
@@ -185,14 +198,14 @@ namespace BirimizKovulacak.Core
         private static void WriteCallStatus(BinaryWriter w, CallStatus v) { WriteEnum(w, (byte)v, 3, "CallStatus"); }
         private static CallEndReason ReadCallEndReason(BinaryReader r) { return (CallEndReason)ReadEnum(r, 5, "CallEndReason"); }
         private static void WriteCallEndReason(BinaryWriter w, CallEndReason v) { WriteEnum(w, (byte)v, 5, "CallEndReason"); }
-        private static LineVerb ReadLineVerb(BinaryReader r) { return (LineVerb)ReadEnum(r, 15, "LineVerb"); }
-        private static void WriteLineVerb(BinaryWriter w, LineVerb v) { WriteEnum(w, (byte)v, 15, "LineVerb"); }
+        private static LineVerb ReadLineVerb(BinaryReader r) { return (LineVerb)ReadEnum(r, 16, "LineVerb"); }
+        private static void WriteLineVerb(BinaryWriter w, LineVerb v) { WriteEnum(w, (byte)v, 16, "LineVerb"); }
         private static LineFailure ReadLineFailure(BinaryReader r) { return (LineFailure)ReadEnum(r, 25, "LineFailure"); }
         private static void WriteLineFailure(BinaryWriter w, LineFailure v) { WriteEnum(w, (byte)v, 25, "LineFailure"); }
         private static LineAudience ReadLineAudience(BinaryReader r) { return (LineAudience)ReadEnum(r, 2, "LineAudience"); }
         private static void WriteLineAudience(BinaryWriter w, LineAudience v) { WriteEnum(w, (byte)v, 2, "LineAudience"); }
-        private static LineEventType ReadLineEventType(BinaryReader r) { return (LineEventType)ReadEnum(r, 21, "LineEventType"); }
-        private static void WriteLineEventType(BinaryWriter w, LineEventType v) { WriteEnum(w, (byte)v, 21, "LineEventType"); }
+        private static LineEventType ReadLineEventType(BinaryReader r) { return (LineEventType)ReadEnum(r, 22, "LineEventType"); }
+        private static void WriteLineEventType(BinaryWriter w, LineEventType v) { WriteEnum(w, (byte)v, 22, "LineEventType"); }
         private static BlameReason ReadBlameReason(BinaryReader r) { return (BlameReason)ReadEnum(r, 9, "BlameReason"); }
         private static void WriteBlameReason(BinaryWriter w, BlameReason v) { WriteEnum(w, (byte)v, 9, "BlameReason"); }
         private static PrimReason ReadPrimReason(BinaryReader r) { return (PrimReason)ReadEnum(r, 10, "PrimReason"); }
@@ -313,6 +326,7 @@ namespace BirimizKovulacak.Core
             w.Write(v.PranksEnabled);
             WriteLineSessionHistory(w, v.History);
             WriteList(w, v.ForceTasks, (b, x) => { WriteTaskKind(b, x); });
+            w.Write(v.TalkTime);
         }
         internal static LineSetup ReadLineSetup(BinaryReader r)
         {
@@ -327,6 +341,7 @@ namespace BirimizKovulacak.Core
             v.PranksEnabled = ReadBool(r);
             v.History = ReadLineSessionHistory(r);
             v.ForceTasks = ReadList(r, b => ReadTaskKind(b));
+            v.TalkTime = r.ReadInt32();
             return v;
         }
 
@@ -363,6 +378,7 @@ namespace BirimizKovulacak.Core
             WriteString(w, v.SessionId);
             WriteString(w, v.GroupId);
             WriteList(w, v.Experiments, (b, x) => { WriteString(b, x); });
+            w.Write(v.TalkTime);
         }
         internal static LineLobbyView ReadLineLobbyView(BinaryReader r)
         {
@@ -381,6 +397,7 @@ namespace BirimizKovulacak.Core
             v.SessionId = ReadString(r);
             v.GroupId = ReadString(r);
             v.Experiments = ReadList(r, b => ReadString(b));
+            v.TalkTime = r.ReadInt32();
             return v;
         }
 
@@ -580,6 +597,12 @@ namespace BirimizKovulacak.Core
             w.Write(v.ShiftVolunteerClean);
             w.Write(v.InvestigationSharerOnly);
             w.Write(v.CandidateMinBlame);
+            w.Write(v.ShiftMeeting);
+            w.Write(v.DeclarationsEnabled);
+            w.Write(v.DeclareSeconds);
+            w.Write(v.DeclareMax);
+            w.Write(v.TalkTimeShort);
+            w.Write(v.TalkTimeLong);
         }
         internal static LineConfig ReadLineConfig(BinaryReader r)
         {
@@ -658,6 +681,12 @@ namespace BirimizKovulacak.Core
             v.ShiftVolunteerClean = r.ReadInt32();
             v.InvestigationSharerOnly = ReadBool(r);
             v.CandidateMinBlame = r.ReadInt32();
+            v.ShiftMeeting = ReadBool(r);
+            v.DeclarationsEnabled = ReadBool(r);
+            v.DeclareSeconds = r.ReadSingle();
+            v.DeclareMax = r.ReadInt32();
+            v.TalkTimeShort = r.ReadSingle();
+            v.TalkTimeLong = r.ReadSingle();
             return v;
         }
 
@@ -729,6 +758,7 @@ namespace BirimizKovulacak.Core
             w.Write(v.VoteOpen);
             w.Write(v.PranksEnabled);
             w.Write(v.PranksOpen);
+            w.Write(v.DeclareOpen);
         }
         internal static LineFeaturesView ReadLineFeaturesView(BinaryReader r)
         {
@@ -746,6 +776,7 @@ namespace BirimizKovulacak.Core
             v.VoteOpen = ReadBool(r);
             v.PranksEnabled = ReadBool(r);
             v.PranksOpen = ReadBool(r);
+            v.DeclareOpen = ReadBool(r);
             return v;
         }
 
@@ -1099,6 +1130,10 @@ namespace BirimizKovulacak.Core
             WriteList(w, v.Options, (b, x) => { b.Write(x); });
             w.Write(v.FiringsTotal);
             WriteList(w, v.Firings, (b, x) => { WriteLineFiringView(b, x); });
+            w.Write(v.DeclareUntil);
+            w.Write(v.MyDeclaration);
+            w.Write(v.DeclarationsRevealed);
+            WriteList(w, v.Declarations, (b, x) => { WriteLineDeclarationView(b, x); });
         }
         internal static LineFinalView ReadLineFinalView(BinaryReader r)
         {
@@ -1114,10 +1149,51 @@ namespace BirimizKovulacak.Core
             v.Options = ReadList(r, b => b.ReadInt32());
             v.FiringsTotal = r.ReadInt32();
             v.Firings = ReadList(r, b => ReadLineFiringView(b));
+            v.DeclareUntil = r.ReadDouble();
+            v.MyDeclaration = r.ReadInt32();
+            v.DeclarationsRevealed = ReadBool(r);
+            v.Declarations = ReadList(r, b => ReadLineDeclarationView(b));
             return v;
         }
 
-        internal static void WriteLineFiringView(BinaryWriter w, LineFiringView v)
+        internal static void WriteLineDeclarationView(BinaryWriter w, LineDeclarationView v)
+        {
+            w.Write(v != null); if (v == null) return;
+            w.Write(v.Player);
+            w.Write(v.Amount);
+            w.Write(v.Actual);
+        }
+        internal static LineDeclarationView ReadLineDeclarationView(BinaryReader r)
+        {
+            if (!ReadBool(r)) return null;
+            var v = new LineDeclarationView();
+            v.Player = r.ReadInt32();
+            v.Amount = r.ReadInt32();
+            v.Actual = r.ReadInt32();
+            return v;
+        }
+
+        internal static void WriteLineGroupView(BinaryWriter w, LineGroupView v)
+        {
+            w.Write(v != null); if (v == null) return;
+            w.Write(v.TaskNumber);
+            WriteTaskKind(w, v.Task);
+            WriteList(w, v.Members, (b, x) => { b.Write(x); });
+        }
+        internal static LineGroupView ReadLineGroupView(BinaryReader r)
+        {
+            if (!ReadBool(r)) return null;
+            var v = new LineGroupView();
+            v.TaskNumber = r.ReadInt32();
+            v.Task = ReadTaskKind(r);
+            v.Members = ReadList(r, b => b.ReadInt32());
+            return v;
+        }
+
+        internal static void WriteLineFiringView(BinaryWriter w, LineFiringView v) { WriteFiringView(w, v, false); }
+
+        /// <summary><paramref name="hashSchema"/>: the frozen v5.0 field list of <see cref="HashResult"/>.</summary>
+        private static void WriteFiringView(BinaryWriter w, LineFiringView v, bool hashSchema)
         {
             w.Write(v != null); if (v == null) return;
             w.Write(v.Player);
@@ -1128,6 +1204,9 @@ namespace BirimizKovulacak.Core
             WriteList(w, v.Recipients, (b, x) => { b.Write(x); });
             w.Write(v.Share);
             w.Write(v.Removed);
+            if (hashSchema) return;
+            w.Write(v.Declared);
+            w.Write(v.Time);
         }
         internal static LineFiringView ReadLineFiringView(BinaryReader r)
         {
@@ -1141,6 +1220,8 @@ namespace BirimizKovulacak.Core
             v.Recipients = ReadList(r, b => b.ReadInt32());
             v.Share = r.ReadInt32();
             v.Removed = r.ReadInt32();
+            v.Declared = r.ReadInt32();
+            v.Time = r.ReadDouble();
             return v;
         }
 
@@ -1171,7 +1252,10 @@ namespace BirimizKovulacak.Core
             return v;
         }
 
-        internal static void WriteLineWeekResult(BinaryWriter w, LineWeekResult v)
+        internal static void WriteLineWeekResult(BinaryWriter w, LineWeekResult v) { WriteWeekResult(w, v, false); }
+
+        /// <summary><paramref name="hashSchema"/>: the frozen v5.0 field list of <see cref="HashResult"/>.</summary>
+        private static void WriteWeekResult(BinaryWriter w, LineWeekResult v, bool hashSchema)
         {
             w.Write(v != null); if (v == null) return;
             w.Write(v.WeekId);
@@ -1183,7 +1267,7 @@ namespace BirimizKovulacak.Core
             WriteList(w, v.Players, (b, x) => { WriteLineWeekPlayerResult(b, x); });
             WriteList(w, v.Fired, (b, x) => { b.Write(x); });
             WriteList(w, v.Winners, (b, x) => { b.Write(x); });
-            WriteList(w, v.Firings, (b, x) => { WriteLineFiringView(b, x); });
+            WriteList(w, v.Firings, (b, x) => { WriteFiringView(b, x, hashSchema); });
             WriteList(w, v.Ballots, (b, x) => { WriteLineBallotView(b, x); });
             WriteList(w, v.Transfers, (b, x) => { WriteLineTransferView(b, x); });
             WriteList(w, v.Choices, (b, x) => { WriteLineChoiceView(b, x); });
@@ -1191,6 +1275,9 @@ namespace BirimizKovulacak.Core
             WriteList(w, v.PrimLog, (b, x) => { WriteLinePrimChange(b, x); });
             WriteList(w, v.BlameLog, (b, x) => { WriteLineBlameChange(b, x); });
             w.Write(v.ResultHash);
+            if (hashSchema) return;
+            WriteList(w, v.Declarations, (b, x) => { WriteLineDeclarationView(b, x); });
+            WriteList(w, v.Groups, (b, x) => { WriteLineGroupView(b, x); });
         }
         internal static LineWeekResult ReadLineWeekResult(BinaryReader r)
         {
@@ -1213,6 +1300,8 @@ namespace BirimizKovulacak.Core
             v.PrimLog = ReadList(r, b => ReadLinePrimChange(b));
             v.BlameLog = ReadList(r, b => ReadLineBlameChange(b));
             v.ResultHash = r.ReadUInt64();
+            v.Declarations = ReadList(r, b => ReadLineDeclarationView(b));
+            v.Groups = ReadList(r, b => ReadLineGroupView(b));
             return v;
         }
 

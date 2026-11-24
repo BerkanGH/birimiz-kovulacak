@@ -13,11 +13,34 @@ namespace BirimizKovulacak.Core.Tests
         static readonly P[] FinalTail = { P.CrisisCalls, P.CrisisVote, P.CrisisVerdict, P.FinalDiscussion, P.FinalDefense };
 
         [TestCase(3), TestCase(4), TestCase(5), TestCase(6)]
-        public void DefaultMatchSkipsMeeting1VoteAndRunsMeeting2(int n)
+        public void DefaultMatchSkipsTheMeetingVoteAndGoesFromTheShiftStraightToTheCrisis(int n)
         {
-            // Defaults: share, leave, skip. Tasks 1-2 succeed (no vote-able failure); task 3 fails (no volunteers): meeting 2
-            // is the dossier and the discussion (v5.1: the skippers' suç is automatic, no vote).
+            // Defaults: share, leave, skip. Tasks 1-2 succeed (no vote-able failure); task 3 fails (no volunteers): the
+            // skippers' suç lands at its reveal and the crisis calls follow (v5.2: there is no meeting 2).
             var m = new LineTest(n);
+            m.Finish();
+            var expected = new List<P>(Tasks12) { P.MeetingDossier, P.MeetingDiscussion, P.TaskPlay, P.TaskReveal };
+            expected.AddRange(FinalTail);
+            int firings = m.Config.FiringsFor(n);
+            for (int i = 0; i < firings; i++)
+            {
+                expected.Add(P.FinalVote);
+                expected.Add(P.FinalVote);
+                expected.Add(P.FinalVerdict);
+            }
+            expected.Add(P.Results);
+            CollectionAssert.AreEqual(expected, m.PhaseTrace());
+            Assert.AreEqual(1, m.PhaseTrace().Count(x => x == P.MeetingDossier), "one meeting before the final");
+            Assert.AreEqual(firings, m.Engine.Result.Fired.Count);
+            Assert.IsTrue(m.Engine.Result.Players.All(x => x.Blame >= 2), "every skipper of the unstaffed shift got its suç");
+        }
+
+        [TestCase(3), TestCase(4), TestCase(5), TestCase(6)]
+        public void ShiftMeetingSwitchKeepsMeeting2ForAFailedShift(int n)
+        {
+            // The v5.1 flow behind the switch: task 3 fails (no volunteers): meeting 2 is the dossier and the discussion
+            // (the skippers' suç is automatic, no vote).
+            var m = new LineTest(n, configure: LineTest.V51);
             m.Finish();
             var expected = new List<P>(Tasks12) { P.MeetingDossier, P.MeetingDiscussion, P.TaskPlay, P.TaskReveal,
                 P.MeetingDossier, P.MeetingDiscussion };
@@ -35,10 +58,10 @@ namespace BirimizKovulacak.Core.Tests
             Assert.AreEqual(firings, m.Engine.Result.Fired.Count);
         }
 
-        [TestCase(3), TestCase(4), TestCase(5), TestCase(6)]
-        public void SuccessfulTask3SkipsMeeting2AndFailedTask1HoldsMeeting1Vote(int n)
+        [TestCase(3, false), TestCase(4, false), TestCase(5, false), TestCase(6, false), TestCase(4, true), TestCase(6, true)]
+        public void SuccessfulTask3GoesToTheCrisisAndFailedTask1HoldsTheMeetingVote(int n, bool shiftMeeting)
         {
-            var m = new LineTest(n);
+            var m = new LineTest(n, configure: c => c.ShiftMeeting = shiftMeeting);
             m.PlayTask(0, id => id == 0 ? LineChoice.Take : LineChoice.Share);
             m.PlayTask(1, LineTest.Share);
             m.Until(P.MeetingDossier);
@@ -51,8 +74,9 @@ namespace BirimizKovulacak.Core.Tests
             var trace = m.PhaseTrace();
             CollectionAssert.AreEqual(new[] { P.MeetingDossier, P.MeetingDiscussion, P.MeetingVote, P.MeetingVerdict, P.TaskPlay, P.TaskReveal, P.CrisisCalls },
                 trace.Skip(Tasks12.Length).ToList());
-            var skipped = m.Events.Last(e => e.Type == LineEventType.PhaseChanged);
-            Assert.AreEqual((int)PhaseEndReason.Skipped, skipped.B);
+            // with the ShiftMeeting switch a staffed shift skips meeting 2; without it nothing is skipped
+            var entered = m.Events.Last(e => e.Type == LineEventType.PhaseChanged);
+            Assert.AreEqual((int)(shiftMeeting ? PhaseEndReason.Skipped : PhaseEndReason.Timer), entered.B);
         }
 
         [Test]
@@ -64,10 +88,19 @@ namespace BirimizKovulacak.Core.Tests
             Assert.AreEqual(0, m.Engine.Day);
             m.Until(P.TaskPlay);
             Assert.AreEqual(1, m.Engine.Day);
-            m.Until(P.MeetingDossier);
+            m.Until(P.TaskReveal);
             Assert.AreEqual(1, m.Engine.Day);
-            m.Until(P.CrisisCalls);
+            m.Next();
+            Assert.AreEqual(P.CrisisCalls, m.Engine.Phase, "v5.2: the crisis follows the shift");
             Assert.AreEqual(2, m.Engine.Day);
+            // the v5.1 flow: meeting 2 is day 1
+            var old = new LineTest(configure: LineTest.V51);
+            old.ToMeeting1();
+            old.Until(P.TaskPlay);
+            old.Until(P.MeetingDossier);
+            Assert.AreEqual(1, old.Engine.Day);
+            old.Until(P.CrisisCalls);
+            Assert.AreEqual(2, old.Engine.Day);
         }
 
         [Test]

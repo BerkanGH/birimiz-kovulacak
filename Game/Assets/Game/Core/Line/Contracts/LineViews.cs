@@ -62,6 +62,9 @@ namespace BirimizKovulacak.Core
         public bool PranksEnabled;
         /// <summary>A prank session runs (the meeting room phases; Results: cake only).</summary>
         public bool PranksOpen;
+        /// <summary>I may declare my prim right now (<see cref="LineVerb.Declare"/>): I am a candidate, I have not declared
+        /// and the window is open (until <see cref="LineFinalView.DeclareUntil"/>).</summary>
+        public bool DeclareOpen;
     }
 
     [Serializable]
@@ -277,6 +280,37 @@ namespace BirimizKovulacak.Core
         public List<int> Options = new List<int>();
         public int FiringsTotal;
         public List<LineFiringView> Firings = new List<LineFiringView>();
+        /// <summary>Prim declarations (v5.2): host time until which the candidates may declare (the final discussion's
+        /// start + <see cref="LineConfig.DeclareSeconds"/>); 0 when declarations are off or there is no candidate.</summary>
+        public double DeclareUntil;
+        /// <summary>My own declaration (a candidate sees it before the reveal too), -1 = none.</summary>
+        public int MyDeclaration = -1;
+        /// <summary>The declarations are public (from the reveal to the end of the match).</summary>
+        public bool DeclarationsRevealed;
+        /// <summary>After the reveal: one entry per candidate in candidate order (Amount -1 = no declaration). Empty before
+        /// it: a declaration is sealed, nobody else sees whether or what a candidate declared.</summary>
+        public List<LineDeclarationView> Declarations = new List<LineDeclarationView>();
+    }
+
+    /// <summary>A candidate's prim declaration ("prim beyanı").</summary>
+    [Serializable]
+    public sealed class LineDeclarationView
+    {
+        public int Player;
+        /// <summary>The prim the candidate claims to have; -1 = did not declare.</summary>
+        public int Amount = -1;
+        /// <summary>The candidate's real prim when the declarations were revealed. Only in
+        /// <see cref="LineWeekResult.Declarations"/> (full disclosure); -1 in every view before Results.</summary>
+        public int Actual = -1;
+    }
+
+    /// <summary>A task group (a pair or a trio) for the full disclosure: who played a pair task with whom.</summary>
+    [Serializable]
+    public sealed class LineGroupView
+    {
+        public int TaskNumber;
+        public TaskKind Task;
+        public List<int> Members = new List<int>();
     }
 
     [Serializable]
@@ -293,6 +327,11 @@ namespace BirimizKovulacak.Core
         public int Share;
         /// <summary>Prim removed from the game (remainder or no recipients).</summary>
         public int Removed;
+        /// <summary>The prim the fired candidate had declared (v5.2, stamped against <see cref="Desk"/>); -1 = no
+        /// declaration (or declarations are off).</summary>
+        public int Declared = -1;
+        /// <summary>Host time of the firing (v5.2; the deciding vote's end).</summary>
+        public double Time;
     }
 
     /// <summary>Free-text and system messages, delivered per recipient outside the view (ILineEngine.MessagesFor).</summary>
@@ -340,6 +379,11 @@ namespace BirimizKovulacak.Core
         public List<LineBlameChange> BlameLog = new List<LineBlameChange>();
         /// <summary>Deterministic hash of the outcome (all clients must agree; used by automated runs).</summary>
         public ulong ResultHash;
+        /// <summary>v5.2: every candidate's declaration against their real prim at the reveal (candidate order; empty when
+        /// declarations are off or nobody was a candidate).</summary>
+        public List<LineDeclarationView> Declarations = new List<LineDeclarationView>();
+        /// <summary>v5.2: the groups of the pair tasks (who could rob whom).</summary>
+        public List<LineGroupView> Groups = new List<LineGroupView>();
     }
 
     [Serializable]

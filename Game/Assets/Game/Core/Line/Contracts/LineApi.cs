@@ -87,6 +87,9 @@ namespace BirimizKovulacak.Core
         public bool RecordingsEnabled = true;
         /// <summary>Lobby option "Yaramazlıklar açık" (docs/V5_YARAMAZLIKLAR.md); false: every Prank fails with NotAvailable.</summary>
         public bool PranksEnabled = true;
+        /// <summary>Lobby option "Konuşma süresi" (<see cref="LineTalkTime"/>: 0 short, 1 normal, 2 long). The engine scales
+        /// the talking phases of its config by <see cref="LineConfig.TalkFactor"/> when the match starts.</summary>
+        public int TalkTime = LineTalkTime.Normal;
         /// <summary>Carried across matches of one session; null for the first match.</summary>
         public LineSessionHistory History;
 
@@ -111,6 +114,8 @@ namespace BirimizKovulacak.Core
     /// </summary>
     public interface ILineEngine
     {
+        /// <summary>The effective config of this match: the one given, with the talking phases already scaled by
+        /// <see cref="LineSetup.TalkTime"/> (never feed it back into a new engine together with that option).</summary>
         LineConfig Config { get; }
         LineSetup Setup { get; }
         LinePhase Phase { get; }
@@ -168,6 +173,8 @@ namespace BirimizKovulacak.Core
         public bool RecordingsEnabled = true;
         /// <summary>Lobby option "Yaramazlıklar açık".</summary>
         public bool PranksEnabled = true;
+        /// <summary>Lobby option "Konuşma süresi" (<see cref="LineTalkTime"/>).</summary>
+        public int TalkTime = LineTalkTime.Normal;
         /// <summary>Matches finished in this session.</summary>
         public int WeeksPlayed;
         /// <summary>Message key shown when the host cannot start, e.g. "lobby.need_players", "lobby.pool_too_small".</summary>

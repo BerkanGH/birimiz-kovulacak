@@ -205,7 +205,7 @@ namespace BirimizKovulacak.Core.Tests
         public void NumericWireOrderIsLittleEndianAndEnumsAreOneByte()
         {
             byte[] bytes = LineCodec.EncodeAction(new LineAction(0x01020304, 0xA1B2C3D4, LineVerb.SubmitTask, -1, 0x11223344, 7));
-            CollectionAssert.AreEqual(new byte[] {0xB3,7,0,2,1,4,3,2,1,0xD4,0xC3,0xB2,0xA1,5,255,255,255,255,0x44,0x33,0x22,0x11,7,0,0,0,255,255,255,255,1},bytes);
+            CollectionAssert.AreEqual(new byte[] {0xB3,8,0,2,1,4,3,2,1,0xD4,0xC3,0xB2,0xA1,5,255,255,255,255,0x44,0x33,0x22,0x11,7,0,0,0,255,255,255,255,1},bytes);
         }
 
         [Test]
@@ -226,6 +226,50 @@ namespace BirimizKovulacak.Core.Tests
             Assert.AreEqual(first, (ulong)method.Invoke(null, new object[] { result }));
             result.Fired[0] = 1;
             Assert.AreNotEqual(first, (ulong)method.Invoke(null, new object[] { result }));
+        }
+
+        [Test]
+        public void HashKeepsItsFrozenSchemaAndCoversDeclarationsOnlyWhenThereAreSome()
+        {
+            var method = typeof(LineCodec).GetMethod("HashResult", SchemaMethods);
+            Func<LineWeekResult, ulong> hash = x => (ulong)method.Invoke(null, new object[] { x });
+            var result = new LineWeekResult { WeekId = 17, Fired = new List<int> { 2 } };
+            result.Firings.Add(new LineFiringView { Player = 2, Desk = 9 });
+            ulong plain = hash(result);
+            // v5.2 fields that follow from what is already hashed do not move the hash of an outcome that did not change
+            result.Groups.Add(new LineGroupView { TaskNumber = 0, Task = TaskKind.ClientBonus, Members = new List<int> { 0, 1 } });
+            result.Firings[0].Time = 321.5;
+            Assert.AreEqual(plain, hash(result));
+            // the declarations are part of the outcome
+            result.Declarations.Add(new LineDeclarationView { Player = 2, Amount = 7, Actual = 9 });
+            ulong declared = hash(result);
+            Assert.AreNotEqual(plain, declared);
+            result.Declarations[0].Amount = 8;
+            Assert.AreNotEqual(declared, hash(result));
+            result.Declarations[0].Amount = 7;
+            result.Declarations[0].Actual = 10;
+            Assert.AreNotEqual(declared, hash(result));
+            // and the full wire format carries every new field
+            result.Declarations[0].Actual = 9;
+            result.Firings[0].Declared = 7;
+            var view = new LineView { Results = result };
+            var back = LineCodec.DecodeView(LineCodec.EncodeView(view)).Results;
+            Assert.AreEqual(7, back.Firings[0].Declared);
+            Assert.AreEqual(321.5, back.Firings[0].Time);
+            Assert.AreEqual(9, back.Declarations[0].Actual);
+            CollectionAssert.AreEqual(new[] { 0, 1 }, back.Groups[0].Members);
+        }
+
+        [Test]
+        public void TheDeclareVerbAndItsEventTravel()
+        {
+            var action = LineCodec.DecodeAction(LineCodec.EncodeAction(new LineAction(3, 9, LineVerb.Declare, -1, 42)));
+            Assert.AreEqual(LineVerb.Declare, action.Verb);
+            Assert.AreEqual(42, action.A);
+            var events = LineCodec.DecodeEvents(LineCodec.EncodeEvents(new List<LineEvent> { new LineEvent { Type = LineEventType.DeclarationsRevealed, A = 2, B = 3 } }));
+            Assert.AreEqual(LineEventType.DeclarationsRevealed, events[0].Type);
+            var lobby = LineCodec.DecodeLobby(LineCodec.EncodeLobby(new LineLobbyView { TalkTime = LineTalkTime.Long }));
+            Assert.AreEqual(LineTalkTime.Long, lobby.TalkTime);
         }
     }
 }

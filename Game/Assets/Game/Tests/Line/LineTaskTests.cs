@@ -306,9 +306,27 @@ namespace BirimizKovulacak.Core.Tests
         }
 
         [Test]
-        public void WeekendShiftOneShortFailsAndMeeting2ShowsTheRoster()
+        public void WeekendShiftOneShortFailsAndTheCrisisDossierShowsTheRoster()
         {
             var m = new LineTest(6);
+            m.ToMeeting1();
+            m.PlayTask(2, id => id < 2 ? LineChoice.Volunteer : LineChoice.Skip);
+            CollectionAssert.AreEqual(new[] { 0, 1 }, m.View(5).Task.Roster, "the public roster at the reveal");
+            m.Next();
+            Assert.AreEqual(LinePhase.CrisisCalls, m.Engine.Phase);
+            var meeting = m.View(5).Meeting;
+            Assert.AreEqual(2, meeting.Index);
+            CollectionAssert.IsEmpty(meeting.FailedTasks, "nothing is voted for the shift");
+            CollectionAssert.AreEqual(new[] { 0, 1 }, meeting.Roster);
+            var line = meeting.Dossier.Single(d => d.Kind == DossierKind.ShiftRoster);
+            Assert.AreEqual(2, line.N1);
+            Assert.AreEqual(3, line.N2);
+        }
+
+        [Test]
+        public void V51WeekendShiftOneShortFailsAndMeeting2ShowsTheRoster()
+        {
+            var m = new LineTest(6, configure: LineTest.V51);
             m.ToMeeting1();
             m.PlayTask(2, id => id < 2 ? LineChoice.Volunteer : LineChoice.Skip);
             m.Next();

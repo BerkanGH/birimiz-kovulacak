@@ -15,9 +15,9 @@ namespace BirimizKovulacak.Core.Tests
         const int Take = LineChoice.Take;
 
         /// <summary>4 players: seat 0 takes the Client Bonus; meeting 1 votes 1→0, 2→0, 3→2, 0→3: suç 0:2, 1:0, 2:1, 3:1.</summary>
-        static LineTest SucBeforeTheShift()
+        static LineTest SucBeforeTheShift(System.Action<LineConfig> configure = null)
         {
-            var m = new LineTest();
+            var m = new LineTest(configure: configure);
             m.PlayTask(0, id => id == 0 ? Take : 0);
             m.PlayTask(1, id => 0);
             m.Until(LinePhase.MeetingVote);
@@ -44,7 +44,8 @@ namespace BirimizKovulacak.Core.Tests
             CollectionAssert.AreEquivalent(new[] { 0, 2 }, cleans.Select(e => e.Target));
             Assert.IsTrue(cleans.All(e => e.A == -1), "announced as a negative change");
             m.Next();
-            Assert.AreEqual(LinePhase.CrisisCalls, m.Engine.Phase, "staffed: no meeting 2");
+            Assert.AreEqual(LinePhase.CrisisCalls, m.Engine.Phase, "staffed: the crisis follows");
+            CollectionAssert.IsEmpty(m.View().Meeting.Dossier, "a staffed shift adds nothing to the crisis dossier");
             m.Finish();
             var log = m.Engine.Result.BlameLog.Where(b => b.Reason == BlameReason.ShiftClean).ToList();
             Assert.AreEqual(2, log.Count);
@@ -55,7 +56,27 @@ namespace BirimizKovulacak.Core.Tests
         [Test]
         public void AnUnstaffedShiftStillCleansItsVolunteersAndBlamesItsSkippers()
         {
+            // v5.2: everything lands at the reveal; the crisis segment's dossier carries the line
             var m = SucBeforeTheShift();
+            for (int i = 0; i < 20 && !(m.Engine.Phase == LinePhase.TaskPlay && m.View().TaskNumber == 2); i++) m.Next();
+            int prim3 = m.Prim(3);
+            m.PlayTask(2, id => id == 0 ? LineChoice.Volunteer : LineChoice.Skip);   // 1 of 2: not staffed
+            Assert.AreEqual(LinePhase.TaskReveal, m.Engine.Phase);
+            Assert.AreEqual(prim3, m.Prim(3), "unstaffed: the skippers get nothing");
+            CollectionAssert.AreEqual(new[] { 1, 0 + 2, 1 + 2, 1 + 2 }, m.Ids.Select(m.Blame).ToArray(), "cleaned and blamed at the reveal");
+            m.Next();
+            Assert.AreEqual(LinePhase.CrisisCalls, m.Engine.Phase);
+            CollectionAssert.AreEqual(new[] { 1, 2, 3, 3 }, m.Ids.Select(m.Blame).ToArray(), "nothing more when the crisis starts");
+            var line = m.View().Meeting.Dossier.Single(d => d.Kind == DossierKind.ShiftSkipBlame);
+            Assert.AreEqual(2, line.N1);
+            Assert.AreEqual(3, line.N2);
+            CollectionAssert.AreEqual(new[] { 0 }, m.View().Meeting.Roster);
+        }
+
+        [Test]
+        public void V51AnUnstaffedShiftBlamesItsSkippersWhenMeeting2Opens()
+        {
+            var m = SucBeforeTheShift(LineTest.V51);
             for (int i = 0; i < 20 && !(m.Engine.Phase == LinePhase.TaskPlay && m.View().TaskNumber == 2); i++) m.Next();
             int prim3 = m.Prim(3);
             m.PlayTask(2, id => id == 0 ? LineChoice.Volunteer : LineChoice.Skip);   // 1 of 2: not staffed

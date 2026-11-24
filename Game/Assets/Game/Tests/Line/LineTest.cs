@@ -103,7 +103,8 @@ namespace BirimizKovulacak.Core.Tests.Line
             Until(LinePhase.MeetingDossier, 0);
         }
 
-        /// <summary>Clean tasks 1-2, task 3 with the given volunteers, then (if task 3 failed) meeting 2: with
+        /// <summary>Clean tasks 1-2, task 3 with the given volunteers, then straight to the crisis calls (v5.2). With
+        /// <see cref="LineConfig.ShiftMeeting"/> a failed task 3 holds meeting 2 first: with
         /// <see cref="LineConfig.ShiftFailVote"/> (v5.0, <see cref="Meeting2Vote"/>) the given single ballots; v5.1 has no
         /// meeting 2 vote (the skippers' suç is automatic).</summary>
         internal void ToCrisis(Func<int, int> volunteer = null, Func<int, int> meeting2Vote = null)
@@ -120,10 +121,12 @@ namespace BirimizKovulacak.Core.Tests.Line
             Assert.AreEqual(LinePhase.CrisisCalls, Engine.Phase);
         }
 
-        /// <summary>The v5.0 Weekend Shift (and Client Bonus share) numbers: an unstaffed shift pays the skippers 2 and meeting 2
-        /// holds a suç vote (no automatic suç). Tests of the crisis and the final use it to set suç up with ballots.</summary>
+        /// <summary>The v5.0 Weekend Shift (and Client Bonus share) numbers: an unstaffed shift pays the skippers 2 and is
+        /// followed by meeting 2 (<see cref="LineConfig.ShiftMeeting"/>), which holds a suç vote (no automatic suç). Tests of
+        /// the crisis and the final use it to set suç up with ballots.</summary>
         internal static void Meeting2Vote(LineConfig c)
         {
+            c.ShiftMeeting = true;
             c.ShiftFailVote = true;
             c.ShiftFailSkipBlame = 0;
             c.ShiftFailSkipPay = c.ShiftSkipPay;
@@ -131,10 +134,19 @@ namespace BirimizKovulacak.Core.Tests.Line
             c.BonusTrioNone = 2;
         }
 
+        /// <summary>The v5.1 flow: an unstaffed shift is followed by meeting 2 (dossier and discussion, no vote), where
+        /// the skippers get their suç; no prim declarations.</summary>
+        internal static void V51(LineConfig c)
+        {
+            c.ShiftMeeting = true;
+            c.DeclarationsEnabled = false;
+        }
+
         /// <summary>Every number and switch of the v5.0 rules (LineSim --rules old).</summary>
         internal static void V50(LineConfig c)
         {
             Meeting2Vote(c);
+            c.DeclarationsEnabled = false;
             c.CashWhistleReward = 2;
             c.CashWhistledKeeps = false;
             c.ShiftVolunteerClean = 0;

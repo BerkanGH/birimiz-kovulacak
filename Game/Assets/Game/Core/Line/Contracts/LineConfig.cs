@@ -38,20 +38,29 @@ namespace BirimizKovulacak.Core
             FinalDiscussion *= s; FinalDefense *= s; FinalVote *= s; FinalRevote *= s; FinalVerdict *= s;
             Results *= s; Ring *= s;
         }
+
+        /// <summary>The lobby's talk-time option (<see cref="LineTalkTime"/>): only the phases people talk in.</summary>
+        public void ScaleTalk(float s)
+        {
+            if (s <= 0f || Math.Abs(s - 1f) < 0.0001f) return;
+            MeetingDiscussion *= s; CrisisCalls *= s; FinalDiscussion *= s; FinalDefense *= s;
+        }
     }
 
     /// <summary>
     /// Every v5 tunable (docs/V5_ENGINE_SPEC.md, numbers from docs/V5_DESIGN.md §12).
-    /// prim = money = score; suç = public blame. The defaults are the v5.1 rules (2026-11-15); the comments name the
-    /// v5.0 value of every number that changed, so a config can still play the old rules (LineSim --rules old).
+    /// prim = money = score; suç = public blame. The defaults are the v5.2 rules (2026-11-24: prim declarations, no
+    /// meeting 2) on top of v5.1 (2026-11-15); the comments name the v5.0 value of every number that changed, so a config
+    /// can still play the old rules (LineSim --rules old).
     /// </summary>
     [Serializable]
     public sealed class LineConfig
     {
         /// <summary>Schema version of this class (6: Yaramazlıklar added the prank numbers; 7: the v5.1 rules: free
         /// sharer-only investigation, the whistled thief keeps the cash, shift cleaning and the failed shift's automatic suç,
-        /// candidates need suç). Config files of another version are ignored.</summary>
-        public const int CurrentVersion = 7;
+        /// candidates need suç; 8: v5.2: ShiftMeeting, the prim declarations, the talk-time factors). Config files of another
+        /// version are ignored.</summary>
+        public const int CurrentVersion = 8;
         public int ConfigVersion = CurrentVersion;
         public LineDurations Durations = new LineDurations();
         /// <summary>When every connected player has submitted, TaskPlay ends this many seconds later.</summary>
@@ -88,10 +97,14 @@ namespace BirimizKovulacak.Core
         public int ShiftSkipPay = 2;
         /// <summary>Prim of each skipper when the shift is not staffed (v5.0: 2, like <see cref="ShiftSkipPay"/>).</summary>
         public int ShiftFailSkipPay = 0;
-        /// <summary>Suç every skipper of an unstaffed shift gets when meeting 2 opens (v5.0: 0).</summary>
+        /// <summary>Suç every skipper of an unstaffed shift gets (v5.0: 0): at the shift's reveal (v5.2), or when meeting 2
+        /// opens with <see cref="ShiftMeeting"/>.</summary>
         public int ShiftFailSkipBlame = 2;
-        /// <summary>Meeting 2 holds a suç vote for the unstaffed shift (v5.0: true). Without it meeting 2 is the dossier and
-        /// the discussion only.</summary>
+        /// <summary>An unstaffed shift is followed by meeting 2 (v5.0 and v5.1: true). v5.2: false, the match goes from the
+        /// shift's reveal straight to the crisis calls and every consequence of the shift lands at the reveal.</summary>
+        public bool ShiftMeeting = false;
+        /// <summary>Meeting 2 holds a suç vote for the unstaffed shift (v5.0: true; needs <see cref="ShiftMeeting"/>).
+        /// Without it meeting 2 is the dossier and the discussion only.</summary>
         public bool ShiftFailVote = false;
         /// <summary>Suç removed from every volunteer (never below 0) when the shift resolves, staffed or not (v5.0: 0).</summary>
         public int ShiftVolunteerClean = 1;
@@ -120,6 +133,19 @@ namespace BirimizKovulacak.Core
         public List<int> CandidatesByPlayers = new List<int> { 2, 2, 3, 3 };
         /// <summary>Firings for 3, 4, 5, 6 players.</summary>
         public List<int> FiringsByPlayers = new List<int> { 1, 1, 2, 2 };
+        /// <summary>Prim declarations ("prim beyanı", v5.2): every final candidate may state once how much prim they have
+        /// (they may lie); sealed until all are revealed together; stamped against the desk when a candidate is fired.
+        /// No effect on prim, suç or votes (v5.1: false).</summary>
+        public bool DeclarationsEnabled = true;
+        /// <summary>Declaring stays open this long into the final discussion (it opens when the crisis verdict starts);
+        /// the declarations are revealed then at the latest.</summary>
+        public float DeclareSeconds = 12f;
+        /// <summary>Highest amount a candidate may declare.</summary>
+        public int DeclareMax = 99;
+
+        // ---- lobby option "Konuşma süresi" (LineSetup.TalkTime): factors on the talking phases
+        public float TalkTimeShort = 0.7f;
+        public float TalkTimeLong = 1.5f;
 
         // ---- transfers
         public int TransferMax = 10;
@@ -229,6 +255,13 @@ namespace BirimizKovulacak.Core
                 case PrankKind.Cake: return CakeCooldown;
                 default: return 0f;
             }
+        }
+
+        /// <summary>The factor of a <see cref="LineTalkTime"/> level on MeetingDiscussion, CrisisCalls, FinalDiscussion and
+        /// FinalDefense (Normal and anything unknown: 1).</summary>
+        public float TalkFactor(int level)
+        {
+            return level == LineTalkTime.Short ? TalkTimeShort : level == LineTalkTime.Long ? TalkTimeLong : 1f;
         }
 
         public int CandidatesFor(int players) { return ByPlayers(CandidatesByPlayers, players); }

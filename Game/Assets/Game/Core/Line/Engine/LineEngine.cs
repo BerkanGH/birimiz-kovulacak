@@ -103,6 +103,7 @@ namespace BirimizKovulacak.Core
             }
             var h = input.History;
             if (h != null && (h.Wins == null || h.TimesFired == null || h.WeeksPlayed < 0)) throw new ArgumentException("Invalid history.");
+            if (!LineTalkTime.Valid(input.TalkTime)) throw new ArgumentException("Invalid talk time.");
             try
             {
                 setup = LineCodec.Clone(input);
@@ -110,6 +111,8 @@ namespace BirimizKovulacak.Core
             }
             catch (FormatException ex) { throw new ArgumentException("Invalid setup/config schema.", ex); }
             ValidateConfig(input.Players.Count);
+            // lobby option "Konuşma süresi": the talking phases of this match (Config returns the scaled durations)
+            c.Durations.ScaleTalk(c.TalkFactor(setup.TalkTime));
             rng = new LineRandom(setup.Seed);
             for (int id = 0; id < LineProtocol.MaxPlayers; id++)
             {
@@ -140,7 +143,8 @@ namespace BirimizKovulacak.Core
             var d = c.Durations;
             if (d.TaskPlay <= 0 || d.FinalDefense <= 0 || d.FinalVote <= 0 || d.FinalRevote <= 0 || d.Ring <= 0 ||
                 c.AbandonSeconds <= 0 || c.PairingTries < 1 || c.PairingTries > 100000 || c.MessagesKeptPerPlayer < 1 ||
-                c.TextMaxChars > 512 || c.MeetingChatMaxChars > 512 || c.PlaneNoteMaxChars > 512 || c.PatienceCapacity < 1)
+                c.TextMaxChars > 512 || c.MeetingChatMaxChars > 512 || c.PlaneNoteMaxChars > 512 || c.PatienceCapacity < 1 ||
+                c.TalkTimeShort <= 0 || c.TalkTimeLong <= 0 || c.DeclareMax > 9999)
                 throw new ArgumentException("Invalid config range.");
             for (int n = LineProtocol.MinPlayers; n <= LineProtocol.MaxPlayers; n++)
             {
@@ -241,6 +245,7 @@ namespace BirimizKovulacak.Core
                 if (insufficientSince >= 0) due = Math.Min(due, insufficientSince + c.AbandonSeconds);
                 if (Phase == LinePhase.FinalDefense && defenderIndex + 1 < final.DefenseOrder.Count)
                     due = Math.Min(due, DefenderEnd(defenderIndex));
+                if (Phase == LinePhase.FinalDiscussion && DeclarationsPending) due = Math.Min(due, final.DeclareUntil);
                 foreach (int id in ids)
                     if (seats[id].Phone.Status == CallStatus.Dialing) due = Math.Min(due, seats[id].Phone.RingUntil);
                 if (due > time) break;
@@ -258,6 +263,8 @@ namespace BirimizKovulacak.Core
                     var s = seats[id];
                     if (s.Phone.Status == CallStatus.Dialing && s.Phone.RingUntil <= due) EndCall(id, due, CallEndReason.Missed);
                 }
+                // the declaration deadline: whatever was declared is revealed now (before the defence, if both fall together)
+                if (Phase == LinePhase.FinalDiscussion && DeclarationsPending && final.DeclareUntil <= due) RevealDeclarations(due);
                 if (due >= PhaseEndTime) Advance(due);
                 else if (Phase == LinePhase.FinalDefense && DefenderEnd(defenderIndex) <= due) { defenderIndex++; Changed(); }
             }
@@ -276,8 +283,10 @@ namespace BirimizKovulacak.Core
                     break;
                 case LinePhase.TaskReveal:
                     if (taskIndex < 2) Enter(LinePhase.Break, time, c.Durations.Break);
-                    else if (tasks[2].Failed) StartMeeting(1, time);
-                    else { endReason = PhaseEndReason.Skipped; StartCrisis(time); }
+                    // v5.2: no meeting 2; everything the shift does landed at its reveal. With ShiftMeeting (v5.0 / v5.1) an
+                    // unstaffed shift is followed by meeting 2 and a staffed one skips it.
+                    else if (c.ShiftMeeting && tasks[2].Failed) StartMeeting(1, time);
+                    else { if (c.ShiftMeeting) endReason = PhaseEndReason.Skipped; StartCrisis(time); }
                     break;
                 case LinePhase.Break:
                     if (taskIndex == 0) StartTask(1, time);
@@ -298,7 +307,7 @@ namespace BirimizKovulacak.Core
                     if (final.Candidates.Count == 0 || final.FiringsTotal <= 0) { endReason = PhaseEndReason.Skipped; ToResults(time); }
                     else StartFinalDiscussion(time);
                     break;
-                case LinePhase.FinalDiscussion: StartDefense(time); break;
+                case LinePhase.FinalDiscussion: RevealDeclarations(time); StartDefense(time); break;
                 case LinePhase.FinalDefense:
                     if (final.FiringsTotal <= 0 || Remaining().Count == 0) ToResults(time);
                     else StartFinalVote(time, 0, Remaining(), false);
@@ -378,6 +387,7 @@ namespace BirimizKovulacak.Core
                 case LineVerb.Leak: return Leak(id, a, time);
                 case LineVerb.Vote: return Vote(id, a, time);
                 case LineVerb.Prank: return Prank(id, a, time);
+                case LineVerb.Declare: return Declare(id, a, time);
                 default: return LineFailure.BadParam;
             }
         }
