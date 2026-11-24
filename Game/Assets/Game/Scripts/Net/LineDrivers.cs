@@ -221,19 +221,37 @@ namespace BirimizKovulacak.Game
                 case LinePhase.MeetingVote:
                 case LinePhase.CrisisVote:
                 case LinePhase.FinalVote:
-                    return new[] { new ShotSpec(3f, "ballot", () => { Seat(0f, 6f); Meeting?.OpenBallot(); }), new ShotSpec(9f, "box", BoxView), new ShotSpec(15f, "projector", () => Meeting?.OpenProjector()) };
+                {
+                    var shots = new List<ShotSpec>
+                    {
+                        new ShotSpec(3f, "ballot", () => { Seat(0f, 6f); Meeting?.OpenBallot(); }), new ShotSpec(9f, "box", BoxView), new ShotSpec(15f, "projector", () => Meeting?.OpenProjector()),
+                    };
+                    // v5.2: a short shift's "NÖBET CEZASI" slide opens the crisis vote
+                    if (phase == LinePhase.CrisisVote && v.Meeting != null && v.Meeting.Dossier.Exists(d => d.Kind == DossierKind.ShiftSkipBlame))
+                        shots.Insert(0, new ShotSpec(0.5f, "penalty", () => Meeting?.OpenProjector()));
+                    return shots.ToArray();
+                }
                 case LinePhase.MeetingVerdict: return new[] { new ShotSpec(3f, "board", () => Meeting?.OpenBoard()) };
                 case LinePhase.CrisisVerdict: return new[] { new ShotSpec(0.5f, "projector", () => Meeting?.OpenProjector()), new ShotSpec(3.6f, "board", () => Meeting?.OpenBoard()) };
                 case LinePhase.FinalDiscussion: return new[] { new ShotSpec(5f, "room", () => Seat(15f, 4f)), new ShotSpec(11f, "folder", () => Meeting?.OpenFolder(MeetingFolder.Tab.Chat)), new ShotSpec(22f, "projector", () => Meeting?.OpenProjector()) };
                 case LinePhase.FinalDefense: return new[] { new ShotSpec(4f, "room", DefenderView), new ShotSpec(9f, "projector", () => Meeting?.OpenProjector()) };
                 // the desk opening runs by itself: the camera is on the projector for the count, then back at the table
-                case LinePhase.FinalVerdict: return new[] { new ShotSpec(2.4f, "projector", null), new ShotSpec(6.6f, "payout", null), new ShotSpec(9.0f, "payout_end", null) };
+                // (v5.2: the projector shot waits for the declaration's YALAN / DOĞRU stamp)
+                case LinePhase.FinalVerdict: return new[] { new ShotSpec(4.4f, "projector", null), new ShotSpec(7.2f, "payout", null), new ShotSpec(9.2f, "payout_end", null) };
                 case LinePhase.Results:
+                {
+                    // v5.2: the ranking just before the awards slide, the folder's story and robberies, then the awards slide
+                    // with every award in (and my title on the results bar). Real seconds, whatever the duration scale.
+                    float k = 1f / Mathf.Max(0.3f, LaunchArgs.Current.DurationScale);
+                    float at = (float)LineStory.AwardsAt(v.PhaseEndTime - v.PhaseStartTime);
                     return new[]
                     {
-                        new ShotSpec(16f, "projector", null), new ShotSpec(26f, "reveal", () => Meeting?.OpenReveal(MeetingReveal.TabSummary)),
-                        new ShotSpec(34f, "robbed", () => Meeting?.OpenReveal(MeetingReveal.TabRobbed)),
+                        new ShotSpec(Mathf.Max(1.5f, at - 2.6f) * k, "projector", null),
+                        new ShotSpec((at + 0.2f) * k, "reveal", () => Meeting?.OpenReveal(MeetingReveal.TabStory)),
+                        new ShotSpec((at + 1.6f) * k, "robbed", () => Meeting?.OpenReveal(MeetingReveal.TabRobbed)),
+                        new ShotSpec((at + 4.6f) * k, "awards", () => { Meeting?.CloseAll(); Meeting?.OpenProjector(); }),
                     };
+                }
                 default: return null;
             }
         }

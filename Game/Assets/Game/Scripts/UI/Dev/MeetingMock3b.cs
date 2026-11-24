@@ -11,9 +11,10 @@ namespace BirimizKovulacak.Game
     /// far seats), the final's deck (candidates, crisis result and the board shift), the verdicts and a vote;
     /// <c>"v5.meeting_leak*"</c> a leaked recording on the projector (everyone turns to it, the note when it is out of view);
     /// <c>"v5.meeting_defence*"</c> the defender on their feet in the spotlight, the projector, me defending;
-    /// <c>"v5.meeting_reveal*"</c> the desk opening (drawer, count, "11 PRİM", the box, the bundles sliding to the voters),
-    /// also the 6-player sequence (first opening and payout, the second vote with the bundles on the table, the second
-    /// opening); <c>"v5.meeting_results*"</c> the ceremony, the folder's full reveal and the results bar; "_en" variants.
+    /// <c>"v5.meeting_reveal*"</c> the desk opening (drawer, count, "11 PRİM", v5.2: the declaration stamped YALAN / DOĞRU
+    /// against it, the box, the bundles sliding to the voters), also the 6-player sequence (first opening and payout, the
+    /// second vote with the bundles on the table, the second opening); <c>"v5.meeting_results*"</c> the ceremony, the folder's
+    /// full reveal and the results bar; "_en" variants.
     /// </summary>
     public static class MeetingMock3bScenarios
     {
@@ -86,14 +87,32 @@ namespace BirimizKovulacak.Game
                     v.Final.Candidates.Clear(); v.Final.Candidates.AddRange(new[] { 2, 0, 3 }); v.Final.Defender = 0; Candidates(v); Show(v); Aim(0f, 8f); }, 1.6f)
                 .Do(7.2f, () => Aim(-30f, 6f), 0.8f));
 
-            // ---- the desk opening (4 players): drawer, count, stamp, back to the table, the box, the bundles sliding
+            // ---- the desk opening (4 players): drawer, count, the prim stamp, the declaration's YALAN stamp, who shares it,
+            // back to the table, the box, the bundles sliding
             LineMock.Register("v5.meeting_reveal", () => new LineMockScenario()
-                .Do(0f, () => { Reset(); Show(Verdict(4, Firing(2, 11, FiringDecision.Plurality, new[] { 0, 3 }))); Aim(0f, 6f); }, 0.7f)
+                .Do(0f, () => { Reset(); Show(Verdict(4, Firing(2, 11, FiringDecision.Plurality, new[] { 0, 3 }, 6))); Aim(0f, 6f); }, 0.7f)
                 .Do(1.9f, () => { }, 0.15f)
-                .Do(3.9f, () => { }, 0.15f)
-                .Do(5.3f, () => { }, 0.15f)
-                .Do(6.2f, () => { }, 0.25f)
-                .Do(7.6f, () => { }, 0.6f));
+                .Do(3.6f, () => { }, 0.2f)
+                .Do(4.3f, () => { }, 0.15f)
+                .Do(5.0f, () => { }, 0.2f)
+                .Do(6.3f, () => { }, 0.2f)
+                .Do(7.1f, () => { }, 0.25f)
+                .Do(8.4f, () => { }, 0.6f));
+            // the fired colleague had told the truth: DOĞRU (zoomed in for the whole count)
+            LineMock.Register("v5.meeting_reveal_true", () => new LineMockScenario()
+                .Do(0f, () => { Reset(); MeetingUi.NoAutoCamera = true; Show(Verdict(4, Firing(2, 11, FiringDecision.Plurality, new[] { 0, 3 }, 11))); MeetingUi.I?.OpenProjector(); }, 4.9f)
+                .Do(6.0f, () => { MeetingUi.NoAutoCamera = false; MeetingUi.I?.CloseAll(); Aim(0f, 6f); }, 0.8f));
+            // the desk grew after the reveal (a share, a transfer): the declaration was true when it was revealed, so
+            // DOĞRU with the note "Beyanlar açılırken: 8 prim"
+            foreach (bool en in new[] { false, true })
+            {
+                bool e = en;
+                LineMock.Register("v5.meeting_reveal_later" + (en ? "_en" : ""), () => new LineMockScenario()
+                    .Do(0f, () => { if (e) English(); })
+                    .Do(e ? 0.3f : 0f, () => { Reset(); MeetingUi.NoAutoCamera = true; var v = Verdict(4, Firing(2, 13, FiringDecision.Plurality, new[] { 0, 3 }, 8, 8));
+                        if (e) LineMock.SetNames(v, true); Show(v); MeetingUi.I?.OpenProjector(); }, 4.9f)
+                    .Do(6.3f, () => { MeetingUi.NoAutoCamera = false; MeetingUi.I?.CloseAll(); Aim(0f, 6f); }, 0.8f));
+            }
             // 6 players: the first opening and payout before the second vote, then the second opening
             LineMock.Register("v5.meeting_reveal6", () => new LineMockScenario()
                 .Do(0f, () => { Reset(); Show(Verdict(6, Firing(2, 11, FiringDecision.Plurality, new[] { 0, 3, 4 }))); Aim(0f, 6f); }, 0.7f)
@@ -135,7 +154,7 @@ namespace BirimizKovulacak.Game
                 .Do(0.7f, () => MeetingUi.I?.OpenProjector(), 2.2f));
             LineMock.Register("v5.meeting_reveal_en", () => new LineMockScenario()
                 .Do(0f, () => English())
-                .Do(0.3f, () => { Reset(); var v = Verdict(4, Firing(2, 23, FiringDecision.Revote, new[] { 0, 1, 3 })); LineMock.SetNames(v, true); Show(v); }, 4.1f));
+                .Do(0.3f, () => { Reset(); var v = Verdict(4, Firing(2, 23, FiringDecision.Revote, new[] { 0, 1, 3 }, 14)); LineMock.SetNames(v, true); Show(v); }, 4.9f));
             LineMock.Register("v5.meeting_results_en", () => new LineMockScenario()
                 .Do(0f, () => English())
                 .Do(0.3f, () => { Reset(); RevealMemory.MockGroup(1, "mock", 0, 0, 1); var v = Results(6); LineMock.SetNames(v, true); Show(v); }, 4.6f)
@@ -205,9 +224,13 @@ namespace BirimizKovulacak.Game
             return v;
         }
 
-        internal static LineFiringView Firing(int player, int desk, FiringDecision decision, int[] voters)
+        /// <summary><paramref name="had"/>: the prim at the reveal when the desk holds something else (prim arrived later).</summary>
+        internal static LineFiringView Firing(int player, int desk, FiringDecision decision, int[] voters, int declared = -1, int had = -1)
         {
-            var f = new LineFiringView { Player = player, Decision = decision, Votes = voters.Length, Desk = desk };
+            var f = new LineFiringView
+            {
+                Player = player, Decision = decision, Votes = voters.Length, Desk = desk, Declared = declared, DeclaredActual = had >= 0 ? had : declared >= 0 ? desk : -1,
+            };
             f.Recipients.AddRange(voters);
             f.Share = voters.Length > 0 ? desk / voters.Length : 0;
             f.Removed = desk - f.Share * voters.Length;
@@ -224,6 +247,9 @@ namespace BirimizKovulacak.Game
             v.Meeting = new LineMeetingView { Index = 2 };
             v.Final = Final(players >= 5 ? new[] { 2, 5, 1 } : new[] { 2, 1 }, players >= 5 ? 2 : 1);
             v.Final.Firings.Add(f);
+            // v5.2: the declarations were revealed in the final discussion (the fired colleague's is on the firing)
+            v.Final.DeclarationsRevealed = true;
+            foreach (int id in v.Final.Candidates) v.Final.Declarations.Add(new LineDeclarationView { Player = id, Amount = id == f.Player ? f.Declared : 9 });
             Candidates(v);
             return v;
         }
