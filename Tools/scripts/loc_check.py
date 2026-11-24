@@ -12,7 +12,9 @@ Checks (Game/Assets/StreamingAssets/Localization):
     decision./fire.decision. (FiringDecision), blame. (BlameReason), phone.log_missed. (CallEndReason),
     task.<id>.name/choice.0/choice.1, vote.todo.<vote phase>;
   * v5 bot talk: every line key of LineBotLines (Core/Line/Engine/LineBotTalk.cs) exists in both languages with exactly
-    the placeholders its argument signature gives ({0}.. one per argument).
+    the placeholders its argument signature gives ({0}.. one per argument);
+  * v5.2 story: award.<id>.name / .text for every LineAwards id and the headline keys of every LineHeadlines id
+    (Core/Line/Engine/LineStory.cs), and the lobby's talk-time option (lobby.talk.<id>, lobby.talk.note.<id>).
 """
 import glob
 import json
@@ -25,6 +27,12 @@ LOC = os.path.join(ROOT, "Game", "Assets", "StreamingAssets", "Localization")
 PLAY = [os.path.join(ROOT, "Game", "Assets", "Game", "Scripts", "UI", d) for d in ("Play", "Office", "Meeting")]
 ENUMS = os.path.join(ROOT, "Game", "Assets", "Game", "Core", "Line", "Contracts", "LineEnums.cs")
 BOT_LINES = os.path.join(ROOT, "Game", "Assets", "Game", "Core", "Line", "Engine", "LineBotTalk.cs")
+STORY = os.path.join(ROOT, "Game", "Assets", "Game", "Core", "Line", "Engine", "LineStory.cs")
+# v5.2 story keys that hang off an award / headline id (StoryText.cs)
+AWARD_EXTRA = ["v5.award.sellout.how.%d" % i for i in range(4)] + ["v5.award.robber.text_many", "v5.award.robber.text_none"]
+HEADLINE_KEYS = {"deal": ["deal.0", "deal.1", "deal.2", "deal.3"], "bonus": ["bonus", "bonus_two"],
+                 "firing": ["firing", "firing_none", "firing_true", "firing_true_later", "firing_lie"], "crisis": ["crisis", "crisis_tie"], "transfer": ["transfer"]}
+TALK_IDS = ["short", "normal", "long"]
 EMPTY_OK = {"v5.hint.None"}
 TASK_IDS = ["client_bonus", "petty_cash", "weekend_shift"]
 # office keys built from an enum / id: office.use.<DeskTarget>, office.app.<app id>, office.task_where.<task id>,
@@ -122,6 +130,23 @@ def main():
                 problems.append("missing bot line (%s): %s" % (lang, k))
             elif set(re.findall(r"\{\d+\}", table[k])) != want:
                 problems.append("bot line placeholders (%s): %s needs %s" % (lang, k, sorted(want)))
+    # v5.2: the results' story (awards, headlines) and the lobby's talk-time option
+    story = open(STORY, encoding="utf-8").read()
+    ids = re.findall(r'static readonly string\[\] Ids = \{([^}]*)\}', story)
+    awards = [x for x in re.findall(r'"([a-z_]*)"', ids[0]) if x] if len(ids) >= 2 else []
+    heads = [x for x in re.findall(r'"([a-z_]*)"', ids[1]) if x] if len(ids) >= 2 else []
+    if len(awards) < 10 or sorted(heads) != sorted(HEADLINE_KEYS):
+        problems.append("story ids not found (%d awards, headlines %s)" % (len(awards), heads))
+    wanted = ["v5.award.%s.%s" % (a, s) for a in awards for s in ("name", "text")] + AWARD_EXTRA
+    wanted += ["v5.bot.award." + a for a in awards]
+    wanted += ["v5.headline." + k for h in heads for k in HEADLINE_KEYS.get(h, [])]
+    for k in wanted:
+        if k not in tr or k not in en:
+            problems.append("missing story key: " + k)
+    for i in TALK_IDS:
+        for k in ("lobby.talk." + i, "lobby.talk.note." + i):
+            if k not in mt or k not in me:
+                problems.append("missing talk-time key: " + k)
     for p in problems:
         print("FAIL", p)
     print("loc_check: %d keys per language, %d used literals, %d bot lines, %s" % (len(tr), len(used), len(bot), "OK" if not problems else "%d problem(s)" % len(problems)))
