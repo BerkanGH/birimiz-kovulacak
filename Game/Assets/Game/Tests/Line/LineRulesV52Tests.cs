@@ -132,7 +132,7 @@ namespace BirimizKovulacak.Core.Tests
             v50.Finish();
             CollectionAssert.IsEmpty(v50.Engine.Result.Declarations);
             // the ShiftFailVote switch alone means nothing without the meeting
-            var noMeeting = new LineTest(4, configure: c => c.ShiftFailVote = true);
+            var noMeeting = new LineTest(4, configure: c => LineTest.Legacy(c).ShiftFailVote = true);
             noMeeting.ToMeeting1();
             noMeeting.PlayTask(2, id => 0);
             noMeeting.Next();

@@ -36,6 +36,14 @@ namespace BirimizKovulacak.Core.Tests
             public Made Send(int from, int to, int amount, LinePhase phase, double time) { R.Transfers.Add(new LineTransferView { From = from, To = to, Amount = amount, Phase = phase, Time = time }); return this; }
             public Made Whistle(int by, int thief, double time) { R.Incidents.Add(new LineDossierEntry { Kind = DossierKind.Whistle, Player = by, Other = thief, N1 = 3, Time = time }); return this; }
             public Made Investigate(int by, int target, double time) { R.Incidents.Add(new LineDossierEntry { Kind = DossierKind.Investigation, Player = by, Other = target, N1 = 1, Time = time }); return this; }
+            /// <summary>v5.3: a file and what became of it (an opened one is an incident too).</summary>
+            public Made File(TaskKind task, int holder, int target, LineFileState state, double time, LinePhase phase = LinePhase.MeetingDossier)
+            {
+                int suc = task == Bonus ? 4 : 3;
+                R.Files.Add(new LineFileView { Task = task, Holder = holder, Target = target, State = state, Time = time, Phase = phase, Blame = suc });
+                if (state == LineFileState.Opened) R.Incidents.Add(new LineDossierEntry { Kind = DossierKind.FileOpened, Task = task, Player = holder, Other = target, N1 = suc, Time = time });
+                return this;
+            }
             public Made Leak(int by, double time) { R.Incidents.Add(new LineDossierEntry { Kind = DossierKind.Leak, Player = by, Other = 0, N1 = 0, N2 = 1, Time = time }); return this; }
             public Made Vote(BallotKind kind, int voter, int target, int round = 0, bool self = false) { R.Ballots.Add(new LineBallotView { Kind = kind, Voter = voter, Target = target, Round = round, SelfAssigned = self }); return this; }
             public Made Declare(int id, int amount, int actual) { R.Declarations.Add(new LineDeclarationView { Player = id, Amount = amount, Actual = actual }); return this; }
@@ -171,6 +179,56 @@ namespace BirimizKovulacak.Core.Tests
             // a trio: the second witness whistled, the first kept its word
             var trio = new Made(5).Theft(1, 0, 2).Send(1, 0, 1, LinePhase.Break, 50).Whistle(2, 1, 60);
             Assert.AreEqual(0, trio.Award(AwardKind.Loyal).Player);
+        }
+
+        [Test]
+        public void Files_SelloutLoyalSnitchAndCashRatFollowTheFiles()
+        {
+            const LineFileState Opened = LineFileState.Opened, Shredded = LineFileState.Shredded, Expired = LineFileState.Expired, Void = LineFileState.Void;
+            // "Satılmış": kept the silence money and opened the file anyway (late, in the crisis calls)
+            var sold = new Made(4).Theft(1, 0).Send(1, 0, 2, LinePhase.Break, 50).File(Cash, 0, 1, Opened, 300, LinePhase.CrisisCalls).Award(AwardKind.Sellout);
+            Assert.AreEqual(new[] { 0, 1, 2, LineStory.BreakCashFile }, new[] { sold.Player, sold.Other, sold.N1, sold.N2 });
+            Assert.AreEqual(LineStory.BreakBonusFile, new Made(4).Robbery(1, 0).Send(1, 0, 1, LinePhase.Break, 50).File(Bonus, 0, 1, Opened, 90).Award(AwardKind.Sellout).N2);
+            Assert.IsNull(new Made(4).Theft(1, 0).Send(1, 0, 2, LinePhase.Break, 50).Send(0, 1, 2, LinePhase.Break, 55).File(Cash, 0, 1, Opened, 90).Award(AwardKind.Sellout), "sent back, then opened: Honest");
+            Assert.IsNull(new Made(4).Theft(1, 0).File(Cash, 0, 1, Opened, 90).Send(1, 0, 2, LinePhase.MeetingDiscussion, 95).Award(AwardKind.Sellout), "paid after the file was open");
+            Assert.IsNull(new Made(4).Theft(1, 0).Send(1, 0, 2, LinePhase.Break, 50).File(Cash, 0, 1, Shredded, 55).Award(AwardKind.Sellout), "shredded: the deal held");
+
+            // "Sözünün Eri": kept the money and never opened; a shredded file comes first
+            var loyal = new Made(4).Theft(1, 0).Send(1, 0, 1, LinePhase.Break, 50).File(Cash, 0, 1, Shredded, 55).Award(AwardKind.Loyal);
+            Assert.AreEqual(new[] { 0, 1, 1, (int)Shredded }, new[] { loyal.Player, loyal.Other, loyal.N1, loyal.N2 });
+            Assert.AreEqual((int)Expired, new Made(4).Robbery(1, 0).Send(1, 0, 1, LinePhase.Break, 50).File(Bonus, 0, 1, Expired, 400).Award(AwardKind.Loyal).N2, "let it expire: silent too");
+            Assert.IsNull(new Made(4).Theft(1, 0).Send(1, 0, 1, LinePhase.Break, 50).File(Cash, 0, 1, Opened, 90).Award(AwardKind.Loyal), "opened: a sellout");
+            Assert.IsNull(new Made(4).Theft(1, 0).Send(1, 0, 1, LinePhase.Break, 50).File(Cash, 2, 3, Shredded, 55).Award(AwardKind.Loyal), "a result with files: no file of its own on the payer, no silence to keep");
+            Assert.IsNull(new Made(4).Theft(1, 0).Send(1, 0, 1, LinePhase.Break, 50).File(Cash, 0, 1, Shredded, 55).Vote(BallotKind.Crisis, 0, 1).Award(AwardKind.Loyal), "then voted the payer into the crisis");
+            var ranked = new Made(6).Theft(1, 0).Send(1, 0, 1, LinePhase.Break, 50).File(Cash, 0, 1, Shredded, 55)
+                .Theft(3, 2).Send(3, 2, 4, LinePhase.Break, 50).File(Cash, 2, 3, Expired, 400).Award(AwardKind.Loyal);
+            Assert.AreEqual(0, ranked.Player, "the shredded file before the bigger sum");
+            var trio = new Made(5).Theft(1, 0, 2).Send(1, 0, 1, LinePhase.Break, 50).File(Cash, 2, 1, Opened, 60).File(Cash, 0, 1, Void, 60).Award(AwardKind.Loyal);
+            Assert.AreEqual(new[] { 0, (int)Void }, new[] { trio.Player, trio.N2 }, "the other witness opened first: the first kept its word");
+
+            // "Ayın İspiyoncusu": the most files opened
+            var snitch = new Made(5).File(Bonus, 3, 1, Opened, 60).File(Cash, 3, 2, Opened, 90).File(Cash, 0, 4, Opened, 55).Award(AwardKind.Snitch);
+            Assert.AreEqual(new[] { 3, 2 }, new[] { snitch.Player, snitch.N1 });
+            Assert.AreEqual(0, new Made(5).File(Bonus, 3, 1, Opened, 60).File(Cash, 0, 4, Opened, 55).Award(AwardKind.Snitch).Player, "a tie: whoever opened first");
+            Assert.IsNull(new Made(5).File(Bonus, 3, 1, Shredded, 60).File(Cash, 0, 4, Expired, 400).Award(AwardKind.Snitch), "shredding or holding opens nothing");
+
+            // "Kasa Faresi": the sole thief nobody opened a file on
+            Assert.IsNull(new Made(4).Theft(2, 3).File(Cash, 3, 2, Opened, 60).Award(AwardKind.CashRat));
+            Assert.AreEqual(2, new Made(4).Theft(2, 3).File(Cash, 3, 2, Shredded, 60).Award(AwardKind.CashRat).Player);
+            Assert.AreEqual(2, new Made(4).Theft(2, 3).File(Cash, 3, 2, Expired, 400).Award(AwardKind.CashRat).Player);
+
+            // the headline of a deal that held: silence money kept, the file shredded
+            var kept = new Made(4).Theft(1, 0).Send(1, 0, 2, LinePhase.Break, 50).File(Cash, 0, 1, Shredded, 55).Heads(HeadlineKind.FileShredded).Single();
+            Assert.AreEqual(new[] { 0, 1, 2, (int)Cash }, new[] { kept.Player, kept.Other, kept.N1, kept.N2 });
+            Assert.AreEqual("shred", LineHeadlines.Id(HeadlineKind.FileShredded));
+            CollectionAssert.IsEmpty(new Made(4).Theft(1, 0).File(Cash, 0, 1, Shredded, 55).Heads(HeadlineKind.FileShredded), "shredded for nothing: no deal");
+            CollectionAssert.IsEmpty(new Made(4).Theft(1, 0).Send(1, 0, 2, LinePhase.Break, 50).Send(0, 1, 2, LinePhase.Break, 52).File(Cash, 0, 1, Shredded, 55).Heads(HeadlineKind.FileShredded));
+            var broken = new Made(4).Theft(1, 0).Send(1, 0, 2, LinePhase.Break, 50).File(Cash, 0, 1, Shredded, 55).Vote(BallotKind.Crisis, 0, 1);
+            CollectionAssert.IsEmpty(broken.Heads(HeadlineKind.FileShredded), "shredded, then voted against the payer: the broken deal is the headline");
+            Assert.AreEqual(1, broken.Heads(HeadlineKind.DealBroken).Count);
+            // an opened file after silence money is the broken-deal headline
+            var opened = new Made(4).Robbery(1, 0).Send(1, 0, 1, LinePhase.Break, 50).File(Bonus, 0, 1, Opened, 300, LinePhase.CrisisCalls).Heads(HeadlineKind.DealBroken).Single();
+            Assert.AreEqual(new[] { 0, 1, 1, LineStory.BreakBonusFile }, new[] { opened.Player, opened.Other, opened.N1, opened.N2 });
         }
 
         [Test]
@@ -390,10 +448,11 @@ namespace BirimizKovulacak.Core.Tests
                         {
                             case AwardKind.WrongMan: Assert.IsTrue(p.Fired, what); break;
                             case AwardKind.Liar: Assert.IsTrue(p.WasCandidate, what); Assert.GreaterOrEqual(a.N3, LineStory.LieGap, what); break;
-                            case AwardKind.Robber: Assert.AreEqual(c.BonusPairTaker, a.N1, what); Assert.AreNotEqual(a.Player, a.Other, what); break;
-                            case AwardKind.CashRat: Assert.AreEqual(c.CashTake, a.N1, what); break;
+                            // (the amounts are the match's: "Haftanın gündemi")
+                            case AwardKind.Robber: Assert.AreEqual(r.Stakes.BonusTaker, a.N1, what); Assert.AreNotEqual(a.Player, a.Other, what); break;
+                            case AwardKind.CashRat: Assert.AreEqual(r.Stakes.CashTake, a.N1, what); break;
                             case AwardKind.Scapegoat: Assert.AreEqual(c.CrisisBlame, a.N1, what); break;
-                            case AwardKind.Dodger: Assert.IsFalse(p.Fired, what); Assert.AreEqual(c.ShiftSkipPay, a.N1, what); break;
+                            case AwardKind.Dodger: Assert.IsFalse(p.Fired, what); Assert.AreEqual(r.Stakes.ShiftSkipPay, a.N1, what); break;
                             case AwardKind.Clean: Assert.AreEqual(0, p.Blame, what); Assert.IsFalse(p.Fired, what); break;
                         }
                     }
@@ -406,14 +465,16 @@ namespace BirimizKovulacak.Core.Tests
                         foreach (int id in g.Members)
                         {
                             var ch = r.Choices.Single(x => x.Task == TaskKind.ClientBonus && x.Player == id);
-                            if (takers == 1) Assert.AreEqual(ch.Choice == LineChoice.Take ? 5 : 0, ch.Payout, what);
+                            if (takers == 1) Assert.AreEqual(ch.Choice == LineChoice.Take ? r.Stakes.BonusTaker : 0, ch.Payout, what);
                         }
                     }
                 }
             TestContext.WriteLine(matches + " matches; awards: " + string.Join(", ", seen.OrderBy(x => (int)x.Key).Select(x => x.Key + " " + x.Value))
                                   + "; headlines: " + string.Join(", ", heads.OrderBy(x => (int)x.Key).Select(x => x.Key + " " + x.Value)));
-            // (the declaration awards need bots that declare: LineBotDeclareTests)
-            foreach (var kind in new[] { AwardKind.Robber, AwardKind.CashRat, AwardKind.Snitch, AwardKind.Scapegoat, AwardKind.Dodger, AwardKind.Clean })
+            // (the declaration awards need bots that declare: LineBotDeclareTests; v5.3: bots that do not talk are never paid,
+            // so every file is opened and no thief stays a "Kasa Faresi": Files_SelloutLoyalSnitchAndCashRatFollowTheFiles)
+            Assert.IsFalse(seen.ContainsKey(AwardKind.CashRat) || seen.ContainsKey(AwardKind.Loyal) || seen.ContainsKey(AwardKind.Sellout));
+            foreach (var kind in new[] { AwardKind.Robber, AwardKind.Snitch, AwardKind.Scapegoat, AwardKind.Dodger, AwardKind.Clean })
                 Assert.IsTrue(seen.ContainsKey(kind), kind + " never came up in " + matches + " bot matches");
             Assert.IsTrue(heads.ContainsKey(HeadlineKind.BonusBetrayal) && heads.ContainsKey(HeadlineKind.Firing) && heads.ContainsKey(HeadlineKind.Crisis));
         }

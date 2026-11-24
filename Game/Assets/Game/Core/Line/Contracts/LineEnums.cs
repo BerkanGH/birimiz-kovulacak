@@ -9,15 +9,19 @@ namespace BirimizKovulacak.Core
     {
         /// <summary>Wire format version (6: Yaramazlıklar added the Prank verb and the pranks view; 7: the v5.1 rules added
         /// BlameReason.ShiftClean / ShiftFailSkip and DossierKind.ShiftSkipBlame; 8: v5.2 added the Declare verb, the
-        /// DeclarationsRevealed event, the declaration / group views, the talk-time option and the new config fields).</summary>
-        public const int Version = 8;
+        /// DeclarationsRevealed event, the declaration / group views, the talk-time option and the new config fields;
+        /// 9: v5.3 added the FileOpen / FileShred verbs, the file events, views and dossier line and the week's stakes
+        /// view, and moved the one-shot investigation / whistle numbers to <see cref="LineConfig.Legacy"/>).</summary>
+        public const int Version = 9;
         /// <summary>Ruleset identity for analytics and results; never pool data across different values. Yaramazlıklar is a
         /// lobby option (like recordings) and does not change it. v5.1 (2026-11-15): Client Bonus 3/3, free sharer-only
         /// investigation (+4 suç), the whistled thief keeps the cash (no whistle reward), shift cleaning (−1 suç) and the
         /// failed shift's automatic suç (no meeting 2 vote), 0 suç is never a candidate. v5.2 (2026-11-24): the candidates'
         /// prim declarations ("prim beyanı"), no meeting 2 (the short shift's suç lands at its reveal): one meeting before
-        /// the final.</summary>
-        public const string RulesetVersion = "v5.2-kayit";
+        /// the final. v5.3 (2026-11-24): "Dosya" (a persistent file its holder may open or shred until the crisis calls
+        /// end replaces the one-shot investigation and whistle) and "Haftanın gündemi" (one task small, one normal, one
+        /// big per match: the prizes change, the suç prices never do).</summary>
+        public const string RulesetVersion = "v5.3-kayit";
         /// <summary>What the engine, the tests and LineSim support.</summary>
         public const int MinPlayers = 3;
         public const int MaxPlayers = 6;
@@ -77,7 +81,7 @@ namespace BirimizKovulacak.Core
         None = 0,
         /// <summary>Pair/trio: Share (0) or Take (1).</summary>
         ClientBonus = 1,
-        /// <summary>Pair/trio: Leave (0) or Take (1); witnesses may whistle in the following break.</summary>
+        /// <summary>Pair/trio: Leave (0) or Take (1); the witnesses of a sole taker hold a file on them (v5.3).</summary>
         PettyCash = 2,
         /// <summary>Everyone: Skip (0) or Volunteer (1); needs ceil(N/2) volunteers.</summary>
         WeekendShift = 3,
@@ -138,9 +142,11 @@ namespace BirimizKovulacak.Core
         SendMeetingChat = 8,
         /// <summary>Prim: Target = receiver, A = amount.</summary>
         Transfer = 9,
-        /// <summary>Petty Cash break: Target = the sole taker of my group.</summary>
+        /// <summary>Legacy rules only (<see cref="LineConfig.Legacy"/>; v5.3 has <see cref="FileOpen"/>). Petty Cash
+        /// break: Target = the sole taker of my group.</summary>
         Whistle = 10,
-        /// <summary>Meeting 1: Target = a member of my Client Bonus group (v5.1: I shared and the target took).</summary>
+        /// <summary>Legacy rules only (<see cref="LineConfig.Legacy"/>; v5.3 has <see cref="FileOpen"/>). Meeting 1:
+        /// Target = a member of my Client Bonus group (v5.1: I shared and the target took).</summary>
         Investigate = 11,
         /// <summary>Mark my current connected call as recorded.</summary>
         Record = 12,
@@ -156,6 +162,13 @@ namespace BirimizKovulacak.Core
         /// it may be a lie). Candidates only, once each, from CrisisVerdict until the declaration deadline in the final
         /// discussion. No effect on prim, suç or votes.</summary>
         Declare = 16,
+        /// <summary>"Dosya" (v5.3): open a file I hold. Target = the colleague it is on, A = (int)<see cref="TaskKind"/>
+        /// (ClientBonus or PettyCash). From that task's reveal until the crisis calls end. Free; the target gets the
+        /// file's suç at once and publicly, the other files on the same offence become void.</summary>
+        FileOpen = 17,
+        /// <summary>"Dosya" (v5.3): shred a file I hold (irreversible; only the target is told who did it). Target and A
+        /// as <see cref="FileOpen"/>.</summary>
+        FileShred = 18,
     }
 
     public enum LineFailure : byte
@@ -182,9 +195,9 @@ namespace BirimizKovulacak.Core
         InsufficientFunds = 19,
         /// <summary>The call/record is not mine.</summary>
         NotOwned = 20,
-        /// <summary>Whistle/investigation preconditions (witness, same group) not met.</summary>
+        /// <summary>Whistle / investigation preconditions (witness, same group) not met; I hold no such file.</summary>
         NotEligible = 21,
-        /// <summary>The theft / taker / recording was already resolved, exposed or leaked.</summary>
+        /// <summary>The theft / taker / recording was already resolved, exposed or leaked; the file is no longer held.</summary>
         AlreadyResolved = 22,
         /// <summary>Fired players take no further part in votes.</summary>
         Fired = 23,
@@ -221,10 +234,10 @@ namespace BirimizKovulacak.Core
         TaskSubmitted = 10,
         /// <summary>To the recipient: Actor = sender, A = amount.</summary>
         TransferReceived = 11,
-        /// <summary>To whistler and thief: Actor = whistler, Target = thief, A = prim taken back (0 when the thief keeps it,
-        /// <see cref="LineConfig.CashWhistledKeeps"/>).</summary>
+        /// <summary>Legacy rules only. To whistler and thief: Actor = whistler, Target = thief, A = prim taken back (0 when
+        /// the thief keeps it, <see cref="LineLegacyRules.CashWhistledKeeps"/>).</summary>
         Whistled = 12,
-        /// <summary>Public: Actor investigated Target; A = 1 Target had taken / 0 Target had shared.</summary>
+        /// <summary>Legacy rules only. Public: Actor investigated Target; A = 1 Target had taken / 0 Target had shared.</summary>
         Investigated = 13,
         /// <summary>Public: Actor leaked call C between A (caller) and B (callee); Target = pick index.</summary>
         Leaked = 14,
@@ -249,6 +262,14 @@ namespace BirimizKovulacak.Core
         /// <summary>Public: the candidates' prim declarations are revealed (all at once): A = declarations made,
         /// B = candidates. The amounts are in <see cref="LineFinalView.Declarations"/>.</summary>
         DeclarationsRevealed = 22,
+        /// <summary>"Dosya" (v5.3). Public: Actor opened its file on Target; A = (int)TaskKind, B = suç added.</summary>
+        FileOpened = 23,
+        /// <summary>"Dosya". To the holder and to the target only: Actor shredded its file on Target; A = (int)TaskKind.</summary>
+        FileShredded = 24,
+        /// <summary>"Dosya", the anonymous public notice (<see cref="LineConfig.FilePublicCount"/>): A = what happened
+        /// ((int)<see cref="LineFileState"/>: Shredded or Expired), B = how many files, C = files still held. A shredding
+        /// goes to everyone but its holder and target (they get <see cref="FileShredded"/>); an expiry to everyone.</summary>
+        FileNotice = 25,
     }
 
     public enum BlameReason : byte
@@ -258,9 +279,11 @@ namespace BirimizKovulacak.Core
         Vote = 1,
         /// <summary>Two or more Petty Cash takers in one group.</summary>
         CashCaught = 2,
-        /// <summary>Whistled Petty Cash thief.</summary>
+        /// <summary>A sole Petty Cash thief: a witness opened the file on them (v5.3; legacy rules: whistled).</summary>
         Whistled = 3,
+        /// <summary>A Client Bonus taker: a sharer opened the file on them (v5.3; legacy rules: investigated).</summary>
         InvestigationGuilty = 4,
+        /// <summary>Legacy v5.0 rules only: the investigated colleague had shared.</summary>
         InvestigationFalse = 5,
         Crisis = 6,
         /// <summary>A prank overflowed the manager's patience (Yaramazlıklar).</summary>
@@ -276,7 +299,7 @@ namespace BirimizKovulacak.Core
     {
         None = 0,
         Task = 1,
-        /// <summary>Whistled thief loses the stolen prim (v5.0 rules only: <see cref="LineConfig.CashWhistledKeeps"/> false).</summary>
+        /// <summary>Whistled thief loses the stolen prim (v5.0 rules only: <see cref="LineLegacyRules.CashWhistledKeeps"/> false).</summary>
         Whistled = 2,
         WhistleReward = 3,
         InvestigationCost = 4,
@@ -310,13 +333,13 @@ namespace BirimizKovulacak.Core
         BonusTakers = 2,
         /// <summary>Petty Cash: Player was caught (two or more takers in one group); N1 = suç added.</summary>
         CashCaught = 3,
-        /// <summary>Petty Cash: Player whistled on Other; N1 = suç added to Other.</summary>
+        /// <summary>Legacy rules only. Petty Cash: Player whistled on Other; N1 = suç added to Other.</summary>
         Whistle = 4,
         /// <summary>Petty Cash: N1 = prim missing from unresolved thefts, N2 = number of unresolved thefts.</summary>
         CashMissing = 5,
         /// <summary>Weekend Shift: N1 = volunteers, N2 = needed (roster in <see cref="LineMeetingView.Roster"/>).</summary>
         ShiftRoster = 6,
-        /// <summary>Player investigated Other; N1 = 1 guilty (Other took) / 0 innocent.</summary>
+        /// <summary>Legacy rules only. Player investigated Other; N1 = 1 guilty (Other took) / 0 innocent.</summary>
         Investigation = 7,
         /// <summary>Player leaked a call between N1 (caller) and N2 (callee); Other = recording pick index.</summary>
         Leak = 8,
@@ -324,9 +347,57 @@ namespace BirimizKovulacak.Core
         /// <see cref="LineMeetingView.Roster"/>). v5.2: in the crisis / final segment's dossier (the suç landed at the
         /// shift's reveal); with <see cref="LineConfig.ShiftMeeting"/>: in meeting 2's.</summary>
         ShiftSkipBlame = 9,
+        /// <summary>"Dosya" (v5.3): Player opened its file on Other; Task = the task of the offence (ClientBonus: Other
+        /// took while Player shared; PettyCash: Other was the sole taker), N1 = suç added to Other. In the dossier of the
+        /// meeting room segment it happened in (or the next one to open) and in the results' incidents.</summary>
+        FileOpened = 10,
     }
 
     public enum BallotKind : byte { None = 0, Meeting = 1, Crisis = 2, Final = 3 }
+
+    /// <summary>What became of a file ("Dosya", v5.3).</summary>
+    public enum LineFileState : byte
+    {
+        /// <summary>Still in its holder's hands: it can be opened or shredded.</summary>
+        Held = 0,
+        /// <summary>Opened: the target got its suç, publicly.</summary>
+        Opened = 1,
+        /// <summary>Shredded by its holder (only the holder and the target know who).</summary>
+        Shredded = 2,
+        /// <summary>Another holder opened a file on the same offence first.</summary>
+        Void = 3,
+        /// <summary>Still held when the crisis calls ended.</summary>
+        Expired = 4,
+    }
+
+    /// <summary>"Haftanın gündemi" (v5.3): the stakes level of each task in a match and how the levels are drawn.
+    /// Localisation id: <see cref="Id"/>.</summary>
+    public static class LineStakes
+    {
+        public const int Small = 0, Normal = 1, Big = 2;
+        /// <summary><see cref="LineConfig.StakesScheme"/>: every task plays at the config's own numbers (the normal level).</summary>
+        public const int Fixed = 0;
+        /// <summary><see cref="LineConfig.StakesScheme"/>: a seeded permutation gives one task the small level, one the
+        /// normal and one the big (six week types).</summary>
+        public const int Permutation = 1;
+        public const int WeekTypes = 6;
+        static readonly string[] Ids = { "small", "normal", "big" };
+        /// <summary>Levels of { Client Bonus, Petty Cash, Weekend Shift } per week type.</summary>
+        static readonly int[][] Weeks =
+        {
+            new[] { Small, Normal, Big }, new[] { Small, Big, Normal }, new[] { Normal, Small, Big },
+            new[] { Normal, Big, Small }, new[] { Big, Small, Normal }, new[] { Big, Normal, Small },
+        };
+        public static bool Valid(int level) { return level >= Small && level <= Big; }
+        /// <summary>Stable string id (localisation v5.stakes.&lt;task&gt;.&lt;id&gt;, logs).</summary>
+        public static string Id(int level) { return Valid(level) ? Ids[level] : ""; }
+        /// <summary>The level of a task (ClientBonus, PettyCash, WeekendShift) in a week type (0..5); Normal for anything else.</summary>
+        public static int Level(int weekType, TaskKind task)
+        {
+            int i = (int)task - 1;
+            return weekType >= 0 && weekType < Weeks.Length && i >= 0 && i < 3 ? Weeks[weekType][i] : Normal;
+        }
+    }
 
     /// <summary>How a firing was decided.</summary>
     public enum FiringDecision : byte

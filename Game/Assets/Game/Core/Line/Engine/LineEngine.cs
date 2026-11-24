@@ -6,7 +6,7 @@ namespace BirimizKovulacak.Core
     /// <summary>
     /// v5 rules engine core: seats, construction and validation, the absolute-deadline Tick loop, the phase machine,
     /// action dispatch, presence and the prim/suç ledgers. Rules per area live in the other partial files
-    /// (Office: phone, messages, transfers, recorder; Tasks; Meeting; Final; Views). Normative spec:
+    /// (Office: phone, messages, transfers, recorder; Tasks; Meeting; Final; Files: the stakes and the files; Views). Normative spec:
     /// docs/V5_ENGINE_SPEC.md.
     /// </summary>
     internal sealed partial class LineEngine : ILineEngine
@@ -113,6 +113,8 @@ namespace BirimizKovulacak.Core
             ValidateConfig(input.Players.Count);
             // lobby option "Konuşma süresi": the talking phases of this match (Config returns the scaled durations)
             c.Durations.ScaleTalk(c.TalkFactor(setup.TalkTime));
+            // "Haftanın gündemi": this match's levels and amounts (Config returns them applied)
+            DrawStakes();
             rng = new LineRandom(setup.Seed);
             for (int id = 0; id < LineProtocol.MaxPlayers; id++)
             {
@@ -140,6 +142,8 @@ namespace BirimizKovulacak.Core
             // Every numeric tunable, including ones added in future revisions: finite, 0..1e6.
             ValidateNumbers(c);
             ValidateNumbers(c.Durations);
+            if (c.Legacy != null) ValidateNumbers(c.Legacy);
+            if (c.StakesScheme != LineStakes.Fixed && c.StakesScheme != LineStakes.Permutation) throw new ArgumentException("Invalid stakes scheme.");
             var d = c.Durations;
             if (d.TaskPlay <= 0 || d.FinalDefense <= 0 || d.FinalVote <= 0 || d.FinalRevote <= 0 || d.Ring <= 0 ||
                 c.AbandonSeconds <= 0 || c.PairingTries < 1 || c.PairingTries > 100000 || c.MessagesKeptPerPlayer < 1 ||
@@ -300,7 +304,7 @@ namespace BirimizKovulacak.Core
                     break;
                 case LinePhase.MeetingVote: TallyMeetingVote(time); Enter(LinePhase.MeetingVerdict, time, c.Durations.MeetingVerdict); break;
                 case LinePhase.MeetingVerdict: EndMeeting(time); break;
-                case LinePhase.CrisisCalls: StartCrisisVote(time); break;
+                case LinePhase.CrisisCalls: ExpireFiles(time); StartCrisisVote(time); break;
                 case LinePhase.CrisisVote: ResolveCrisis(time); Enter(LinePhase.CrisisVerdict, time, c.Durations.CrisisVerdict); break;
                 case LinePhase.CrisisVerdict:
                     // nobody has suç (CandidateMinBlame): no candidates, nobody is fired, straight to the results
@@ -388,6 +392,8 @@ namespace BirimizKovulacak.Core
                 case LineVerb.Vote: return Vote(id, a, time);
                 case LineVerb.Prank: return Prank(id, a, time);
                 case LineVerb.Declare: return Declare(id, a, time);
+                case LineVerb.FileOpen:
+                case LineVerb.FileShred: return FileAction(id, a, time);
                 default: return LineFailure.BadParam;
             }
         }

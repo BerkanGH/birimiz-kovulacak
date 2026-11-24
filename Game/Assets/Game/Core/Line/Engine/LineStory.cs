@@ -17,18 +17,21 @@ namespace BirimizKovulacak.Core
         /// <summary>"En Pahalı Yalan": the candidate whose declaration understated their prim the most (at least
         /// <see cref="LineStory.LieGap"/>). N1 = declared, N2 = real prim at the reveal, N3 = the gap.</summary>
         Liar = 2,
-        /// <summary>"Satılmış": kept prim from Other and then punished them (whistle, investigation) or voted for them in
-        /// the crisis / a firing vote. N1 = prim kept, N2 = how (<see cref="LineStory.BreakWhistle"/>..).</summary>
+        /// <summary>"Satılmış": kept prim from Other and then opened the file on them (legacy rules: whistle,
+        /// investigation) or voted for them in the crisis / a firing vote. N1 = prim kept, N2 = how
+        /// (<see cref="LineStory.BreakCashFile"/>..).</summary>
         Sellout = 3,
-        /// <summary>"Sözünün Eri": kept silence money from Other (whom they could have punished) and never punished or
-        /// voted against them. N1 = prim kept.</summary>
+        /// <summary>"Sözünün Eri": kept silence money from Other, on whom they held a file, and never opened it or voted
+        /// against them. N1 = prim kept, N2 = what became of the file ((int)<see cref="LineFileState"/>: Shredded first,
+        /// then Expired / Void; -1 in a result without files).</summary>
         Loyal = 4,
         /// <summary>"Soyguncu": took the whole Client Bonus while the group shared. Other = a victim, N1 = prim taken,
         /// N2 = victims.</summary>
         Robber = 5,
-        /// <summary>"Kasa Faresi": the only taker of a Petty Cash box, never whistled on. N1 = prim taken.</summary>
+        /// <summary>"Kasa Faresi": the only taker of a Petty Cash box, and no file was opened on them. N1 = prim taken.</summary>
         CashRat = 6,
-        /// <summary>"Ayın İspiyoncusu": opened the most punishments (whistles + investigations, at least one). N1 = how many.</summary>
+        /// <summary>"Ayın İspiyoncusu": opened the most files (legacy rules: whistles + investigations), at least one.
+        /// N1 = how many.</summary>
         Snitch = 7,
         /// <summary>"Günah Keçisi": the one colleague who got the crisis suç. N1 = suç, N2 = crisis votes received.</summary>
         Scapegoat = 8,
@@ -63,7 +66,8 @@ namespace BirimizKovulacak.Core
     public enum HeadlineKind : byte
     {
         None = 0,
-        /// <summary>A broken deal: Player kept N1 prim from Other and still punished / voted against them (N2 = how).</summary>
+        /// <summary>A broken deal: Player kept N1 prim from Other and still opened the file on them / voted against them
+        /// (N2 = how, <see cref="LineStory.BreakCashFile"/>..).</summary>
         DealBroken = 1,
         /// <summary>Client Bonus: Player took it all (N1 prim); Other (and Other2 in a trio) had shared.</summary>
         BonusBetrayal = 2,
@@ -74,11 +78,14 @@ namespace BirimizKovulacak.Core
         Crisis = 4,
         /// <summary>The biggest single transfer of the match: Player sent Other N1 prim.</summary>
         BigTransfer = 5,
+        /// <summary>A deal that held (v5.3): Player kept N1 prim from Other and shredded the file on them (N2 = the
+        /// file's task, (int)<see cref="TaskKind"/>).</summary>
+        FileShredded = 6,
     }
 
     public static class LineHeadlines
     {
-        static readonly string[] Ids = { "", "deal", "bonus", "firing", "crisis", "transfer" };
+        static readonly string[] Ids = { "", "deal", "bonus", "firing", "crisis", "transfer", "shred" };
         /// <summary>Stable string id (localisation v5.headline.&lt;id&gt;*, logs).</summary>
         public static string Id(HeadlineKind k) { int i = (int)k; return i >= 0 && i < Ids.Length ? Ids[i] : ""; }
     }
@@ -102,8 +109,10 @@ namespace BirimizKovulacak.Core
         public const int LieGap = 3;
         /// <summary>The single transfer that makes the "biggest transfer" headline is at least this big.</summary>
         public const int BigTransferMin = 2;
-        /// <summary>How a deal was broken (Sellout N2, DealBroken N2).</summary>
-        public const int BreakWhistle = 0, BreakInvestigation = 1, BreakCrisisVote = 2, BreakFinalVote = 3;
+        /// <summary>How a deal was broken (Sellout N2, DealBroken N2): the Petty Cash file opened (legacy rules: the
+        /// whistle), the Client Bonus file opened (legacy: the investigation), a crisis vote, a firing vote.</summary>
+        public const int BreakCashFile = 0, BreakBonusFile = 1, BreakCrisisVote = 2, BreakFinalVote = 3;
+        public const int BreakWhistle = BreakCashFile, BreakInvestigation = BreakBonusFile;
 
         public readonly List<LineAward> Awards = new List<LineAward>();
         public readonly List<LineHeadline> Headlines = new List<LineHeadline>();
@@ -157,7 +166,7 @@ namespace BirimizKovulacak.Core
             }
             story.Awards.Sort((a, b) => a.Kind != b.Kind ? ((int)a.Kind).CompareTo((int)b.Kind) : a.Player.CompareTo(b.Player));
             // ---- headlines: the first of every kind in priority order, then the rest kind by kind
-            var kinds = new List<List<LineHeadline>> { f.DealHeadlines(), f.BonusHeadlines(), f.FiringHeadlines(), f.CrisisHeadlines(), f.TransferHeadlines() };
+            var kinds = new List<List<LineHeadline>> { f.DealHeadlines(), f.BonusHeadlines(), f.FiringHeadlines(), f.CrisisHeadlines(), f.TransferHeadlines(), f.ShredHeadlines() };
             for (int round = 0; story.Headlines.Count < MaxHeadlines; round++)
             {
                 bool any = false;
@@ -238,12 +247,32 @@ namespace BirimizKovulacak.Core
                 if (r.Incidents == null) return false;
                 foreach (var d in r.Incidents)
                 {
-                    if (d == null || d.Player != by || d.Other != target) continue;
-                    if (d.Kind != DossierKind.Whistle && d.Kind != DossierKind.Investigation) continue;
-                    if (d.Time < time) { time = d.Time; how = d.Kind == DossierKind.Whistle ? BreakWhistle : BreakInvestigation; }
+                    if (d == null || d.Player != by || d.Other != target || !Punishment(d)) continue;
+                    if (d.Time < time) { time = d.Time; how = d.Kind == DossierKind.Whistle || d.Kind == DossierKind.FileOpened && d.Task == TaskKind.PettyCash ? BreakCashFile : BreakBonusFile; }
                 }
                 return how >= 0;
             }
+
+            /// <summary>An opened file (legacy rules: a whistle, an investigation).</summary>
+            static bool Punishment(LineDossierEntry d)
+            {
+                return d.Kind == DossierKind.FileOpened || d.Kind == DossierKind.Whistle || d.Kind == DossierKind.Investigation;
+            }
+
+            /// <summary>The file <paramref name="holder"/> held on <paramref name="target"/> (the shredded one first), or null.</summary>
+            LineFileView File(int holder, int target)
+            {
+                LineFileView best = null;
+                if (r.Files != null)
+                    foreach (var f in r.Files)
+                    {
+                        if (f == null || f.Holder != holder || f.Target != target) continue;
+                        if (best == null || f.State == LineFileState.Shredded && best.State != LineFileState.Shredded) best = f;
+                    }
+                return best;
+            }
+
+            bool HasFiles { get { return r.Files != null && r.Files.Count > 0; } }
 
             /// <summary>What <paramref name="to"/> kept of <paramref name="from"/>'s prim: sent minus sent back.</summary>
             int Kept(int to, int from)
@@ -337,9 +366,12 @@ namespace BirimizKovulacak.Core
                                 int kept = Kept(s, p), how;
                                 double at;
                                 if (kept <= 0 || Punished(s, p, out how, out at) || deals.Exists(d => d.Taker == s && d.Payer == p)) continue;
-                                list.Add(new LineAward { Kind = kind, Player = s, Other = p, N1 = kept });
+                                var file = File(s, p);
+                                list.Add(new LineAward { Kind = kind, Player = s, Other = p, N1 = kept, N2 = file != null ? (int)file.State : -1 });
                             }
-                        list.Sort((a, b) => a.N1 != b.N1 ? b.N1.CompareTo(a.N1) : a.Player != b.Player ? a.Player.CompareTo(b.Player) : a.Other.CompareTo(b.Other));
+                        // a shredded file first (the word kept and delivered), then the most prim
+                        list.Sort((a, b) => Shredded(a) != Shredded(b) ? Shredded(b).CompareTo(Shredded(a)) : a.N1 != b.N1 ? b.N1.CompareTo(a.N1)
+                            : a.Player != b.Player ? a.Player.CompareTo(b.Player) : a.Other.CompareTo(b.Other));
                         break;
                     case AwardKind.Robber:
                         foreach (int id in ids)
@@ -361,7 +393,7 @@ namespace BirimizKovulacak.Core
                         list.Sort((a, b) => ByPrim(this, a, b));
                         break;
                     case AwardKind.Snitch:
-                        CountIncidents(list, kind, d => d.Kind == DossierKind.Whistle || d.Kind == DossierKind.Investigation);
+                        CountIncidents(list, kind, Punishment);
                         break;
                     case AwardKind.Scapegoat:
                     {
@@ -433,9 +465,14 @@ namespace BirimizKovulacak.Core
                 list.Sort((a, b) => a.N1 != b.N1 ? b.N1.CompareTo(a.N1) : first[a.Player] != first[b.Player] ? first[a.Player].CompareTo(first[b.Player]) : a.Player.CompareTo(b.Player));
             }
 
+            static int Shredded(LineAward a) { return a.N2 == (int)LineFileState.Shredded ? 1 : 0; }
+
+            /// <summary>A Petty Cash file was opened on the thief (legacy rules: a whistle).</summary>
             bool Whistled(int thief)
             {
-                if (r.Incidents != null) foreach (var d in r.Incidents) if (d != null && d.Kind == DossierKind.Whistle && d.Other == thief) return true;
+                if (r.Incidents != null)
+                    foreach (var d in r.Incidents)
+                        if (d != null && d.Other == thief && (d.Kind == DossierKind.Whistle || d.Kind == DossierKind.FileOpened && d.Task == TaskKind.PettyCash)) return true;
                 return false;
             }
 
@@ -463,10 +500,12 @@ namespace BirimizKovulacak.Core
                 return victims.Count > 0 ? victims : null;
             }
 
-            /// <summary><paramref name="s"/> could have punished <paramref name="p"/>: p took the Client Bonus s shared in,
-            /// or was the only Petty Cash taker of a group s left the box alone in.</summary>
+            /// <summary><paramref name="s"/> could have punished <paramref name="p"/>: s held a file on p (a result without
+            /// files: p took the Client Bonus s shared in, or was the only Petty Cash taker of a group s left the box
+            /// alone in).</summary>
             bool CouldPunish(int s, int p)
             {
+                if (HasFiles) return File(s, p) != null;
                 var victims = BonusVictims(p);
                 if (victims != null && victims.Contains(s)) return true;
                 var group = Group(TaskKind.PettyCash, p);
@@ -480,6 +519,23 @@ namespace BirimizKovulacak.Core
             {
                 var list = new List<LineHeadline>();
                 foreach (var d in deals) list.Add(new LineHeadline { Kind = HeadlineKind.DealBroken, Player = d.Taker, Other = d.Payer, N1 = d.Kept, N2 = d.How });
+                return list;
+            }
+
+            /// <summary>Deals that held: silence money kept and the file shredded (the most prim first).</summary>
+            internal List<LineHeadline> ShredHeadlines()
+            {
+                var list = new List<LineHeadline>();
+                if (r.Files == null) return list;
+                foreach (var f in r.Files)
+                {
+                    if (f == null || f.State != LineFileState.Shredded || !Seat(f.Holder) || !Seat(f.Target)) continue;
+                    int kept = Kept(f.Holder, f.Target);
+                    if (kept <= 0 || deals.Exists(d => d.Taker == f.Holder && d.Payer == f.Target)) continue;
+                    if (list.Exists(h => h.Player == f.Holder && h.Other == f.Target)) continue;
+                    list.Add(new LineHeadline { Kind = HeadlineKind.FileShredded, Player = f.Holder, Other = f.Target, N1 = kept, N2 = (int)f.Task });
+                }
+                list.Sort((a, b) => a.N1 != b.N1 ? b.N1.CompareTo(a.N1) : a.Player != b.Player ? a.Player.CompareTo(b.Player) : a.Other.CompareTo(b.Other));
                 return list;
             }
 

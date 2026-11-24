@@ -65,6 +65,16 @@ namespace BirimizKovulacak.Core
                         hash = (hash ^ (uint)d.Amount) * 1099511628211UL;
                         hash = (hash ^ (uint)d.Actual) * 1099511628211UL;
                     }
+                // v5.3: the files (none under the legacy rules, whose hashes stay what they were)
+                if (copy.Files != null)
+                    foreach (var f in copy.Files)
+                    {
+                        if (f == null) continue;
+                        hash = (hash ^ (uint)f.Task) * 1099511628211UL;
+                        hash = (hash ^ (uint)f.Holder) * 1099511628211UL;
+                        hash = (hash ^ (uint)f.Target) * 1099511628211UL;
+                        hash = (hash ^ (uint)f.State) * 1099511628211UL;
+                    }
             }
             return hash;
         }
@@ -198,28 +208,30 @@ namespace BirimizKovulacak.Core
         private static void WriteCallStatus(BinaryWriter w, CallStatus v) { WriteEnum(w, (byte)v, 3, "CallStatus"); }
         private static CallEndReason ReadCallEndReason(BinaryReader r) { return (CallEndReason)ReadEnum(r, 5, "CallEndReason"); }
         private static void WriteCallEndReason(BinaryWriter w, CallEndReason v) { WriteEnum(w, (byte)v, 5, "CallEndReason"); }
-        private static LineVerb ReadLineVerb(BinaryReader r) { return (LineVerb)ReadEnum(r, 16, "LineVerb"); }
-        private static void WriteLineVerb(BinaryWriter w, LineVerb v) { WriteEnum(w, (byte)v, 16, "LineVerb"); }
+        private static LineVerb ReadLineVerb(BinaryReader r) { return (LineVerb)ReadEnum(r, 18, "LineVerb"); }
+        private static void WriteLineVerb(BinaryWriter w, LineVerb v) { WriteEnum(w, (byte)v, 18, "LineVerb"); }
         private static LineFailure ReadLineFailure(BinaryReader r) { return (LineFailure)ReadEnum(r, 25, "LineFailure"); }
         private static void WriteLineFailure(BinaryWriter w, LineFailure v) { WriteEnum(w, (byte)v, 25, "LineFailure"); }
         private static LineAudience ReadLineAudience(BinaryReader r) { return (LineAudience)ReadEnum(r, 2, "LineAudience"); }
         private static void WriteLineAudience(BinaryWriter w, LineAudience v) { WriteEnum(w, (byte)v, 2, "LineAudience"); }
-        private static LineEventType ReadLineEventType(BinaryReader r) { return (LineEventType)ReadEnum(r, 22, "LineEventType"); }
-        private static void WriteLineEventType(BinaryWriter w, LineEventType v) { WriteEnum(w, (byte)v, 22, "LineEventType"); }
+        private static LineEventType ReadLineEventType(BinaryReader r) { return (LineEventType)ReadEnum(r, 25, "LineEventType"); }
+        private static void WriteLineEventType(BinaryWriter w, LineEventType v) { WriteEnum(w, (byte)v, 25, "LineEventType"); }
         private static BlameReason ReadBlameReason(BinaryReader r) { return (BlameReason)ReadEnum(r, 9, "BlameReason"); }
         private static void WriteBlameReason(BinaryWriter w, BlameReason v) { WriteEnum(w, (byte)v, 9, "BlameReason"); }
         private static PrimReason ReadPrimReason(BinaryReader r) { return (PrimReason)ReadEnum(r, 10, "PrimReason"); }
         private static void WritePrimReason(BinaryWriter w, PrimReason v) { WriteEnum(w, (byte)v, 10, "PrimReason"); }
         private static MessageKind ReadMessageKind(BinaryReader r) { return (MessageKind)ReadEnum(r, 3, "MessageKind"); }
         private static void WriteMessageKind(BinaryWriter w, MessageKind v) { WriteEnum(w, (byte)v, 3, "MessageKind"); }
-        private static DossierKind ReadDossierKind(BinaryReader r) { return (DossierKind)ReadEnum(r, 9, "DossierKind"); }
-        private static void WriteDossierKind(BinaryWriter w, DossierKind v) { WriteEnum(w, (byte)v, 9, "DossierKind"); }
+        private static DossierKind ReadDossierKind(BinaryReader r) { return (DossierKind)ReadEnum(r, 10, "DossierKind"); }
+        private static void WriteDossierKind(BinaryWriter w, DossierKind v) { WriteEnum(w, (byte)v, 10, "DossierKind"); }
         private static BallotKind ReadBallotKind(BinaryReader r) { return (BallotKind)ReadEnum(r, 3, "BallotKind"); }
         private static void WriteBallotKind(BinaryWriter w, BallotKind v) { WriteEnum(w, (byte)v, 3, "BallotKind"); }
         private static FiringDecision ReadFiringDecision(BinaryReader r) { return (FiringDecision)ReadEnum(r, 5, "FiringDecision"); }
         private static void WriteFiringDecision(BinaryWriter w, FiringDecision v) { WriteEnum(w, (byte)v, 5, "FiringDecision"); }
         private static PrankKind ReadPrankKind(BinaryReader r) { return (PrankKind)ReadEnum(r, 8, "PrankKind"); }
         private static void WritePrankKind(BinaryWriter w, PrankKind v) { WriteEnum(w, (byte)v, 8, "PrankKind"); }
+        private static LineFileState ReadLineFileState(BinaryReader r) { return (LineFileState)ReadEnum(r, 4, "LineFileState"); }
+        private static void WriteLineFileState(BinaryWriter w, LineFileState v) { WriteEnum(w, (byte)v, 4, "LineFileState"); }
 
         // ---- contract types (declaration order)
         internal static void WriteLineAction(BinaryWriter w, LineAction v)
@@ -541,13 +553,8 @@ namespace BirimizKovulacak.Core
             w.Write(v.CashTake);
             w.Write(v.CashCaughtBlame);
             w.Write(v.CashWhistleBlame);
-            w.Write(v.CashWhistleReward);
             w.Write(v.ShiftSkipPay);
-            w.Write(v.InvestigationsPerPlayer);
-            w.Write(v.InvestigationCost);
             w.Write(v.InvestigationGuiltyBlame);
-            w.Write(v.InvestigationRefund);
-            w.Write(v.InvestigationFalseBlame);
             w.Write(v.BlamePerVote);
             w.Write(v.CrisisBlame);
             WriteList(w, v.CandidatesByPlayers, (b, x) => { b.Write(x); });
@@ -590,12 +597,9 @@ namespace BirimizKovulacak.Core
             w.Write(v.FlatterPerSession);
             w.Write(v.CakeCooldown);
             w.Write(v.CakeMax);
-            w.Write(v.CashWhistledKeeps);
             w.Write(v.ShiftFailSkipPay);
             w.Write(v.ShiftFailSkipBlame);
-            w.Write(v.ShiftFailVote);
             w.Write(v.ShiftVolunteerClean);
-            w.Write(v.InvestigationSharerOnly);
             w.Write(v.CandidateMinBlame);
             w.Write(v.ShiftMeeting);
             w.Write(v.DeclarationsEnabled);
@@ -603,6 +607,20 @@ namespace BirimizKovulacak.Core
             w.Write(v.DeclareMax);
             w.Write(v.TalkTimeShort);
             w.Write(v.TalkTimeLong);
+            w.Write(v.FilePublicCount);
+            w.Write(v.FileHeldBlocksVote);
+            WriteLineLegacyRules(w, v.Legacy);
+            w.Write(v.StakesScheme);
+            w.Write(v.StakeBonusSmall);
+            w.Write(v.StakeBonusNormal);
+            w.Write(v.StakeBonusBig);
+            w.Write(v.StakeTakerCut);
+            w.Write(v.StakeCashSmall);
+            w.Write(v.StakeCashNormal);
+            w.Write(v.StakeCashBig);
+            w.Write(v.StakeSkipSmall);
+            w.Write(v.StakeSkipNormal);
+            w.Write(v.StakeSkipBig);
         }
         internal static LineConfig ReadLineConfig(BinaryReader r)
         {
@@ -625,13 +643,8 @@ namespace BirimizKovulacak.Core
             v.CashTake = r.ReadInt32();
             v.CashCaughtBlame = r.ReadInt32();
             v.CashWhistleBlame = r.ReadInt32();
-            v.CashWhistleReward = r.ReadInt32();
             v.ShiftSkipPay = r.ReadInt32();
-            v.InvestigationsPerPlayer = r.ReadInt32();
-            v.InvestigationCost = r.ReadInt32();
             v.InvestigationGuiltyBlame = r.ReadInt32();
-            v.InvestigationRefund = r.ReadInt32();
-            v.InvestigationFalseBlame = r.ReadInt32();
             v.BlamePerVote = r.ReadInt32();
             v.CrisisBlame = r.ReadInt32();
             v.CandidatesByPlayers = ReadList(r, b => b.ReadInt32());
@@ -674,12 +687,9 @@ namespace BirimizKovulacak.Core
             v.FlatterPerSession = r.ReadInt32();
             v.CakeCooldown = r.ReadSingle();
             v.CakeMax = r.ReadInt32();
-            v.CashWhistledKeeps = ReadBool(r);
             v.ShiftFailSkipPay = r.ReadInt32();
             v.ShiftFailSkipBlame = r.ReadInt32();
-            v.ShiftFailVote = ReadBool(r);
             v.ShiftVolunteerClean = r.ReadInt32();
-            v.InvestigationSharerOnly = ReadBool(r);
             v.CandidateMinBlame = r.ReadInt32();
             v.ShiftMeeting = ReadBool(r);
             v.DeclarationsEnabled = ReadBool(r);
@@ -687,6 +697,122 @@ namespace BirimizKovulacak.Core
             v.DeclareMax = r.ReadInt32();
             v.TalkTimeShort = r.ReadSingle();
             v.TalkTimeLong = r.ReadSingle();
+            v.FilePublicCount = ReadBool(r);
+            v.FileHeldBlocksVote = ReadBool(r);
+            v.Legacy = ReadLineLegacyRules(r);
+            v.StakesScheme = r.ReadInt32();
+            v.StakeBonusSmall = r.ReadInt32();
+            v.StakeBonusNormal = r.ReadInt32();
+            v.StakeBonusBig = r.ReadInt32();
+            v.StakeTakerCut = r.ReadInt32();
+            v.StakeCashSmall = r.ReadInt32();
+            v.StakeCashNormal = r.ReadInt32();
+            v.StakeCashBig = r.ReadInt32();
+            v.StakeSkipSmall = r.ReadInt32();
+            v.StakeSkipNormal = r.ReadInt32();
+            v.StakeSkipBig = r.ReadInt32();
+            return v;
+        }
+
+        internal static void WriteLineLegacyRules(BinaryWriter w, LineLegacyRules v)
+        {
+            w.Write(v != null); if (v == null) return;
+            w.Write(v.InvestigationSharerOnly);
+            w.Write(v.InvestigationCost);
+            w.Write(v.InvestigationRefund);
+            w.Write(v.InvestigationFalseBlame);
+            w.Write(v.CashWhistleReward);
+            w.Write(v.CashWhistledKeeps);
+            w.Write(v.ShiftFailVote);
+        }
+        internal static LineLegacyRules ReadLineLegacyRules(BinaryReader r)
+        {
+            if (!ReadBool(r)) return null;
+            var v = new LineLegacyRules();
+            v.InvestigationSharerOnly = ReadBool(r);
+            v.InvestigationCost = r.ReadInt32();
+            v.InvestigationRefund = r.ReadInt32();
+            v.InvestigationFalseBlame = r.ReadInt32();
+            v.CashWhistleReward = r.ReadInt32();
+            v.CashWhistledKeeps = ReadBool(r);
+            v.ShiftFailVote = ReadBool(r);
+            return v;
+        }
+
+        internal static void WriteLineFileView(BinaryWriter w, LineFileView v)
+        {
+            w.Write(v != null); if (v == null) return;
+            WriteTaskKind(w, v.Task);
+            w.Write(v.Holder);
+            w.Write(v.Target);
+            WriteLineFileState(w, v.State);
+            w.Write(v.Time);
+            WriteLinePhase(w, v.Phase);
+            w.Write(v.Blame);
+        }
+        internal static LineFileView ReadLineFileView(BinaryReader r)
+        {
+            if (!ReadBool(r)) return null;
+            var v = new LineFileView();
+            v.Task = ReadTaskKind(r);
+            v.Holder = r.ReadInt32();
+            v.Target = r.ReadInt32();
+            v.State = ReadLineFileState(r);
+            v.Time = r.ReadDouble();
+            v.Phase = ReadLinePhase(r);
+            v.Blame = r.ReadInt32();
+            return v;
+        }
+
+        internal static void WriteLineFilesView(BinaryWriter w, LineFilesView v)
+        {
+            w.Write(v != null); if (v == null) return;
+            WriteList(w, v.Opened, (b, x) => { WriteLineFileView(b, x); });
+            w.Write(v.Held);
+            w.Write(v.Shredded);
+            w.Write(v.Expired);
+        }
+        internal static LineFilesView ReadLineFilesView(BinaryReader r)
+        {
+            if (!ReadBool(r)) return null;
+            var v = new LineFilesView();
+            v.Opened = ReadList(r, b => ReadLineFileView(b));
+            v.Held = r.ReadInt32();
+            v.Shredded = r.ReadInt32();
+            v.Expired = r.ReadInt32();
+            return v;
+        }
+
+        internal static void WriteLineStakesView(BinaryWriter w, LineStakesView v)
+        {
+            w.Write(v != null); if (v == null) return;
+            w.Write(v.Scheme);
+            w.Write(v.WeekType);
+            w.Write(v.LevelBonus);
+            w.Write(v.LevelCash);
+            w.Write(v.LevelShift);
+            w.Write(v.BonusPot);
+            w.Write(v.BonusShare);
+            w.Write(v.BonusTaker);
+            w.Write(v.BonusBoth);
+            w.Write(v.CashTake);
+            w.Write(v.ShiftSkipPay);
+        }
+        internal static LineStakesView ReadLineStakesView(BinaryReader r)
+        {
+            if (!ReadBool(r)) return null;
+            var v = new LineStakesView();
+            v.Scheme = r.ReadInt32();
+            v.WeekType = r.ReadInt32();
+            v.LevelBonus = r.ReadInt32();
+            v.LevelCash = r.ReadInt32();
+            v.LevelShift = r.ReadInt32();
+            v.BonusPot = r.ReadInt32();
+            v.BonusShare = r.ReadInt32();
+            v.BonusTaker = r.ReadInt32();
+            v.BonusBoth = r.ReadInt32();
+            v.CashTake = r.ReadInt32();
+            v.ShiftSkipPay = r.ReadInt32();
             return v;
         }
 
@@ -714,6 +840,8 @@ namespace BirimizKovulacak.Core
             WriteLineFinalView(w, v.Final);
             WriteLineWeekResult(w, v.Results);
             WriteLinePranksView(w, v.Pranks);
+            WriteLineFilesView(w, v.Files);
+            WriteLineStakesView(w, v.Stakes);
         }
         internal static LineView ReadLineView(BinaryReader r)
         {
@@ -740,6 +868,8 @@ namespace BirimizKovulacak.Core
             v.Final = ReadLineFinalView(r);
             v.Results = ReadLineWeekResult(r);
             v.Pranks = ReadLinePranksView(r);
+            v.Files = ReadLineFilesView(r);
+            v.Stakes = ReadLineStakesView(r);
             return v;
         }
 
@@ -759,6 +889,7 @@ namespace BirimizKovulacak.Core
             w.Write(v.PranksEnabled);
             w.Write(v.PranksOpen);
             w.Write(v.DeclareOpen);
+            w.Write(v.FilesOpen);
         }
         internal static LineFeaturesView ReadLineFeaturesView(BinaryReader r)
         {
@@ -777,6 +908,7 @@ namespace BirimizKovulacak.Core
             v.PranksEnabled = ReadBool(r);
             v.PranksOpen = ReadBool(r);
             v.DeclareOpen = ReadBool(r);
+            v.FilesOpen = ReadBool(r);
             return v;
         }
 
@@ -851,6 +983,7 @@ namespace BirimizKovulacak.Core
             w.Write(v.MeetingChatLeft);
             w.Write(v.NextMessageAt);
             w.Write(v.NextTransferAt);
+            WriteList(w, v.Files, (b, x) => { WriteLineFileView(b, x); });
         }
         internal static LineMeView ReadLineMeView(BinaryReader r)
         {
@@ -872,6 +1005,7 @@ namespace BirimizKovulacak.Core
             v.MeetingChatLeft = r.ReadInt32();
             v.NextMessageAt = r.ReadDouble();
             v.NextTransferAt = r.ReadDouble();
+            v.Files = ReadList(r, b => ReadLineFileView(b));
             return v;
         }
 
@@ -1280,6 +1414,8 @@ namespace BirimizKovulacak.Core
             if (hashSchema) return;
             WriteList(w, v.Declarations, (b, x) => { WriteLineDeclarationView(b, x); });
             WriteList(w, v.Groups, (b, x) => { WriteLineGroupView(b, x); });
+            WriteList(w, v.Files, (b, x) => { WriteLineFileView(b, x); });
+            WriteLineStakesView(w, v.Stakes);
         }
         internal static LineWeekResult ReadLineWeekResult(BinaryReader r)
         {
@@ -1304,6 +1440,8 @@ namespace BirimizKovulacak.Core
             v.ResultHash = r.ReadUInt64();
             v.Declarations = ReadList(r, b => ReadLineDeclarationView(b));
             v.Groups = ReadList(r, b => ReadLineGroupView(b));
+            v.Files = ReadList(r, b => ReadLineFileView(b));
+            v.Stakes = ReadLineStakesView(r);
             return v;
         }
 

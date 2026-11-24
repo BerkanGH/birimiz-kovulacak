@@ -134,7 +134,7 @@ namespace BirimizKovulacak.Core.Tests
             {
                 if (bytes.Length > 3 && bytes[3] == 2) verbs.Add(LineCodec.DecodeAction(bytes).Verb);
             });
-            CollectionAssert.IsSubsetOf(verbs, new[] { LineVerb.SubmitTask, LineVerb.Whistle, LineVerb.Investigate, LineVerb.Vote, LineVerb.Declare });
+            CollectionAssert.IsSubsetOf(verbs, new[] { LineVerb.SubmitTask, LineVerb.FileOpen, LineVerb.FileShred, LineVerb.Vote, LineVerb.Declare });
             Assert.Throws<ArgumentException>(() => new LineBot(6, 1));
         }
     }

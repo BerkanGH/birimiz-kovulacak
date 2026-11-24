@@ -5,23 +5,29 @@ namespace BirimizKovulacak.Core
 {
     public enum LineBotPolicy : byte
     {
-        /// <summary>Share, leave, volunteer when needed; punish whenever it can (returning any silence money).</summary>
+        /// <summary>Share, leave, volunteer when needed; open every file it holds at the meeting (returning any silence money).</summary>
         Honest = 0,
-        /// <summary>Take, take, skip; punish only when the target paid it for silence (and then on a seeded 50% coin).</summary>
+        /// <summary>Take, take, skip; a file it holds: unpaid, opened at the meeting; paid, shredded or (a seeded 50% coin)
+        /// kept and opened late, in the crisis calls.</summary>
         Greedy = 1,
-        /// <summary>Honest or greedy, seeded per decision.</summary>
+        /// <summary>Honest or greedy, seeded per decision; its task choices follow the week's stakes (take / skip with
+        /// 25 / 50 / 75% at the small / normal / big level).</summary>
         Mixed = 2,
     }
 
-    /// <summary>How a bot decides to punish (whistle in the Petty Cash break, investigate in meeting 1).</summary>
+    /// <summary>How a bot decides to punish (v5.3: the files it holds; legacy rules: the whistle in the Petty Cash break
+    /// and the investigation in meeting 1).</summary>
     public enum LineBotPunishStyle : byte
     {
         /// <summary>
-        /// The v5.1 silence deals (docs/V5_BOT_TALK.md §4.1). Honest punishes whenever it is eligible and returns any silence
-        /// money the target sent it (a transfer back); Greedy never punishes unless the target paid it, then keeps the money
-        /// and still punishes on a seeded 50% coin (betrayal); Mixed acts as Honest or as Greedy per decision (seeded 50/50).
-        /// The coins are hashes of the bot's seed, the week, the kind and the target, so <see cref="LineBot.WillPunish"/> can
-        /// preview them (the talk) and they never draw from the bot's random stream.
+        /// The silence deals (docs/V5_BOT_TALK.md §4.1). Honest mode punishes and returns any silence money the target
+        /// sent it (a transfer back); Greedy mode sells: Mixed acts as Honest or as Greedy per colleague (seeded 50/50).
+        /// v5.3, files (<see cref="LineBot.FilePlan"/>): Honest mode opens at the meeting's dossier; Greedy mode opens at
+        /// the meeting when it was not paid, and when it was paid it shreds the file (the deal kept) or, on a seeded 50%
+        /// coin, keeps the money and opens late, during the crisis calls (the betrayal).
+        /// Legacy rules (v5.1 / v5.2, one shot): Greedy mode never punishes unless paid, then on the same 50% coin.
+        /// The coins are hashes of the bot's seed, the week, the kind and the target, so <see cref="LineBot.WillPunish"/>
+        /// and <see cref="LineBot.FilePlan"/> can preview them (the talk) and they never draw from the bot's random stream.
         /// </summary>
         Deals = 0,
         /// <summary>The v5.0 prototype rule, for LineSim --rules old: every witness whistles at once; Greedy (Mixed on a coin
@@ -44,9 +50,9 @@ namespace BirimizKovulacak.Core
     /// A view-only synthetic player (spec §13). It never calls, texts or uses the recorder. <see cref="Next"/> returns at
     /// most one action per call; call it until it returns null. With <see cref="ThinkSeconds"/> &gt; 0 the bot waits a
     /// seeded delay after each phase starts (see <see cref="WakeAt"/>).
-    /// Punishments (<see cref="PunishStyle"/>, default <see cref="LineBotPunishStyle.Deals"/>): whistles and investigations
-    /// follow the silence-deal rules; the only transfers the bot itself sends are Honest's returns of silence money
-    /// (<see cref="TransferHoldUntil"/> keeps them apart from the talker's payments).
+    /// Punishments (<see cref="PunishStyle"/>, default <see cref="LineBotPunishStyle.Deals"/>): the files it holds (v5.3;
+    /// legacy rules: whistles and investigations) follow the silence-deal rules; the only transfers the bot itself sends
+    /// are Honest's returns of silence money (<see cref="TransferHoldUntil"/> keeps them apart from the talker's payments).
     /// Talk support (docs/V5_BOT_TALK.md): <see cref="PlannedTaskChoice"/> and <see cref="PlannedVote"/> preview a decision
     /// before the bot makes it by running the same policy on a copy of its random state, so they never change what it does.
     /// Calls, chat lines and payments are <see cref="LineBotTalker"/>'s job.
@@ -73,6 +79,9 @@ namespace BirimizKovulacak.Core
         /// <summary>Deals: punishments already sent this week (key: kind * 16 + target), when each task kind started (silence
         /// money counts from there), my group's revealed choices per task kind, and a sent return waiting to show in the view.</summary>
         private readonly HashSet<int> punished = new HashSet<int>();
+        /// <summary>Files: when this bot last sent an open / shred for a file (key: kind * 16 + target); a client's view
+        /// lags, so the same file is not acted on again for a few seconds.</summary>
+        private readonly Dictionary<int, double> fileSent = new Dictionary<int, double>();
         private readonly double[] kindStart = { double.NaN, double.NaN, double.NaN, double.NaN };
         private readonly int[][] groupChoices = { null, null, null, null };
         private double refundWaitUntil = double.NegativeInfinity;
@@ -132,10 +141,19 @@ namespace BirimizKovulacak.Core
             return new LineAction(v.WeekId, ++request, verb, target, a);
         }
 
-        private bool Greedy(LineRandom r)
+        /// <summary>Whether a decision is greedy: Greedy always, Honest never, Mixed with probability
+        /// <paramref name="p"/> (one draw).</summary>
+        private bool Greedy(LineRandom r, double p = 0.5)
         {
-            if (policy == LineBotPolicy.Mixed) return r.Unit() < 0.5;
+            if (policy == LineBotPolicy.Mixed) return r.Unit() < p;
             return policy == LineBotPolicy.Greedy;
+        }
+
+        /// <summary>"Haftanın gündemi": Mixed's chance to take / skip in a task of this level: 25% small, 50% normal,
+        /// 75% big (fixed stakes: every task is normal).</summary>
+        public static double MixedTakeChance(int level)
+        {
+            return level == LineStakes.Small ? 0.25 : level == LineStakes.Big ? 0.75 : 0.5;
         }
 
         public LineAction Next(LineView v, LineConfig config, double now)
@@ -151,7 +169,7 @@ namespace BirimizKovulacak.Core
             if (week != v.WeekId)
             {
                 week = v.WeekId; culprits.Clear(); phaseStart = double.NaN;
-                punished.Clear(); returned.Clear(); refundTo = -1; refundWaitUntil = TransferHoldUntil = double.NegativeInfinity;
+                punished.Clear(); fileSent.Clear(); returned.Clear(); refundTo = -1; refundWaitUntil = TransferHoldUntil = double.NegativeInfinity;
                 declaredAmount = declaredPrim = -1;
                 for (int i = 0; i < kindStart.Length; i++) { kindStart[i] = double.NaN; groupChoices[i] = null; }
             }
@@ -188,6 +206,8 @@ namespace BirimizKovulacak.Core
                     if (line.Kind == DossierKind.Whistle) into.Add(line.Other);
                     if (line.Kind == DossierKind.Investigation && line.N1 == 1) into.Add(line.Other);
                 }
+            // an opened file is public in every phase
+            if (v.Files != null) foreach (var f in v.Files.Opened) if (f != null && f.Target != seat) into.Add(f.Target);
         }
 
         private LineAction Decide(LineView v, LineConfig config, double now)
@@ -203,6 +223,7 @@ namespace BirimizKovulacak.Core
                     decidedAt = phaseStart;
                     return Action(v, LineVerb.SubmitTask, a: choice);
                 case LinePhase.Break:
+                    if (v.Features.FilesOpen) break; // v5.3: no whistle; the files are decided below
                     if (deals)
                     {
                         var whistle = Punish(v, config, true);
@@ -217,6 +238,7 @@ namespace BirimizKovulacak.Core
                 case LinePhase.MeetingDossier:
                 case LinePhase.MeetingDiscussion:
                     Learn(v, culprits);
+                    if (v.Features.FilesOpen) break; // v5.3: no investigation; the files are decided below
                     if (deals)
                     {
                         // (one decision per target and week, whichever of the two phases it falls in)
@@ -225,7 +247,7 @@ namespace BirimizKovulacak.Core
                         break;
                     }
                     // Legacy (v5.0): decided again in each of the two phases, kept as it was for LineSim --rules old
-                    if (triedInvestigation || !v.Features.InvestigationOpen || m.Prim < config.InvestigationCost) return null;
+                    if (triedInvestigation || !v.Features.InvestigationOpen || m.Prim < InvestigationCost(config)) return null;
                     triedInvestigation = true;
                     foreach (int target in m.InvestigationTargets)
                         if (culprits.Contains(target) && (policy == LineBotPolicy.Greedy || policy == LineBotPolicy.Mixed && Greedy(rng)))
@@ -259,10 +281,95 @@ namespace BirimizKovulacak.Core
                     }
                     break;
             }
-            return deals ? ReturnSilenceMoney(v, config, now) : null;
+            if (!deals) return null;
+            var file = FileStep(v, now);
+            if (file != null) return file;
+            return ReturnSilenceMoney(v, config, now);
         }
 
-        // ---- punishments and silence deals (LineBotPunishStyle.Deals; docs/V5_BOT_TALK.md §4.1)
+        private static int InvestigationCost(LineConfig config) { return config != null && config.Legacy != null ? config.Legacy.InvestigationCost : 0; }
+
+        // ---- files ("Dosya", v5.3; LineBotPunishStyle.Deals; docs/V5_BOT_TALK.md §4.1)
+
+        /// <summary><see cref="FilePlan"/>: what a bot does with a file it holds.</summary>
+        public const int FileShreds = 0, FileOpensAtMeeting = 1, FileOpensLate = 2;
+
+        /// <summary>
+        /// What this bot does with the file it holds on <paramref name="target"/> (<paramref name="cash"/>: the Petty Cash
+        /// file, else the Client Bonus one), without changing anything. Honest mode: <see cref="FileOpensAtMeeting"/>
+        /// (and the silence money goes back). Greedy mode: not paid: <see cref="FileOpensAtMeeting"/>; paid
+        /// (<see cref="SilenceMoney"/> &gt; 0, or <paramref name="assumePaid"/> for a deal still being offered):
+        /// <see cref="FileShreds"/>, or <see cref="FileOpensLate"/> on its betrayal coin (it keeps the money and opens
+        /// during the crisis calls).
+        /// </summary>
+        public int FilePlan(LineView v, bool cash, int target, bool assumePaid = false)
+        {
+            if (HonestMode(v, cash, target)) return FileOpensAtMeeting;
+            if (!assumePaid && SilenceMoney(v, cash, target) <= 0) return FileOpensAtMeeting;
+            return Betrays(v, cash, target) ? FileOpensLate : FileShreds;
+        }
+
+        /// <summary>How far into the crisis calls this bot opens a file it kept the money for (a seeded 35..75%).</summary>
+        public double LateOpenAt(LineView v, bool cash, int target)
+        {
+            return 0.35 + 0.40 * (v == null ? 0.5 : Coin(v.WeekId, "late", cash ? KindWhistle : KindInvestigation, target));
+        }
+
+        /// <summary>How far into the meeting's discussion a Greedy-mode holder that was not paid opens its file (the
+        /// target has had the break and this much of the discussion to pay).</summary>
+        public const double UnpaidOpenAt = 0.6;
+
+        /// <summary>The open / shred this bot sends now, if any: one file at a time.</summary>
+        private LineAction FileStep(LineView v, double now)
+        {
+            if (!v.Features.FilesOpen || v.Mine.Files == null) return null;
+            foreach (var f in v.Mine.Files)
+            {
+                if (f == null || f.Holder != seat || f.State != LineFileState.Held) continue;
+                bool cash = f.Task == TaskKind.PettyCash;
+                int key = (cash ? KindWhistle : KindInvestigation) * 16 + f.Target;
+                double sentAt;
+                if (fileSent.TryGetValue(key, out sentAt) && now < sentAt + 3.0) { wakeWanted = Math.Min(wakeWanted, sentAt + 3.0); continue; }
+                double wake;
+                int act = FileDecision(v, cash, f.Target, now, out wake);
+                if (act == 0) { wakeWanted = Math.Min(wakeWanted, wake); continue; }
+                fileSent[key] = now;
+                return Action(v, act == 1 ? LineVerb.FileOpen : LineVerb.FileShred, f.Target, (int)f.Task);
+            }
+            return null;
+        }
+
+        /// <summary>0 = keep holding (ask again at <paramref name="wake"/>), 1 = open now, 2 = shred now.</summary>
+        private int FileDecision(LineView v, bool cash, int target, double now, out double wake)
+        {
+            wake = double.PositiveInfinity;
+            bool table = v.Phase >= LinePhase.MeetingDossier || v.Day > 0; // the meeting has begun (or is over)
+            switch (FilePlan(v, cash, target))
+            {
+                case FileShreds: return 2; // paid, the deal kept: the delivery the payer can check
+                case FileOpensLate:
+                {
+                    if (v.Phase != LinePhase.CrisisCalls) return 0;
+                    double at = v.PhaseStartTime + LateOpenAt(v, cash, target) * Math.Max(0, v.PhaseEndTime - v.PhaseStartTime);
+                    if (now >= at - 1e-9) return 1;
+                    wake = at;
+                    return 0;
+                }
+                default:
+                    if (!table) return 0;
+                    // Honest mode: the first chance at the table. Greedy mode, not paid: late in the discussion.
+                    if (HonestMode(v, cash, target) || v.Day > 0 || v.Phase > LinePhase.MeetingDiscussion) return 1;
+                    if (v.Phase == LinePhase.MeetingDiscussion)
+                    {
+                        double at = v.PhaseStartTime + UnpaidOpenAt * Math.Max(0, v.PhaseEndTime - v.PhaseStartTime);
+                        if (now >= at - 1e-9) return 1;
+                        wake = at;
+                    }
+                    return 0;
+            }
+        }
+
+        // ---- legacy punishments and the silence deals (LineBotPunishStyle.Deals; docs/V5_BOT_TALK.md §4.1)
 
         private const int KindWhistle = 0, KindInvestigation = 1;
 
@@ -276,7 +383,7 @@ namespace BirimizKovulacak.Core
             if (whistle) targets = m.WitnessOf;
             else
             {
-                if (!v.Features.InvestigationOpen || m.InvestigationUsed || m.Prim < config.InvestigationCost) return null;
+                if (!v.Features.InvestigationOpen || m.InvestigationUsed || m.Prim < InvestigationCost(config)) return null;
                 targets = m.InvestigationTargets;
             }
             int kind = whistle ? KindWhistle : KindInvestigation;
@@ -370,13 +477,13 @@ namespace BirimizKovulacak.Core
             return c == null || id < 0 || id >= c.Length ? -1 : c[id];
         }
 
-        /// <summary>I shared the Client Bonus and <paramref name="target"/> (my group) took: I may investigate it.</summary>
+        /// <summary>I shared the Client Bonus and <paramref name="target"/> (my group) took: I hold a file on it (legacy rules: I may investigate it).</summary>
         public bool Victim(int target)
         {
             return target != seat && ChoiceOf(TaskKind.ClientBonus, seat) == LineChoice.Share && ChoiceOf(TaskKind.ClientBonus, target) == LineChoice.Take;
         }
 
-        /// <summary>I left the Petty Cash and <paramref name="target"/> was the only taker of my group: I may whistle.</summary>
+        /// <summary>I left the Petty Cash and <paramref name="target"/> was the only taker of my group: I hold a file on it (legacy rules: I may whistle).</summary>
         public bool Witness(int target)
         {
             var c = groupChoices[(int)TaskKind.PettyCash];
@@ -436,15 +543,19 @@ namespace BirimizKovulacak.Core
         }
 
         /// <summary>
-        /// Whether this bot punishes <paramref name="target"/> when it can (deals): Honest mode always; Greedy mode only once
-        /// paid (<see cref="SilenceMoney"/> &gt; 0, or <paramref name="assumePaid"/> for a deal still being offered) and then
-        /// on its betrayal coin. A preview: the same answer the bot acts on, without changing anything.
+        /// Whether this bot punishes <paramref name="target"/> when it can (deals). v5.3, files: it opens the file sooner or
+        /// later (<see cref="FilePlan"/> is not <see cref="FileShreds"/>). Legacy rules: Honest mode always; Greedy mode
+        /// only once paid (<see cref="SilenceMoney"/> &gt; 0, or <paramref name="assumePaid"/> for a deal still being
+        /// offered) and then on its betrayal coin. A preview: the same answer the bot acts on, without changing anything.
         /// </summary>
         public bool WillPunish(LineView v, bool whistle, int target, bool assumePaid = false)
         {
+            if ((config ?? Defaults).FilesOn()) return FilePlan(v, whistle, target, assumePaid) != FileShreds;
             if (HonestMode(v, whistle, target)) return true;
             return (assumePaid || SilenceMoney(v, whistle, target) > 0) && Betrays(v, whistle, target);
         }
+
+        private static readonly LineConfig Defaults = LineConfig.CreateDefault();
 
         // ---- prim declarations (v5.2; docs/V5_BOT_TALK.md §7.1)
 
@@ -492,7 +603,8 @@ namespace BirimizKovulacak.Core
 
         private int Choose(LineView v, LineRandom r)
         {
-            bool greedy = Greedy(r);
+            // "Haftanın gündemi": Mixed follows the stakes of the task; Honest and Greedy do not
+            bool greedy = Greedy(r, MixedTakeChance(v.Stakes != null ? v.Stakes.Level(v.Task.Kind) : LineStakes.Normal));
             switch (v.Task.Kind)
             {
                 case TaskKind.ClientBonus:

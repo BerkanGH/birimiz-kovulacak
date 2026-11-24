@@ -44,6 +44,8 @@ namespace BirimizKovulacak.Core
                 Line(DossierKind.ShiftRoster, time, n1: shift.Roster.Count, n2: shift.Needed, task: shift.Kind);
                 if (shift.SkipBlamed > 0) Line(DossierKind.ShiftSkipBlame, time, n1: c.ShiftFailSkipBlame, n2: shift.SkipBlamed, task: shift.Kind);
             }
+            // files opened since the last meeting room dossier (during the shift); the ones opened in the calls join live
+            ListOpenedFiles();
             Enter(LinePhase.CrisisCalls, time, c.Durations.CrisisCalls);
         }
 
@@ -314,6 +316,8 @@ namespace BirimizKovulacak.Core
                 if (t == null || LineTasks.Family(t.Kind) != TaskFamily.Pair) continue;
                 foreach (var g in t.Groups) r.Groups.Add(new LineGroupView { TaskNumber = t.Number, Task = t.Kind, Members = new List<int>(g) });
             }
+            foreach (var f in files) r.Files.Add(FileView(f));
+            r.Stakes = StakesView();
             result = LineCodec.Clone(r);
             result.ResultHash = LineCodec.HashResult(result);
         }

@@ -161,7 +161,7 @@ namespace BirimizKovulacak.Core.Tests
         [Test]
         public void PettyCashSoleTakerGetsThreeAndWitnessesSeeIt()
         {
-            var m = new LineTest(4);
+            var m = LineTest.OneShot(4);
             m.PlayTask(0, LineTest.Share);
             m.Next(); m.Next();
             var g = m.Group(0);
@@ -223,7 +223,7 @@ namespace BirimizKovulacak.Core.Tests
         [Test]
         public void WhistleIsFreeTheThiefKeepsTheCashAndItIsPublicInMeeting1()
         {
-            var m = new LineTest(4);
+            var m = LineTest.OneShot(4);
             m.PlayTask(0, LineTest.Share);
             m.Next(); m.Next();
             var g = m.Group(0);
@@ -256,7 +256,7 @@ namespace BirimizKovulacak.Core.Tests
         [Test]
         public void V50WhistledThiefWhoSpentTheCashLosesOnlyWhatIsLeft()
         {
-            var m = new LineTest(4, configure: LineTest.V50);
+            var m = LineTest.OneShot(4, configure: LineTest.V50);
             m.PlayTask(0, LineTest.Share);
             m.Next(); m.Next();
             var g = m.Group(0);
@@ -273,7 +273,7 @@ namespace BirimizKovulacak.Core.Tests
         [Test]
         public void TrioWitnessesShareOneWhistle()
         {
-            var m = new LineTest(3);
+            var m = LineTest.OneShot(3);
             m.PlayTask(0, LineTest.Share);
             m.PlayTask(1, id => id == 1 ? Take : 0);
             m.Next();

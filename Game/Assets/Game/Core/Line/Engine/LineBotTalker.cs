@@ -18,10 +18,13 @@ namespace BirimizKovulacak.Core
     /// estimate to be the richest), voice that suspicion in the meeting chat, and every announced crisis / final vote is
     /// committed (<see cref="LineBot.CommitVote"/>) so it cannot silently change before the ballot. MostBlame bots keep the
     /// suç-board lines.
-    /// Silence deals (v5.1): a Greedy / Mixed bot that took (a Client Bonus betrayal, a sole Petty Cash theft) pays every
-    /// victim / witness 1 prim for silence in the break (a call, else a text); a bot that is paid by the colleague it could
-    /// punish answers with what its <see cref="LineBot"/> will really do (<see cref="LineBot.WillPunish"/>): Honest sends
-    /// the money back (the bot's own transfer) and punishes, Greedy keeps it and may still punish.
+    /// Silence deals (v5.1; v5.3: about the files): a Greedy / Mixed bot that took (a Client Bonus betrayal, a sole Petty
+    /// Cash theft) pays every victim / witness (the holders of the files on it) 1 prim in the break (a call, else a text)
+    /// and asks for the shredding; a Greedy-mode holder asks its target for prim itself; a bot that is paid by the
+    /// colleague it holds a file on answers with what its <see cref="LineBot"/> will really do
+    /// (<see cref="LineBot.FilePlan"/>): Honest mode sends the money back (the bot's own transfer) and opens the file at
+    /// the meeting, Greedy mode keeps it and shreds the file, or lies and opens it late (its betrayal coin).
+    /// The week's agenda (v5.3): task openers mention a big or a small level.
     /// Prim declarations and awards (v5.2): a candidate repeats its declaration in its defence (a lie when its
     /// <see cref="LineBot"/> understated it), a colleague whose ledger counts at least 3 more than a declaration says so,
     /// and at the results the owner of an award (<see cref="LineStory"/>) says one line out loud.
@@ -141,7 +144,8 @@ namespace BirimizKovulacak.Core
         readonly List<Hush> hushes = new List<Hush>();
         /// <summary>Deal reactions already said (key: target * 2 + whistle).</summary>
         readonly HashSet<int> dealReacted = new HashSet<int>();
-        /// <summary>When meeting 1 ended (silence money is counted until then).</summary>
+        /// <summary>When the deals closed (silence money is counted until then): the crisis calls' end (v5.3, the files
+        /// expire); legacy rules: meeting 1's end.</summary>
         double dealsEnd = double.NaN;
         /// <summary>Every payment this talker sent (to, amount, time, silence money?): at Results they are told apart from the
         /// bot's own returns of silence money, and silence money never counts as keeping another promise.</summary>
@@ -415,6 +419,7 @@ namespace BirimizKovulacak.Core
                     if (d.Kind == DossierKind.Whistle && d.Other != Seat) set.Add(d.Other);
                     if (d.Kind == DossierKind.Investigation && d.N1 == 1 && d.Other != Seat) set.Add(d.Other);
                 }
+            if (v.Files != null) foreach (var f in v.Files.Opened) if (f != null && f.Target != Seat) set.Add(f.Target);
             return set;
         }
 
@@ -445,7 +450,7 @@ namespace BirimizKovulacak.Core
                     else if (t.Kind == TaskKind.ClientBonus) m.Failed = t.Takers > 0;
                 }
             }
-            if (double.IsNaN(dealsEnd) && v.Day >= 1) dealsEnd = now;
+            if (double.IsNaN(dealsEnd) && (FileRules ? v.Phase > LinePhase.CrisisCalls : v.Day >= 1)) dealsEnd = now;
             // prim that came in: thank the sender (on the phone if we are talking, else a short call or a text); silence
             // money from a colleague I could punish gets the answer my LineBot will act on instead
             var list = v.Mine.Transfers;
@@ -458,7 +463,7 @@ namespace BirimizKovulacak.Core
                 paidBy[tr.From] = had + tr.Amount;
                 Log(string.Format(CultureInfo.InvariantCulture, "received seat={0} from={1} amount={2}", Seat, tr.From, tr.Amount));
                 bool whistle;
-                if (DealOpen(v, tr.From, out whistle))
+                if (DealOpen(v, tr, out whistle))
                 {
                     if (dealReacted.Add(tr.From * 2 + (whistle ? 1 : 0))) DealReaction(v, tr.From, whistle, now);
                     continue;
@@ -513,8 +518,8 @@ namespace BirimizKovulacak.Core
                     int target;
                     string reason = BreakCall(v, out target);
                     if (reason != null) Plan(target, phaseStart + (2.5 + Seat * 1.0 + U("at:" + topic) * 3.0) * scale, reason);
-                    // silence money: a Greedy / Mixed taker calls each victim / witness early in the break (a Petty Cash
-                    // witness can whistle until the break ends); past the deadline it texts instead
+                    // silence money: a Greedy / Mixed taker calls each victim / witness (the holders of the files on it)
+                    // early in the break; past the deadline it texts instead
                     var t = v.Task != null ? Memo(v.Task.Number) : null;
                     int i = 0;
                     foreach (int id in HushTargets(t))
@@ -915,18 +920,27 @@ namespace BirimizKovulacak.Core
             if (t == null || (v.Phase != LinePhase.TaskPlay && v.Phase != LinePhase.TaskReveal)) return null;
             int choice = bot != null ? bot.PlannedTaskChoice(v) : t.MyChoice;
             string topic = "task" + t.Number;
+            // "Haftanın gündemi": a big (or a small) task gets a line of its own
+            int level = v.Stakes != null ? v.Stakes.Level(t.Kind) : LineStakes.Normal;
+            bool big = level == LineStakes.Big;
             switch (t.Kind)
             {
                 case TaskKind.ClientBonus:
-                    if (Policy == LineBotPolicy.Honest) return Claim(Line("bot.cb.call.h", other, other), BotClaimKind.Choice, LineChoice.Share, choice == LineChoice.Share, t.Number);
+                    if (Policy == LineBotPolicy.Honest)
+                    {
+                        var h = level == LineStakes.Big ? Line("bot.cb.call.h_big", other) : level == LineStakes.Small ? Line("bot.cb.call.h_small", other) : Line("bot.cb.call.h", other, other);
+                        return Claim(h, BotClaimKind.Choice, LineChoice.Share, choice == LineChoice.Share, t.Number);
+                    }
                     if (Policy == LineBotPolicy.Mixed && choice == LineChoice.Take && !MixedLies(topic)) return null;
-                    return Claim(Line(Key("bot.cb.call"), other), BotClaimKind.Choice, LineChoice.Share, choice == LineChoice.Share, t.Number);
+                    return Claim(Line(big && Policy == LineBotPolicy.Greedy ? "bot.cb.call.g_big" : Key("bot.cb.call"), other), BotClaimKind.Choice, LineChoice.Share, choice == LineChoice.Share, t.Number);
                 case TaskKind.PettyCash:
-                    if (Policy == LineBotPolicy.Mixed) return Line("bot.cash.call.m", other);
-                    return Claim(Line(Key("bot.cash.call"), other), BotClaimKind.Choice, LineChoice.Leave, choice == LineChoice.Leave, t.Number);
+                    if (Policy == LineBotPolicy.Mixed) return Line(big ? "bot.cash.call.m_big" : "bot.cash.call.m", other);
+                    return Claim(Line(big ? (Policy == LineBotPolicy.Honest ? "bot.cash.call.h_big" : "bot.cash.call.g_big") : Key("bot.cash.call"), other),
+                        BotClaimKind.Choice, LineChoice.Leave, choice == LineChoice.Leave, t.Number);
                 case TaskKind.WeekendShift:
                     if (Policy == LineBotPolicy.Mixed) return Line("bot.shift.call.m", other);
-                    if (Policy == LineBotPolicy.Greedy) return Claim(Line("bot.shift.call.g", other), BotClaimKind.Choice, LineChoice.Volunteer, choice == LineChoice.Volunteer, t.Number);
+                    if (Policy == LineBotPolicy.Greedy)
+                        return Claim(Line(big ? "bot.shift.call.g_big" : "bot.shift.call.g", other), BotClaimKind.Choice, LineChoice.Volunteer, choice == LineChoice.Volunteer, t.Number);
                     if (choice == LineChoice.Volunteer) return Claim(Line("bot.shift.call.h", other, Math.Max(1, t.Needed)), BotClaimKind.Choice, LineChoice.Volunteer, true, t.Number);
                     // Honest skips when enough cleaner colleagues will sign (LineBot's simple count): it says so and pays a
                     // colleague who signs instead
@@ -1035,7 +1049,7 @@ namespace BirimizKovulacak.Core
             if (t.Kind == TaskKind.ClientBonus)
             {
                 if (theirs == LineChoice.Take && (mine == LineChoice.Share || Policy == LineBotPolicy.Greedy))
-                    return Line(Key("bot.cb.victim"), other);
+                    return FileAsk(v, other, false) ?? Line(Key("bot.cb.victim"), other);
                 // the victim calls me first: the silence money right away (once)
                 if (callee && mine == LineChoice.Take && theirs == LineChoice.Share && PendingHush(t.Number, other) != null) return HushLine(t.Kind, t.Number, other);
                 return null;
@@ -1045,6 +1059,8 @@ namespace BirimizKovulacak.Core
                 int thief = SoleTaker(t);
                 if (thief == other && mine == LineChoice.Leave)
                 {
+                    var ask = FileAsk(v, other, true);
+                    if (ask != null) return ask;
                     if (Policy == LineBotPolicy.Honest) return Claim(Line("bot.cash.witness.h", other), BotClaimKind.Whistle, 1, true);
                     // "pay me and I won't press": true when, once paid, it keeps quiet (no betrayal coin)
                     if (Policy == LineBotPolicy.Greedy) return Claim(Line("bot.cash.witness.g", other), BotClaimKind.Silence, 1, !PunishesPaid(v, true, other));
@@ -1094,15 +1110,68 @@ namespace BirimizKovulacak.Core
 
         // ================================================================== silence deals: the bot that could punish
 
+        /// <summary>v5.3: the match is played with files (no <see cref="LineConfig.Legacy"/> rules).</summary>
+        bool FileRules { get { return config.FilesOn(); } }
+
+        /// <summary>The file I hold (<paramref name="heldOnly"/>) or held on <paramref name="target"/>: a still held one
+        /// first, then the Petty Cash one; null when there is none.</summary>
+        LineFileView MyFile(LineView v, int target, bool heldOnly, int task = -1)
+        {
+            LineFileView best = null;
+            if (v.Mine.Files == null) return null;
+            foreach (var f in v.Mine.Files)
+            {
+                if (f == null || f.Holder != Seat || f.Target != target || task >= 0 && (int)f.Task != task) continue;
+                if (heldOnly && f.State != LineFileState.Held) continue;
+                if (best == null || f.State == LineFileState.Held && best.State != LineFileState.Held
+                    || (f.State == LineFileState.Held) == (best.State == LineFileState.Held) && f.Task == TaskKind.PettyCash && best.Task != TaskKind.PettyCash) best = f;
+            }
+            return best;
+        }
+
+        /// <summary>I opened my file on <paramref name="target"/> (public).</summary>
+        bool OpenedBy(LineView v, int holder, int target, int task = -1)
+        {
+            if (v.Files != null)
+                foreach (var f in v.Files.Opened)
+                    if (f != null && f.Holder == holder && f.Target == target && (task < 0 || (int)f.Task == task)) return true;
+            return false;
+        }
+
         /// <summary>
-        /// Whether prim from <paramref name="from"/> is silence money for a punishment this bot can still decide:
-        /// the Petty Cash whistle (I witnessed its sole theft; the reveal or the break of that task) or the investigation
-        /// (it took my Client Bonus share; until meeting 1's investigation window closes).
+        /// A Greedy-mode holder's offer to its target: "Dosyan bende. 2 prim gönder, imha edeyim." True when, once paid, it
+        /// shreds (<see cref="LineBot.FilePlan"/>); a lie when its betrayal coin says keep the money and open late. Null
+        /// when I hold no file on <paramref name="other"/> or decide it in Honest mode.
         /// </summary>
-        bool DealOpen(LineView v, int from, out bool whistle)
+        BotLine FileAsk(LineView v, int other, bool cash)
+        {
+            if (bot == null || !FileRules || bot.PunishStyle != LineBotPunishStyle.Deals || Policy == LineBotPolicy.Honest) return null;
+            if (MyFile(v, other, true, (int)(cash ? TaskKind.PettyCash : TaskKind.ClientBonus)) == null || bot.HonestMode(v, cash, other)) return null;
+            return Claim(Line(Policy == LineBotPolicy.Mixed ? "bot.file.ask.m" : "bot.file.ask.g", other), BotClaimKind.Silence, 2,
+                bot.FilePlan(v, cash, other, true) == LineBot.FileShreds);
+        }
+
+        /// <summary>
+        /// Whether a transfer I received is silence money for a punishment this bot can still decide. v5.3: I hold a
+        /// file on its sender (or held it until the moment the prim arrived: my LineBot may have shredded it in the same
+        /// step). Legacy rules: the Petty Cash whistle (I witnessed its sole theft; the reveal or the break of that task)
+        /// or the investigation (it took my Client Bonus share; until meeting 1's investigation window closes).
+        /// </summary>
+        bool DealOpen(LineView v, LineTransferView tr, out bool whistle)
         {
             whistle = false;
-            if (bot == null || bot.PunishStyle != LineBotPunishStyle.Deals || v.Day > 0) return false;
+            int from = tr.From;
+            if (bot == null || bot.PunishStyle != LineBotPunishStyle.Deals) return false;
+            if (FileRules)
+            {
+                var f = MyFile(v, from, false);
+                if (f == null) return false;
+                // (no longer held: only prim that arrived before I shredded / opened it; a void or expired file is no deal)
+                if (f.State != LineFileState.Held && (tr.Time > f.Time + 1e-6 || f.State != LineFileState.Shredded && f.State != LineFileState.Opened)) return false;
+                whistle = f.Task == TaskKind.PettyCash;
+                return true;
+            }
+            if (v.Day > 0) return false;
             var pc = MemoOf(TaskKind.PettyCash);
             if (bot.Witness(from) && pc != null && v.TaskNumber == pc.Number && (v.Phase == LinePhase.TaskReveal || v.Phase == LinePhase.Break))
             {
@@ -1118,8 +1187,9 @@ namespace BirimizKovulacak.Core
             return bot == null || bot.WillPunish(v, whistle, target, true);
         }
 
-        /// <summary>The answer to silence money: Honest mode sends it back and punishes (the LineBot returns it), Greedy mode
-        /// keeps it and promises silence (a lie when its betrayal coin says punish anyway).</summary>
+        /// <summary>The answer to silence money: Honest mode sends it back and punishes (the LineBot returns it and opens
+        /// the file), Greedy mode keeps it and promises the shredding / silence (a lie when its betrayal coin says punish
+        /// anyway: it opens the file late).</summary>
         void DealReaction(LineView v, int from, bool whistle, double now)
         {
             bool honest = bot.HonestMode(v, whistle, from);
@@ -1127,7 +1197,7 @@ namespace BirimizKovulacak.Core
             if (honest) l = Claim(Line(Policy == LineBotPolicy.Mixed ? "bot.deal.refund.m" : "bot.deal.refund.h", from), BotClaimKind.Whistle, 1, true);
             else l = Claim(Line(Policy == LineBotPolicy.Mixed ? "bot.deal.keep.m" : "bot.deal.keep.g", from), BotClaimKind.Silence, 1, !bot.Betrays(v, whistle, from));
             Log(string.Format(CultureInfo.InvariantCulture, "deal seat={0} policy={1} from={2} kind={3} mode={4} t={5:0.0}",
-                Seat, Policy, from, whistle ? "whistle" : "investigation", honest ? "honest" : "greedy", now));
+                Seat, Policy, from, FileRules ? (whistle ? "cash" : "bonus") : whistle ? "whistle" : "investigation", honest ? "honest" : "greedy", now));
             if (talk != null && talk.Other == from && !talk.HungUp)
             {
                 talk.Queue.Add(new Due { At = now + 0.8 * k, Line = l });
@@ -1468,7 +1538,8 @@ namespace BirimizKovulacak.Core
             if (!accusedAnswered && v.Meeting != null)
                 foreach (var d in v.Meeting.Dossier)
                 {
-                    bool named = (d.Kind == DossierKind.Whistle || d.Kind == DossierKind.Investigation) && d.Other == Seat || d.Kind == DossierKind.CashCaught && d.Player == Seat;
+                    bool named = (d.Kind == DossierKind.FileOpened || d.Kind == DossierKind.Whistle || d.Kind == DossierKind.Investigation) && d.Other == Seat
+                                 || d.Kind == DossierKind.CashCaught && d.Player == Seat;
                     if (!named) continue;
                     accusedAnswered = true;
                     int by = d.Kind == DossierKind.CashCaught ? -1 : d.Player;
@@ -1530,7 +1601,10 @@ namespace BirimizKovulacak.Core
                 if (betrayed != null) return betrayed;
                 return took && Policy != LineBotPolicy.Honest ? Deflect(v, culprits) : null;
             }
-            // the final discussion: a candidate who took deflects; else what I know, if I have not said it yet
+            // the final discussion: a file opened on me in the crisis calls by a colleague I had paid; a candidate who took
+            // deflects; else what I know, if I have not said it yet
+            var late = BetrayedLine(v);
+            if (late != null && !chatSaid.Contains(late.Key)) return late;
             var me = P(v, Seat);
             if (me != null && me.Candidate && took && Policy != LineBotPolicy.Honest) return Deflect(v, culprits);
             if (victim != null && !chatSaid.Contains(victim.Key)) return victim;
@@ -1538,14 +1612,15 @@ namespace BirimizKovulacak.Core
             return null;
         }
 
-        /// <summary>I paid a colleague to keep quiet, it kept the money and punished me anyway (the dossier says so).</summary>
+        /// <summary>I paid a colleague to keep quiet, it kept the money and punished me anyway (its opened file is public;
+        /// legacy rules: the dossier says so).</summary>
         BotLine BetrayedLine(LineView v)
         {
             if (v.Meeting == null || Policy == LineBotPolicy.Honest) return null;
             foreach (var h in hushes)
             {
                 if (h.At < 0) continue;
-                bool punished = false;
+                bool punished = OpenedBy(v, h.Target, Seat);
                 foreach (var d in v.Meeting.Dossier)
                     if ((d.Kind == DossierKind.Whistle || d.Kind == DossierKind.Investigation && d.N1 == 1) && d.Player == h.Target && d.Other == Seat) punished = true;
                 if (!punished) continue;
@@ -1576,7 +1651,9 @@ namespace BirimizKovulacak.Core
             switch (Policy)
             {
                 case LineBotPolicy.Honest:
-                    return shared ? Claim(Line("bot.meet.victim.h", -1, thief), BotClaimKind.Choice, LineChoice.Share, true, t.Number) : null;
+                    // (v5.3: "... I opened the file on them" once it has: another sharer of a trio may have been first)
+                    return shared ? Claim(Line(OpenedBy(v, Seat, thief, (int)TaskKind.ClientBonus) ? "bot.meet.victim.h_open" : "bot.meet.victim.h", -1, thief),
+                        BotClaimKind.Choice, LineChoice.Share, true, t.Number) : null;
                 case LineBotPolicy.Greedy:
                     int paidMe;
                     if (paidBy.TryGetValue(thief, out paidMe) && paidMe > 0) return Line("bot.meet.victim.g_paid", -1);
@@ -1594,15 +1671,15 @@ namespace BirimizKovulacak.Core
             if (thief < 0 || thief == Seat) return null;
             switch (Policy)
             {
-                case LineBotPolicy.Honest: return Line("bot.meet.witness.h", -1, thief);
+                case LineBotPolicy.Honest: return Line(OpenedBy(v, Seat, thief, (int)TaskKind.PettyCash) ? "bot.meet.witness.h_open" : "bot.meet.witness.h", -1, thief);
                 case LineBotPolicy.Greedy:
                 {
-                    bool whistled = false;
+                    bool whistled = OpenedBy(v, Seat, thief, (int)TaskKind.PettyCash);
                     if (v.Meeting != null) foreach (var d in v.Meeting.Dossier) if (d.Kind == DossierKind.Whistle && d.Player == Seat) whistled = true;
                     int got;
                     bool paidMe = paidBy.TryGetValue(thief, out got) && got > 0;
-                    // Greedy whistles only when it was paid (deals: then on its betrayal coin) and denies the deal; paid and
-                    // quiet, it saw nothing
+                    // Greedy that opened the file (legacy: whistled) after being paid denies the deal; paid and quiet, it saw
+                    // nothing
                     if (whistled) return paidMe ? Claim(Line("bot.meet.witness.g_paid", -1, thief), BotClaimKind.Silence, 0, false) : Line("bot.meet.witness.g", -1, thief);
                     return paidMe ? Claim(Line("bot.meet.witness.g_quiet", -1), BotClaimKind.Silence, 0, false) : null;
                 }
@@ -1880,8 +1957,10 @@ namespace BirimizKovulacak.Core
 
         /// <summary>
         /// Silence deals at Results (verify_logs.py): every hush payment I made ("bottalk hush ... punished=yes|no
-        /// returned=N") and, for every colleague I could punish, what it paid me until meeting 1 ended, what I sent back
-        /// and whether I punished it ("bottalk punish ... outcome=none|refused|kept|betrayed").
+        /// returned=N file=state") and, v5.3, every file I held: what its target paid me while I held it, what I sent
+        /// back and what became of it ("bottalk file ... state=opened|shredded|void|expired outcome=none|refused|sold|
+        /// betrayed|kept"). Legacy rules: for every colleague I could punish, what it paid me until meeting 1 ended, what I
+        /// sent back and whether I punished it ("bottalk punish ... outcome=none|refused|kept|betrayed").
         /// </summary>
         void LogDeals(LineView v, LineWeekResult r)
         {
@@ -1891,11 +1970,41 @@ namespace BirimizKovulacak.Core
                 bool punished = Punished(r, h.Target, Seat, h.Kind == TaskKind.PettyCash);
                 int back = 0;
                 foreach (var x in r.Transfers) if (x.From == h.Target && x.To == Seat && x.Time >= h.At - 0.01 && x.Time < end) back += x.Amount;
-                Log(string.Format(CultureInfo.InvariantCulture, "hush seat={0} policy={1} kind={2} to={3} amount=1 via={4} punished={5} returned={6}",
-                    Seat, Policy, h.Kind, h.Target, h.At < 0 ? "none" : h.Via, Yes(punished), back));
+                string state = "none";
+                if (r.Files != null) foreach (var f in r.Files) if (f != null && f.Holder == h.Target && f.Target == Seat && f.Task == h.Kind) state = f.State.ToString().ToLowerInvariant();
+                Log(string.Format(CultureInfo.InvariantCulture, "hush seat={0} policy={1} kind={2} to={3} amount=1 via={4} punished={5} returned={6} file={7}",
+                    Seat, Policy, h.Kind, h.Target, h.At < 0 ? "none" : h.Via, Yes(punished), back, state));
             }
             if (bot == null || bot.PunishStyle != LineBotPunishStyle.Deals) return;
             var mineSent = MatchSent(r);
+            if (FileRules)
+            {
+                if (r.Files == null) return;
+                foreach (var f in r.Files)
+                {
+                    if (f == null || f.Holder != Seat) continue;
+                    bool cash = f.Task == TaskKind.PettyCash;
+                    var t = MemoOf(f.Task);
+                    double since = t != null && !double.IsNaN(t.Start) ? t.Start : double.MinValue;
+                    // silence money: what the target sent while I held the file (the transfer that made me shred it included)
+                    double until = f.State == LineFileState.Shredded ? f.Time + 1e-6 : f.Time;
+                    int got = 0, back = 0;
+                    for (int i = 0; i < r.Transfers.Count; i++)
+                    {
+                        var x = r.Transfers[i];
+                        if (x.Time < since - 1e-9) continue;
+                        if (x.From == f.Target && x.To == Seat && x.Time <= until) got += x.Amount;
+                        // the bot's own returns (not a payment of mine: silence money I owed it, a promise)
+                        if (x.From == Seat && x.To == f.Target && !mineSent.ContainsKey(i)) back += x.Amount;
+                    }
+                    bool honest = bot.HonestMode(v, cash, f.Target);
+                    bool opened = f.State == LineFileState.Opened;
+                    string outcome = got == 0 ? "none" : back >= got ? "refused" : opened ? "betrayed" : f.State == LineFileState.Shredded ? "sold" : "kept";
+                    Log(string.Format(CultureInfo.InvariantCulture, "file seat={0} policy={1} task={2} target={3} mode={4} paid={5} returned={6} state={7} phase={8} outcome={9}",
+                        Seat, Policy, cash ? "cash" : "bonus", f.Target, honest ? "honest" : "greedy", got, Math.Min(back, got), f.State.ToString().ToLowerInvariant(), f.Phase, outcome));
+                }
+                return;
+            }
             foreach (var p in v.Players)
             {
                 for (int w = 0; w < 2; w++)
@@ -1950,7 +2059,11 @@ namespace BirimizKovulacak.Core
         static bool Punished(LineWeekResult r, int by, int target, bool whistle)
         {
             foreach (var d in r.Incidents)
-                if (d.Player == by && d.Other == target && (whistle ? d.Kind == DossierKind.Whistle : d.Kind == DossierKind.Investigation)) return true;
+            {
+                if (d.Player != by || d.Other != target) continue;
+                if (d.Kind == DossierKind.FileOpened && d.Task == (whistle ? TaskKind.PettyCash : TaskKind.ClientBonus)) return true;
+                if (whistle ? d.Kind == DossierKind.Whistle : d.Kind == DossierKind.Investigation) return true;
+            }
             return false;
         }
 

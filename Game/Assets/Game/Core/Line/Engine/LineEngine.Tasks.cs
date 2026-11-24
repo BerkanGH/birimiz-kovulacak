@@ -3,13 +3,14 @@ using System.Collections.Generic;
 
 namespace BirimizKovulacak.Core
 {
-    /// <summary>Tasks (spec §5): grouping, choices, early finish, payouts, Petty Cash thefts and whistles.</summary>
+    /// <summary>Tasks (spec §5): grouping, choices, early finish, payouts, Petty Cash thefts and (legacy rules) whistles.</summary>
     internal sealed partial class LineEngine
     {
         private sealed class Theft
         {
             internal int Thief;
             internal readonly List<int> Witnesses = new List<int>();
+            /// <summary>Who opened the file on the thief (legacy rules: who whistled), -1 while the theft is unresolved.</summary>
             internal int Whistler = -1;
             internal double WhistleTime;
             internal bool Resolved { get { return Whistler >= 0; } }
@@ -45,7 +46,7 @@ namespace BirimizKovulacak.Core
         private readonly TaskState[] tasks = new TaskState[3];
         private int taskIndex = -1;
         private bool shortened;
-        /// <summary>Client Bonus takers exposed by an investigation; targets already investigated.</summary>
+        /// <summary>Client Bonus takers exposed by an opened file (legacy rules: an investigation); legacy: targets already investigated.</summary>
         private readonly List<int> exposed = new List<int>();
         private readonly List<int> investigated = new List<int>();
         private readonly List<LineChoiceView> choiceLog = new List<LineChoiceView>();
@@ -204,6 +205,7 @@ namespace BirimizKovulacak.Core
                 choiceLog.Add(new LineChoiceView { TaskNumber = t.Number, Task = t.Kind, Player = id, Choice = t.Choice[id], Payout = t.Payout[id] });
             }
             t.Resolved = true;
+            CreateFiles(t, time);
             Changed();
         }
 
@@ -240,7 +242,7 @@ namespace BirimizKovulacak.Core
                 }
                 else if (takers.Count >= 2) t.Caught.AddRange(takers);
             }
-            // Failure (unresolved theft) is decided when meeting 1 opens, after the whistle window.
+            // Failure (an unresolved theft: no file opened on it yet) is decided when the meeting opens.
         }
 
         /// <summary>Volunteers get 0; skippers get <see cref="LineConfig.ShiftSkipPay"/> when the shift is staffed, else
@@ -254,9 +256,9 @@ namespace BirimizKovulacak.Core
             foreach (int id in ids) if (t.Choice[id] != LineChoice.Volunteer) t.Payout[id] = skipPay;
         }
 
-        // ---- whistle (break after Petty Cash)
+        // ---- whistle (legacy rules: the break after Petty Cash; v5.3: the witnesses hold files)
 
-        private bool WhistleWindow { get { return Phase == LinePhase.Break && Current != null && Current.Kind == TaskKind.PettyCash; } }
+        private bool WhistleWindow { get { return !FilesOn && Phase == LinePhase.Break && Current != null && Current.Kind == TaskKind.PettyCash; } }
 
         private LineFailure Whistle(int id, LineAction a, double time)
         {
@@ -270,8 +272,8 @@ namespace BirimizKovulacak.Core
             theft.WhistleTime = time;
             // v5.1: the thief keeps the stolen prim and the whistle pays nothing (CashWhistledKeeps, CashWhistleReward 0).
             // v5.0: the stolen prim left the game (min with balance). Suç is applied publicly when meeting 1 opens.
-            int lost = c.CashWhistledKeeps ? 0 : -AddPrim(a.Target, -c.CashTake, PrimReason.Whistled, time, id);
-            AddPrim(id, c.CashWhistleReward, PrimReason.WhistleReward, time, a.Target);
+            int lost = c.Legacy.CashWhistledKeeps ? 0 : -AddPrim(a.Target, -c.CashTake, PrimReason.Whistled, time, id);
+            AddPrim(id, c.Legacy.CashWhistleReward, PrimReason.WhistleReward, time, a.Target);
             Emit(LineEventType.Whistled, time, id, a.Target, lost, recipient: id);
             Emit(LineEventType.Whistled, time, id, a.Target, lost, recipient: a.Target);
             return LineFailure.None;

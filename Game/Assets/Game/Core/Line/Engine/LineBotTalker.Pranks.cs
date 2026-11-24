@@ -189,7 +189,7 @@ namespace BirimizKovulacak.Core
             if (v.Meeting != null)
                 foreach (var d in v.Meeting.Dossier)
                 {
-                    if ((d.Kind == DossierKind.Whistle || d.Kind == DossierKind.Investigation) && d.Other == Seat && d.Player >= 0) set.Add(d.Player);
+                    if ((d.Kind == DossierKind.FileOpened || d.Kind == DossierKind.Whistle || d.Kind == DossierKind.Investigation) && d.Other == Seat && d.Player >= 0) set.Add(d.Player);
                     if (d.Kind == DossierKind.Leak && (d.N1 == Seat || d.N2 == Seat) && d.Player >= 0) set.Add(d.Player);
                 }
             set.Remove(Seat);

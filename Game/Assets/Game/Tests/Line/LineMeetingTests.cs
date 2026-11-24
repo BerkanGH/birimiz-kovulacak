@@ -26,7 +26,7 @@ namespace BirimizKovulacak.Core.Tests
         [Test]
         public void TwoVoteableFailuresGiveTwoBallotsEachAndEmptyBallotsGoToSelf()
         {
-            var m = new LineTest();
+            var m = LineTest.OneShot();
             var (_, thief) = TwoFailures(m);
             var meeting = m.View().Meeting;
             CollectionAssert.AreEquivalent(new[] { TaskKind.ClientBonus, TaskKind.PettyCash }, meeting.FailedTasks);
@@ -69,7 +69,7 @@ namespace BirimizKovulacak.Core.Tests
         [Test]
         public void DisconnectedPlayersEmptyBallotsAreDropped()
         {
-            var m = new LineTest();
+            var m = LineTest.OneShot();
             TwoFailures(m);
             m.Until(LinePhase.MeetingVote);
             m.Ok(2, LineVerb.Vote, 1, 0);
@@ -83,7 +83,7 @@ namespace BirimizKovulacak.Core.Tests
         [Test]
         public void ExposingTheOnlyTakerRemovesTheBonusFailureFromTheVote()
         {
-            var m = new LineTest();
+            var m = LineTest.OneShot();
             var (partner, thief) = TwoFailures(m);
             m.Ok(partner, LineVerb.Investigate, 0);
             m.Until(LinePhase.MeetingVote);
@@ -93,7 +93,7 @@ namespace BirimizKovulacak.Core.Tests
         [Test]
         public void SharerInvestigatesTheTakerForFreeAndTheTakerKeepsThePrim()
         {
-            var m = new LineTest();
+            var m = LineTest.OneShot();
             var (partner, _) = TwoFailures(m);
             Assert.AreEqual(6, m.Prim(partner));
             Assert.AreEqual(11, m.Prim(0));
@@ -121,7 +121,7 @@ namespace BirimizKovulacak.Core.Tests
         public void TakersNeverInvestigateAndSharersAreNeverTargets()
         {
             // a taker against the sharer: no false investigations
-            var m = new LineTest();
+            var m = LineTest.OneShot();
             var (partner, _) = TwoFailures(m);
             CollectionAssert.IsEmpty(m.View(0).Mine.InvestigationTargets);
             m.Fail(LineFailure.NotEligible, 0, LineVerb.Investigate, partner);
@@ -130,7 +130,7 @@ namespace BirimizKovulacak.Core.Tests
             Assert.IsFalse(m.View(3).Meeting.Dossier.Any(d => d.Kind == DossierKind.Investigation));
 
             // two takers in a pair cannot investigate each other; two sharers have nobody to investigate
-            var takers = new LineTest();
+            var takers = LineTest.OneShot();
             takers.Next();
             int other = takers.Group(0).Single(x => x != 0);
             int sharer = takers.Ids.First(id => id != 0 && id != other);
@@ -152,7 +152,7 @@ namespace BirimizKovulacak.Core.Tests
         [Test]
         public void V50InnocentInvestigationBlamesTheInvestigator()
         {
-            var m = new LineTest(configure: LineTest.V50);
+            var m = LineTest.OneShot(configure: LineTest.V50);
             var (partner, _) = TwoFailures(m);
             m.Ok(0, LineVerb.Investigate, partner);
             Assert.AreEqual(11 - 4, m.Prim(0));
@@ -165,7 +165,7 @@ namespace BirimizKovulacak.Core.Tests
         [Test]
         public void V50GuiltyInvestigationCostsFourAndRefundsThree()
         {
-            var m = new LineTest(configure: LineTest.V50);
+            var m = LineTest.OneShot(configure: LineTest.V50);
             var (partner, _) = TwoFailures(m);
             m.Ok(partner, LineVerb.Investigate, 0);
             Assert.AreEqual(6 - 4 + 3, m.Prim(partner));
@@ -176,7 +176,7 @@ namespace BirimizKovulacak.Core.Tests
         [Test]
         public void InvestigationNeedsTheSameGroupAndThePhase()
         {
-            var m = new LineTest();
+            var m = LineTest.OneShot();
             m.PlayTask(0, id => id == 0 ? Take : 0);
             int partner = m.Group(0).Single(x => x != 0);
             int outsider = m.Ids.First(id => id != 0 && id != partner);
@@ -198,7 +198,7 @@ namespace BirimizKovulacak.Core.Tests
         [Test]
         public void V50InvestigationNeedsThePrim()
         {
-            var m = new LineTest(configure: LineTest.V50);
+            var m = LineTest.OneShot(configure: LineTest.V50);
             m.PlayTask(0, id => id == 0 ? Take : 0);
             int partner = m.Group(0).Single(x => x != 0);
             int outsider = m.Ids.First(id => id != 0 && id != partner);
@@ -214,7 +214,7 @@ namespace BirimizKovulacak.Core.Tests
         [Test]
         public void TrioMatesCannotInvestigateTheSameTargetTwice()
         {
-            var m = new LineTest(3);
+            var m = LineTest.OneShot(3);
             m.PlayTask(0, id => id == 0 ? Take : 0);
             m.ToMeeting1Continue(id => 0);
             CollectionAssert.AreEqual(new[] { 0 }, m.View(1).Mine.InvestigationTargets);
@@ -228,7 +228,7 @@ namespace BirimizKovulacak.Core.Tests
         [Test]
         public void TrioSharerPicksOneOfTwoTakers()
         {
-            var m = new LineTest(3);
+            var m = LineTest.OneShot(3);
             m.PlayTask(0, id => id == 0 ? 0 : Take);
             m.ToMeeting1Continue(id => 0);
             CollectionAssert.AreEquivalent(new[] { 1, 2 }, m.View(0).Mine.InvestigationTargets);
@@ -243,7 +243,7 @@ namespace BirimizKovulacak.Core.Tests
         [Test]
         public void InvestigationIsOnlyForMeeting1()
         {
-            var m = new LineTest(configure: LineTest.V51);
+            var m = LineTest.OneShot(configure: LineTest.V51);
             m.PlayTask(0, id => id == 0 ? Take : 0);
             int partner = m.Group(0).Single(x => x != 0);
             m.ToMeeting1Continue(id => 0);
@@ -258,7 +258,7 @@ namespace BirimizKovulacak.Core.Tests
         [Test]
         public void InvestigationClosesWithTheMeeting()
         {
-            var m = new LineTest();
+            var m = LineTest.OneShot();
             m.PlayTask(0, id => id == 0 ? Take : 0);
             int partner = m.Group(0).Single(x => x != 0);
             m.ToMeeting1Continue(id => 0);
@@ -274,7 +274,7 @@ namespace BirimizKovulacak.Core.Tests
         [Test]
         public void V51Meeting2HasNoVoteTheSkippersGetTheSucWhenItOpens()
         {
-            var m = new LineTest(5, configure: LineTest.V51);
+            var m = LineTest.OneShot(5, configure: LineTest.V51);
             m.ToMeeting1();
             int before = m.Prim(4);
             m.PlayTask(2, id => id < 2 ? LineChoice.Volunteer : LineChoice.Skip);
@@ -301,7 +301,7 @@ namespace BirimizKovulacak.Core.Tests
         [Test]
         public void V50Meeting2HasOneBallotForTheFailedShift()
         {
-            var m = new LineTest(5, configure: LineTest.V50);
+            var m = LineTest.OneShot(5, configure: LineTest.V50);
             m.ToMeeting1();
             m.PlayTask(2, id => 0);
             m.Until(LinePhase.MeetingVote, 1);

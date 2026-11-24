@@ -18,9 +18,11 @@ namespace BirimizKovulacak.Core
         Vote = 2,
         /// <summary>"I won't vote for you": ClaimValue = the listener.</summary>
         NotVote = 3,
-        /// <summary>"I would report it" / "I'll investigate" / "your money goes back, I won't keep quiet".</summary>
+        /// <summary>"I'll open your file" / "your money goes back, I won't keep quiet" (legacy rules: "I would report it",
+        /// "I'll investigate").</summary>
         Whistle = 4,
-        /// <summary>"I'd keep quiet (for prim)": true when, once paid, the bot does not punish (its betrayal coin).</summary>
+        /// <summary>"Pay and I shred your file" / "I'd keep quiet (for prim)": true when, once paid, the bot does not
+        /// punish (it shreds; a lie on its betrayal coin).</summary>
         Silence = 5,
         /// <summary>"I'll send you N prim": ClaimValue = N (kept or not per policy).</summary>
         Pay = 6,
@@ -116,6 +118,9 @@ namespace BirimizKovulacak.Core
             { "bot.thanks.h", "" }, { "bot.thanks.g", "" }, { "bot.thanks.m", "" },
             // Client Bonus
             { "bot.cb.call.h", "p" }, { "bot.cb.call.g", "" }, { "bot.cb.call.m", "" },
+            // "Haftanın gündemi" (v5.3): openers that mention the week's level
+            { "bot.cb.call.h_big", "" }, { "bot.cb.call.h_small", "" }, { "bot.cb.call.g_big", "" },
+            { "bot.cash.call.h_big", "" }, { "bot.cash.call.g_big", "" }, { "bot.cash.call.m_big", "" }, { "bot.shift.call.g_big", "" },
             { "bot.cb.a1.h", "" }, { "bot.cb.a1.g", "" }, { "bot.cb.a1.m", "" }, { "bot.cb.a1.m_dodge", "" },
             { "bot.cb.a2.h", "" }, { "bot.cb.a2.g", "" }, { "bot.cb.a2.m", "" },
             { "bot.cb.a3.h", "" }, { "bot.cb.a3.g", "" }, { "bot.cb.a3.m", "" },
@@ -128,8 +133,10 @@ namespace BirimizKovulacak.Core
             { "bot.cash.a3.h", "" }, { "bot.cash.a3.g", "" }, { "bot.cash.a3.m", "" },
             { "bot.cash.witness.h", "" }, { "bot.cash.witness.g", "" }, { "bot.cash.witness.m", "" },
             { "bot.cash.thief.g", "" }, { "bot.cash.thief.m", "" },
-            // silence deals (v5.1): the answer to silence money from a colleague the bot could punish
+            // silence deals (v5.1; v5.3: about the file): the answer to silence money from a colleague the bot holds a
+            // file on, and a Greedy-mode holder's own offer ("your file is with me: 2 prim and I shred it")
             { "bot.deal.refund.h", "" }, { "bot.deal.refund.m", "" }, { "bot.deal.keep.g", "" }, { "bot.deal.keep.m", "" },
+            { "bot.file.ask.g", "" }, { "bot.file.ask.m", "" },
             // Weekend Shift
             { "bot.shift.call.h", "n" }, { "bot.shift.call.h_skip", "n" }, { "bot.shift.call.g", "" }, { "bot.shift.call.m", "" },
             { "bot.shift.a1.h", "" }, { "bot.shift.a1.h_skip", "" }, { "bot.shift.a1.g", "" }, { "bot.shift.a1.m", "" },
@@ -145,6 +152,8 @@ namespace BirimizKovulacak.Core
             // meetings (chat) and the final
             { "bot.meet.victim.h", "p" }, { "bot.meet.victim.g", "p" }, { "bot.meet.victim.g_paid", "" }, { "bot.meet.victim.m", "p" },
             { "bot.meet.witness.h", "p" }, { "bot.meet.witness.g", "p" }, { "bot.meet.witness.g_paid", "p" }, { "bot.meet.witness.g_quiet", "" },
+            // v5.3: Honest has opened its file on the colleague and says so
+            { "bot.meet.victim.h_open", "p" }, { "bot.meet.witness.h_open", "p" },
             { "bot.meet.witness.m", "" },
             { "bot.meet.deflect.g", "p" }, { "bot.meet.deflect.m", "" },
             { "bot.meet.accused.h", "" }, { "bot.meet.accused.g", "p" }, { "bot.meet.accused.m", "p" },

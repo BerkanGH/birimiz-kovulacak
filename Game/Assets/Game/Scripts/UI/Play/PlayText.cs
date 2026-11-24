@@ -88,7 +88,7 @@ namespace BirimizKovulacak.Game
         /// <summary>A meeting without a vote: meeting 2 of a short shift (the skippers' suç is automatic) or nothing to vote on.</summary>
         public static string NoVote(LineMeetingView mt, LineConfig c)
         {
-            if (mt != null && mt.Index == 1 && mt.FailedTasks.Contains(TaskKind.WeekendShift) && !c.ShiftFailVote && c.ShiftFailSkipBlame > 0)
+            if (mt != null && mt.Index == 1 && mt.FailedTasks.Contains(TaskKind.WeekendShift) && (c.Legacy == null || !c.Legacy.ShiftFailVote) && c.ShiftFailSkipBlame > 0)
                 return F("meeting.shift_auto", c.ShiftFailSkipBlame);
             return T("meeting.no_vote");
         }

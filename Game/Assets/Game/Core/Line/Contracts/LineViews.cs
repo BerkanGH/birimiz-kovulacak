@@ -42,6 +42,72 @@ namespace BirimizKovulacak.Core
         /// <summary>Yaramazlıklar (docs/V5_YARAMAZLIKLAR.md): the manager's patience, stains, post-its, my options and the
         /// public prank log; null when pranks are off.</summary>
         public LinePranksView Pranks;
+        /// <summary>"Dosya" (v5.3): the public side of the files (the opened ones, the anonymous counters). Never null;
+        /// empty under the legacy rules.</summary>
+        public LineFilesView Files = new LineFilesView();
+        /// <summary>"Haftanın gündemi" (v5.3): the levels and the amounts of this match, public from the Intro.</summary>
+        public LineStakesView Stakes = new LineStakesView();
+    }
+
+    /// <summary>A file ("Dosya", v5.3): its holder may punish the target's offence by opening it, or shred it.</summary>
+    [Serializable]
+    public sealed class LineFileView
+    {
+        /// <summary>ClientBonus (the target took while the holder shared) or PettyCash (the target was the sole taker
+        /// and the holder a witness).</summary>
+        public TaskKind Task;
+        public int Holder = LineIds.None;
+        public int Target = LineIds.None;
+        public LineFileState State;
+        /// <summary>When it was created (while held), else when it was opened / shredded / voided / expired.</summary>
+        public double Time;
+        /// <summary>The phase <see cref="Time"/> falls in (an opened file: "when").</summary>
+        public LinePhase Phase;
+        /// <summary>The suç it costs the target when opened (an opened file: what it added).</summary>
+        public int Blame;
+    }
+
+    /// <summary>What everybody knows about the files of the match.</summary>
+    [Serializable]
+    public sealed class LineFilesView
+    {
+        /// <summary>Every file opened so far, oldest first (public: holder, target, task, suç).</summary>
+        public List<LineFileView> Opened = new List<LineFileView>();
+        /// <summary>Files still held ("Açılmamış dosya: N"); -1 when the count is not public
+        /// (<see cref="LineConfig.FilePublicCount"/> off, or the legacy rules).</summary>
+        public int Held = -1;
+        /// <summary>Files shredded / expired so far (anonymous); -1 when not public.</summary>
+        public int Shredded = -1;
+        public int Expired = -1;
+    }
+
+    /// <summary>The week's agenda ("Haftanın gündemi", v5.3): the level of each task and the amounts they play at.</summary>
+    [Serializable]
+    public sealed class LineStakesView
+    {
+        /// <summary><see cref="LineStakes.Fixed"/> or <see cref="LineStakes.Permutation"/>.</summary>
+        public int Scheme;
+        /// <summary>The drawn week type 0..5 (<see cref="LineStakes.Level"/>); -1 with fixed stakes.</summary>
+        public int WeekType = -1;
+        /// <summary><see cref="LineStakes"/> levels (Small, Normal, Big).</summary>
+        public int LevelBonus = LineStakes.Normal;
+        public int LevelCash = LineStakes.Normal;
+        public int LevelShift = LineStakes.Normal;
+        /// <summary>Client Bonus: the pot (twice the both-share amount), each one's prim when both share / nobody takes,
+        /// a sole taker's prim, and each one's when two or more take.</summary>
+        public int BonusPot;
+        public int BonusShare;
+        public int BonusTaker;
+        public int BonusBoth;
+        /// <summary>Petty Cash: the box.</summary>
+        public int CashTake;
+        /// <summary>Weekend Shift: a skipper's pay when the shift is staffed.</summary>
+        public int ShiftSkipPay;
+
+        public int Level(TaskKind task)
+        {
+            return task == TaskKind.ClientBonus ? LevelBonus : task == TaskKind.PettyCash ? LevelCash : task == TaskKind.WeekendShift ? LevelShift : LineStakes.Normal;
+        }
     }
 
     [Serializable]
@@ -65,6 +131,9 @@ namespace BirimizKovulacak.Core
         /// <summary>I may declare my prim right now (<see cref="LineVerb.Declare"/>): I am a candidate, I have not declared
         /// and the window is open (until <see cref="LineFinalView.DeclareUntil"/>).</summary>
         public bool DeclareOpen;
+        /// <summary>"Dosya" (v5.3): files are in play and a held one can still be opened or shredded (from the Intro
+        /// until the crisis calls end).</summary>
+        public bool FilesOpen;
     }
 
     [Serializable]
@@ -122,6 +191,10 @@ namespace BirimizKovulacak.Core
         public int MeetingChatLeft;
         public double NextMessageAt;
         public double NextTransferAt;
+        /// <summary>"Dosya" (v5.3): every file I hold and every file on me, whatever became of it, oldest first. (A
+        /// target knows who shared or watched in their own group, so who holds a file on them is no secret; a shredding
+        /// is told to nobody else.)</summary>
+        public List<LineFileView> Files = new List<LineFileView>();
     }
 
     [Serializable]
@@ -377,7 +450,7 @@ namespace BirimizKovulacak.Core
         public List<LineBallotView> Ballots = new List<LineBallotView>();
         public List<LineTransferView> Transfers = new List<LineTransferView>();
         public List<LineChoiceView> Choices = new List<LineChoiceView>();
-        /// <summary>Whistles, investigations, catches and leaks.</summary>
+        /// <summary>Opened files (legacy rules: whistles, investigations), catches and leaks.</summary>
         public List<LineDossierEntry> Incidents = new List<LineDossierEntry>();
         public List<LinePrimChange> PrimLog = new List<LinePrimChange>();
         public List<LineBlameChange> BlameLog = new List<LineBlameChange>();
@@ -388,6 +461,10 @@ namespace BirimizKovulacak.Core
         public List<LineDeclarationView> Declarations = new List<LineDeclarationView>();
         /// <summary>v5.2: the groups of the pair tasks (who could rob whom).</summary>
         public List<LineGroupView> Groups = new List<LineGroupView>();
+        /// <summary>v5.3: every file of the match and what became of it (creation order).</summary>
+        public List<LineFileView> Files = new List<LineFileView>();
+        /// <summary>v5.3: the week's agenda the match was played at.</summary>
+        public LineStakesView Stakes = new LineStakesView();
     }
 
     [Serializable]

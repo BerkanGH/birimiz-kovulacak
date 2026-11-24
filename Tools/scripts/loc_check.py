@@ -29,9 +29,10 @@ ENUMS = os.path.join(ROOT, "Game", "Assets", "Game", "Core", "Line", "Contracts"
 BOT_LINES = os.path.join(ROOT, "Game", "Assets", "Game", "Core", "Line", "Engine", "LineBotTalk.cs")
 STORY = os.path.join(ROOT, "Game", "Assets", "Game", "Core", "Line", "Engine", "LineStory.cs")
 # v5.2 story keys that hang off an award / headline id (StoryText.cs)
-AWARD_EXTRA = ["v5.award.sellout.how.%d" % i for i in range(4)] + ["v5.award.robber.text_many", "v5.award.robber.text_none"]
+AWARD_EXTRA = ["v5.award.sellout.how.%d" % i for i in range(4)] + ["v5.award.robber.text_many", "v5.award.robber.text_none", "v5.award.loyal.text_shred"]
 HEADLINE_KEYS = {"deal": ["deal.0", "deal.1", "deal.2", "deal.3"], "bonus": ["bonus", "bonus_two"],
-                 "firing": ["firing", "firing_none", "firing_true", "firing_true_later", "firing_lie"], "crisis": ["crisis", "crisis_tie"], "transfer": ["transfer"]}
+                 "firing": ["firing", "firing_none", "firing_true", "firing_true_later", "firing_lie"], "crisis": ["crisis", "crisis_tie"], "transfer": ["transfer"],
+                 "shred": ["shred"]}
 TALK_IDS = ["short", "normal", "long"]
 EMPTY_OK = {"v5.hint.None"}
 TASK_IDS = ["client_bonus", "petty_cash", "weekend_shift"]

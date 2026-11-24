@@ -104,7 +104,7 @@ namespace BirimizKovulacak.Game
                     if (e.Actor == me)
                     {
                         _whistledTarget = e.Target;
-                        _explained += c.CashWhistleReward;
+                        _explained += c.Legacy != null ? c.Legacy.CashWhistleReward : 0;
                         _explainedUntil = Time.unscaledTime + 2.5f;
                     }
                     if (e.Target == me) { _whistledBy = e.Actor; _whistledLost = e.A; if (e.A > 0) Sfx.Play("bills", 0.6f); }

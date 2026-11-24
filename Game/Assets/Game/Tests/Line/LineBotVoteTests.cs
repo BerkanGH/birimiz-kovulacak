@@ -12,6 +12,8 @@ namespace BirimizKovulacak.Core.Tests.Line
     public sealed class LineBotVoteTests
     {
         static readonly LineConfig C = LineConfig.CreateDefault();
+        /// <summary>The one-shot rules' numbers (v5.2: an investigation is free and moves no money).</summary>
+        static readonly LineLegacyRules Old = new LineLegacyRules();
         static readonly LineBotPolicy[] Rotation = { LineBotPolicy.Honest, LineBotPolicy.Greedy, LineBotPolicy.Mixed };
 
         // ------------------------------------------------------------------ hand-made views (what one seat sees)
@@ -109,15 +111,15 @@ namespace BirimizKovulacak.Core.Tests.Line
             // 2 shared (known) with a partner who surely took (the only unknown takes: q = 1): 0
             Assert.AreEqual(C.StartPrim + C.BonusPairSharer, e[2], 1e-9);
             // 3 took for sure, partner averages q = 1 → both-take, then paid the investigation
-            Assert.AreEqual(C.StartPrim + C.BonusPairBothTake - C.InvestigationCost, e[3], 1e-9);
+            Assert.AreEqual(C.StartPrim + C.BonusPairBothTake - Old.InvestigationCost, e[3], 1e-9);
 
             // guilty: 2 investigated 3 who took
             meeting.Meeting = Meeting(0, D(DossierKind.BonusTakers, n1: 2), D(DossierKind.Investigation, 2, 3, n1: 1));
             e = Fed(reveal, meeting);
             // 3 is the second taker (known), 2 is the only unknown and nobody is left to have taken: q = 0
             double q = 0;
-            Assert.AreEqual(C.StartPrim + (q * C.BonusPairBothTake + (1 - q) * C.BonusPairTaker) - C.InvestigationRefund, e[3], 1e-9);
-            Assert.AreEqual(C.StartPrim + (q * C.BonusPairSharer + (1 - q) * C.BonusPairShare) - C.InvestigationCost + C.InvestigationRefund, e[2], 1e-9);
+            Assert.AreEqual(C.StartPrim + (q * C.BonusPairBothTake + (1 - q) * C.BonusPairTaker) - Old.InvestigationRefund, e[3], 1e-9);
+            Assert.AreEqual(C.StartPrim + (q * C.BonusPairSharer + (1 - q) * C.BonusPairShare) - Old.InvestigationCost + Old.InvestigationRefund, e[2], 1e-9);
         }
 
         [Test]
@@ -273,7 +275,7 @@ namespace BirimizKovulacak.Core.Tests.Line
             var m2 = View();
             m2.Meeting = Meeting(1);
             var e = Fed(m1, m2);
-            Assert.AreEqual(C.StartPrim - C.InvestigationCost, e[2], "meeting 1's dossier is gone in meeting 2, the ledger remembers");
+            Assert.AreEqual(C.StartPrim - Old.InvestigationCost, e[2], "meeting 1's dossier is gone in meeting 2, the ledger remembers");
             var l = new LineBotLedger(0);
             l.Ingest(m1);
             l.Ingest(View(week: 2));

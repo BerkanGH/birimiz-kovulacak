@@ -22,14 +22,49 @@ namespace BirimizKovulacak.Core.Tests.Line
             return s;
         }
 
+        /// <summary>The default rules (v5.3: files) at fixed stakes, so the amounts a test names are the config's own
+        /// (the normal level) whatever the seed; <see cref="Agenda"/> turns "Haftanın gündemi" back on.</summary>
         internal LineTest(int count = 4, int seed = 731, Action<LineConfig> configure = null, Action<LineSetup> prepare = null)
         {
             Setup = MakeSetup(count, seed);
             prepare?.Invoke(Setup);
             Config = LineConfig.CreateDefault();
+            Config.StakesScheme = LineStakes.Fixed;
             configure?.Invoke(Config);
             Now = Setup.StartTime;
             Engine = LineEngineFactory.Create(Setup, Config);
+        }
+
+        /// <summary>A match with the one-shot investigation and whistle of v5.1 / v5.2 instead of the files
+        /// (<see cref="LineConfig.Legacy"/>): the tests of the rules LineSim --rules old still plays.</summary>
+        internal static LineTest OneShot(int count = 4, int seed = 731, Action<LineConfig> configure = null, Action<LineSetup> prepare = null)
+        {
+            return new LineTest(count, seed, c => { Legacy(c); configure?.Invoke(c); }, prepare);
+        }
+
+        /// <summary>The one-shot rules with their v5.2 numbers (kept when a config already carries them).</summary>
+        internal static LineLegacyRules Legacy(LineConfig c)
+        {
+            return c.Legacy ?? (c.Legacy = new LineLegacyRules());
+        }
+
+        /// <summary>"Haftanın gündemi" as the game plays it: the stakes drawn from the seed.</summary>
+        internal static void Agenda(LineConfig c) { c.StakesScheme = LineStakes.Permutation; }
+
+        /// <summary>The first seed from <paramref name="from"/> whose week type is <paramref name="weekType"/> (0..5).</summary>
+        internal static int SeedFor(int weekType, int count = 4, int from = 1)
+        {
+            for (int seed = from; seed < from + 500; seed++)
+                if (new LineTest(count, seed, Agenda).View().Stakes.WeekType == weekType) return seed;
+            throw new InvalidOperationException("No seed for week type " + weekType);
+        }
+
+        /// <summary>Opens (or shreds) the file <paramref name="holder"/> holds on <paramref name="target"/>.</summary>
+        internal void OpenFile(int holder, int target, TaskKind task) { Ok(holder, LineVerb.FileOpen, target, (int)task); }
+        internal void ShredFile(int holder, int target, TaskKind task) { Ok(holder, LineVerb.FileShred, target, (int)task); }
+        internal LineFileView FileOf(int holder, int target, TaskKind task)
+        {
+            return View(holder).Mine.Files.SingleOrDefault(f => f.Holder == holder && f.Target == target && f.Task == task);
         }
 
         internal IEnumerable<int> Ids { get { return Setup.Players.Select(p => p.Id); } }
@@ -105,8 +140,8 @@ namespace BirimizKovulacak.Core.Tests.Line
 
         /// <summary>Clean tasks 1-2, task 3 with the given volunteers, then straight to the crisis calls (v5.2). With
         /// <see cref="LineConfig.ShiftMeeting"/> a failed task 3 holds meeting 2 first: with
-        /// <see cref="LineConfig.ShiftFailVote"/> (v5.0, <see cref="Meeting2Vote"/>) the given single ballots; v5.1 has no
-        /// meeting 2 vote (the skippers' suç is automatic).</summary>
+        /// <see cref="LineLegacyRules.ShiftFailVote"/> (v5.0, <see cref="Meeting2Vote"/>) the given single ballots; v5.1 has
+        /// no meeting 2 vote (the skippers' suç is automatic).</summary>
         internal void ToCrisis(Func<int, int> volunteer = null, Func<int, int> meeting2Vote = null)
         {
             ToMeeting1();
@@ -127,7 +162,7 @@ namespace BirimizKovulacak.Core.Tests.Line
         internal static void Meeting2Vote(LineConfig c)
         {
             c.ShiftMeeting = true;
-            c.ShiftFailVote = true;
+            Legacy(c).ShiftFailVote = true;
             c.ShiftFailSkipBlame = 0;
             c.ShiftFailSkipPay = c.ShiftSkipPay;
             c.BonusPairShare = 2;
@@ -147,13 +182,15 @@ namespace BirimizKovulacak.Core.Tests.Line
         {
             Meeting2Vote(c);
             c.DeclarationsEnabled = false;
-            c.CashWhistleReward = 2;
-            c.CashWhistledKeeps = false;
+            c.StakesScheme = LineStakes.Fixed;
+            var old = Legacy(c);
+            old.CashWhistleReward = 2;
+            old.CashWhistledKeeps = false;
             c.ShiftVolunteerClean = 0;
-            c.InvestigationSharerOnly = false;
-            c.InvestigationCost = 4;
+            old.InvestigationSharerOnly = false;
+            old.InvestigationCost = 4;
             c.InvestigationGuiltyBlame = 3;
-            c.InvestigationRefund = 3;
+            old.InvestigationRefund = 3;
             c.CandidateMinBlame = 0;
         }
 

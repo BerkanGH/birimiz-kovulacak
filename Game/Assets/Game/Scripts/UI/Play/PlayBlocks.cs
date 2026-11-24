@@ -301,7 +301,6 @@ namespace BirimizKovulacak.Game
                 Sub(p, T("investigate.title"));
                 Line(p, T(m.InvestigationUsed ? "investigate.used" : "investigate.none"), "pl-dim");
             }
-            else if (v.Features.InvestigationOpen && m.Prim < lc.Config.InvestigationCost) Line(p, F("investigate.poor", m.Prim), "pl-bad");
         }
 
         /// <summary>v5.2, the fallback screen (the meeting room has its own card, <see cref="MeetingDeclare"/>): a candidate's

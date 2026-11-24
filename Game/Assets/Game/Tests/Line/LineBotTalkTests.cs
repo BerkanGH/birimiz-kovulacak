@@ -126,13 +126,14 @@ namespace BirimizKovulacak.Core.Tests.Line
                     if (d.Kind == DossierKind.CashCaught) sim.Visible[seat].Add(d.Player);
                     if (d.Kind == DossierKind.Whistle || d.Kind == DossierKind.Investigation && d.N1 == 1) sim.Visible[seat].Add(d.Other);
                 }
+            foreach (var f in v.Files.Opened) sim.Visible[seat].Add(f.Target); // an opened file is public
         }
 
         /// <summary>A line that names someone as having taken may only name a colleague the speaker saw take.</summary>
         static void CheckVisible(Sim sim, BotLine l)
         {
             bool accuses = l.Key.StartsWith("bot.meet.victim.", StringComparison.Ordinal) && l.Key != "bot.meet.victim.g_paid"
-                           || l.Key == "bot.meet.witness.h" || l.Key == "bot.meet.witness.g" || l.Key == "bot.meet.witness.g_paid" || l.Key == "bot.meet.accused.m";
+                           || l.Key == "bot.meet.witness.h" || l.Key == "bot.meet.witness.h_open" || l.Key == "bot.meet.witness.g" || l.Key == "bot.meet.witness.g_paid" || l.Key == "bot.meet.accused.m";
             if (accuses && !sim.Visible[l.Speaker].Contains(l.Args[0])) sim.Leaks.Add(l.Speaker + " " + l);
         }
 

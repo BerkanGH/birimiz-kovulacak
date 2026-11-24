@@ -3,8 +3,8 @@ using System.Collections.Generic;
 
 namespace BirimizKovulacak.Core
 {
-    /// <summary>The meeting (meeting 1; meeting 2 only with <see cref="LineConfig.ShiftMeeting"/>) (spec §7), investigations
-    /// (§8), leaks and recording picks (§10).</summary>
+    /// <summary>The meeting (meeting 1; meeting 2 only with <see cref="LineConfig.ShiftMeeting"/>) (spec §7), the legacy
+    /// investigations (§8; v5.3: files, LineEngine.Files.cs), leaks and recording picks (§10).</summary>
     internal sealed partial class LineEngine
     {
         private sealed class MeetingState
@@ -68,6 +68,7 @@ namespace BirimizKovulacak.Core
                     if (t.Kind == TaskKind.ClientBonus) OpenClientBonus(t, time);
                     else if (t.Kind == TaskKind.PettyCash) OpenPettyCash(t, time);
                 }
+                ListOpenedFiles(); // (opened before the meeting, outside the meeting room)
             }
             else
             {
@@ -91,7 +92,8 @@ namespace BirimizKovulacak.Core
                     }
                     if (skippers > 0) Line(DossierKind.ShiftSkipBlame, time, n1: c.ShiftFailSkipBlame, n2: skippers, task: t.Kind);
                 }
-                if (!c.ShiftFailVote) meeting.Voteable = CountVoteable(); // known now (0): the meeting shows no vote is coming
+                ListOpenedFiles();
+                if (!ShiftFailVote) meeting.Voteable = CountVoteable(); // known now (0): the meeting shows no vote is coming
             }
             Enter(LinePhase.MeetingDossier, time, c.Durations.MeetingDossier);
         }
@@ -122,14 +124,20 @@ namespace BirimizKovulacak.Core
             }
             foreach (var theft in t.Thefts)
             {
-                if (!theft.Resolved) continue;
+                // (v5.3: a file opened before the meeting gave its suç when it was opened, never a second time here)
+                if (!theft.Resolved || FilesOn) continue;
                 AddBlame(theft.Thief, c.CashWhistleBlame, BlameReason.Whistled, time);
                 Incident(DossierKind.Whistle, theft.WhistleTime, theft.Whistler, theft.Thief, c.CashWhistleBlame);
             }
             if (open > 0) Line(DossierKind.CashMissing, time, n1: missing, n2: open, task: t.Kind);
         }
 
-        /// <summary>Counted when the vote would start (after investigations).</summary>
+        private bool ShiftFailVote { get { return c.Legacy != null && c.Legacy.ShiftFailVote; } }
+
+        /// <summary>Counted when the vote would start: a failed task is vote-able while one of its offences is not
+        /// resolved (no file opened on that taker / thief; legacy rules: not exposed, not whistled). A file opened later
+        /// refunds nothing. With <see cref="LineConfig.FileHeldBlocksVote"/> an offence somebody still holds a file on
+        /// does not count.</summary>
         private int CountVoteable()
         {
             int count = 0;
@@ -141,12 +149,12 @@ namespace BirimizKovulacak.Core
                     if (t.Kind == TaskKind.ClientBonus)
                     {
                         foreach (int id in ids)
-                            if (t.Choice[id] == LineChoice.Take && !exposed.Contains(id)) { count++; break; }
+                            if (t.Choice[id] == LineChoice.Take && !exposed.Contains(id) && !FileBlocksVote(t.Kind, id)) { count++; break; }
                     }
-                    else if (t.Kind == TaskKind.PettyCash && t.Thefts.Exists(x => !x.Resolved)) count++;
+                    else if (t.Kind == TaskKind.PettyCash && t.Thefts.Exists(x => !x.Resolved && !FileBlocksVote(t.Kind, x.Thief))) count++;
                 }
             }
-            else if (tasks[2].Failed && c.ShiftFailVote) count++;
+            else if (tasks[2].Failed && ShiftFailVote) count++;
             return count;
         }
 
@@ -183,13 +191,13 @@ namespace BirimizKovulacak.Core
             ClearBallots();
         }
 
-        // ---- investigation (meeting 1 dossier/discussion)
+        // ---- investigation (legacy rules: meeting 1 dossier/discussion, one per player)
 
         private bool InvestigationOpen
         {
             get
             {
-                return meeting != null && meeting.Index == 0 &&
+                return !FilesOn && meeting != null && meeting.Index == 0 &&
                        (Phase == LinePhase.MeetingDossier || Phase == LinePhase.MeetingDiscussion) && TaskOf(TaskKind.ClientBonus) != null;
             }
         }
@@ -198,27 +206,28 @@ namespace BirimizKovulacak.Core
         {
             if (!InvestigationOpen) return LineFailure.WrongPhase;
             var s = seats[id];
-            if (s.InvestigationUsed || c.InvestigationsPerPlayer <= 0) return LineFailure.AlreadyUsed;
+            if (s.InvestigationUsed) return LineFailure.AlreadyUsed;
             var f = TargetFailure(id, a.Target);
             if (f != LineFailure.None) return f;
             var t = TaskOf(TaskKind.ClientBonus);
             if (t.GroupOf[id] != t.GroupOf[a.Target]) return LineFailure.NotEligible;
             // v5.1: only a sharer may investigate, and only a group-mate who took (no false investigations)
-            if (c.InvestigationSharerOnly && (t.Choice[id] == LineChoice.Take || t.Choice[a.Target] != LineChoice.Take)) return LineFailure.NotEligible;
+            var old = c.Legacy;
+            if (old.InvestigationSharerOnly && (t.Choice[id] == LineChoice.Take || t.Choice[a.Target] != LineChoice.Take)) return LineFailure.NotEligible;
             if (investigated.Contains(a.Target)) return LineFailure.AlreadyResolved;
-            if (s.Prim < c.InvestigationCost) return LineFailure.InsufficientFunds;
+            if (s.Prim < old.InvestigationCost) return LineFailure.InsufficientFunds;
             s.InvestigationUsed = true;
             investigated.Add(a.Target);
-            AddPrim(id, -c.InvestigationCost, PrimReason.InvestigationCost, time);
+            AddPrim(id, -old.InvestigationCost, PrimReason.InvestigationCost, time);
             bool guilty = t.Choice[a.Target] == LineChoice.Take;
             if (guilty)
             {
                 exposed.Add(a.Target);
                 AddBlame(a.Target, c.InvestigationGuiltyBlame, BlameReason.InvestigationGuilty, time);
-                int paid = -AddPrim(a.Target, -c.InvestigationRefund, PrimReason.InvestigationRefund, time, id);
+                int paid = -AddPrim(a.Target, -old.InvestigationRefund, PrimReason.InvestigationRefund, time, id);
                 AddPrim(id, paid, PrimReason.InvestigationRefund, time, a.Target);
             }
-            else AddBlame(id, c.InvestigationFalseBlame, BlameReason.InvestigationFalse, time);
+            else AddBlame(id, old.InvestigationFalseBlame, BlameReason.InvestigationFalse, time);
             Incident(DossierKind.Investigation, time, id, a.Target, guilty ? 1 : 0);
             Emit(LineEventType.Investigated, time, id, a.Target, guilty ? 1 : 0);
             return LineFailure.None;
@@ -227,11 +236,12 @@ namespace BirimizKovulacak.Core
         private List<int> InvestigationTargets(int id)
         {
             var list = new List<int>();
-            if (!InvestigationOpen || seats[id].InvestigationUsed || c.InvestigationsPerPlayer <= 0) return list;
+            if (!InvestigationOpen || seats[id].InvestigationUsed) return list;
             var t = TaskOf(TaskKind.ClientBonus);
-            if (c.InvestigationSharerOnly && t.Choice[id] == LineChoice.Take) return list;
+            bool sharerOnly = c.Legacy.InvestigationSharerOnly;
+            if (sharerOnly && t.Choice[id] == LineChoice.Take) return list;
             foreach (int other in t.GroupFor(id))
-                if (other != id && !investigated.Contains(other) && (!c.InvestigationSharerOnly || t.Choice[other] == LineChoice.Take)) list.Add(other);
+                if (other != id && !investigated.Contains(other) && (!sharerOnly || t.Choice[other] == LineChoice.Take)) list.Add(other);
             return list;
         }
 

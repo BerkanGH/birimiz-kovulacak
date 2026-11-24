@@ -35,6 +35,7 @@ namespace BirimizKovulacak.Core
                 VoteOpen = (Phase == LinePhase.MeetingVote || Phase == LinePhase.CrisisVote || Phase == LinePhase.FinalVote) && !s.Fired,
                 PranksEnabled = PranksOn, PranksOpen = PrankSessionNow != LinePranks.SessionNone,
                 DeclareOpen = DeclareWindowOpen && !IsFinished && s.Candidate && final.Declared[player] < 0,
+                FilesOpen = FilesWindow && !IsFinished,
             };
             foreach (int id in ids)
             {
@@ -54,6 +55,8 @@ namespace BirimizKovulacak.Core
             if (Phase >= LinePhase.CrisisVote && Phase <= LinePhase.Results) v.Final = FinalView(player);
             if (Phase == LinePhase.Results && result != null) v.Results = result;
             v.Pranks = PranksView(player, time);
+            v.Files = FilesView();
+            v.Stakes = StakesView();
             return LineCodec.Clone(v);
         }
 
@@ -66,6 +69,7 @@ namespace BirimizKovulacak.Core
                 WitnessOf = WitnessOf(player), InvestigationTargets = InvestigationTargets(player), MessageSeq = s.MessageSeq,
                 TextsLeft = Math.Max(0, c.TextsPerSegment - s.Texts), MeetingChatLeft = Math.Max(0, c.MeetingChatPerSegment - s.Chats),
                 NextMessageAt = s.NextMessage, NextTransferAt = s.NextTransfer,
+                Files = FilesOf(player),
             };
             if (TaskVisible) m.Group = new List<int>(Current.GroupFor(player));
             return m;

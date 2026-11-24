@@ -11,11 +11,27 @@ namespace BirimizKovulacak.Core.Tests
         [Test]
         public void VersionsAndDefaultsMatchTheSpec()
         {
-            Assert.AreEqual(8, LineProtocol.Version);
-            Assert.AreEqual("v5.2-kayit", LineProtocol.RulesetVersion);
+            Assert.AreEqual("v5.3-kayit", LineProtocol.RulesetVersion);
+            Assert.AreEqual(9, LineProtocol.Version);
             Assert.AreEqual(new[] { 3, 6, 4 }, new[] { LineProtocol.MinPlayers, LineProtocol.MaxPlayers, LineProtocol.LobbyMinPlayers });
             var c = LineConfig.CreateDefault();
-            Assert.AreEqual(8, c.ConfigVersion);
+            Assert.AreEqual(9, c.ConfigVersion);
+            // v5.3: files instead of the one-shot rules, the week's agenda
+            Assert.IsNull(c.Legacy);
+            Assert.IsTrue(c.FilesOn());
+            Assert.IsTrue(c.FilePublicCount);
+            Assert.IsFalse(c.FileHeldBlocksVote);
+            Assert.AreEqual(new[] { 4, 3, 0 }, new[] { c.FileBlame(TaskKind.ClientBonus), c.FileBlame(TaskKind.PettyCash), c.FileBlame(TaskKind.WeekendShift) });
+            Assert.AreEqual(LineStakes.Permutation, c.StakesScheme);
+            Assert.AreEqual(new[] { 4, 6, 8, 1 }, new[] { c.StakeBonusSmall, c.StakeBonusNormal, c.StakeBonusBig, c.StakeTakerCut });
+            Assert.AreEqual(new[] { 2, 3, 5 }, new[] { c.StakeCashSmall, c.StakeCashNormal, c.StakeCashBig });
+            Assert.AreEqual(new[] { 1, 2, 3 }, new[] { c.StakeSkipSmall, c.StakeSkipNormal, c.StakeSkipBig });
+            // the config's own task amounts are the normal level
+            Assert.AreEqual(new[] { c.StakeBonusNormal / 2, c.StakeBonusNormal - c.StakeTakerCut, c.StakeCashNormal, c.StakeSkipNormal },
+                new[] { c.BonusPairShare, c.BonusPairTaker, c.CashTake, c.ShiftSkipPay });
+            var old = new LineLegacyRules();
+            Assert.AreEqual(new[] { 0, 0, 3, 0 }, new[] { old.InvestigationCost, old.InvestigationRefund, old.InvestigationFalseBlame, old.CashWhistleReward });
+            Assert.IsTrue(old.InvestigationSharerOnly && old.CashWhistledKeeps && !old.ShiftFailVote);
             // v5.2: no meeting 2, prim declarations, the talk-time factors
             Assert.IsFalse(c.ShiftMeeting);
             Assert.IsTrue(c.DeclarationsEnabled);
@@ -25,12 +41,9 @@ namespace BirimizKovulacak.Core.Tests
             Assert.AreEqual(6, c.StartPrim);
             Assert.AreEqual(new[] { 3, 5, 0, 1 }, new[] { c.BonusPairShare, c.BonusPairTaker, c.BonusPairSharer, c.BonusPairBothTake });
             Assert.AreEqual(new[] { 3, 5, 0, 1 }, new[] { c.BonusTrioNone, c.BonusTrioTaker, c.BonusTrioOthers, c.BonusTrioMany });
-            Assert.AreEqual(new[] { 3, 2, 3, 0 }, new[] { c.CashTake, c.CashCaughtBlame, c.CashWhistleBlame, c.CashWhistleReward });
-            Assert.IsTrue(c.CashWhistledKeeps);
+            Assert.AreEqual(new[] { 3, 2, 3 }, new[] { c.CashTake, c.CashCaughtBlame, c.CashWhistleBlame });
             Assert.AreEqual(new[] { 2, 0, 2, 1 }, new[] { c.ShiftSkipPay, c.ShiftFailSkipPay, c.ShiftFailSkipBlame, c.ShiftVolunteerClean });
-            Assert.IsFalse(c.ShiftFailVote);
-            Assert.IsTrue(c.InvestigationSharerOnly);
-            Assert.AreEqual(new[] { 1, 0, 4, 0, 3 }, new[] { c.InvestigationsPerPlayer, c.InvestigationCost, c.InvestigationGuiltyBlame, c.InvestigationRefund, c.InvestigationFalseBlame });
+            Assert.AreEqual(4, c.InvestigationGuiltyBlame);
             Assert.AreEqual(1, c.CandidateMinBlame);
             Assert.AreEqual(new[] { 1, 4, 10, 1 }, new[] { c.BlamePerVote, c.CrisisBlame, c.TransferMax, c.RecorderUses });
             Assert.AreEqual(new[] { 2, 2, 3, 3 }, new[] { c.CandidatesFor(3), c.CandidatesFor(4), c.CandidatesFor(5), c.CandidatesFor(6) });
