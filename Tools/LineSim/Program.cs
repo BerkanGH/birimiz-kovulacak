@@ -12,8 +12,10 @@ using BirimizKovulacak.Core;
 /// by policy, suç distribution and who gets fired, to sanity-check docs/V5_DESIGN.md §12. Synthetic data: bots do
 /// not talk, call or record. <c>--vote richest</c> (default, the game's bots) or <c>blame</c> (the old rule) picks
 /// <see cref="LineBotVoteStyle"/>; the vote lines report whether the votes found the richest player. <c>--rules new</c>
-/// (default: the v5.1 config defaults, bots with <see cref="LineBotPunishStyle.Deals"/>) or <c>old</c> (every v5.0 number
-/// and switch, <see cref="LineBotPunishStyle.Legacy"/>: reproduces the v5.0 result hashes).
+/// (default: the v5.2 config defaults, bots with <see cref="LineBotPunishStyle.Deals"/>) or <c>old</c> (every v5.0 number
+/// and switch, meeting 2 and no declarations, <see cref="LineBotPunishStyle.Legacy"/>: reproduces the v5.0 statistics).
+/// v5.2: no meeting 2 (the short shift's suç lands at its reveal), the candidates' prim declarations and the results'
+/// awards / headlines (<see cref="LineStory"/>); the Declarations and Story lines report them.
 /// </summary>
 internal static class Program
 {
@@ -43,6 +45,12 @@ internal static class Program
         internal int FinalFirings, FiredRichestAlive, FiredRichestOption, FiredBlameLeader, CrisisVotes, CrisisRichest, CrisisBlameLeader;
         internal int EstimateChecks, EstimateTopHits, EstimateErrors, VoteRounds, Shared;
         internal double EstimateAbsError, VoteTopShare, WinnerPrim, WinnerGap;
+        // v5.2: prim declarations and the results' story
+        internal int DeclCandidates, DeclMade, DeclTrue, DeclLow, FiredDeclared, FiredTrue, ShortShifts;
+        internal long DeclClaim, DeclActual, Awards, Headlines;
+        internal readonly Dictionary<LineBotPolicy, int> DeclBy = new Dictionary<LineBotPolicy, int>(), DeclTrueBy = new Dictionary<LineBotPolicy, int>();
+        internal readonly int[] AwardKinds = new int[LineAwards.Count + 1];
+        internal readonly int[] HeadlineKinds = new int[6];
 
         internal void Add<T>(Dictionary<LineBotPolicy, T> d, LineBotPolicy p, Func<T, T> f) { d.TryGetValue(p, out T v); d[p] = f(v); }
     }
@@ -100,8 +108,10 @@ internal static class Program
                 report.AppendLine("Bots never call, text or record (spec §13), so nobody pays for silence here. Honest: share, leave, volunteer by a simple count (the cleanest Needed+1 by suç volunteer),");
                 report.AppendLine("punish whenever eligible (whistle as a witness, investigate a Client Bonus partner who took). Greedy: take, take, skip; punish only when paid (never here).");
                 report.AppendLine("Mixed: honest or greedy per task decision (50/50, seeded) and per punishment (Honest or Greedy mode, seeded coin).");
-                report.AppendLine("Rules: the v5.1 defaults (Client Bonus 3/3, free sharer-only investigation +4 suç, free whistle +3 suç and the thief keeps the cash, volunteers −1 suç,");
-                report.AppendLine("an unstaffed shift: skippers 0 prim and +2 suç with no meeting 2 vote, 0 suç is never a candidate, firings ≤ candidates).");
+                report.AppendLine("Rules: the v5.2 defaults (Client Bonus 3/3, free sharer-only investigation +4 suç, free whistle +3 suç and the thief keeps the cash, volunteers −1 suç,");
+                report.AppendLine("an unstaffed shift: skippers 0 prim and +2 suç at its reveal and no meeting 2, 0 suç is never a candidate, firings ≤ candidates).");
+                report.AppendLine("Declarations (v5.2): every candidate bot declares its prim once: Honest the truth, Greedy 35–45% less (at least 2 less, never below 3), Mixed one or the other (seeded coin).");
+                report.AppendLine("No effect on prim, suç or votes. Story: the results' awards (at most 4, one per player where possible) and headlines (at most 5), LineStory.");
             }
             report.AppendLine(style == LineBotVoteStyle.Richest
                 ? "Votes (--vote richest, the game's bots): every policy votes for the rival it estimates to be the richest (LineBotLedger: its own views only, plus a fixed ±0.4 per-bot noise; seeded tie-break)."
@@ -123,7 +133,7 @@ internal static class Program
                     var stats = new Stats();
                     for (int i = 0; i < matches; i++) Run(n, m, seed + i, think, style, old, stats);
                     total += matches;
-                    Write(report, n, m, stats);
+                    Write(report, n, m, stats, old);
                     if (m != "mixed") Console.WriteLine(n + "p " + m + ": honest " + F(Avg(stats.Prim, stats.Players, LineBotPolicy.Honest)) + " / greedy " +
                                       F(Avg(stats.Prim, stats.Players, LineBotPolicy.Greedy)) + " prim; greedy fired in " +
                                       F(Pct(stats.MatchesGreedyFired, stats.MatchesWithGreedy)) + "% of matches with a greedy bot");
@@ -183,9 +193,10 @@ internal static class Program
         return best;
     }
 
-    /// <summary>Every v5.0 number and switch (--rules old).</summary>
+    /// <summary>Every v5.0 number and switch (--rules old): also meeting 2 after an unstaffed shift and no declarations.</summary>
     private static void OldRules(LineConfig c)
     {
+        c.ShiftMeeting = true; c.DeclarationsEnabled = false;
         c.BonusPairShare = 2; c.BonusTrioNone = 2;
         c.CashWhistleReward = 2; c.CashWhistledKeeps = false;
         c.ShiftFailSkipPay = c.ShiftSkipPay; c.ShiftFailSkipBlame = 0; c.ShiftFailVote = true; c.ShiftVolunteerClean = 0;
@@ -322,6 +333,29 @@ internal static class Program
         stats.Candidates += r.Players.Count(p => p.WasCandidate);
         if (r.Firings.Count < config.FiringsFor(n)) stats.FewerFirings++;
         if (r.Firings.Count == 0) stats.NoFiring++;
+        if (r.Choices.Count(c => c.Task == TaskKind.WeekendShift && c.Choice == LineChoice.Volunteer) < LineConfig.ShiftNeeded(n)) stats.ShortShifts++;
+        foreach (var d in r.Declarations)
+        {
+            stats.DeclCandidates++;
+            if (d.Amount < 0) continue;
+            stats.DeclMade++;
+            stats.DeclClaim += d.Amount;
+            stats.DeclActual += d.Actual;
+            stats.Add(stats.DeclBy, policy[d.Player], v => v + 1);
+            if (d.Amount == d.Actual) { stats.DeclTrue++; stats.Add(stats.DeclTrueBy, policy[d.Player], v => v + 1); }
+            else if (d.Amount < d.Actual) stats.DeclLow++;
+        }
+        foreach (var f in r.Firings)
+        {
+            if (f.Declared < 0) continue;
+            stats.FiredDeclared++;
+            if (f.Declared == f.Desk) stats.FiredTrue++;
+        }
+        var story = LineStory.Build(r, config);
+        stats.Awards += story.Awards.Count;
+        stats.Headlines += story.Headlines.Count;
+        foreach (var a in story.Awards) stats.AwardKinds[(int)a.Kind]++;
+        foreach (var h in story.Headlines) stats.HeadlineKinds[(int)h.Kind]++;
         foreach (var d in r.Incidents)
         {
             if (d.Kind == DossierKind.Investigation) { stats.Investigations++; if (d.N1 == 1) stats.GuiltyInvestigations++; }
@@ -356,7 +390,7 @@ internal static class Program
         return Convert.ToDouble(sum.TryGetValue(p, out T s) ? s : default(T), Inv) / c;
     }
 
-    private static void Write(StringBuilder b, int n, string mix, Stats s)
+    private static void Write(StringBuilder b, int n, string mix, Stats s, bool old)
     {
         b.AppendLine();
         b.AppendLine(n + " players | " + mix + " | " + s.Matches + " matches | candidates " + LineConfig.CreateDefault().CandidatesFor(n) + ", firings " + LineConfig.CreateDefault().FiringsFor(n));
@@ -387,5 +421,15 @@ internal static class Program
                      "%, to the suç leader " + F(Pct(s.CrisisBlameLeader, s.CrisisVotes)) + "%; final vote top share " + F(Pct(s.VoteTopShare, s.VoteRounds)) + "%");
         b.AppendLine("Estimate: top-hit " + F(Pct(s.EstimateTopHits, s.EstimateChecks)) + "%, mean abs error " + F(s.EstimateAbsError / Math.Max(1, s.EstimateErrors)) +
                      " prim; winner prim mean " + F(s.WinnerPrim / s.Matches) + ", gap to 2nd " + F(s.WinnerGap / s.Matches) + ", shared wins " + F(Pct(s.Shared, s.Matches)) + "%");
+        if (old) return;   // (--rules old keeps exactly the v5.0 lines)
+        b.AppendLine("Declarations: short shift (suç at its reveal) " + F(Pct(s.ShortShifts, s.Matches)) + "%; candidates per match " + F((double)s.DeclCandidates / s.Matches) + ", declared " +
+                     F(Pct(s.DeclMade, s.DeclCandidates)) + "%; truthful " + F(Pct(s.DeclTrue, s.DeclMade)) + "% (" +
+                     string.Join(", ", Policies.Where(p => s.DeclBy.ContainsKey(p)).Select(p => p + " " + (s.DeclTrueBy.TryGetValue(p, out int t) ? t : 0) + "/" + s.DeclBy[p])) +
+                     "), understated " + F(Pct(s.DeclLow, s.DeclMade)) + "%; mean claim " + F((double)s.DeclClaim / Math.Max(1, s.DeclMade)) + " of " +
+                     F((double)s.DeclActual / Math.Max(1, s.DeclMade)) + " prim; fired with a true claim (DOĞRU stamp) " + F(Pct(s.FiredTrue, s.FiredDeclared)) + "% of " + s.FiredDeclared);
+        b.AppendLine("Story: awards per match " + F((double)s.Awards / s.Matches) + " (" +
+                     string.Join(", ", Enumerable.Range(1, LineAwards.Count).Where(k => s.AwardKinds[k] > 0).Select(k => LineAwards.Id((AwardKind)k) + " " + F(Pct(s.AwardKinds[k], s.Matches)) + "%")) +
+                     "); headlines per match " + F((double)s.Headlines / s.Matches) + " (" +
+                     string.Join(", ", Enumerable.Range(1, 5).Where(k => s.HeadlineKinds[k] > 0).Select(k => LineHeadlines.Id((HeadlineKind)k) + " " + F((double)s.HeadlineKinds[k] / s.Matches))) + ")");
     }
 }
