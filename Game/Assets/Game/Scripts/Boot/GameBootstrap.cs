@@ -89,7 +89,9 @@ namespace BirimizKovulacak.Game
                 _lastResultsWeek = v.WeekId;
                 _matchesFinished++;
                 int quitAfter = LaunchArgs.Current.QuitAfterMatches;
-                if (quitAfter > 0 && _matchesFinished >= quitAfter) StartCoroutine(QuitSoon(8f));
+                // (v5.2: stay for the awards slide and the bots' award lines; they follow the ranking at LineStory.AwardsAt)
+                if (quitAfter > 0 && _matchesFinished >= quitAfter)
+                    StartCoroutine(QuitSoon(Mathf.Max(8f, (float)LineStory.AwardsAt(v.PhaseEndTime - v.PhaseStartTime) + 6.5f)));
             }
         }
 
