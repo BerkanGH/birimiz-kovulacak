@@ -89,6 +89,9 @@ namespace BirimizKovulacak.Game
         public bool RecordingsEnabled { get; private set; } = true;
         /// <summary>Lobby option "Yaramazlıklar açık" (docs/V5_YARAMAZLIKLAR.md), on by default.</summary>
         public bool PranksEnabled { get; private set; } = true;
+        /// <summary>Lobby option "Konuşma süresi" (v5.2, <see cref="LineTalkTime"/>): Kısa / Normal / Uzun scale the meeting
+        /// discussion, the crisis calls, the final discussion and the defence (LineConfig.TalkFactor). Normal by default.</summary>
+        public int TalkTime { get; private set; } = LineTalkTime.Valid(LaunchArgs.Current.TalkTime) ? LaunchArgs.Current.TalkTime : LineTalkTime.Normal;
         public int WeeksPlayed => _history != null ? _history.WeeksPlayed : 0;
         public string ConfigJson { get; private set; }
         /// <summary>Random id of this hosting session (analytics correlation only).</summary>
@@ -401,6 +404,13 @@ namespace BirimizKovulacak.Game
             BroadcastLobby();
         }
 
+        public void SetTalkTime(int level)
+        {
+            if (WeekRunning || TalkTime == level || !LineTalkTime.Valid(level)) return;
+            TalkTime = level;
+            BroadcastLobby();
+        }
+
         /// <summary>False with a localisation key explaining why (e.g. "lobby.need_players").</summary>
         public bool CanStart(out string reasonKey)
         {
@@ -412,7 +422,9 @@ namespace BirimizKovulacak.Game
                 if (s.Ready && s.Connected) ready++;
             }
             if (WeekRunning) { reasonKey = "lobby.running"; return false; }
-            int need = LaunchArgs.Current.AutoStart ? Mathf.Clamp(LaunchArgs.Current.ExpectPlayers, LineProtocol.MinPlayers, SlotCount) : LineProtocol.MinPlayers;
+            // v5.2: the lobby needs four seats (people + bots): three players would play both pair tasks as the same trio.
+            // Automated runs (-autostart -expectplayers 3) may still start the three-player match the engine supports.
+            int need = LaunchArgs.Current.AutoStart ? Mathf.Clamp(LaunchArgs.Current.ExpectPlayers, LineProtocol.MinPlayers, SlotCount) : LineProtocol.LobbyMinPlayers;
             if (occupied < need) { reasonKey = "lobby.need_players"; return false; }
             if (ready < occupied) { reasonKey = "lobby.need_ready"; return false; }
             reasonKey = "lobby.ready_to_start";
@@ -426,7 +438,7 @@ namespace BirimizKovulacak.Game
             var lv = new LineLobbyView
             {
                 BuildId = GameConfig.BuildId, WeekRunning = WeekRunning, WeekId = _weekId,
-                RecordingsEnabled = RecordingsEnabled, PranksEnabled = PranksEnabled, WeeksPlayed = WeeksPlayed, StatusKey = reason,
+                RecordingsEnabled = RecordingsEnabled, PranksEnabled = PranksEnabled, TalkTime = TalkTime, WeeksPlayed = WeeksPlayed, StatusKey = reason,
                 SessionId = SessionId, GroupId = GroupId,
             };
             lv.Experiments.AddRange(CurrentExperiments());
@@ -480,6 +492,7 @@ namespace BirimizKovulacak.Game
                 StartTime = Now, // the engine clock starts here; anything earlier would be time going backwards
                 RecordingsEnabled = RecordingsEnabled,
                 PranksEnabled = PranksEnabled,
+                TalkTime = TalkTime,
                 History = _history,
             };
             for (int i = 0; i < SlotCount; i++)
@@ -508,8 +521,9 @@ namespace BirimizKovulacak.Game
                 foreach (var s in _slots) if (s.Occupied && !s.Virtual && s.Connected) returning++;
                 HostTelemetryBridge.RematchStarted(_lastMatchId, returning, rematchRequests, LaunchArgs.Current.AutoStart);
             }
-            ConfigJson = GameConfig.ToJson(config);
+            // the engine's effective config (the talk-time option scales its talking phases): what clients and bots use
             _botConfig = _engine.Config;
+            ConfigJson = GameConfig.ToJson(_botConfig);
             for (int i = 0; i < SlotCount; i++)
             {
                 var s = _slots[i];
@@ -539,7 +553,7 @@ namespace BirimizKovulacak.Game
             // The seed reproduces every secret of the match: it is logged only once results are public (LogResult).
             _matchSeed = setup.Seed;
             MatchLog.Write("host: week " + _weekId + " started players=" + setup.Players.Count + " ruleset=" + LineProtocol.RulesetVersion
-                + " recordings=" + RecordingsEnabled + " pranks=" + PranksEnabled + " weeksPlayed=" + WeeksPlayed);
+                + " recordings=" + RecordingsEnabled + " pranks=" + PranksEnabled + " talk=" + LineTalkTime.Id(TalkTime) + " weeksPlayed=" + WeeksPlayed);
             BroadcastLobby();
             SendViewsToAll();
             return true;
@@ -609,6 +623,7 @@ namespace BirimizKovulacak.Game
             var r = _engine.Result;
             if (r != null) MatchLog.Write("host: " + LineClient.ResultLine(r) + " seed=" + _matchSeed);
             LogRules(r);
+            LogStory(r);
             LogPranks();
             // Results are public now: telemetry may flush the private-until-match-end buffer.
             if (_engine.Phase == LinePhase.Results || _engine.IsFinished) ReportMatchEnd("results");
@@ -640,6 +655,54 @@ namespace BirimizKovulacak.Game
                 + " caught=" + caught + " shift=" + (volunteers >= needed ? "staffed" : "short") + " volunteers=" + volunteers + "/" + needed + " cleaned=" + cleaned
                 + " skip_blamed=" + skipped + " skip_blame=" + skipBlame + " candidates=" + candidates + " firings=" + r.Firings.Count + "/" + _engine.Config.FiringsFor(r.PlayerCount)
                 + " transfers=" + r.Transfers.Count);
+        }
+
+        /// <summary>
+        /// v5.2 at Results (verify_logs.py): the candidates' prim declarations against their real prim at the reveal, and
+        /// the story every client builds from the result (LineStory: awards and headlines).
+        /// </summary>
+        void LogStory(LineWeekResult r)
+        {
+            if (r == null || _engine == null) return;
+            var inv = System.Globalization.CultureInfo.InvariantCulture;
+            var config = _engine.Config;
+            int candidates = 0, made = 0, truthful = 0, low = 0;
+            var list = new System.Text.StringBuilder();
+            foreach (var p in r.Players) if (p.WasCandidate) candidates++;
+            foreach (var d in r.Declarations)
+            {
+                if (list.Length > 0) list.Append(',');
+                list.Append(d.Player).Append(':').Append(d.Amount < 0 ? "-" : d.Amount.ToString(inv)).Append('/').Append(d.Actual.ToString(inv));
+                if (d.Amount < 0) continue;
+                made++;
+                if (d.Amount == d.Actual) truthful++;
+                else if (d.Amount < d.Actual) low++;
+            }
+            var fired = new System.Text.StringBuilder();
+            foreach (var f in r.Firings)
+            {
+                if (fired.Length > 0) fired.Append(',');
+                fired.Append(f.Player).Append(':').Append(f.Declared < 0 ? "-" : f.Declared.ToString(inv)).Append('/').Append(f.Desk.ToString(inv))
+                    .Append(':').Append(f.Declared < 0 ? "none" : f.Declared == f.Desk ? "true" : "lie");
+            }
+            MatchLog.Write("host: declarations week=" + r.WeekId + " enabled=" + (config.DeclarationsEnabled ? "yes" : "no") + " candidates=" + candidates
+                + " made=" + made + " truthful=" + truthful + " understated=" + low + " list=" + (list.Length > 0 ? list.ToString() : "-")
+                + " fired=" + (fired.Length > 0 ? fired.ToString() : "-"));
+            var story = LineStory.Build(r, config);
+            var awards = new System.Text.StringBuilder();
+            foreach (var a in story.Awards)
+            {
+                if (awards.Length > 0) awards.Append(',');
+                awards.Append(LineAwards.Id(a.Kind)).Append(':').Append(a.Player);
+            }
+            var heads = new System.Text.StringBuilder();
+            foreach (var h in story.Headlines)
+            {
+                if (heads.Length > 0) heads.Append(',');
+                heads.Append(LineHeadlines.Id(h.Kind)).Append(':').Append(h.Player);
+            }
+            MatchLog.Write("host: awards week=" + r.WeekId + " count=" + story.Awards.Count + " list=" + (awards.Length > 0 ? awards.ToString() : "-"));
+            MatchLog.Write("host: headlines week=" + r.WeekId + " count=" + story.Headlines.Count + " list=" + (heads.Length > 0 ? heads.ToString() : "-"));
         }
 
         public void Abort()

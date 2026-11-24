@@ -7,7 +7,8 @@ Phase grammar (docs/V5_ENGINE_SPEC.md section 3):
     TaskPlay TaskReveal Break  TaskPlay TaskReveal Break        (tasks 1 and 2)
     MeetingDossier MeetingDiscussion [MeetingVote MeetingVerdict] (meeting 1; vote skipped without vote-able failures)
     TaskPlay TaskReveal                                          (task 3)
-    [MeetingDossier MeetingDiscussion [MeetingVote MeetingVerdict]] (meeting 2 only when task 3 failed; v5.1: no vote)
+    [MeetingDossier MeetingDiscussion [MeetingVote MeetingVerdict]] (meeting 2: v5.0 / v5.1 only, when task 3 failed; v5.1:
+                                                                  no vote; v5.2: never, the crisis follows the shift)
     CrisisCalls CrisisVote CrisisVerdict
     [FinalDiscussion FinalDefense (FinalVote [FinalVote] FinalVerdict) x firings] (1..2: at most the candidates, who need suç;
                                                                                   none at all without a candidate)
@@ -30,6 +31,16 @@ silence payment it made and "bottalk punish seat=S policy=P kind=whistle|investi
 returned=N punished=yes|no by_other=yes|no spent=yes|no outcome=none|refused|kept|betrayed" per colleague it could punish. The
 script reports offers and outcomes per policy and fails when an Honest bot kept silence money, an Honest-mode bot did not
 punish a colleague it could (nobody else did, its one investigation was not spent), or a Greedy-mode bot punished unpaid.
+
+v5.2 (docs/V5_ENGINE_SPEC.md section 22): no meeting 2 (a v5.2 match that holds one fails; a short shift must still have
+blamed its skippers). Prim declarations: the host logs "host: declarations week=W enabled=yes|no candidates=C made=M
+truthful=T understated=U list=seat:declared/actual,... fired=seat:declared/desk:true|lie|none,..." and each candidate bot
+"bottalk declare seat=S policy=P declared=X had=Y actual=Z truthful=yes|no|none" (had = its prim when it declared). The
+script reports them per policy and fails when an Honest bot's declaration was not its prim, a bot's line disagrees with
+the host's, or more declarations than candidates were made. Results story (LineStory): "host: awards week=W count=N
+list=id:seat,..." and "host: headlines week=W count=N list=id:seat,..."; each award owner bot logs "bottalk award seat=S
+policy=P key=bot.award.<id>". The script reports the awards and fails on more than 4 awards / 5 headlines, an award
+given twice, or a bot saying a line for an award the host did not give it.
 
 v5 Yaramazlıklar (docs/V5_YARAMAZLIKLAR.md): at Results the host logs "host: pranks week=W enabled=.. total=N tutanak=T
 burned=B" and "host: prank i=.. kind=K actor=A target=T ... tutanak=yes|no culprit=C"; each bot logs "bottalk prank seat=S
@@ -54,8 +65,8 @@ TOKENS = {
 
 def grammar(players):
     firings = 2 if players >= 5 else 1
-    # v5.1: meeting 2 has no vote (a v5.0 config may still hold one); firings ≤ candidates (who need suç): 1..firings
-    # rounds, or no final at all when nobody qualifies
+    # v5.1: meeting 2 has no vote (a v5.0 config may still hold one); v5.2: no meeting 2 at all (checked per ruleset in
+    # rules()); firings ≤ candidates (who need suç): 1..firings rounds, or no final at all when nobody qualifies
     return re.compile(r"^I PRB PRB DS(?:VE)? PR (?:DS(?:VE)?)? CKX (?:FG (?:OO?Z){1,%d})? Q$".replace(" ", "") % firings)
 
 
@@ -156,8 +167,14 @@ RULES = re.compile(r"host: rules week=(\d+) ruleset=(\S+) whistles=(\d+) investi
                    r"volunteers=(\d+)/(\d+) cleaned=(\d+) skip_blamed=(\d+) skip_blame=(\d+) candidates=(\d+) firings=(\d+)/(\d+) transfers=(\d+)")
 
 
+def ruleset_at_least(ruleset, minor):
+    """ "v5.2-kayit" >= v5.<minor>."""
+    m = re.match(r"v5\.(\d+)", ruleset)
+    return bool(m) and int(m.group(1)) >= minor
+
+
 def rules(logs, meeting2):
-    """v5.1 rules per match (host line): punishments, the shift and the candidates. False on a broken rule."""
+    """v5.1 / v5.2 rules per match (host line): punishments, the shift and the candidates. False on a broken rule."""
     bad = []
     seen = 0
     for path in logs:
@@ -171,14 +188,18 @@ def rules(logs, meeting2):
                   "candidates=%d firings=%d/%d transfers=%s"
                   % (week, m.group(2), m.group(3), m.group(4), m.group(5), m.group(6), m.group(7), m.group(8), m.group(9), skipped,
                      m.group(11), cand, fired, planned, m.group(15)))
-            if short and skipped == 0 and int(m.group(7)) < int(m.group(8)) and m.group(2).startswith("v5.1"):
+            if short and skipped == 0 and int(m.group(7)) < int(m.group(8)) and ruleset_at_least(m.group(2), 1):
                 bad.append("match %d: a short shift but no skipper got suç" % week)
             if not short and skipped > 0:
                 bad.append("match %d: a staffed shift blamed its skippers" % week)
             if fired > cand or fired > planned:
                 bad.append("match %d: %d firings for %d candidates (planned %d)" % (week, fired, cand, planned))
             held = meeting2.get(week)
-            if held is not None and held != short:
+            if ruleset_at_least(m.group(2), 2):
+                # v5.2: one meeting before the final; the short shift's suç lands at its reveal
+                if held:
+                    bad.append("match %d: meeting 2 held in a %s match" % (week, m.group(2)))
+            elif held is not None and held != short:
                 bad.append("match %d: meeting 2 %s for a %s shift" % (week, "held" if held else "skipped", m.group(6)))
     if not seen:
         print("rules: none logged")
@@ -249,6 +270,101 @@ def deals(logs):
               % (policy, p["whistle"][0], p["whistle"][1], p["investigation"][0], p["investigation"][1], r["refused"], r["kept"], r["betrayed"], r["none"]))
     for b in bad[:10]:
         print("   DEAL PROBLEM:", b)
+    return not bad
+
+
+DECL_HOST = re.compile(r"host: declarations week=(\d+) enabled=(yes|no) candidates=(\d+) made=(\d+) truthful=(\d+) understated=(\d+) "
+                       r"list=(\S+) fired=(\S+)")
+DECL_BOT = re.compile(r"bottalk declare seat=(\d+) policy=(\w+) declared=(-?\d+) had=(-?\d+) actual=(-?\d+) truthful=(yes|no|none)")
+AWARDS_HOST = re.compile(r"host: awards week=(\d+) count=(\d+) list=(\S+)")
+HEADS_HOST = re.compile(r"host: headlines week=(\d+) count=(\d+) list=(\S+)")
+AWARD_BOT = re.compile(r"bottalk award seat=(\d+) policy=(\w+) key=bot\.award\.(\w+)")
+
+
+def pairs(text):
+    """ "a:1,b:2" -> [("a", "1"), ("b", "2")] ("-" = empty)."""
+    return [] if text == "-" else [tuple(x.split(":")) for x in text.split(",")]
+
+
+def story(logs):
+    """v5.2: prim declarations and the results' awards / headlines. False when a bot or the host broke a rule."""
+    bad = []
+    host_decl = {}     # seat -> (declared, actual) of the last match in the logs (one match per run directory by default)
+    host_awards = {}   # seat -> [award ids]
+    per = {}
+    seen_host = False
+    for path in logs:
+        text = open(path, encoding="utf-8", errors="replace").read()
+        for m in DECL_HOST.finditer(text):
+            seen_host = True
+            week, cand, made, true_n, low = int(m.group(1)), int(m.group(3)), int(m.group(4)), int(m.group(5)), int(m.group(6))
+            print("declarations match %d: enabled=%s candidates=%d declared=%d (truthful %d, understated %d) %s; fired %s"
+                  % (week, m.group(2), cand, made, true_n, low, m.group(7), m.group(8)))
+            if made > cand:
+                bad.append("match %d: %d declarations for %d candidates" % (week, made, cand))
+            if m.group(2) == "no" and made > 0:
+                bad.append("match %d: declarations made although they are off" % week)
+            for item in pairs(m.group(7)):
+                seat, rest = int(item[0]), item[1]
+                declared, actual = rest.split("/")
+                host_decl[(week, seat)] = (-1 if declared == "-" else int(declared), int(actual))
+        for m in AWARDS_HOST.finditer(text):
+            week, count, items = int(m.group(1)), int(m.group(2)), pairs(m.group(3))
+            print("awards match %d: %s" % (week, ", ".join("%s → seat %s" % (a[0], a[1]) for a in items) or "none"))
+            kinds = [a[0] for a in items]
+            if count != len(items) or count > 4:
+                bad.append("match %d: %d awards (at most 4)" % (week, count))
+            if len(set(kinds)) != len(kinds):
+                bad.append("match %d: an award was given twice: %s" % (week, m.group(3)))
+            for a in items:
+                host_awards.setdefault((week, int(a[1])), []).append(a[0])
+        for m in HEADS_HOST.finditer(text):
+            week, count, items = int(m.group(1)), int(m.group(2)), pairs(m.group(3))
+            print("headlines match %d: %s" % (week, ", ".join(h[0] for h in items) or "none"))
+            if count != len(items) or count > 5:
+                bad.append("match %d: %d headlines (at most 5)" % (week, count))
+    weeks = sorted({k[0] for k in host_decl} | {k[0] for k in host_awards})
+    for path in logs:
+        name = os.path.basename(path)
+        text = open(path, encoding="utf-8", errors="replace").read()
+        seen = set()
+        for m in DECL_BOT.finditer(text):
+            if m.group(0) in seen:
+                continue
+            seen.add(m.group(0))
+            seat, policy, declared, had, actual, truthful = int(m.group(1)), m.group(2), int(m.group(3)), int(m.group(4)), int(m.group(5)), m.group(6)
+            row = per.setdefault(policy, {"candidates": 0, "declared": 0, "truthful": 0, "understated": 0, "none": 0, "awards": 0})
+            row["candidates"] += 1
+            if truthful == "none":
+                row["none"] += 1
+            else:
+                row["declared"] += 1
+                if truthful == "yes":
+                    row["truthful"] += 1
+                elif declared < had:
+                    row["understated"] += 1
+            if policy == "Honest" and truthful == "no":
+                bad.append("%s: an Honest bot declared %d with %d prim: %s" % (name, declared, had, m.group(0)[:160]))
+            # the host's list of the same match (runs hold one match per log unless -Matches was given: any week matches)
+            if weeks and not any(host_decl.get((w, seat)) == (declared, actual) for w in weeks):
+                bad.append("%s: the host lists another declaration for seat %d: %s" % (name, seat, m.group(0)[:160]))
+        for m in AWARD_BOT.finditer(text):
+            if m.group(0) in seen:
+                continue
+            seen.add(m.group(0))
+            seat, policy, award = int(m.group(1)), m.group(2), m.group(3)
+            per.setdefault(policy, {"candidates": 0, "declared": 0, "truthful": 0, "understated": 0, "none": 0, "awards": 0})["awards"] += 1
+            if weeks and not any(award in host_awards.get((w, seat), []) for w in weeks):
+                bad.append("%s: a bot said the line of an award the host did not give it: %s" % (name, m.group(0)[:160]))
+    if not seen_host and not per:
+        print("declarations / awards: none logged")
+        return True
+    for policy in sorted(per):
+        r = per[policy]
+        print("declarations %-6s candidates=%d declared=%d (truthful %d, understated %d, none %d); award lines said %d"
+              % (policy, r["candidates"], r["declared"], r["truthful"], r["understated"], r["none"], r["awards"]))
+    for b in bad[:10]:
+        print("   STORY PROBLEM:", b)
     return not bad
 
 
@@ -368,6 +484,8 @@ def main(run):
     if not rules(logs, meeting2):
         ok = False
     if not deals(logs):
+        ok = False
+    if not story(logs):
         ok = False
     if not pranks(logs):
         ok = False

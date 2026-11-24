@@ -39,6 +39,8 @@ namespace BirimizKovulacak.Game
         public bool CallTest;
         /// <summary>Playtest facilitator's friend-group code (analytics grouping), e.g. G07.</summary>
         public string PlaytestGroup;
+        /// <summary>-talktime short|normal|long: the host's lobby option "Konuşma süresi" (LineTalkTime) at start.</summary>
+        public int TalkTime = BirimizKovulacak.Core.LineTalkTime.Normal;
 
         public static LaunchArgs Current { get; private set; } = new LaunchArgs();
 
@@ -78,6 +80,11 @@ namespace BirimizKovulacak.Game
                         break;
                     case "-playtestgroup": a.PlaytestGroup = next; i++; break;
                     case "-calltest": a.CallTest = true; break;
+                    case "-talktime":
+                        a.TalkTime = (next ?? "").ToLowerInvariant() == "short" ? BirimizKovulacak.Core.LineTalkTime.Short
+                            : (next ?? "").ToLowerInvariant() == "long" ? BirimizKovulacak.Core.LineTalkTime.Long : BirimizKovulacak.Core.LineTalkTime.Normal;
+                        i++;
+                        break;
                     case "-voicetest":
                         if (next != null && !next.StartsWith("-")) { a.VoiceTest = next; i++; }
                         else a.VoiceTest = "sine";

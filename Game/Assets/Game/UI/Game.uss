@@ -673,6 +673,11 @@
 .seg-on .seg-title, .seg-on .seg-sub { color: rgb(244, 239, 227); }
 .lobby-length-client { font-size: 26px; color: rgb(31, 42, 68); }
 .lobby-rec-toggle > .unity-label { min-width: 0; margin-right: 12px; font-size: 20px; }
+.lobby-talk { align-items: center; margin-top: 2px; }
+.lobby-talk-label { font-size: 20px; color: rgb(31, 42, 68); margin-right: 10px; }
+.lobby-talk-btn { min-width: 96px; margin: 2px 6px 2px 0; }
+.lobby-talk-on, .art .lobby-talk-on { background-image: none; background-color: rgb(47, 107, 79); border-width: 2px; border-color: rgb(31, 42, 68); border-bottom-width: 4px; }
+.lobby-talk-on .btn-label, .lobby-talk-on > .unity-text-element, .lobby-talk-on { color: rgb(244, 239, 227); }
 .lobby-consent { font-size: 17px; color: rgb(31, 42, 68); white-space: normal; margin-top: 6px; padding: 7px 12px; border-radius: 8px; background-color: rgba(255, 224, 102, 0.4); }
 .lobby-consent-off { background-color: rgba(31, 42, 68, 0.06); color: rgb(107, 111, 128); }
 .lobby-act { width: 420px; padding-left: 28px; align-items: center; justify-content: center; }

@@ -287,13 +287,15 @@ namespace BirimizKovulacak.Game
     }
 
     /// <summary>
-    /// v5 lobby (<see cref="LineClient.Lobby"/>): 3–6 seats pinned on the cork board (badge, name, tags, ready stamp,
-    /// session wins); below, the host desk: call recordings with the consent line, add bot, start;
+    /// v5 lobby (<see cref="LineClient.Lobby"/>): six seats pinned on the cork board (badge, name, tags, ready stamp,
+    /// session wins; a match needs four of them filled); below, the host desk: call recordings with the consent line,
+    /// pranks, the talk-time option (Kısa / Normal / Uzun), add bot, start;
     /// clients get "Ready". How-to and leave in the corner; the host's addresses at the bottom.
     /// </summary>
     public sealed class LobbyScreen : UiKit.Screen
     {
-        readonly VisualElement _board, _grid, _desk, _recHost, _week, _ticket, _groupRow;
+        readonly VisualElement _board, _grid, _desk, _recHost, _week, _ticket, _groupRow, _talkRow;
+        readonly Button[] _talk = new Button[LineTalkTime.Count];
         readonly Label _count, _status, _addresses, _consent, _session, _experiments, _rules;
         readonly TextField _group;
         readonly Button _ready, _start, _addBot;
@@ -332,6 +334,14 @@ namespace BirimizKovulacak.Game
             // v5 Yaramazlıklar (on by default)
             _pranks = new Toggle(Loc.T("lobby.pranks_toggle")).Cls("toggle", "lobby-rec-toggle").AddTo(_recHost);
             _pranks.RegisterValueChangedCallback(e => HostLineController.Current?.SetPranks(e.newValue));
+            // v5.2 "Konuşma süresi": Kısa / Normal / Uzun (host only; everyone reads the choice in the note below)
+            _talkRow = Box("row", "lobby-talk").AddTo(_week);
+            Text(Loc.T("lobby.talk.label"), "lobby-talk-label").AddTo(_talkRow);
+            for (int i = 0; i < _talk.Length; i++)
+            {
+                int level = i;
+                _talk[i] = Btn(Loc.T("lobby.talk." + LineTalkTime.Id(level)), () => HostLineController.Current?.SetTalkTime(level), "btn-small", "btn-ghost", "lobby-talk-btn").AddTo(_talkRow);
+            }
             _consent = Text("", "lobby-consent").AddTo(_week);
 
             // host only: optional playtest group code (a facilitator's pseudonymous group id; never a name)
@@ -417,6 +427,7 @@ namespace BirimizKovulacak.Game
             foreach (var s in lobby.Slots) hash = hash * 31 + (s.WantsRematch ? 1 : 0);
             hash = hash * 31 + (lobby.StatusKey ?? "").GetHashCode() + (lobby.Experiments != null ? lobby.Experiments.Count : 0) * 5;
             hash = hash * 31 + (lobby.RecordingsEnabled ? 3 : 0) + (lobby.PranksEnabled ? 7 : 0) + lobby.WeeksPlayed * 131 + c.MySlot * 17 + (isHost ? 1 : 0) + (lobby.WeekRunning ? 5 : 0);
+            hash = hash * 31 + lobby.TalkTime;
             if (hash != _lastHash)
             {
                 _lastHash = hash;
@@ -428,6 +439,7 @@ namespace BirimizKovulacak.Game
                 _nextStatus = Time.unscaledTime + 0.25f;
                 string reason = lobby.StatusKey;
                 bool can = hc != null && hc.CanStart(out reason);
+                if (MockHost && hc == null) can = string.IsNullOrEmpty(reason) || reason == "lobby.ready_to_start";
                 _start.SetEnabled(can);
                 _status.SetText(Loc.T(string.IsNullOrEmpty(reason) ? (can ? "lobby.ready_to_start" : "lobby.waiting") : reason));
                 _status.EnableInClassList("lobby-status-go", can);
@@ -466,8 +478,17 @@ namespace BirimizKovulacak.Game
             _experiments.Show(_experiments.text.Length > 0);
             _rec.SetValueWithoutNotify(lobby.RecordingsEnabled);
             _pranks.SetValueWithoutNotify(lobby.PranksEnabled);
+            _talkRow.Show(isHost);
+            for (int i = 0; i < _talk.Length; i++)
+            {
+                bool on = i == lobby.TalkTime;
+                _talk[i].EnableInClassList("lobby-talk-on", on);
+                _talk[i].EnableInClassList("btn-ghost", !on);
+                _talk[i].SetEnabled(!lobby.WeekRunning);
+            }
             _consent.text = Loc.T(lobby.RecordingsEnabled ? "lobby.recordings_consent" : "lobby.recordings_off")
-                + "\n" + Loc.T(lobby.PranksEnabled ? "lobby.pranks_on" : "lobby.pranks_off");
+                + "\n" + Loc.T(lobby.PranksEnabled ? "lobby.pranks_on" : "lobby.pranks_off")
+                + "\n" + Loc.T("lobby.talk.note." + LineTalkTime.Id(LineTalkTime.Valid(lobby.TalkTime) ? lobby.TalkTime : LineTalkTime.Normal));
             _consent.EnableInClassList("lobby-consent-off", !lobby.RecordingsEnabled);
             _start.Show(isHost);
             _ready.Show(!isHost);
