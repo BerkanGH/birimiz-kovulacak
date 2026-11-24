@@ -310,7 +310,7 @@ def story(logs):
                 host_decl[(week, seat)] = (-1 if declared == "-" else int(declared), int(actual))
         for m in AWARDS_HOST.finditer(text):
             week, count, items = int(m.group(1)), int(m.group(2)), pairs(m.group(3))
-            print("awards match %d: %s" % (week, ", ".join("%s → seat %s" % (a[0], a[1]) for a in items) or "none"))
+            print("awards match %d: %s" % (week, ", ".join("%s -> seat %s" % (a[0], a[1]) for a in items) or "none"))
             kinds = [a[0] for a in items]
             if count != len(items) or count > 4:
                 bad.append("match %d: %d awards (at most 4)" % (week, count))
