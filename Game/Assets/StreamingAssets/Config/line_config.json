@@ -1,5 +1,5 @@
 {
-  "ConfigVersion": 7,
+  "ConfigVersion": 8,
   "Durations": {
     "Intro": 20.0,
     "TaskPlay": 60.0,
@@ -40,6 +40,7 @@
   "ShiftSkipPay": 2,
   "ShiftFailSkipPay": 0,
   "ShiftFailSkipBlame": 2,
+  "ShiftMeeting": false,
   "ShiftFailVote": false,
   "ShiftVolunteerClean": 1,
   "InvestigationsPerPlayer": 1,
@@ -63,6 +64,11 @@
     2,
     2
   ],
+  "DeclarationsEnabled": true,
+  "DeclareSeconds": 12.0,
+  "DeclareMax": 99,
+  "TalkTimeShort": 0.7,
+  "TalkTimeLong": 1.5,
   "TransferMax": 10,
   "TransferMinInterval": 1.0,
   "RecordingsEnabled": true,
