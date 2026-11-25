@@ -14,7 +14,10 @@ Checks (Game/Assets/StreamingAssets/Localization):
   * v5 bot talk: every line key of LineBotLines (Core/Line/Engine/LineBotTalk.cs) exists in both languages with exactly
     the placeholders its argument signature gives ({0}.. one per argument);
   * v5.2 story: award.<id>.name / .text for every LineAwards id and the headline keys of every LineHeadlines id
-    (Core/Line/Engine/LineStory.cs), and the lobby's talk-time option (lobby.talk.<id>, lobby.talk.note.<id>).
+    (Core/Line/Engine/LineStory.cs), and the lobby's talk-time option (lobby.talk.<id>, lobby.talk.note.<id>);
+  * v5.3: the week's agenda (stakes.<task id>.<small|normal|big>, one {0} each), the file states (files.state.<LineFileState>)
+    and the projector's stamp of every dossier line the files rules can produce (projector.kind.<DossierKind>);
+  * Turkish: no case suffix glued to a placeholder ("{0}'e", "{0}'in"): names and colours stand alone.
 """
 import glob
 import json
@@ -148,6 +151,28 @@ def main():
         for k in ("lobby.talk." + i, "lobby.talk.note." + i):
             if k not in mt or k not in me:
                 problems.append("missing talk-time key: " + k)
+    # v5.3: the week's agenda, the file states, the projector's stamps
+    for t in TASK_IDS:
+        for level in ("small", "normal", "big"):
+            k = "v5.stakes.%s.%s" % (t, level)
+            for lang, table in (("tr", tr), ("en", en)):
+                if k not in table:
+                    problems.append("missing stakes key (%s): %s" % (lang, k))
+                elif set(re.findall(r"\{\d+\}", table[k])) != {"{0}"}:
+                    problems.append("stakes key needs exactly {0} (%s): %s" % (lang, k))
+    for v in enum_values("LineFileState"):
+        k = "v5.files.state." + v
+        if k not in tr or k not in en:
+            problems.append("missing file state key: " + k)
+    for v in enum_values("DossierKind"):
+        k = "v5.projector.kind." + v
+        # (the legacy rules' whistle / investigation show under the opened file's stamp)
+        if v not in ("Whistle", "Investigation") and (k not in tr or k not in en):
+            problems.append("missing projector stamp key: " + k)
+    # Turkish: a case suffix never follows a name / colour placeholder
+    for k in sorted(tr):
+        if re.search(r"\{\d+\}['\u2019]", tr[k]):
+            problems.append("suffix after a placeholder (tr): " + k)
     for p in problems:
         print("FAIL", p)
     print("loc_check: %d keys per language, %d used literals, %d bot lines, %s" % (len(tr), len(used), len(bot), "OK" if not problems else "%d problem(s)" % len(problems)))

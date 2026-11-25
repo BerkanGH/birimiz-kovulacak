@@ -42,6 +42,20 @@ list=id:seat,..." and "host: headlines week=W count=N list=id:seat,..."; each aw
 policy=P key=bot.award.<id>". The script reports the awards and fails on more than 4 awards / 5 headlines, an award
 given twice, or a bot saying a line for an award the host did not give it.
 
+v5.3 (docs/V5_ENGINE_SPEC.md section 23). "Haftanın gündemi": when a match starts the host logs "host: stakes week=W
+ruleset=.. scheme=permutation|fixed type=T bonus=level:pot:share/taker cash=level:amount shift=level:pay suc=a/b/c/d/e"
+(the suç prices: bonus file / cash file / caught / short shift / crisis). The script reports the week types and fails
+when a v5.3 match has no stakes line, the levels of a permutation week are not one small, one normal and one big, the
+share is not half the pot, or the suç prices differ between two matches of the run. "Dosya": at Results the host logs
+"host: files week=W enabled=yes|no total=N opened=O shredded=S void=V expired=E held=H suc=X/Y list=task:holder>target:
+state@Phase,..." (X = the suç of the opened files, Y = what the blame log holds for them) and each bot "bottalk file seat=S
+policy=P task=cash|bonus target=T mode=honest|greedy paid=N returned=N state=.. phase=.. outcome=none|refused|sold|
+betrayed|kept week=W" per file it held. The script reports them and fails when the totals do not add up, a file is
+still held at Results, the file suç was added twice (X != Y), an offence was opened twice, a file was opened outside its
+window, a bot's line disagrees with the host's, an Honest bot kept silence money, an Honest-mode holder did not open
+(unless a colleague was first), a Greedy-mode holder shredded / kept an unpaid file, returned silence money, or opened a
+paid file before the crisis calls. A v5.3 match with a whistle / investigation log line fails.
+
 v5 Yaramazlıklar (docs/V5_YARAMAZLIKLAR.md): at Results the host logs "host: pranks week=W enabled=.. total=N tutanak=T
 burned=B" and "host: prank i=.. kind=K actor=A target=T ... tutanak=yes|no culprit=C"; each bot logs "bottalk prank seat=S
 policy=P kind=K target=T ... cost=C tutanak=yes|no culprit=C sealed=yes|no prim_after=N" (cakes as they land) and
@@ -171,6 +185,141 @@ def ruleset_at_least(ruleset, minor):
     """ "v5.2-kayit" >= v5.<minor>."""
     m = re.match(r"v5\.(\d+)", ruleset)
     return bool(m) and int(m.group(1)) >= minor
+
+
+STAKES = re.compile(r"host: stakes week=(\d+) ruleset=(\S+) scheme=(\w+) type=(-?\d+) bonus=(\w+):(\d+):(\d+)/(\d+) cash=(\w+):(\d+) "
+                    r"shift=(\w+):(\d+) suc=(\d+)/(\d+)/(\d+)/(\d+)/(\d+)")
+FILES_HOST = re.compile(r"host: files week=(\d+) enabled=(yes|no) total=(\d+) opened=(\d+) shredded=(\d+) void=(\d+) expired=(\d+) held=(\d+) "
+                        r"suc=(\d+)/(\d+) list=(\S+)")
+FILE_BOT = re.compile(r"bottalk file seat=(\d+) policy=(\w+) task=(\w+) target=(\d+) mode=(\w+) paid=(\d+) returned=(\d+) state=(\w+) phase=(\w+) "
+                      r"outcome=(\w+) week=(\d+)")
+FILE_WINDOW = {"TaskReveal", "Break", "TaskPlay", "MeetingDossier", "MeetingDiscussion", "MeetingVote", "MeetingVerdict", "CrisisCalls"}
+
+
+def stakes(logs, weeks):
+    """v5.3 "Haftanın gündemi" per match (host line when the match starts). False on a broken rule."""
+    bad = []
+    seen = {}
+    prices = set()
+    for path in logs:
+        text = open(path, encoding="utf-8", errors="replace").read()
+        for m in STAKES.finditer(text):
+            week = int(m.group(1))
+            if week in seen:
+                continue
+            seen[week] = m
+            levels = [m.group(5), m.group(9), m.group(11)]
+            pot, share, taker = int(m.group(6)), int(m.group(7)), int(m.group(8))
+            print("stakes match %d (%s): %s week type %s: Client Bonus %s (pot %d: %d each, a sole taker %d), Petty Cash %s (%s), skip pay %s (+%s)"
+                  % (week, m.group(2), m.group(3), m.group(4), levels[0], pot, share, taker, levels[1], m.group(10), levels[2], m.group(12)))
+            if m.group(3) == "permutation":
+                if sorted(levels) != ["big", "normal", "small"] or not 0 <= int(m.group(4)) <= 5:
+                    bad.append("match %d: not a permutation week: %s type %s" % (week, levels, m.group(4)))
+            elif levels != ["normal"] * 3:
+                bad.append("match %d: fixed stakes with levels %s" % (week, levels))
+            if share * 2 != pot or taker >= pot:
+                bad.append("match %d: Client Bonus pot %d pays %d / %d" % (week, pot, share, taker))
+            prices.add(m.group(13, 14, 15, 16, 17))
+    for week, ruleset in sorted(weeks.items()):
+        if ruleset_at_least(ruleset, 3) and week not in seen:
+            bad.append("match %d (%s): no stakes line" % (week, ruleset))
+    if len(prices) > 1:
+        bad.append("the suç prices changed between matches: %s" % sorted(prices))
+    if not seen and not bad:
+        print("stakes: none logged")
+    for b in bad[:10]:
+        print("   STAKES PROBLEM:", b)
+    return not bad
+
+
+def files(logs):
+    """v5.3 "Dosya": the host's file list per match and every bot's own files. False on a broken rule."""
+    bad = []
+    host = {}       # week -> {(task, holder, target): (state, phase)}
+    totals = {"opened": 0, "shredded": 0, "void": 0, "expired": 0}
+    late = 0
+    per = {}        # policy -> counters
+    for path in logs:
+        text = open(path, encoding="utf-8", errors="replace").read()
+        for m in FILES_HOST.finditer(text):
+            week = int(m.group(1))
+            if week in host:
+                continue
+            total, opened, shredded, voided, expired, held = (int(m.group(i)) for i in range(3, 9))
+            entries = {}
+            offences = set()
+            for item in ([] if m.group(11) == "-" else m.group(11).split(",")):
+                task, pair, rest = item.split(":")
+                state, phase = rest.split("@")
+                holder, target = (int(x) for x in pair.split(">"))
+                entries[(task, holder, target)] = (state, phase)
+                if state == "opened":
+                    if (task, target) in offences:
+                        bad.append("match %d: the %s offence of seat %d was opened twice" % (week, task, target))
+                    offences.add((task, target))
+                    if phase not in FILE_WINDOW:
+                        bad.append("match %d: a file opened in %s" % (week, phase))
+                    if phase == "CrisisCalls":
+                        late += 1
+            host[week] = entries
+            for k, n in (("opened", opened), ("shredded", shredded), ("void", voided), ("expired", expired)):
+                totals[k] += n
+            print("files match %d: %d files: opened %d, shredded %d, void %d, expired %d (file suç %s)"
+                  % (week, total, opened, shredded, voided, expired, m.group(9)))
+            if m.group(2) != "yes":
+                bad.append("match %d: files are off" % week)
+            if opened + shredded + voided + expired + held != total or len(entries) != total:
+                bad.append("match %d: the file totals do not add up: %s" % (week, m.group(0)[:160]))
+            if held:
+                bad.append("match %d: %d file(s) still held at Results" % (week, held))
+            if m.group(9) != m.group(10):
+                bad.append("match %d: file suç %s but the blame log holds %s (added twice?)" % (week, m.group(9), m.group(10)))
+    for path in logs:
+        name = os.path.basename(path)
+        text = open(path, encoding="utf-8", errors="replace").read()
+        seen = set()
+        for m in FILE_BOT.finditer(text):
+            if m.group(0) in seen:
+                continue
+            seen.add(m.group(0))
+            seat, policy, task, target, mode = int(m.group(1)), m.group(2), m.group(3), int(m.group(4)), m.group(5)
+            paid, back, state, phase, outcome, week = int(m.group(6)), int(m.group(7)), m.group(8), m.group(9), m.group(10), int(m.group(11))
+            row = per.setdefault(policy, {"files": 0, "opened": 0, "late": 0, "shredded": 0, "void": 0, "expired": 0,
+                                          "none": 0, "refused": 0, "sold": 0, "betrayed": 0, "kept": 0})
+            row["files"] += 1
+            row[state] = row.get(state, 0) + 1
+            row[outcome] = row.get(outcome, 0) + 1
+            if state == "opened" and phase == "CrisisCalls":
+                row["late"] += 1
+            line = m.group(0)[:200]
+            if week in host and host[week].get((task, seat, target)) != (state, phase):
+                bad.append("%s: the host's list says %s: %s" % (name, host[week].get((task, seat, target)), line))
+            if policy == "Honest" and (mode != "honest" or back < paid):
+                bad.append("%s: an Honest bot kept silence money: %s" % (name, line))
+            if policy == "Greedy" and mode != "greedy":
+                bad.append("%s: a Greedy bot in Honest mode: %s" % (name, line))
+            if mode == "honest" and state not in ("opened", "void"):
+                bad.append("%s: an Honest-mode holder did not open its file: %s" % (name, line))
+            if mode == "greedy" and back > 0:
+                bad.append("%s: a Greedy-mode holder returned silence money: %s" % (name, line))
+            if mode == "greedy" and paid == 0 and state not in ("opened", "void"):
+                bad.append("%s: a Greedy-mode holder did not open an unpaid file: %s" % (name, line))
+            if mode == "greedy" and paid > 0 and state == "opened" and phase != "CrisisCalls":
+                bad.append("%s: a Greedy-mode holder opened a paid file before the crisis calls: %s" % (name, line))
+            if mode == "greedy" and paid > 0 and state == "expired":
+                bad.append("%s: a Greedy-mode holder let a paid file expire: %s" % (name, line))
+    if not host and not per:
+        print("files: none logged")
+        return True
+    print("files total: opened %d (%d of them in the crisis calls), shredded %d, void %d, expired %d"
+          % (totals["opened"], late, totals["shredded"], totals["void"], totals["expired"]))
+    for policy in sorted(per):
+        r = per[policy]
+        print("files %-6s held %d: opened %d (late %d), shredded %d, void %d, expired %d; silence money: none %d, refused %d, sold %d, betrayed %d, kept %d"
+              % (policy, r["files"], r["opened"], r["late"], r["shredded"], r["void"], r["expired"], r["none"], r["refused"], r["sold"], r["betrayed"], r["kept"]))
+    for b in bad[:10]:
+        print("   FILE PROBLEM:", b)
+    return not bad
 
 
 def rules(logs, meeting2):
@@ -483,6 +632,20 @@ def main(run):
     votes(logs)
     if not rules(logs, meeting2):
         ok = False
+    # v5.3: the week's agenda and the files (the ruleset of each match is on the host's rules line)
+    weeks = {}
+    for path in logs:
+        for m in RULES.finditer(open(path, encoding="utf-8", errors="replace").read()):
+            weeks[int(m.group(1))] = m.group(2)
+    if not stakes(logs, weeks):
+        ok = False
+    if not files(logs):
+        ok = False
+    if any(ruleset_at_least(r, 3) for r in weeks.values()):
+        for path in logs:
+            if PUNISH.search(open(path, encoding="utf-8", errors="replace").read()):
+                ok = False
+                print("   FILE PROBLEM: %s: a one-shot punishment line in a v5.3 run" % os.path.basename(path))
     if not deals(logs):
         ok = False
     if not story(logs):

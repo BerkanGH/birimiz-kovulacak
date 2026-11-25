@@ -2000,8 +2000,8 @@ namespace BirimizKovulacak.Core
                     bool honest = bot.HonestMode(v, cash, f.Target);
                     bool opened = f.State == LineFileState.Opened;
                     string outcome = got == 0 ? "none" : back >= got ? "refused" : opened ? "betrayed" : f.State == LineFileState.Shredded ? "sold" : "kept";
-                    Log(string.Format(CultureInfo.InvariantCulture, "file seat={0} policy={1} task={2} target={3} mode={4} paid={5} returned={6} state={7} phase={8} outcome={9}",
-                        Seat, Policy, cash ? "cash" : "bonus", f.Target, honest ? "honest" : "greedy", got, Math.Min(back, got), f.State.ToString().ToLowerInvariant(), f.Phase, outcome));
+                    Log(string.Format(CultureInfo.InvariantCulture, "file seat={0} policy={1} task={2} target={3} mode={4} paid={5} returned={6} state={7} phase={8} outcome={9} week={10}",
+                        Seat, Policy, cash ? "cash" : "bonus", f.Target, honest ? "honest" : "greedy", got, Math.Min(back, got), f.State.ToString().ToLowerInvariant(), f.Phase, outcome, r.WeekId));
                 }
                 return;
             }

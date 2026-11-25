@@ -521,9 +521,11 @@ namespace BirimizKovulacak.Game
                 foreach (var s in _slots) if (s.Occupied && !s.Virtual && s.Connected) returning++;
                 HostTelemetryBridge.RematchStarted(_lastMatchId, returning, rematchRequests, LaunchArgs.Current.AutoStart);
             }
-            // the engine's effective config (the talk-time option scales its talking phases): what clients and bots use
+            // the engine's effective config (the talk-time option scales its talking phases, the week's agenda sets the task
+            // amounts): what clients and bots use
             _botConfig = _engine.Config;
             ConfigJson = GameConfig.ToJson(_botConfig);
+            LogStakes();
             for (int i = 0; i < SlotCount; i++)
             {
                 var s = _slots[i];
@@ -623,10 +625,57 @@ namespace BirimizKovulacak.Game
             var r = _engine.Result;
             if (r != null) MatchLog.Write("host: " + LineClient.ResultLine(r) + " seed=" + _matchSeed);
             LogRules(r);
+            LogFiles(r);
             LogStory(r);
             LogPranks();
             // Results are public now: telemetry may flush the private-until-match-end buffer.
             if (_engine.Phase == LinePhase.Results || _engine.IsFinished) ReportMatchEnd("results");
+        }
+
+        /// <summary>
+        /// "Haftanın gündemi" when the match starts (verify_logs.py): the scheme, the drawn week type, each task's level
+        /// and amount, and the suç prices that never change.
+        /// </summary>
+        void LogStakes()
+        {
+            LineStakesView s;
+            try { s = _engine.BuildView(FirstSeat(), Now).Stakes; }
+            catch (Exception e) { Debug.LogException(e); return; }
+            var c = _botConfig;
+            MatchLog.Write("host: stakes week=" + _weekId + " ruleset=" + LineProtocol.RulesetVersion + " scheme=" + (s.Scheme == LineStakes.Permutation ? "permutation" : "fixed")
+                + " type=" + s.WeekType + " bonus=" + LineStakes.Id(s.LevelBonus) + ":" + s.BonusPot + ":" + s.BonusShare + "/" + s.BonusTaker
+                + " cash=" + LineStakes.Id(s.LevelCash) + ":" + s.CashTake + " shift=" + LineStakes.Id(s.LevelShift) + ":" + s.ShiftSkipPay
+                + " suc=" + c.InvestigationGuiltyBlame + "/" + c.CashWhistleBlame + "/" + c.CashCaughtBlame + "/" + c.ShiftFailSkipBlame + "/" + c.CrisisBlame);
+        }
+
+        /// <summary>
+        /// "Dosya" at Results (verify_logs.py): every file of the match (task:holder>target:state@phase) and the totals,
+        /// with the suç the opened ones added.
+        /// </summary>
+        void LogFiles(LineWeekResult r)
+        {
+            if (r == null || _engine == null) return;
+            var config = _engine.Config;
+            int opened = 0, shredded = 0, voided = 0, expired = 0, held = 0, blame = 0;
+            var list = new System.Text.StringBuilder();
+            foreach (var f in r.Files)
+            {
+                if (list.Length > 0) list.Append(',');
+                list.Append(f.Task == TaskKind.PettyCash ? "cash" : "bonus").Append(':').Append(f.Holder).Append('>').Append(f.Target).Append(':')
+                    .Append(f.State.ToString().ToLowerInvariant()).Append('@').Append(f.Phase);
+                switch (f.State)
+                {
+                    case LineFileState.Opened: opened++; blame += f.Blame; break;
+                    case LineFileState.Shredded: shredded++; break;
+                    case LineFileState.Void: voided++; break;
+                    case LineFileState.Expired: expired++; break;
+                    default: held++; break;
+                }
+            }
+            int logged = 0;
+            foreach (var b in r.BlameLog) if (b.Reason == BlameReason.InvestigationGuilty || b.Reason == BlameReason.Whistled) logged += b.Delta;
+            MatchLog.Write("host: files week=" + r.WeekId + " enabled=" + (config.FilesOn() ? "yes" : "no") + " total=" + r.Files.Count + " opened=" + opened + " shredded=" + shredded
+                + " void=" + voided + " expired=" + expired + " held=" + held + " suc=" + blame + "/" + logged + " list=" + (list.Length > 0 ? list.ToString() : "-"));
         }
 
         /// <summary>
@@ -639,8 +688,9 @@ namespace BirimizKovulacak.Game
             int whistles = 0, investigations = 0, caught = 0, volunteers = 0, cleaned = 0, skipped = 0, skipBlame = 0, candidates = 0;
             foreach (var d in r.Incidents)
             {
-                if (d.Kind == DossierKind.Whistle) whistles++;
-                else if (d.Kind == DossierKind.Investigation) investigations++;
+                // (v5.3: an opened Petty Cash / Client Bonus file counts where the whistle / the investigation did)
+                if (d.Kind == DossierKind.Whistle || d.Kind == DossierKind.FileOpened && d.Task == TaskKind.PettyCash) whistles++;
+                else if (d.Kind == DossierKind.Investigation || d.Kind == DossierKind.FileOpened) investigations++;
                 else if (d.Kind == DossierKind.CashCaught) caught++;
             }
             foreach (var c in r.Choices) if (c.Task == TaskKind.WeekendShift && c.Choice == LineChoice.Volunteer) volunteers++;
