@@ -176,7 +176,7 @@ namespace BirimizKovulacak.Game
             t.Choices.Add(new LineChoiceView { TaskNumber = 1, Task = TaskKind.PettyCash, Player = 0, Choice = LineChoice.Take, Payout = 3 });
             t.Choices.Add(new LineChoiceView { TaskNumber = 1, Task = TaskKind.PettyCash, Player = Honest, Choice = LineChoice.Leave, Payout = -1 });
             v.Task = t;
-            v.Features.WhistleOpen = true;
+            LineMock.AddFile(v, LineMock.File(TaskKind.PettyCash, Honest, 0)); // the witness holds a file on me
             v.Mine.Group.Clear(); v.Mine.Group.AddRange(t.Group);
             v.Mine.CallLog.Clear();
             v.Mine.Transfers.Clear();

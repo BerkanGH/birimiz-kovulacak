@@ -154,7 +154,12 @@ namespace BirimizKovulacak.Game
             var v = LineMock.BaseView(LinePhase.MeetingDiscussion, players, 0, 44);
             v.Meeting = LineMock.MeetingView(0, -1);
             v.Meeting.Recordings.Clear();
-            v.Mine.InvestigationTargets.Add(1);
+            // v5.3: I shared the Client Bonus and Sarı took it all: the file is mine. Two files are opened already (the
+            // dossier), one more is still in somebody's hands
+            LineMock.AddFile(v, LineMock.File(TaskKind.ClientBonus, 0, 1));
+            v.Files.Held++;
+            LineMock.AddFile(v, LineMock.File(TaskKind.PettyCash, 2, 3, LineFileState.Opened, LinePhase.Break));
+            LineMock.AddFile(v, LineMock.File(TaskKind.ClientBonus, 3, 2, LineFileState.Opened, LinePhase.MeetingDossier));
             v.Mine.Recorded.Add(new LineRecordedCallView { CallId = 3, Other = 1, Start = LineMock.Now - 200 });
             foreach (var p in v.Players) p.Blame = new[] { 2, 4, 0, 7, 3, 1 }[p.Id];
             return v;
@@ -166,7 +171,7 @@ namespace BirimizKovulacak.Game
             v.Meeting = LineMock.MeetingView(0, 2);
             v.Meeting.Recordings.Clear();
             v.Mine.Ballots.Add(a); v.Mine.Ballots.Add(b);
-            v.Mine.InvestigationUsed = true;
+            LineMock.AddFile(v, LineMock.File(TaskKind.ClientBonus, 0, 1));
             foreach (var p in v.Players) p.Blame = new[] { 2, 4, 0, 7, 3, 1 }[p.Id];
             v.Players[1].Voted = true; v.Players[3].Voted = true;
             v.Players[0].Voted = a >= 0 && b >= 0;
@@ -270,7 +275,7 @@ namespace BirimizKovulacak.Game
             var list = new List<LineMessage>
             {
                 LineMock.Msg(MessageKind.MeetingChat, 1, -1, "Kasada ben almadım, Yeşil'e sorun.", true, 30),
-                LineMock.Msg(MessageKind.Text, 2, 0, "Soruşturma açarsan ben de sana oy veririm.", ago: 20),
+                LineMock.Msg(MessageKind.Text, 2, 0, "Dosyayı açarsan ben de sana oy veririm.", ago: 20),
                 LineMock.Msg(MessageKind.MeetingChat, 0, -1, "Bonus'ta paylaştım, kaydım var.", true, 12),
                 LineMock.Msg(MessageKind.MeetingChat, 3, -1, "Kayıt sahte olabilir.", true, 4),
             };

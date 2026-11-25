@@ -194,7 +194,12 @@ namespace BirimizKovulacak.Game
             double t0 = v.PhaseStartTime - 600;
             r.Transfers.Add(new LineTransferView { From = 1, To = 0, Amount = 1, Phase = LinePhase.Break, Time = t0 + 95 });
             r.Transfers.Add(new LineTransferView { From = 2, To = 3, Amount = 1, Phase = LinePhase.Break, Time = t0 + 190 });
-            r.Incidents.Add(new LineDossierEntry { Kind = DossierKind.Investigation, Player = 0, Other = 1, N1 = 1, Time = t0 + 230 });
+            r.Incidents.Add(new LineDossierEntry { Kind = DossierKind.FileOpened, Task = TaskKind.ClientBonus, Player = 0, Other = 1, N1 = 4, Time = t0 + 230 });
+            // v5.3 files: I kept Sarı's prim and opened the file anyway; Yeşil kept Pembe's and shredded the cash file
+            r.Files.Add(new LineFileView { Task = TaskKind.ClientBonus, Holder = 0, Target = 1, State = LineFileState.Opened, Phase = LinePhase.MeetingDossier, Time = t0 + 230, Blame = 4 });
+            r.Files.Add(new LineFileView { Task = TaskKind.PettyCash, Holder = 3, Target = 2, State = LineFileState.Shredded, Phase = LinePhase.Break, Time = t0 + 195, Blame = 3 });
+            // (this table was written with every task at the normal level)
+            r.Stakes = new LineStakesView { BonusPot = 6, BonusShare = 3, BonusTaker = 5, BonusBoth = 1, CashTake = 3, ShiftSkipPay = 2 };
             for (int i = 0; i < 6; i++)
             {
                 r.Ballots.Add(new LineBallotView { Kind = BallotKind.Meeting, Round = 0, Voter = i, Index = 0, Target = i == 5 ? 4 : 5 });

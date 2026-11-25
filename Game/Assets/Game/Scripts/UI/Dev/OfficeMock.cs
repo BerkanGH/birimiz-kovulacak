@@ -12,6 +12,10 @@ namespace BirimizKovulacak.Game
     /// Step 2 (task objects): <c>v5.office_cashbox*</c> (the Petty Cash box: choosing, outcomes, witness and whistle,
     /// the sole taker), <c>v5.office_roster*</c> (writing / rubbing out, the revealed roster), <c>v5.office_drawer</c>
     /// (the prim stack growing and shrinking, prim coming in, looking sharply right from the chair).
+    /// v5.3: <c>"v5.stakes_intro*"</c> the week's agenda at the Intro (the strip, the manager's line, the computer's card);
+    /// <c>"v5.files_office*"</c> a witness's files (the strip, the cash box's button, "Dosyalarım" with the open / shred
+    /// confirmations, the shredding and the opening); <c>"v5.files_target"</c> the file on me (held, then shredded: the
+    /// notice only I get, then the anonymous one); <c>"v5.files_crisis"</c> the last chance in the crisis calls.
     /// </summary>
     public static class OfficeMockScenarios
     {
@@ -67,7 +71,7 @@ namespace BirimizKovulacak.Game
                 {
                     Look();
                     var v = Task(TaskKind.PettyCash, 1, 4, LinePhase.Break, true);
-                    v.Features.WhistleOpen = true; v.Mine.WitnessOf.Add(1);
+                    LineMock.AddFile(v, LineMock.File(TaskKind.PettyCash, 0, 1));
                     Show(v);
                 })
                 .Do(1.0f, () => OfficeUi.I.OpenComputer(OfficeComputer.App.Task), true));
@@ -117,10 +121,10 @@ namespace BirimizKovulacak.Game
                 .Do(3.0f, () => OfficeUi.I.OpenObject(OfficeUi.Focus.CashBox), true)
                 .Do(4.8f, () =>
                 {
-                    // v5.1: the whistle is free and earns nothing; the thief keeps the cash (A = 0 taken back)
-                    var v = Cash(LinePhase.Break, 0, LineChoice.Take, true);
-                    v.Mine.WitnessOf.Clear();
-                    LineClient.I.ApplyEvents(new List<LineEvent> { new LineEvent { Type = LineEventType.Whistled, Actor = 0, Target = 1, A = 0, Audience = LineAudience.Player, AudiencePlayer = 0, Time = LineMock.Now } });
+                    // v5.3: the button opened my file on the thief: +3 suç at once, publicly; the thief keeps the cash
+                    var v = Cash(LinePhase.Break, 0, LineChoice.Take, true, LineFileState.Opened);
+                    v.Players[1].Blame += 3;
+                    LineClient.I.ApplyEvents(new List<LineEvent> { new LineEvent { Type = LineEventType.FileOpened, Actor = 0, Target = 1, A = (int)TaskKind.PettyCash, B = 3, Time = LineMock.Now } });
                     Show(v);
                 }, true)
                 .Do(6.6f, () => { OfficeUi.I.CloseFocus(); AimAt(Presenter().Office.CashBox.position + Vector3.up * 0.09f); }, true));
@@ -131,9 +135,10 @@ namespace BirimizKovulacak.Game
                 .Do(2.4f, () => OfficeUi.I.OpenObject(OfficeUi.Focus.CashBox), true)
                 .Do(4.2f, () =>
                 {
-                    // the witness whistled: v5.1 the notes stay on the desk (A = 0 taken back), the suç comes in meeting 1
-                    var v = Cash(LinePhase.Break, LineChoice.Take, 0, true);
-                    LineClient.I.ApplyEvents(new List<LineEvent> { new LineEvent { Type = LineEventType.Whistled, Actor = 1, Target = 0, A = 0, Audience = LineAudience.Player, AudiencePlayer = 0, Time = LineMock.Now } });
+                    // v5.3: the witness opened the file on me: the notes stay on the desk, +3 suç at once
+                    var v = Cash(LinePhase.Break, LineChoice.Take, 0, true, LineFileState.Opened);
+                    v.Players[0].Blame += 3;
+                    LineClient.I.ApplyEvents(new List<LineEvent> { new LineEvent { Type = LineEventType.FileOpened, Actor = 1, Target = 0, A = (int)TaskKind.PettyCash, B = 3, Time = LineMock.Now } });
                     Show(v);
                 }, true));
 
@@ -164,6 +169,66 @@ namespace BirimizKovulacak.Game
                 .Do(8.8f, () => Show(Prim(58)), true)
                 .Do(10.4f, () => { OfficeUi.I.CloseFocus(); Aim(72f, 24f); }, true)
                 .Do(12.0f, () => Aim(-70f, 20f), true));
+
+            // ---- v5.3 "Haftanın gündemi": the Intro announces the week
+            LineMock.Register("v5.stakes_intro", () => new LineMockScenario()
+                .Do(0f, () => { Look(); Show(Intro()); Aim(0f, 15f); }, 1.6f)
+                .Do(2.4f, () => OfficeUi.I.OpenComputer(OfficeComputer.App.Task), true)
+                .Do(4.0f, () => OfficeUi.I.Computer.ShowRules(HowToPlayScreen.PageFiles), true));
+            LineMock.Register("v5.stakes_intro_en", () => new LineMockScenario()
+                .Do(0f, () => English())
+                .Do(0.3f, () => { Look(); var v = Intro(); LineMock.SetNames(v, true); Show(v); Aim(0f, 15f); }, 1.6f)
+                .Do(2.7f, () => OfficeUi.I.OpenComputer(OfficeComputer.App.Task), true));
+
+            // ---- v5.3 "Dosya": the files I hold, in the office
+            LineMock.Register("v5.files_office", () => new LineMockScenario()
+                .Do(0f, () => { Look(); Show(Files(LineFileState.Held, LineFileState.Held)); Aim(0f, 15f); }, true)
+                .Do(1.6f, () => OfficeUi.I.OpenObject(OfficeUi.Focus.CashBox), true)
+                .Do(3.4f, () => { OfficeUi.I.CloseFocus(); OfficeUi.I.OpenComputer(OfficeComputer.App.Task); }, true)
+                .Do(5.0f, () => Ask(TaskKind.ClientBonus, 2, 1), true)
+                .Do(6.4f, () => Ask(TaskKind.ClientBonus, 2, 2), true)
+                .Do(7.8f, () =>
+                {
+                    // confirmed: the file is gone; only Pembe and I know
+                    OfficeUi.I.State.AskFile(null, 0);
+                    Sfx.Play("shred", 0.7f);
+                    Event(LineEventType.FileShredded, 0, 2, (int)TaskKind.ClientBonus, -1, 0);
+                    Show(Files(LineFileState.Held, LineFileState.Shredded));
+                }, true)
+                .Do(9.4f, () =>
+                {
+                    // the cash file opened: +3 suç for Sarı at once, in front of everyone
+                    Event(LineEventType.FileOpened, 0, 1, (int)TaskKind.PettyCash, 3, -1);
+                    Show(Files(LineFileState.Opened, LineFileState.Shredded));
+                }, true)
+                .Do(11.0f, () => { OfficeUi.I.CloseFocus(); Aim(0f, 15f); Event(LineEventType.FileNotice, -1, -1, (int)LineFileState.Shredded, 1, 0, 1); }, true));
+            LineMock.Register("v5.files_office_en", () => new LineMockScenario()
+                .Do(0f, () => English())
+                .Do(0.3f, () => { Look(); var v = Files(LineFileState.Held, LineFileState.Held); LineMock.SetNames(v, true); Show(v); Aim(0f, 15f); }, true)
+                .Do(1.9f, () => OfficeUi.I.OpenComputer(OfficeComputer.App.Task), true)
+                .Do(3.5f, () => Ask(TaskKind.ClientBonus, 2, 2), true));
+            // the other side: a colleague holds a file on me, then shreds it (told to me alone), then somebody else's goes
+            LineMock.Register("v5.files_target", () => new LineMockScenario()
+                .Do(0f, () => { Look(); Show(Cash(LinePhase.Break, LineChoice.Take, 0, true)); Aim(0f, 15f); }, true)
+                .Do(1.6f, () => OfficeUi.I.OpenComputer(OfficeComputer.App.Task), true)
+                .Do(3.2f, () =>
+                {
+                    Event(LineEventType.FileShredded, 1, 0, (int)TaskKind.PettyCash, -1, 0);
+                    Show(Cash(LinePhase.Break, LineChoice.Take, 0, true, LineFileState.Shredded));
+                }, true)
+                .Do(4.8f, () => { OfficeUi.I.CloseFocus(); Aim(0f, 15f); Event(LineEventType.FileNotice, -1, -1, (int)LineFileState.Shredded, 1, 0, 0); }, true));
+            LineMock.Register("v5.files_crisis", () => new LineMockScenario()
+                .Do(0f, () =>
+                {
+                    Look();
+                    var v = Call(false);
+                    v.Mine.Phone = new LinePhoneView();
+                    LineMock.AddFile(v, LineMock.File(TaskKind.ClientBonus, 0, 2));
+                    v.Files.Held++; // (and one more in somebody else's hands)
+                    Show(v);
+                    Aim(0f, 15f);
+                }, true)
+                .Do(1.6f, () => OfficeUi.I.OpenComputer(OfficeComputer.App.Task), true));
 
             LineMock.Register("v5.office_en", () => new LineMockScenario()
                 .Do(0f, () => English())
@@ -246,14 +311,14 @@ namespace BirimizKovulacak.Game
             return v;
         }
 
-        /// <summary>Petty Cash with Sarı (player 1): my choice and Sarı's (revealed after TaskPlay); a witness in the
-        /// break when only Sarı took.</summary>
-        static LineView Cash(LinePhase phase, int mine, int partner, bool submitted)
+        /// <summary>Petty Cash with Sarı (player 1): my choice and Sarı's (revealed after TaskPlay). When only one of us
+        /// took, the other holds the file on them (v5.3; <paramref name="file"/>: what became of it).</summary>
+        static LineView Cash(LinePhase phase, int mine, int partner, bool submitted, LineFileState file = LineFileState.Held)
         {
             bool revealed = phase != LinePhase.TaskPlay;
             var v = LineMock.BaseView(phase, 4, 0, phase == LinePhase.TaskPlay ? 34 : 21);
             v.TaskNumber = 1;
-            var c = LineConfig.CreateDefault();
+            var c = LineMock.Config();
             var t = new LineTaskView { Kind = TaskKind.PettyCash, Number = 1, Family = LineTasks.Family(TaskKind.PettyCash), PlayEndTime = LineMock.Now + 30,
                                        Submitted = submitted, MyChoice = mine, Revealed = revealed };
             t.Group.Add(0); t.Group.Add(1);
@@ -266,11 +331,8 @@ namespace BirimizKovulacak.Game
             }
             v.Task = t;
             v.Players[1].Submitted = true;
-            if (phase == LinePhase.Break)
-            {
-                v.Features.WhistleOpen = true;
-                if (mine == 0 && partner == LineChoice.Take) v.Mine.WitnessOf.Add(1);
-            }
+            if (revealed && mine != partner)
+                LineMock.AddFile(v, LineMock.File(TaskKind.PettyCash, mine == LineChoice.Take ? 1 : 0, mine == LineChoice.Take ? 0 : 1, file, phase));
             return v;
         }
 
@@ -280,7 +342,7 @@ namespace BirimizKovulacak.Game
             bool revealed = phase != LinePhase.TaskPlay;
             var v = LineMock.BaseView(phase, 6, 1, phase == LinePhase.TaskPlay ? 41 : 6);
             v.TaskNumber = 2;
-            var c = LineConfig.CreateDefault();
+            var c = LineMock.Config();
             var t = new LineTaskView { Kind = TaskKind.WeekendShift, Number = 2, Family = LineTasks.Family(TaskKind.WeekendShift), PlayEndTime = LineMock.Now + 30,
                                        Needed = LineConfig.ShiftNeeded(6), Submitted = submitted, MyChoice = mine, Revealed = revealed };
             for (int i = 0; i < 6; i++) t.Group.Add(i);
@@ -315,6 +377,33 @@ namespace BirimizKovulacak.Game
             var v = Task(TaskKind.PettyCash, 1, 4, LinePhase.Break, true);
             v.PhaseEndTime = LineMock.Now + 9;
             return v;
+        }
+
+        /// <summary>The break after Petty Cash: Sarı took the box alone and I am the witness (my cash file), and in the
+        /// Client Bonus Pembe took what I shared (my bonus file); what became of each.</summary>
+        static LineView Files(LineFileState cash, LineFileState bonus)
+        {
+            var v = Cash(LinePhase.Break, 0, LineChoice.Take, true, cash);
+            LineMock.AddFile(v, LineMock.File(TaskKind.ClientBonus, 0, 2, bonus, bonus == LineFileState.Held ? LinePhase.TaskReveal : LinePhase.Break));
+            if (cash == LineFileState.Opened) v.Players[1].Blame += 3;
+            return v;
+        }
+
+        /// <summary>"Dosyalarım": Aç (1) / İmha et (2) was pressed on my file: the confirmation is up.</summary>
+        static void Ask(TaskKind task, int target, int action)
+        {
+            var v = LineClient.I.View;
+            var f = v != null ? v.Mine.Files.Find(x => x.Task == task && x.Target == target && x.Holder == 0) : null;
+            if (f != null) OfficeUi.I.State.AskFile(f, action);
+        }
+
+        /// <summary>A file event: public (<paramref name="to"/> -1) or for one player.</summary>
+        static void Event(LineEventType type, int actor, int target, int a, int b, int to, int c = -1)
+        {
+            LineClient.I.ApplyEvents(new List<LineEvent>
+            {
+                new LineEvent { Type = type, Actor = actor, Target = target, A = a, B = b, C = c, Audience = to < 0 ? LineAudience.All : LineAudience.Player, AudiencePlayer = to, Time = LineMock.Now },
+            });
         }
 
         static void Show(LineView v)

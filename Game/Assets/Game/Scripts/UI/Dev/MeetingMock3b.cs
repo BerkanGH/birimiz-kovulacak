@@ -15,6 +15,10 @@ namespace BirimizKovulacak.Game
     /// against it, the box, the bundles sliding to the voters), also the 6-player sequence (first opening and payout, the
     /// second vote with the bundles on the table, the second opening); <c>"v5.meeting_results*"</c> the ceremony, the folder's
     /// full reveal and the results bar; "_en" variants.
+    /// v5.3: <c>"v5.meeting_files*"</c> "Dosyalarım" in the folder (a held file, the open / shred confirmations), the
+    /// opened file stamping itself onto the projector, the agenda with the count of unopened files and the week's
+    /// stakes, the whiteboard's counter, the anonymous shredding notice; <c>"v5.meeting_reveal_files*"</c> the results'
+    /// "Dosyalar" tab and the story with the week's agenda.
     /// </summary>
     public static class MeetingMock3bScenarios
     {
@@ -29,7 +33,7 @@ namespace BirimizKovulacak.Game
                 .Do(3.8f, () => MeetingProjector.MockDeckIndex = 3, 0.8f)
                 .Do(5.0f, () => MeetingProjector.MockDeckIndex = 5, 0.8f)
                 .Do(6.2f, () => MeetingProjector.MockDeckIndex = 6, 0.8f)
-                .Do(7.4f, () => { MeetingProjector.MockDeckIndex = -1; var v = Discussion(6); AddInvestigation(v, 4, 5, true); Show(v); }, 0.25f)
+                .Do(7.4f, () => { MeetingProjector.MockDeckIndex = -1; var v = Discussion(6); AddFileOpened(v, 4, 5); Show(v); }, 0.25f)
                 .Do(8.8f, () => { }, 0.2f)
                 .Do(9.6f, () => { MeetingUi.I?.CloseAll(); LookAtProjector(); }, true));
             // v5.1 meeting 2: the shift was short, the skippers' suç is automatic, no vote (agenda and the penalty entry)
@@ -127,6 +131,50 @@ namespace BirimizKovulacak.Game
                 .Do(19.6f, () => { }, 0.4f)
                 .Do(21.2f, () => Aim(-10f, 22f), 0.8f));
 
+            // ---- v5.3 "Dosya" in the meeting room
+            LineMock.Register("v5.meeting_files", () => new LineMockScenario()
+                .Do(0f, () => { Reset(); Show(Discussion(5)); Aim(0f, 6f); MeetingProjector.MockDeckIndex = 0; }, true)
+                .Do(1.6f, () => MeetingUi.I?.OpenFolder(MeetingFolder.Tab.Actions), true)
+                .Do(3.2f, () => AskFile(1), true)
+                .Do(4.8f, () => AskFile(2), true)
+                .Do(6.4f, () =>
+                {
+                    // confirmed "Aç": the line joins the dossier, Sarı's suç lands at once
+                    MeetingUi.I.State.AskFile(null, 0);
+                    MeetingUi.I?.CloseAll();
+                    MeetingProjector.MockDeckIndex = -1;
+                    Show(Opened(5));
+                    LineClient.I.ApplyEvents(new List<LineEvent> { new LineEvent { Type = LineEventType.FileOpened, Actor = 0, Target = 1, A = (int)TaskKind.ClientBonus, B = 4, Time = LineMock.Now } });
+                    LookAtProjector();
+                }, 0.9f)
+                .Do(8.2f, () => MeetingUi.I?.OpenProjector(), true)
+                .Do(9.8f, () => MeetingProjector.MockDeckIndex = 0, 0.8f)
+                .Do(11.2f, () => { MeetingProjector.MockDeckIndex = -1; MeetingUi.I?.CloseAll(); MeetingUi.I?.OpenBoard(); }, true)
+                .Do(12.8f, () =>
+                {
+                    MeetingUi.I?.CloseAll();
+                    Aim(0f, 6f);
+                    var v = Opened(5);
+                    v.Files.Held = 0; v.Files.Shredded = 1;
+                    Show(v);
+                    LineClient.I.ApplyEvents(new List<LineEvent> { new LineEvent { Type = LineEventType.FileNotice, A = (int)LineFileState.Shredded, B = 1, C = 0, Audience = LineAudience.Player, AudiencePlayer = 0, Time = LineMock.Now } });
+                }, true));
+            LineMock.Register("v5.meeting_files_en", () => new LineMockScenario()
+                .Do(0f, () => English())
+                .Do(0.3f, () => { Reset(); var v = Discussion(5); LineMock.SetNames(v, true); Show(v); Aim(0f, 6f); })
+                .Do(0.9f, () => MeetingUi.I?.OpenFolder(MeetingFolder.Tab.Actions), true)
+                .Do(2.5f, () => AskFile(1), true)
+                .Do(4.1f, () => { MeetingUi.I.State.AskFile(null, 0); MeetingUi.I?.CloseAll(); MeetingProjector.MockDeckIndex = 0; MeetingUi.I?.OpenProjector(); }, true));
+            LineMock.Register("v5.meeting_reveal_files", () => new LineMockScenario()
+                .Do(0f, () => { Reset(); RevealMemory.MockGroup(1, "mock", 0, 0, 1); Show(Results(6)); })
+                .Do(0.6f, () => MeetingUi.I?.OpenReveal(MeetingReveal.TabFiles), true)
+                .Do(2.2f, () => MeetingUi.I?.OpenReveal(MeetingReveal.TabStory), true)
+                .Do(3.8f, () => MeetingUi.I?.OpenReveal(MeetingReveal.TabSummary), true));
+            LineMock.Register("v5.meeting_reveal_files_en", () => new LineMockScenario()
+                .Do(0f, () => English())
+                .Do(0.3f, () => { Reset(); RevealMemory.MockGroup(1, "mock", 0, 0, 1); var v = Results(6); LineMock.SetNames(v, true); Show(v); })
+                .Do(0.9f, () => MeetingUi.I?.OpenReveal(MeetingReveal.TabFiles), true));
+
             // ---- the results: the ceremony on the projector, the full reveal in the folder, the results bar
             LineMock.Register("v5.meeting_results", () => new LineMockScenario()
                 .Do(0f, () => { Reset(); RevealMemory.MockGroup(1, "mock", 0, 0, 1); Show(Results(6)); }, 0.9f)
@@ -171,10 +219,35 @@ namespace BirimizKovulacak.Game
             if (rooms != null && rooms.TryGetProjectorLook(out y, out p)) rooms.SetLook(y, p);
         }
 
-        static void AddInvestigation(LineView v, int by, int target, bool guilty)
+        /// <summary>"Dosyalarım" in the folder: Aç (1) / İmha et (2) was pressed on my file: the confirmation is up.</summary>
+        static void AskFile(int action)
         {
-            v.Meeting.Dossier.Add(new LineDossierEntry { Kind = DossierKind.Investigation, Player = by, Other = target, N1 = guilty ? 1 : 0, Time = LineMock.Now });
-            v.Players[target].Blame += LineConfig.CreateDefault().InvestigationGuiltyBlame;
+            var v = LineClient.I.View;
+            var f = v != null ? v.Mine.Files.Find(x => x.Holder == 0 && x.State == LineFileState.Held) : null;
+            if (f != null && MeetingUi.I != null) MeetingUi.I.State.AskFile(f, action);
+        }
+
+        /// <summary>The discussion after I opened my Client Bonus file on Sarı.</summary>
+        static LineView Opened(int players)
+        {
+            var v = Discussion(players);
+            var mine = v.Mine.Files.Find(x => x.Holder == 0 && x.Task == TaskKind.ClientBonus);
+            mine.State = LineFileState.Opened;
+            mine.Phase = LinePhase.MeetingDiscussion;
+            v.Files.Opened.Add(mine);
+            v.Files.Held = 1;
+            v.Meeting.Dossier.Add(new LineDossierEntry { Kind = DossierKind.FileOpened, Task = TaskKind.ClientBonus, Player = 0, Other = 1, N1 = 4, Time = LineMock.Now });
+            v.Players[1].Blame += 4;
+            return v;
+        }
+
+        /// <summary>A Client Bonus file is opened in the meeting room: its line joins the dossier, the suç lands at once.</summary>
+        static void AddFileOpened(LineView v, int by, int target)
+        {
+            v.Meeting.Dossier.Add(new LineDossierEntry { Kind = DossierKind.FileOpened, Task = TaskKind.ClientBonus, Player = by, Other = target, N1 = 4, Time = LineMock.Now });
+            LineMock.AddFile(v, LineMock.File(TaskKind.ClientBonus, by, target, LineFileState.Opened, LinePhase.MeetingDiscussion));
+            v.Files.Held = System.Math.Max(0, v.Files.Held - 1);
+            v.Players[target].Blame += 4;
         }
 
         /// <summary>Meeting 2 (v5.1): the shift was short (Mavi and Yeşil signed), the four skippers got +2 suç, no vote.</summary>
@@ -279,18 +352,11 @@ namespace BirimizKovulacak.Game
             v.PhaseStartTime = LineMock.Now;
             v.PhaseEndTime = LineMock.Now + 45;
             var r = new LineWeekResult { WeekId = 1, MatchId = "mock", PlayerCount = players, ResultHash = 1234567 };
-            int[] prim = { 0, 17, 9, 13, 6, 0 };
+            var c = LineMock.Config();
+            r.Stakes = LineMock.Week();
+            int[] prim = new int[6];
             int[] blame = { 9, 6, 4, 7, 3, 8 };
             bool six = players >= 5;
-            for (int i = 0; i < players; i++)
-            {
-                bool fired = i == 0 || (six && i == 5);
-                r.Players.Add(new LineWeekPlayerResult { Player = i, Prim = prim[i], Blame = blame[i], Fired = fired, Winner = i == 1,
-                    WasCandidate = i == 0 || i == 3 || (six && i == 5), Recorded = i == 1 ? 1 : 0, Leaked = i == 2 ? 1 : 0 });
-            }
-            r.Winners.Add(1); r.Fired.Add(0);
-            r.Firings.Add(Firing(0, 8, FiringDecision.Plurality, six ? new[] { 1, 3, 4 } : new[] { 1, 3 }));
-            if (six) { r.Fired.Add(5); r.Firings.Add(Firing(5, 6, FiringDecision.Revote, new[] { 1, 3 })); }
             // task 1: Client Bonus (Mavi–Sarı: Sarı took it all), task 2: Petty Cash, task 3: Weekend Shift
             for (int i = 0; i < players; i++)
             {
@@ -299,8 +365,8 @@ namespace BirimizKovulacak.Game
                 if (players == 4 && i == 2) pay = 3;
                 r.Choices.Add(new LineChoiceView { TaskNumber = 0, Task = TaskKind.ClientBonus, Player = i, Choice = take ? LineChoice.Take : LineChoice.Share, Payout = take ? 5 : pay });
             }
-            for (int i = 0; i < players; i++) r.Choices.Add(new LineChoiceView { TaskNumber = 1, Task = TaskKind.PettyCash, Player = i, Choice = i == 3 ? 1 : 0, Payout = i == 3 ? 3 : 0 });
-            for (int i = 0; i < players; i++) r.Choices.Add(new LineChoiceView { TaskNumber = 2, Task = TaskKind.WeekendShift, Player = i, Choice = i % 2, Payout = i % 2 == 0 ? 2 : 0 });
+            for (int i = 0; i < players; i++) r.Choices.Add(new LineChoiceView { TaskNumber = 1, Task = TaskKind.PettyCash, Player = i, Choice = i == 3 ? 1 : 0, Payout = i == 3 ? c.CashTake : 0 });
+            for (int i = 0; i < players; i++) r.Choices.Add(new LineChoiceView { TaskNumber = 2, Task = TaskKind.WeekendShift, Player = i, Choice = i % 2, Payout = i % 2 == 0 ? c.ShiftSkipPay : 0 });
             for (int i = 0; i < players; i++)
             {
                 r.Ballots.Add(new LineBallotView { Kind = BallotKind.Meeting, Round = 0, Voter = i, Index = 0, Target = i == 0 ? 1 : 0 });
@@ -310,9 +376,32 @@ namespace BirimizKovulacak.Game
             r.Ballots.Add(new LineBallotView { Kind = BallotKind.Final, Round = 0, Voter = 0, Target = 3 });
             r.Transfers.Add(new LineTransferView { From = 3, To = 1, Amount = 2, Phase = LinePhase.Break });
             r.Transfers.Add(new LineTransferView { From = 0, To = 2, Amount = 3, Phase = LinePhase.CrisisCalls });
-            r.Incidents.Add(new LineDossierEntry { Kind = DossierKind.Investigation, Player = 0, Other = 1, N1 = 1 });
-            r.Incidents.Add(new LineDossierEntry { Kind = DossierKind.Whistle, Player = 2, Other = 3, N1 = 3 });
+            r.Transfers.Add(new LineTransferView { From = 3, To = 2, Amount = 1, Phase = LinePhase.Break });
+            // v5.3 files: I opened mine on Sarı at the meeting; Pembe kept Yeşil's silence money and opened in the crisis
+            // calls anyway; with six, Turuncu's taker paid nothing and the file was shredded all the same
+            r.Incidents.Add(new LineDossierEntry { Kind = DossierKind.FileOpened, Task = TaskKind.ClientBonus, Player = 0, Other = 1, N1 = 4 });
+            r.Incidents.Add(new LineDossierEntry { Kind = DossierKind.FileOpened, Task = TaskKind.PettyCash, Player = 2, Other = 3, N1 = 3 });
             r.Incidents.Add(new LineDossierEntry { Kind = DossierKind.Leak, Player = 2, Other = 0, N1 = 1, N2 = 3 });
+            r.Files.Add(LineMock.File(TaskKind.ClientBonus, 0, 1, LineFileState.Opened, LinePhase.MeetingDossier));
+            r.Files.Add(LineMock.File(TaskKind.PettyCash, 2, 3, LineFileState.Opened, LinePhase.CrisisCalls));
+            if (six) r.Files.Add(LineMock.File(TaskKind.ClientBonus, 5, 4, LineFileState.Shredded, LinePhase.Break));
+            // every balance follows from the logs (start, tasks, transfers), then the desks are opened
+            for (int i = 0; i < players; i++) prim[i] = c.StartPrim;
+            foreach (var ch in r.Choices) prim[ch.Player] += ch.Payout;
+            foreach (var t in r.Transfers) { prim[t.From] -= t.Amount; prim[t.To] += t.Amount; }
+            r.Fired.Add(0);
+            r.Firings.Add(Firing(0, prim[0], FiringDecision.Plurality, six ? new[] { 1, 3, 4 } : new[] { 1, 3 }));
+            if (six) { r.Fired.Add(5); r.Firings.Add(Firing(5, prim[5], FiringDecision.Revote, new[] { 1, 3 })); }
+            foreach (var f in r.Firings) { prim[f.Player] = 0; foreach (int id in f.Recipients) prim[id] += f.Share; }
+            int best = 0;
+            for (int i = 0; i < players; i++) if (!r.Fired.Contains(i)) best = System.Math.Max(best, prim[i]);
+            for (int i = 0; i < players; i++)
+            {
+                bool fired = r.Fired.Contains(i), winner = !fired && prim[i] == best;
+                if (winner) r.Winners.Add(i);
+                r.Players.Add(new LineWeekPlayerResult { Player = i, Prim = prim[i], Blame = blame[i], Fired = fired, Winner = winner,
+                    WasCandidate = i == 0 || i == 3 || (six && i == 5), Recorded = i == 1 ? 1 : 0, Leaked = i == 2 ? 1 : 0 });
+            }
             // the suç log behind every board total (v5.1: the volunteers 1, 3, 5 lost 1; Sarı was investigated)
             var why = new[]
             {
@@ -327,7 +416,7 @@ namespace BirimizKovulacak.Game
                 for (int k = 0; k < why[i].Length; k += 2)
                     r.BlameLog.Add(new LineBlameChange { Player = i, Reason = (BlameReason)why[i][k], Delta = why[i][k + 1] });
             // the prim log behind every balance (start 6)
-            foreach (var c in r.Choices) if (c.Payout != 0) r.PrimLog.Add(new LinePrimChange { Player = c.Player, Delta = c.Payout, Reason = PrimReason.Task });
+            foreach (var ch in r.Choices) if (ch.Payout != 0) r.PrimLog.Add(new LinePrimChange { Player = ch.Player, Delta = ch.Payout, Reason = PrimReason.Task });
             foreach (var t in r.Transfers)
             {
                 r.PrimLog.Add(new LinePrimChange { Player = t.From, Delta = -t.Amount, Reason = PrimReason.TransferOut, Other = t.To });

@@ -39,6 +39,49 @@ namespace BirimizKovulacak.Game
         static long _seq;
         static int _msgId = 1;
 
+        // ------------------------------------------------------------------ v5.3: the week's agenda and files
+
+        /// <summary>The mock week ("Haftanın gündemi"): the cash box is full (5), the Client Bonus is medium (pot 6: 3 / 5),
+        /// the skip pay is low (+1).</summary>
+        public static LineStakesView Week()
+        {
+            return new LineStakesView
+            {
+                Scheme = LineStakes.Permutation, WeekType = 3, LevelBonus = LineStakes.Normal, LevelCash = LineStakes.Big, LevelShift = LineStakes.Small,
+                BonusPot = 6, BonusShare = 3, BonusTaker = 5, BonusBoth = 1, CashTake = 5, ShiftSkipPay = 1,
+            };
+        }
+
+        /// <summary>The host config of the mock week (the engine writes the match's amounts into it).</summary>
+        public static LineConfig Config()
+        {
+            var c = LineConfig.CreateDefault();
+            var w = Week();
+            c.BonusPairShare = c.BonusTrioNone = w.BonusShare;
+            c.BonusPairTaker = c.BonusTrioTaker = w.BonusTaker;
+            c.CashTake = w.CashTake;
+            c.ShiftSkipPay = w.ShiftSkipPay;
+            return c;
+        }
+
+        /// <summary>A file (the suç it costs follows the task).</summary>
+        public static LineFileView File(TaskKind task, int holder, int target, LineFileState state = LineFileState.Held, LinePhase phase = LinePhase.TaskReveal)
+        {
+            return new LineFileView { Task = task, Holder = holder, Target = target, State = state, Phase = phase, Time = Now - 20, Blame = task == TaskKind.ClientBonus ? 4 : 3 };
+        }
+
+        /// <summary>Puts a file into the view: my list when I hold it or it is on me, the public list when opened, the
+        /// public counters.</summary>
+        public static LineFileView AddFile(LineView v, LineFileView f)
+        {
+            if (f.Holder == v.Me || f.Target == v.Me) v.Mine.Files.Add(f);
+            if (f.State == LineFileState.Opened) v.Files.Opened.Add(f);
+            else if (f.State == LineFileState.Held) v.Files.Held++;
+            else if (f.State == LineFileState.Shredded) v.Files.Shredded++;
+            else if (f.State == LineFileState.Expired) v.Files.Expired++;
+            return f;
+        }
+
         // ------------------------------------------------------------------ base view
 
         /// <summary>
@@ -65,7 +108,9 @@ namespace BirimizKovulacak.Game
             f.TextsOpen = phase >= LinePhase.Intro && phase <= LinePhase.FinalVerdict;
             f.MeetingChatOpen = LineClient.IsMeetingPhase(phase);
             f.LeakOpen = phase == LinePhase.MeetingDossier || phase == LinePhase.MeetingDiscussion || phase == LinePhase.FinalDiscussion;
-            f.InvestigationOpen = day == 0 && (phase == LinePhase.MeetingDossier || phase == LinePhase.MeetingDiscussion);
+            f.FilesOpen = phase >= LinePhase.Intro && phase <= LinePhase.CrisisCalls;
+            v.Stakes = Week();
+            v.Files.Held = v.Files.Shredded = v.Files.Expired = 0; // (the counters are public; no file yet)
             f.VoteOpen = phase == LinePhase.MeetingVote || phase == LinePhase.CrisisVote || phase == LinePhase.FinalVote;
             var m = v.Mine;
             m.Prim = 9;
@@ -107,7 +152,7 @@ namespace BirimizKovulacak.Game
             foreach (int id in t.Group)
             {
                 int choice = id == 0 ? myChoice : id == 1 ? LineChoice.Take : 0;
-                t.Choices.Add(new LineChoiceView { TaskNumber = number, Task = kind, Player = id, Choice = choice, Payout = id == 0 ? (choice == 1 ? 5 : 0) : -1 });
+                t.Choices.Add(new LineChoiceView { TaskNumber = number, Task = kind, Player = id, Choice = choice, Payout = id == 0 ? (choice == 1 ? Week().BonusTaker : 0) : -1 });
                 if (kind == TaskKind.WeekendShift && choice == LineChoice.Volunteer) t.Roster.Add(id);
             }
             t.MyPayout = myChoice == 1 ? 5 : 0;
@@ -123,9 +168,9 @@ namespace BirimizKovulacak.Game
                 mt.FailedTasks.Add(TaskKind.ClientBonus); mt.FailedTasks.Add(TaskKind.PettyCash);
                 mt.Dossier.Add(new LineDossierEntry { Kind = DossierKind.TaskFailed, Task = TaskKind.ClientBonus, N1 = 0 });
                 mt.Dossier.Add(new LineDossierEntry { Kind = DossierKind.BonusTakers, N1 = 2 });
-                mt.Dossier.Add(new LineDossierEntry { Kind = DossierKind.Whistle, Player = 2, Other = 3, N1 = 3 });
-                mt.Dossier.Add(new LineDossierEntry { Kind = DossierKind.CashMissing, N1 = 3, N2 = 1 });
-                mt.Dossier.Add(new LineDossierEntry { Kind = DossierKind.Investigation, Player = 3, Other = 2, N1 = 1 });
+                mt.Dossier.Add(new LineDossierEntry { Kind = DossierKind.FileOpened, Task = TaskKind.PettyCash, Player = 2, Other = 3, N1 = 3 });
+                mt.Dossier.Add(new LineDossierEntry { Kind = DossierKind.CashMissing, N1 = Week().CashTake, N2 = 1 });
+                mt.Dossier.Add(new LineDossierEntry { Kind = DossierKind.FileOpened, Task = TaskKind.ClientBonus, Player = 3, Other = 2, N1 = 4 });
                 mt.Dossier.Add(new LineDossierEntry { Kind = DossierKind.Leak, Player = 2, Other = 0, N1 = 1, N2 = 3 });
                 mt.Recordings.Add(new LineRecordingPick { Index = 0, PlayAt = Now + 2, Seconds = 7, Caller = 1, Callee = 3, Leaker = 2, CallStart = Now - 300 });
                 mt.Recordings[0].CandidateCallIds.Add(5);
@@ -146,7 +191,7 @@ namespace BirimizKovulacak.Game
     }
 
     /// <summary>
-    /// v5 scenarios for the play screen: <c>-uimock "v5.*"</c>. Each covers one phase's focus card (task choice, whistle,
+    /// v5 scenarios for the play screen: <c>-uimock "v5.*"</c>. Each covers one phase's focus card (task choice, a held file,
     /// meeting actions, ballots with a leak playing, crisis, candidate with a sealed desk, defence, final vote, desk
     /// reveal, results summary and its detail tabs), the how-to pages, and two English samples.
     /// </summary>
@@ -169,7 +214,7 @@ namespace BirimizKovulacak.Game
             LineMock.Register("v5.reveal", () => new LineMockScenario().Do(0f, () =>
             {
                 var v = Task(TaskKind.PettyCash, 1, 4, LinePhase.Break);
-                v.Features.WhistleOpen = true; v.Mine.WitnessOf.Add(1);
+                LineMock.AddFile(v, LineMock.File(TaskKind.PettyCash, 0, 1)); // I am the witness: the thief's file is mine
                 v.Mine.Phone.Status = CallStatus.Connected; v.Mine.Phone.CallId = 9; v.Mine.Phone.Since = LineMock.Now - 41;
                 Show(v);
             }).Do(1.0f, () => OfficeUi.I?.OpenComputer(OfficeComputer.App.Task), true));
@@ -252,7 +297,8 @@ namespace BirimizKovulacak.Game
                 .Do(0.2f, () => PlayUi.MockResultsTab = MeetingSlide.MockResultsTab = "choices", true)
                 .Do(0.4f, () => PlayUi.MockResultsTab = MeetingSlide.MockResultsTab = "transfers", true)
                 .Do(0.6f, () => PlayUi.MockResultsTab = MeetingSlide.MockResultsTab = "firings", true)
-                .Do(0.8f, () => PlayUi.MockResultsTab = MeetingSlide.MockResultsTab = "incidents", true));
+                .Do(0.8f, () => PlayUi.MockResultsTab = MeetingSlide.MockResultsTab = "incidents", true)
+                .Do(1.0f, () => PlayUi.MockResultsTab = MeetingSlide.MockResultsTab = "files", true));
             LineMock.Register("v5.howto", () =>
             {
                 var s = new LineMockScenario();
@@ -360,9 +406,14 @@ namespace BirimizKovulacak.Game
                     r.Choices.Add(new LineChoiceView { TaskNumber = t, Task = kind, Player = i, Choice = choice, Payout = kind == TaskKind.WeekendShift ? (choice == 1 ? 0 : 2) : choice == 1 ? 5 : 2 });
                 }
             }
-            r.Incidents.Add(new LineDossierEntry { Kind = DossierKind.Whistle, Player = 3, Other = 2, N1 = 3 });
-            r.Incidents.Add(new LineDossierEntry { Kind = DossierKind.Investigation, Player = 1, Other = 0, N1 = 1 });
+            r.Incidents.Add(new LineDossierEntry { Kind = DossierKind.FileOpened, Task = TaskKind.PettyCash, Player = 3, Other = 2, N1 = 3 });
+            r.Incidents.Add(new LineDossierEntry { Kind = DossierKind.FileOpened, Task = TaskKind.ClientBonus, Player = 1, Other = 0, N1 = 4 });
             r.Incidents.Add(new LineDossierEntry { Kind = DossierKind.Leak, Player = 1, Other = 0, N1 = 2, N2 = 3 });
+            r.Files.Add(LineMock.File(TaskKind.PettyCash, 3, 2, LineFileState.Opened, LinePhase.MeetingDossier));
+            r.Files.Add(LineMock.File(TaskKind.ClientBonus, 1, 0, LineFileState.Opened, LinePhase.CrisisCalls));
+            r.Files.Add(LineMock.File(TaskKind.ClientBonus, 3, 1, LineFileState.Shredded, LinePhase.Break));
+            // (these tables were written with every task at the normal level)
+            r.Stakes = new LineStakesView { BonusPot = 6, BonusShare = 3, BonusTaker = 5, BonusBoth = 1, CashTake = 3, ShiftSkipPay = 2 };
             v.Results = r;
             return v;
         }
@@ -395,7 +446,7 @@ namespace BirimizKovulacak.Game
     public sealed class LineMockScenario
     {
         public int Me;
-        public LineConfig Config = LineConfig.CreateDefault();
+        public LineConfig Config = LineMock.Config();
         public readonly List<LineMockStep> Steps = new List<LineMockStep>();
         /// <summary>Optional: called for every request the UI sends (log it, or mutate the next view).</summary>
         public Action<LineAction> OnSend;
