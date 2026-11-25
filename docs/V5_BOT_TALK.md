@@ -19,6 +19,12 @@ her zaman cezalandırır ve susma parasını geri gönderir; Açgözlü sadece p
 yarıya yine de cezalandırır); Karışık her kişi için ikisinden birini oynar. Alan Açgözlü / Karışık bot, mağdurunu ya da
 tanığını molada arayıp 1 prim susma parası gönderir. Görev seçimleri ve oylar değişmedi.
 
+**Güncelleme (2026-11-24, v5.3): Dosya ve Haftanın gündemi.** Tek atımlık soruşturma ve ihbarın yerini kalıcı **dosya**
+aldı (`V5_DESIGN.md` §6): bot elindeki dosyayı açar ya da imha eder (§4.3). Susma pazarlığı artık dosya üzerinedir:
+"Dosyamı imha et, 1 prim senin." Ödüller maçtan maça değişir (§8.1 "Haftanın gündemi"): Karışık görev seçimlerinde
+seviyeye bakar, botlar büyük / küçük haftayı aramada söyler. Aşağıdaki tablolardaki cümleler güncel metinlerdir; §4.1
+tek atımlık kuralın (v5.1 / v5.2, `LineConfig.Legacy`) nasıl işlediğini anlatmaya devam eder, bugünkü davranış §4.3'tedir.
+
 Botlar sadece test içindir; gerçek maçlar 3–6 insanla oynanır. Amaç, tek başına test ederken ofisin ve toplantının boş
 hissettirmemesi.
 
@@ -81,8 +87,8 @@ Soru düğmeleri: **[1] Ne seçeceksin?** *(What will you pick?)* · **[2] Payla
 | [1] | "Paylaş. Söz." <br>*"Share. I promise."* | "Paylaş tabii, ne sandın?" <br>*"Share, of course. What did you think?"* | "Paylaş." / "Önce sen söyle." <br>*"Share." / "You say first."* |
 | [2] | "Tamam, anlaştık." <br>*"Okay, deal."* | "Anlaştık! Telefondan elini sıkıyorum." <br>*"Deal! Shaking your hand over the phone."* | "Olur. Ama hepsini alırsan toplantıda söylerim." <br>*"Fine. But if you take it all, I'll say so in the meeting."* |
 | [3] | "Söz verdiysem tutarım." <br>*"If I gave my word, I keep it."* | "Bana güvenmeyeceksin de kime güveneceksin?" <br>*"If you can't trust me, who can you trust?"* | "Sen bana güvenirsen ben de sana." <br>*"You trust me and I'll trust you."* |
-| Molada, ortağı hepsini aldıysa (bot arar) | "Hepsini almışsın. Toplantıda soruşturma açacağım." <br>*"You took it all. I'll open an investigation in the meeting."* | "3 prim gönder, kimseye söylemem." <br>*"Send me 3 prim and I won't tell anyone."* | "Neden yaptın? Bir açıklaman var mı?" <br>*"Why did you do it? Got an explanation?"* |
-| Molada, bot hepsini aldıysa (bot arar ya da ortağı ararsa; + 1 prim, §4.1) | (Dürüst almaz) | "Soruşturma açma, 1 prim senin." <br>*"Don't open an investigation. 1 prim is yours."* | "Tamam, aldım. Sana 1 prim atayım, unutalım." <br>*"Fine, I took it. Let me send you 1 prim and we forget it."* |
+| Molada, ortağı hepsini aldıysa (bot arar) | "Hepsini almışsın. Dosyan bende; toplantıda açacağım." <br>*"You took it all. I hold your file; I'll open it in the meeting."* | "3 prim gönder, kimseye söylemem." <br>*"Send me 3 prim and I won't tell anyone."* | "Neden yaptın? Bir açıklaman var mı?" <br>*"Why did you do it? Got an explanation?"* |
+| Molada, bot hepsini aldıysa (bot arar ya da ortağı ararsa; + 1 prim, §4.1) | (Dürüst almaz) | "Dosyamı imha et, 1 prim senin." <br>*"Shred my file and 1 prim is yours."* | "Tamam, aldım. Sana 1 prim atıyorum, dosyamı imha et." <br>*"Fine, I took it. I'm sending you 1 prim: shred my file."* |
 
 Karışık hepsini alacaksa: yalan yazı-turası "yalan" derse "Paylaş." / "Olur…" / açılış cümlesini söyler; "doğru" derse
 [1]'de "Önce sen söyle.", [2]'de "Sen bana güvenirsen ben de sana." der ve ortağını aramaz. Dürüst bu cümleyi hep doğru
@@ -98,10 +104,10 @@ take it, will you keep quiet?)* · **[3] Sen alırsan bana ne verirsin?** *(If y
 |---|---|---|---|
 | Bot arar | "Kasaya dokunmuyorum. Sen de dokunma, ikimiz de temiz kalalım." <br>*"I'm not touching the box. Don't you either, let's both stay clean."* | "Bak, ben almıyorum. Kasa senin olsun." <br>*"Look, I'm not taking it. The box is all yours."* | "Biri alacaksa ikimiz birden almayalım, yoksa yakalanırız. Kim alıyor?" <br>*"If someone takes it, not both of us, or we get caught. Who's taking it?"* |
 | [1] | "Hayır." <br>*"No."* | "Yok canım, ben öyle şey yapar mıyım?" <br>*"Oh come on, would I ever do that?"* | "Belki. Sen?" <br>*"Maybe. You?"* |
-| [2] | "Hayır, ihbar ederim. Para gönderirsen de geri yollarım." <br>*"No, I'd report it. Send me money and I'll send it back."* | "1 prim gönderirsen susarım." <br>*"Send me 1 prim and I'll keep quiet."* | "2 prim. Pazarlık yok." <br>*"2 prim. No haggling."* |
+| [2] | "Hayır, dosyanı açarım. Para gönderirsen de geri yollarım." <br>*"No, I'd open your file. Send me money and I'll send it back."* | "1 prim gönderirsen dosyanı imha ederim." <br>*"Send me 1 prim and I'll shred your file."* | "2 prim. Pazarlık yok." <br>*"2 prim. No haggling."* |
 | [3] | "Almayacağım ki." <br>*"But I'm not taking it."* | "1 prim, ama önce sen söz ver." <br>*"1 prim, but you promise first."* | "Alırsam 1 prim." <br>*"If I take it, 1 prim."* |
-| Molada, bot tanıksa (bot arar) | "Gördüm. İhbar ediyorum, haberin olsun." <br>*"I saw it. I'm reporting it, just so you know."* | "2 prim gönder, düğmeye basmam." <br>*"Send me 2 prim and I won't press the button."* | "Bir sebebin varsa dinliyorum." <br>*"If you have a reason, I'm listening."* |
-| Molada, bot hırsızsa (bot arar; + 1 prim, §4.1) | (Dürüst almaz) | "Sus, sana 1 prim göndereyim." <br>*"Keep quiet and let me send you 1 prim."* | "1 prim gönderiyorum, aramızda kalsın." <br>*"I'm sending you 1 prim, let's keep this between us."* |
+| Molada, bot tanıksa (bot arar) | "Gördüm. Dosyan bende; toplantıda açacağım, haberin olsun." <br>*"I saw it. I hold your file; I'll open it in the meeting, just so you know."* | "2 prim gönder, dosyanı imha edeyim." <br>*"Send me 2 prim and I'll shred your file."* | "Bir sebebin varsa dinliyorum." <br>*"If you have a reason, I'm listening."* |
+| Molada, bot hırsızsa (bot arar; + 1 prim, §4.1) | (Dürüst almaz) | "Dosyamı imha et, sana 1 prim göndereyim." <br>*"Shred my file and I'll send you 1 prim."* | "1 prim gönderiyorum. Dosyamı imha et, aramızda kalsın." <br>*"I'm sending you 1 prim. Shred my file and it stays between us."* |
 
 **v5.1: ihbar susma pazarlığına bağlı** (§4.1). Dürüst gördüğü her hırsızlığı ihbar eder (parayı geri yollar). Açgözlü
 para almadan ihbar etmez; aldıysa yarı yarıya yine de eder. Bu yüzden Açgözlü'nün susma sözleri ("1 prim gönderirsen
@@ -111,7 +117,7 @@ yalan yazı-turası "yalan" derse bu cümleyi (yalan) söyler, "doğru" derse "B
 prim" (Karışık) ve "1 prim, ama önce sen söz ver" (Açgözlü) kasadan aldıysa ödenecek sözlerdir: Karışık yarı yarıya
 öder, Açgözlü ödemez (susma parası bu sözü ödemiş sayılmaz).
 
-### 4.1 Susma pazarlığı (v5.1, 2026-11-15)
+### 4.1 Susma pazarlığı (v5.1, 2026-11-15; tek atımlık kural, bugünkü davranış §4.3)
 
 Ceza bedava ve kazançsız olduğu için karar susma parasında. Botların ceza kararı (`LineBot`, `LineBotPunishStyle.Deals`):
 
@@ -144,6 +150,54 @@ Ceza bedava ve kazançsız olduğu için karar susma parasında. Botların ceza 
   cezalandırabildiği birini cezalandırmazsa (başkası etmediyse, soruşturma hakkını başka alana harcamadıysa) ya da
   Açgözlü modu parasız cezalandırırsa FAIL verir.
 
+### 4.3 Dosya ve haftanın gündemi (v5.3, 2026-11-24)
+
+Kurallar: `V5_DESIGN.md` §6, §8.1; `V5_ENGINE_SPEC.md` §23. Botun dosya kararı (`LineBot.FilePlan`,
+`LineBotPunishStyle.Deals`; yazı-turalar §4.1'dekilerle aynı tohum karmalarıdır, önizlenebilir ve rastgele akışı bozmaz):
+
+| | Dürüst kip (Dürüst; Karışık'ta arkadaş başına yazı-tura) | Açgözlü kip (Açgözlü; Karışık'ın öbür yüzü) |
+|---|---|---|
+| Para almadıysa | Toplantının **dosya bölümünde** açar (masadaki ilk fırsat) | Toplantıda açar: tartışmanın **%60'ında** (hedefin ödemesi için mola ve tartışmanın başı kalır) |
+| Para aldıysa | Geri gönderir (kendi havalesi) ve yine açar | **%50 hemen imha eder** (anlaşma tutuldu; hedef bildirimi alır), **%50 parayı tutar ve geç açar:** Kriz telefonlarının %35–75'inde (ihanet) |
+| Kendisi aldıysa | (Dürüst almaz) | Dosyasını tutan herkese 1 prim yollar ve imhayı ister |
+
+- **Teklif (alan bot).** §4.1'deki arama / mesaj düzeni aynen; cümleler dosyayı ister: "Dosyamı imha et, 1 prim senin."
+  / "Tamam, aldım. Sana 1 prim atıyorum, dosyamı imha et." (Bonus), "Dosyamı imha et, sana 1 prim göndereyim." /
+  "1 prim gönderiyorum. Dosyamı imha et, aramızda kalsın." (Kasa). Peşin ödemedir.
+- **İstek (tutan bot, Açgözlü kip).** Molada hedefini arar: "Dosyan bende. 2 prim gönder, imha edeyim." / *"I hold your
+  file. Send 2 prim and I'll shred it."* (`bot.file.ask.g`), Karışık: "Dosyan bende. 2 prim gönderirsen imha ederim,
+  yoksa toplantıda açılır." (`bot.file.ask.m`). İddia `Silence`: para gelince imha edecekse doğru, ihanet yazı-turası
+  "geç aç" diyorsa yalan. En az 1 prim gelmesi "ödendi" sayılır. Dürüst hiç dosya satmaz.
+- **Cevap (para gelince).** Dürüst kip: "Paranı geri gönderiyorum. Dosyanı toplantıda açacağım, kusura bakma." / Karışık
+  "Paranı geri yolladım. Bu dosya parayla kapanmaz." (doğru). Açgözlü kip: "Geldi. Dosyanı imha ediyorum, merak etme." /
+  Karışık "Tamam. Dosyan imha, bu iş kapandı." (ihanet yazı-turası "geç aç" diyorsa yalan). Para, botun dosyayı hâlâ
+  tuttuğu sürece (ya da tam imha ettiği anda) geldiyse susma parasıdır; dosya açıldıktan sonra gelen para değildir.
+- **Toplantı.** Dürüst açtığını söyler: "{0} Müşteri Bonusu'nda hepsini aldı, ben paylaşmıştım. Dosyasını açtım."
+  (`bot.meet.victim.h_open`), "Kasadan {0} aldı. Gördüm ve dosyasını açtım." (`bot.meet.witness.h_open`); üçlüde başka
+  bir tanık ondan önce açtıysa eski cümleyi söyler ("…Gördüm."): Dürüst açmadığı dosyaya "açtım" demez. Karışık:
+  "{0} ile bir hesabım var. Müşteri Bonusu'nda ne yaptığını sorun." Parasını alıp dosyayı yine de açan biri varsa
+  ödeyen bot söyler ("{0} paramı aldı, yine de beni yaktı!"); geç açılışta bu cümle final tartışmasında gelir.
+- **Haftanın gündemi.** Karışık, görev seçiminde açgözlü tarafı küçük / orta / büyük seviyede **%25 / %50 / %75**
+  olasılıkla oynar (al / nöbet tutma); Dürüst ve Açgözlü değişmez. Açılış cümleleri seviyeyi söyler: "Bonus büyük bu
+  hafta: paylaşalım, söz." (`bot.cb.call.h_big`), "Bonus küçük bu hafta, kavgaya değmez. Ben paylaşıyorum."
+  (`h_small`), "Bonus büyük bu hafta. Ben paylaşıyorum; sen de paylaş, ikimiz de gülelim." (`g_big`, yalan), "Bu hafta
+  kasa dolu. Aklından bile geçirme." (`bot.cash.call.h_big`), "Bu hafta kasa dolu ama ben dokunmuyorum. Göze batar."
+  (`g_big`, yalan), "Kasa dolu bu hafta. Ne yapacaksın?" (`m_big`), "Nöbet primi yüksek bu hafta ama ben yazıldım. Sıra
+  sende." (`bot.shift.call.g_big`, yalan). İddialar eskisi gibi botun gerçek seçimiyle karşılaştırılır.
+- **Defter (§6.1).** Açılan bonus dosyası: hedef aldı (tek alanın primi), tutan paylaştı (0). Açılan kasa dosyası: hedef
+  hırsızdır ve parayı tutar, tutan tanıktır. Tutarlar maçın gerçek tutarlarıdır (görüşteki "gündem").
+- **Ödül cümleleri.** Sözünün Eri: "Para geldi, dosya gitti. Söz sözdür." · Ayın İspiyoncusu: "Dosya bendeydi, açtım.
+  O kadar."
+- **Kayıt (sonuç ekranında):** `bottalk hush … punished returned file=<durum>` ve tuttuğu her dosya için `bottalk file
+  seat policy task=cash|bonus target mode=honest|greedy paid returned state=opened|shredded|void|expired phase
+  outcome=none|refused|sold|betrayed|kept week`. Sunucu: `host: stakes …` (maç başında), `host: files …` (sonuçta).
+  `verify_logs.py`: Dürüst para tutarsa, Dürüst kip dosyasını açmazsa (başkası önce açmadıysa), Açgözlü kip parasız
+  dosyayı imha eder / elinde bırakırsa, parayı geri yollarsa ya da paralı dosyayı Kriz telefonlarından önce açarsa,
+  botun satırı sunucunun listesiyle uyuşmazsa FAIL.
+- **Testler:** `LineBotDealTests` (Dürüst dosya bölümünde açar ve parayı geri yollar; Açgözlü kip parasız tartışmada
+  açar, paralıysa imha eder ya da Kriz telefonlarında açar; önizleme kararın kendisidir; konuşan maçlarda `bottalk file`
+  satırları kurallara uyar), `LineRulesV53Tests` (Karışık'ın seviyeye tepkisi, defter).
+
 ### 4.2 Prim beyanı ve ödüller (v5.2, 2026-11-24)
 
 Kurallar: `V5_DESIGN.md` §5, `V5_ENGINE_SPEC.md` §22. Aday olan bot primini bir kez beyan eder (Kriz sonucunda ya da
@@ -166,8 +220,8 @@ final tartışmasının başında, her zamanki düşünme gecikmesiyle):
 - **Oylar beyana bakmaz.** Bot yine defter tahminine göre en zengin sandığı adaya oy verir; beyan ucuz laftır.
 - **Ödül cümlesi.** Sonuç ekranında ödül alan her bot, "ÖDÜLLER" slaytı geldikten sonra bir kez bağırır
   (`bot.award.<id>`): Yanlış Adam "Doğruyu söyledim, yine de kovuldum!" · En Pahalı Yalan "Biraz yuvarlamışım." ·
-  Satılmış "Para paradır, oy oydur." · Sözünün Eri "Sus dediler, sustum." · Soyguncu "Fırsat ayağıma geldi." ·
-  Kasa Faresi "Kasa açıktı, ben ne yapayım?" · Ayın İspiyoncusu "Görevimi yaptım, o kadar." · Günah Keçisi "Hep bana,
+  Satılmış "Para paradır, oy oydur." · Sözünün Eri "Para geldi, dosya gitti. Söz sözdür." · Soyguncu "Fırsat ayağıma geldi." ·
+  Kasa Faresi "Kasa açıktı, ben ne yapayım?" · Ayın İspiyoncusu "Dosya bendeydi, açtım. O kadar." · Günah Keçisi "Hep bana,
   hep bana." · Kara Kutu "Kayıtlar yalan söylemez." · Tutanak Kralı "Müdür beni seviyor aslında." · Nöbet Kaçağı "Hafta
   sonu benim için kutsaldır." · Temiz Sicil "Tertemiz. Sicilime bakın." (İngilizceleri `en.v5.json`.) Politikaya göre
   değişmez; doğruluk iddiası taşımaz.
@@ -235,8 +289,9 @@ Sadece kendi görüşü (`LineView`) ve hatırladıkları (toplantı dosyası he
 - Herkes başlangıç primiyle (6) başlar; kendi primini kesin bilir; kovulan 0 sayılır.
 - **Müşteri Bonusu:** kendi grubu kesin. Diğerleri: herkese açık "alan sayısı"ndan beklenen ödeme; bilinmeyen alanlar
   kalan kişilere dağıtılır, kasadan aldığı bilinenlere daha çok. Soruşturmanın sonucu (aldı / paylaştı) kesin bilgidir.
-- **Küçük Kasa:** yakalananlar 0, ihbar edilen hırsız +3 (v5.1: parayı tutar; v5.0: 0), ihbar eden +0 (v5.0: +2),
-  kendi grubu kesin.
+- **Küçük Kasa:** yakalananlar 0, dosyası açılan (v5.2'ye kadar: ihbar edilen) hırsız kasadaki primi tutar (v5.0: 0),
+  açan +0 (v5.0: +2), kendi grubu kesin. v5.3: açılan dosyalar her aşamada herkese açıktır; toplantı dosyasının
+  saydığı çözülmemiş hırsızlıklardan sonradan açılanlar düşülür. Tutarlar maçın gündemindeki tutarlardır.
   Dosyadaki çözülmemiş hırsızlık sayısı (kendi grubundaki hariç) alabilecek kişilere dağıtılır (yakalanan, ihbar edilen ve
   ihbar eden alamaz), Müşteri Bonusu'nda alma olasılığına göre.
 - **Hafta Sonu Nöbeti:** liste dolduysa listede olmayan herkese +2; dolmadıysa 0 (v5.1).

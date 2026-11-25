@@ -10,11 +10,13 @@ Developed together by **Lucestdra** and **BerkanGH**.
 
 Development was AI-assisted (Claude Code; earlier versions also used OpenAI Codex).
 
-> **v5 is the current version.** The game runs the v5 ruleset "Her Şey Kayıtta" (`v5.2-kayit` since 2026-11-24: the
-> candidates' prim declarations, one meeting, a talk-time option, awards and headlines at the results,
-> `docs/V5_ENGINE_SPEC.md` §22; on top of v5.1's free sharer-only investigation, the whistled thief keeping the cash,
-> shift cleaning and candidates needing suç, §21): 3 tasks (Client Bonus, Petty Cash, Weekend Shift), one meeting with a
-> blame vote, investigations and leaked call recordings, a crisis vote and a final firing vote whose desk goes to the
+> **v5 is the current version.** The game runs the v5 ruleset "Her Şey Kayıtta" (`v5.3-kayit` since 2026-11-24:
+> **files** ("Dosya": whoever was robbed or watched a theft holds a file on the offender and may open it, publicly, or
+> shred it, until the crisis calls end) replace the one-shot investigation and whistle, and **the week's agenda**
+> ("Haftanın gündemi") makes one task small, one normal and one big in every match, `docs/V5_ENGINE_SPEC.md` §23; on top
+> of v5.2's prim declarations, single meeting, talk-time option, awards and headlines, §22, and v5.1's suç prices, shift
+> cleaning and candidates needing suç, §21): 3 tasks (Client Bonus, Petty Cash, Weekend Shift), one meeting with a
+> blame vote, files and leaked call recordings, a crisis vote and a final firing vote whose desk goes to the
 > voters. A match needs 4–6 seats (bots can fill them). Rules: `docs/V5_ENGINE_SPEC.md` (design `docs/V5_DESIGN.md`, plan `docs/V5_IMPLEMENTATION_PLAN.md`); play
 > UI: `Game/Assets/Game/Scripts/UI/Play`. The v4 text below and the tester steps about the desk/monitor, Short/Full
 > weeks and task tutorials describe v4 and are history (tag `v4.0-hybrid`).

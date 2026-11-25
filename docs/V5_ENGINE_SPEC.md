@@ -22,7 +22,9 @@ odd.
   "fewer than two connected ⇒ Abandoned" rule, `LineText.Sanitize`: keep v4 behaviour.
 - `LineProtocol.Version = 5`, `RulesetVersion = "v5.0-kayit"`, `ConfigVersion = 5`. Players 3–6. (Yaramazlıklar, §19: wire 6, config 6.
   v5.1 rules, §21: wire 7, config 7, `RulesetVersion = "v5.1-kayit"`. v5.2, §22: wire 8, config 8,
-  `RulesetVersion = "v5.2-kayit"`; the lobby needs 4 seats, the engine still plays 3–6.)
+  `RulesetVersion = "v5.2-kayit"`; the lobby needs 4 seats, the engine still plays 3–6. v5.3, §23: wire 9, config 9,
+  `RulesetVersion = "v5.3-kayit"`: files replace the one-shot investigation / whistle of §8 and §21, and the task
+  amounts follow the week's agenda.)
 
 ## 2. Removed v4 systems
 
@@ -797,3 +799,191 @@ Greedy / lying Mixed candidate), `snitch` 66–100%, `clean` 31–100%, `robber`
 and `tutanak` never appear here because LineSim's bots do not pay, record or prank (the game's talking bots do).
 A 4-player bot match reaches Results after ≈ 7–7.5 minutes; with players who use the whole of every phase it is
 ≈ 10 minutes plus Results.
+
+## 23. v5.3: files ("Dosya") and the week's agenda ("Haftanın gündemi") (2026-11-24, decided by the user)
+
+Design: `V5_DESIGN.md` §4 (the vote rule), §6 (Dosya), §8.1 (Haftanın gündemi), §8.2, §12. The suç prices are the
+v5.1 ones (+4 / +3); the prizes of the three tasks now depend on the match.
+
+### 23.1 Files (`LineEngine.Files.cs`)
+
+- **On** when the config carries no `Legacy` rules (`LineConfig.FilesOn()`, the default). With `LineConfig.Legacy`
+  set, the engine plays the one-shot rules of §8 / §21 instead (`Investigate`, `Whistle`) and has no files; the two
+  never mix (`FileOpen` / `FileShred` ⇒ `NotAvailable`; `InvestigationOpen` / `WhistleOpen` are false with files).
+- **Creation** (`CreateFiles`, in `ResolveTask`, so at the start of the task's `TaskReveal`):
+  - Client Bonus: for every group, every member who shared gets one file on every member of the group who took
+    (pair: 0 or 1; trio: one taker → 2 files, two takers → 2 files held by the one sharer, three takers → none).
+  - Petty Cash: for every sole theft, every witness (the group's other members) gets one file on the thief. Two or
+    more takers are caught as before: no file.
+- **State** `LineFileState`: `Held = 0`, `Opened = 1`, `Shredded = 2`, `Void = 3`, `Expired = 4`. A file is
+  `{Task, Holder, Target, State, Time, Phase, Blame}` (`LineFileView`; `Time` / `Phase` = when it got its state;
+  `Blame` = `LineConfig.FileBlame(task)`: `InvestigationGuiltyBlame` 4 for Client Bonus, `CashWhistleBlame` 3 for
+  Petty Cash).
+- **Window**: a held file can be opened or shredded while `Phase ≤ CrisisCalls` (`LineFeaturesView.FilesOpen`): the
+  reveal, the break, every meeting phase (the vote and its verdict too), the shift's phases and the crisis calls. When
+  `CrisisCalls` ends (`Advance`, before the crisis vote starts) every held file becomes `Expired`.
+- **Verbs** `LineVerb.FileOpen = 17`, `FileShred = 18`: Target = the colleague the file is on, A = `(int)TaskKind`
+  (ClientBonus or PettyCash). **Failure order**: `NotAvailable` (legacy rules), `WrongPhase` (after the crisis calls),
+  `InvalidTarget` / `Self`, `BadParam` (A is not one of the two tasks), `NotEligible` (I hold no such file),
+  `AlreadyResolved` (the file is not `Held`). Both are free; there is no limit per player.
+- **Open** (`OpenFile`): the file becomes `Opened`; every other held file on the same offence (same task and target)
+  becomes `Void`; the target gets `FileBlame(task)` suç at once (`BlameReason.InvestigationGuilty` for Client Bonus,
+  `Whistled` for Petty Cash; `BlameAdded` to everyone); no prim moves. Client Bonus: the target joins `exposed`.
+  Petty Cash: the theft is resolved (`Theft.Whistler`). A dossier line `DossierKind.FileOpened = 10` (`Player` =
+  holder, `Other` = target, `Task`, `N1` = suç) goes to the results' incidents, and to the meeting room dossier on
+  screen when there is one (`MeetingDossier` .. `CrisisCalls` with a meeting object); a file opened outside the
+  meeting room is listed when the next dossier opens (`ListOpenedFiles`: meeting 1, the crisis segment). Event
+  `LineEventType.FileOpened = 23` to everyone (Actor = holder, Target, A = task, B = suç).
+- **Shred** (`ShredFile`): the file becomes `Shredded`, nothing else changes. `FileShredded = 24` goes to the holder
+  and to the target only (Actor = holder, Target, A = task).
+- **Public, anonymous** (`FilePublicCount`, default true): `LineView.Files` (`LineFilesView`) carries `Held`,
+  `Shredded`, `Expired` (counts; −1 when the flag is off or under the legacy rules) for everyone; `FileNotice = 25`
+  (A = `Shredded` or `Expired`, B = how many, C = files still held) goes to everyone but the holder and the target of a
+  shredding, and to everyone when files expire. `LineFilesView.Opened` (every opened file, oldest first) is public
+  in every phase whatever the flag says.
+- **Mine**: `LineMeView.Files` = every file I hold and every file on me, in every state (a target knows who shared /
+  watched in their own group, so the holder of a file on them is no secret; a `Shredded` state there is the notice).
+- **Meeting 1** (§7): `OpenPettyCash` counts the thefts no file was opened on as unresolved (`TaskFailed`,
+  `CashMissing`) and, with files, **never adds the suç of a resolved theft** (it landed at the opening). The vote rule
+  is unchanged: `CountVoteable` runs when the discussion ends and a failed task is vote-able while one of its offences
+  is unresolved then (a Client Bonus taker not in `exposed`, a theft without an opened file). A file opened during or
+  after the vote refunds nothing. *Config* `FileHeldBlocksVote` (default false): an offence somebody still holds a
+  file on does not count (only offences nobody can open any more are voted on: two takers, a shredded file).
+- **Results**: `LineWeekResult.Files` = every file in creation order with its final state.
+- **Hash**: `HashResult` appends `(Task, Holder, Target, State)` of every file after the frozen v5.0 fields and the
+  declarations. Results without files (the legacy rules) hash as before.
+
+### 23.2 The week's agenda (`DrawStakes`)
+
+- *Config* `StakesScheme`: `LineStakes.Permutation = 1` (default) or `Fixed = 0`. Levels `LineStakes.Small = 0`,
+  `Normal = 1`, `Big = 2`; ids `small / normal / big`.
+- **Draw** (constructor, before anything else uses the config): `new LineRandom(Seed * 486187739 + 1013904223)`
+  (unchecked int), `Index(6)` = the week type. The generator is its own: the pairings (`rng`, seeded with `Seed`) are
+  the same under both schemes. Week types `{bonus, cash, shift}`: 0 `S N B`, 1 `S B N`, 2 `N S B`, 3 `N B S`, 4 `B S N`,
+  5 `B N S` (`LineStakes.Level(weekType, task)`).
+- **Amounts** (written into the match's config, so `ILineEngine.Config`, the payouts and every reader use them):
+  `pot = StakeBonus(level)` (*config* `StakeBonusSmall / Normal / Big` 4 / 6 / 8); `BonusPairShare = BonusTrioNone =
+  pot / 2`; `BonusPairTaker = BonusTrioTaker = max(0, pot − StakeTakerCut)` (1); the sharer's 0 and the both-take 1
+  are untouched. `CashTake = StakeCash(level)` (2 / 3 / 5). `ShiftSkipPay = StakeSkip(level)` (1 / 2 / 3);
+  `ShiftFailSkipPay` (0) is untouched.
+- **Fixed**: nothing is written; the config's own task amounts play (they are the normal level by default: a test
+  asserts it), `WeekType = −1`, all levels `Normal`. LineSim `--rules old / v52` and `--stakes fixed` use it.
+- **Public**: `LineView.Stakes` (`LineStakesView {Scheme, WeekType, LevelBonus, LevelCash, LevelShift, BonusPot,
+  BonusShare, BonusTaker, BonusBoth, CashTake, ShiftSkipPay}`) in every view from the Intro, and in
+  `LineWeekResult.Stakes`. No suç price depends on it.
+- Validation: `StakesScheme` other than 0 / 1 ⇒ `ArgumentException`; the numbers of `Legacy` are range-checked like
+  the config's.
+
+### 23.3 Config, versions, codec
+
+- `LineProtocol.Version` 9, `LineConfig.CurrentVersion` 9, `RulesetVersion` `"v5.3-kayit"` (never pool with earlier
+  data). `line_config.json` regenerated by the builder.
+- New config fields: `FilePublicCount`, `FileHeldBlocksVote`, `Legacy` (`LineLegacyRules`, null), `StakesScheme`,
+  `StakeBonusSmall / Normal / Big`, `StakeTakerCut`, `StakeCashSmall / Normal / Big`, `StakeSkipSmall / Normal / Big`.
+- **Retired** from `LineConfig`: `InvestigationsPerPlayer` (gone: the legacy rules allow one investigation per player,
+  files have no limit) and the numbers only the one-shot rules read, which moved to `LineLegacyRules`:
+  `InvestigationSharerOnly` (true), `InvestigationCost` (0), `InvestigationRefund` (0), `InvestigationFalseBlame` (3),
+  `CashWhistleReward` (0), `CashWhistledKeeps` (true), `ShiftFailVote` (false). Its defaults are the v5.2 values;
+  LineSim `--rules old` sets the v5.0 ones. `InvestigationGuiltyBlame` and `CashWhistleBlame` stay: they are the
+  files' prices.
+- Codec: `LineFileView`, `LineFilesView`, `LineStakesView`, `LineLegacyRules` (presence byte), the new enum ranges
+  (`LineVerb` 18, `LineEventType` 25, `DossierKind` 10, `LineFileState` 4), `LineFeaturesView.FilesOpen`,
+  `LineMeView.Files`, `LineView.Files / Stakes`, `LineWeekResult.Files / Stakes`.
+
+### 23.4 Bots
+
+- **Files** (`LineBot.FileStep`, `PunishStyle.Deals`; previews `FilePlan`, `LateOpenAt`, `WillPunish`). The mode per
+  colleague is `HonestMode` as in §21 (Honest always, Greedy never, Mixed a seeded coin); `Betrays` is the same coin.
+  - Honest mode: `FileOpensAtMeeting`: opens at the first chance at the table (`MeetingDossier`, after its think
+    delay; any later phase if it missed it). Silence money goes back (`ReturnSilenceMoney`, until meeting 1 ends).
+  - Greedy mode, not paid (`SilenceMoney` = 0): `FileOpensAtMeeting`, but late: at 60% of `MeetingDiscussion`
+    (`UnpaidOpenAt`), so the target has the break and the start of the discussion to pay.
+  - Greedy mode, paid: `Betrays` false ⇒ `FileShreds`, at once, in whatever phase the prim arrives; true ⇒
+    `FileOpensLate`: it keeps the money and opens during `CrisisCalls` at a seeded 35..75% of the phase.
+  - One file per call; a sent verb is not repeated for 3 s (a client's view lags).
+- **Stakes**: `Choose` draws Mixed's greedy side with `MixedTakeChance(level)` = 0.25 / 0.5 / 0.75 for the task's
+  level (one draw, as before); Honest and Greedy ignore the level. Fixed stakes ⇒ 0.5: the old behaviour bit for bit.
+- **Ledger** (`LineBotLedger`): the view's stakes replace the config's task amounts; an opened Client Bonus file ⇒
+  its target took (the sole taker's amount) and its holder shared (the sharer's amount); an opened Petty Cash file ⇒
+  its target keeps the box and its holder was a witness; files opened after the meeting dossier counted the
+  unresolved thefts are taken off that count.
+- **Talk** (`LineBotTalker`, `V5_BOT_TALK.md` §4.3): takers pay 1 prim and ask for the shredding; a Greedy-mode
+  holder asks its target for 2 prim (`bot.file.ask.*`, a `Silence` claim: true when it shreds once paid); the answer
+  to silence money (`bot.deal.*`) is about the file; Honest says it opened (`*.h_open`) only when it did; openers
+  mention a big / small week. `DealOpen` counts prim as silence money while the bot holds the file (or shredded it in
+  the same step).
+- **Story** (`LineStory`): `Punished` reads `FileOpened` incidents (`BreakCashFile = 0`, `BreakBonusFile = 1`).
+  Sellout: kept prim and opened the file after a payment (or voted against the payer). Loyal: held a file on the
+  payer, kept prim, never opened it or voted against them (`N2` = the file's state; a shredded file ranks first).
+  Snitch: the most files opened. Cash Rat: no Petty Cash file was opened on the thief. New headline
+  `HeadlineKind.FileShredded = 6` (`shred`): prim kept and the file shredded (not when the deal was broken by a vote).
+
+### 23.5 Host log and checks
+
+- `host: stakes week=W ruleset=.. scheme=permutation|fixed type=T bonus=level:pot:share/taker cash=level:amount
+  shift=level:pay suc=bonus/cash/caught/shift/crisis` when the match starts.
+- `host: files week=W enabled=yes|no total=N opened=O shredded=S void=V expired=E held=H suc=X/Y
+  list=task:holder>target:state@Phase,...` at Results (X = suç of the opened files, Y = what the blame log holds).
+  `host: rules` counts opened Petty Cash / Client Bonus files where it counted whistles / investigations.
+- Bots: `bottalk file seat policy task target mode paid returned state phase outcome week` per held file;
+  `bottalk hush ... file=<state>`.
+- `Tools/scripts/verify_logs.py`: `stakes` (a v5.3 match without a stakes line, a permutation that is not one of each
+  level, share ≠ pot / 2, suç prices that change between matches) and `files` (totals, a file still held at Results,
+  X ≠ Y, an offence opened twice, an opening outside the window, a bot line that disagrees with the host, Honest
+  keeping silence money, an Honest-mode holder not opening, a Greedy-mode holder shredding / keeping an unpaid file,
+  returning money or opening a paid file before the crisis calls, a one-shot `bottalk punish` line in a v5.3 run).
+- `Tools/scripts/loc_check.py`: the stakes keys (`stakes.<task>.<level>`), `files.state.<LineFileState>`, the
+  projector stamps per `DossierKind`, and the Turkish rule (no case suffix after a placeholder).
+
+### 23.6 Tests
+
+`LineRulesV53Tests` (creation per group shape: pairs and trios; open: suç at once, public, the others void, no second
+suç at the meeting; a Client Bonus file with no limit per player; shred: irreversible, who is told what; the window
+from the reveal to the last moment of the crisis calls, expiry; a file opened during the shift listed in the crisis
+dossier; the vote rule and vote suç that is not refunded; `FileHeldBlocksVote`; `FilePublicCount` off; the legacy
+rules have no files and the config round-trips `Legacy`; the permutation: six week types, seeded, pairings independent
+of it; payouts and view amounts per week type, trios; fixed stakes; Mixed's 25 / 50 / 75%; the ledger; codec and
+hash), `LineBotDealTests` (file deals per mode; the one-shot deals through `LineTest.OneShot`), `LineStoryTests`
+(file stories), the one-shot rule tests of §8 / §21 through `LineTest.OneShot`, the harness at fixed stakes.
+CoreTests 345 → 375; TelemetryTests 51 (the event catalogue regenerated for the two verbs), MusicTests 20,
+VoiceTests 109.
+
+### 23.7 LineSim
+
+`--rules new` (default) plays v5.3 and adds three lines per cell: `Files:` (per match, by task; opened before the
+meeting / in the meeting / during the shift / in the crisis calls; shredded, void, expired), `Stakes:` (the share of
+greedy choices at small / normal / big per task) and `Week types:` (matches, prim per seat before the desk reveal and
+suç per seat for each of the six). `--stakes fixed|permutation` overrides the scheme. `--rules v52` plays the one-shot
+rules at fixed stakes and `--rules old` every v5.0 number. **Identity:** `--rules v52 --matches 300 --seed 7000
+--think 15` reproduces every statistic line of d53f9a5's default run and `--rules old ...` every line of its
+`--rules old` run, in all 16 cells each (the aggregate hashes differ by the ruleset id the results carry).
+
+LineSim's bots never talk, so nobody pays: every file is opened in the meeting (Honest mode in the dossier, Mixed's
+Greedy mode late in the discussion) and none is shredded or expires; the deals are in the talking matches
+(`LineBotDealTests`, the bot runs). Win share per seat and firings, 1000 matches per cell, seeds 5000..5999, think 15
+(`v5-sim.txt`):
+
+| Mix | Players | Win share H / G / M | Fired % of seats H / G / M | Fired = suç leader | Meeting vote held | Files per match (bonus + cash) | Opened / void | Take % small / normal / big: bonus; cash | Prim per seat by week type |
+|---|---|---|---|---|---|---|---|---|---|
+| lobby | 3 | 50.0 / 2.4 / 47.6 | 0.0 / 95.3 / 4.7 | 100.0% | 0.0% | 3.02 (2.00 + 1.02) | 67% / 33% | 42 / 51 / 58; 42 / 49 / 58 | 7.67–8.18 |
+| lobby | 4 | 9.6 / 8.5 / 72.4 | 0.3 / 91.1 / 8.3 | 100.0% | 17.7% | 2.33 (1.16 + 1.16) | 100% / 0% | 32 / 38 / 43; 31 / 38 / 43 | 9.91–10.60 |
+| lobby | 5 | 22.3 / 10.4 / 34.5 | 1.4 / 84.4 / 28.4 | 97.2% | 23.5% | 4.01 (2.45 + 1.56) | 77% / 23% | 45 / 49 / 56; 45 / 50 / 55 | 8.16–9.02 |
+| lobby | 6 | 12.0 / 17.6 / 20.4 | 0.0 / 71.3 / 28.6 | 94.5% | 60.5% | 3.38 (1.73 + 1.65) | 100% / 0% | 42 / 50 / 59; 42 / 51 / 58 | 8.96–10.01 |
+| half | 3 | 45.9 / 20.9 / – | 8.2 / 58.2 / – | 100.0% | 12.7% | 2.25 (1.50 + 0.75) | 67% / 33% | 50 / 51 / 50; 49 / 51 / 50 | 7.88–8.40 |
+| half | 4 | 15.7 / 34.3 / – | 2.9 / 47.1 / – | 100.0% | 44.1% | 2.01 (1.00 + 1.01) | 100% / 0% | 51 / 48 / 50; 50 / 50 / 49 | 9.02–10.11 |
+| half | 5 | 24.9 / 15.0 / – | 2.4 / 70.7 / – | 96.7% | 32.7% | 3.32 (2.05 + 1.27) | 76% / 24% | 48 / 49 / 51; 51 / 49 / 49 | 8.38–8.93 |
+| half | 6 | 15.1 / 18.2 / – | 1.0 / 62.9 / – | 95.0% | 57.5% | 3.00 (1.49 + 1.52) | 100% / 0% | 50 / 50 / 49; 49 / 49 / 51 | 9.06–10.13 |
+| mixed | 3 | – / – / 33.3 | – / – / 33.3 | 98.1% | 19.6% | 1.90 (1.28 + 0.62) | 67% / 33% | 26 / 52 / 75; 24 / 50 / 75 | 7.74–7.98 |
+| mixed | 4 | – / – / 25.0 | – / – / 25.0 | 99.4% | 46.7% | 1.72 (0.85 + 0.87) | 100% / 0% | 26 / 51 / 76; 25 / 52 / 73 | 8.76–9.57 |
+| mixed | 5 | – / – / 20.0 | – / – / 39.7 | 93.0% | 40.5% | 2.77 (1.67 + 1.10) | 76% / 24% | 26 / 51 / 76; 25 / 52 / 74 | 8.11–8.54 |
+| mixed | 6 | – / – / 16.7 | – / – / 33.3 | 92.2% | 59.8% | 2.44 (1.21 + 1.24) | 100% / 0% | 26 / 51 / 75; 25 / 51 / 74 | 8.53–9.45 |
+| one-greedy | 3 | 50.0 / 0.0 / – | 0.0 / 100.0 / – | 100.0% | 0.0% | 4.00 (2.00 + 2.00) | 50% / 50% | 33 / 33 / 33; 33 / 33 / 33 | 9.00–9.67 |
+| one-greedy | 4 | 33.3 / 0.0 / – | 0.0 / 100.0 / – | 100.0% | 0.0% | 2.00 (1.00 + 1.00) | 100% / 0% | 25 / 25 / 25; 25 / 25 / 25 | 9.25–10.75 |
+| one-greedy | 5 | 25.0 / 0.0 / – | 0.0 / 100.0 / – | 100.0% | 0.0% | 3.23 (1.61 + 1.61) | 62% / 38% | 20 / 20 / 20; 20 / 20 / 20 | 8.73–10.14 |
+| one-greedy | 6 | 20.0 / 0.0 / – | 0.0 / 100.0 / – | 100.0% | 0.0% | 2.00 (1.00 + 1.00) | 100% / 0% | 17 / 17 / 17; 17 / 17 / 17 | 9.33–10.83 |
+
+Shredded, expired and late-opened files are 0% in every cell (nobody pays). Mixed reads the agenda (take / skip
+≈ 25 / 50 / 75% at small / normal / big); Honest and Greedy do not, so their cells show the level only through the
+pairings. **Money:** against `--stakes fixed` (300 matches per cell, same seeds) the fired desk's mean moves by +0.03
+prim and the winner's prim by −0.18 on average over the 16 cells (single cells −0.8 .. +0.4) and the firing shares
+stay within ≈ 6 points; the six week types differ by up to ≈ 1.5 prim per seat within a cell (last column).

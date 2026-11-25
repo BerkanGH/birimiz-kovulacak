@@ -59,7 +59,7 @@ Vampir köylünün bir kopyası olmamalı: iyi/kötü takımı yok, rol kartı y
 
 - **Suç puanı** kovulma adaylarını belirler. Herkese açıktır ve suç tahtasında görünür.
 - Başarısız olan görevler suç üretir. Toplantı bir mahkemedir: **"Bu kimin suçu?"**
-- Kesinleşen bir soruşturma (§6), ihbar (§8.2) ve Kriz (§8.2) de suç puanı yazar.
+- Açılan bir dosya (§6; v5.2'ye kadar: soruşturma ve ihbar) ve Kriz (§8.2) de suç puanı yazar.
 
 **Suç oylaması [KARAR]:**
 - **Sadece başarısız görev varsa oylama yapılır.** Herkes dürüst davrandıysa suç dağıtılmaz; bu işbirliğinin
@@ -75,12 +75,16 @@ Vampir köylünün bir kopyası olmamalı: iyi/kötü takımı yok, rol kartı y
   anlaşıp suç sistemini öldürebilir.
 - **Kesinleşmiş olaylar oylanmaz.** İhbar edilmiş bir kasa hırsızlığı ya da kazanılmış bir soruşturmanın suçu
   doğrudan suçluya yazılır; o görev için oylama yapılmaz.
+- **[KARAR 2026-11-24] Dosyayla aynı kural (§6):** oylama **başladığı anda** dosyası açılmış suç çözülmüştür ve
+  oylanmaz; bir görevin çözülmemiş tek bir suçu bile varsa (dosyası hâlâ elde, imha edilmiş ya da hiç dosyası olmayan:
+  ikisi de almış bir ikili) o görev oylanır. Oylamadan **sonra** açılan dosya, oylamada dağıtılan suçu geri almaz.
+  Toplantı, önceden açılmış bir kasa dosyasının suçunu ikinci kez yazmaz.
 - **Oylar gizlidir**, maç sonundaki final açılışında açıklanır.
 - Reddedilen alternatif: "kazanan hepsini alır" (en çok oyu alan görevin bütün suçunu alır). Daha dramatik ama
   beraberlik kuralı gerektirir ve bir oyuncu tek toplantıda bitirilebilir.
 
 **Toplantı akışı (≈ 90 sn) [ÖNERİ]:**
-1. Dosya (≈ 15 sn): başarısız görevler, ihbarlar, soruşturmalar, sızdırılan kayıtlar.
+1. Dosya (≈ 15 sn): başarısız görevler, açılan dosyalar (§6), sızdırılan kayıtlar; açılmamış dosya sayısı.
 2. Tartışma (≈ 50 sn): herkes birbirini duyar.
 3. Oylama (≈ 20 sn): gizli oy, ardından suç tahtası güncellenir.
 - Suç puanı "kim aday olacak" sorusunu, prim ise "kime oy vereceğim" sorusunu belirler. Masum ama zengin biri
@@ -223,7 +227,56 @@ süreyi ve kuralı değiştirmez.
     suçlar da eşitse primi çok olan kovulur ("Müdür en yüksek maaşı keser"). Şans yok, her zaman biri kovulur.
   - Kazanmada: primi eşit olanlar birlikte kazanır.
 
-## 6. Soruşturma Hakkı [KARAR 2026-11-15]
+## 6. Dosya [KARAR 2026-11-24] (önceki: Soruşturma Hakkı, KARAR 2026-11-15)
+
+**[KARAR 2026-11-24] Dosya (v5.3): tek atımlık soruşturmanın ve ihbarın yerine kalıcı bir dosya.**
+
+- Dosya, görevin **açıklandığı anda** oluşur:
+  - **Müşteri Bonusu:** her paylaşan, grubunda hepsini alan **her** arkadaşı hakkında bir dosya tutar (iki alanlı bir
+    üçlüde paylaşanın iki dosyası olur; "oyuncu başına 1 soruşturma" sınırı kalktı).
+  - **Küçük Kasa:** grubunda almayan her tanık, tek başına alan hakkında bir dosya tutar. İki kişi birden aldıysa
+    yakalanırlar; dosya olmaz.
+- Dosyayı tutan, açıklamadan **Kriz telefonlarının sonuna kadar** istediği an iki şeyden birini yapabilir:
+  - **Aç:** bedava. Hedef **hemen ve herkesin önünde** suç alır: bonus dosyası **+4**, kasa dosyası **+3**. Dosyaya
+    "kim, kimin, hangi görevden dosyasını açtı" satırı düşer. Prim hedefte kalır, açana prim gelmez. Aynı suç için
+    başkasının elindeki dosyalar **geçersiz** olur (üçlüde ilk açan sayılır).
+  - **İmha et:** geri alınmaz. Yalnızca tutan ve hedef bilir; hedefe bildirim gider ("Mavi senin dosyanı imha etti").
+- Kriz telefonları bitince açılmamış dosyalar **geçersiz** olur.
+- **Herkese açık, isimsiz sayaç:** suç tahtasında ve projektörde "Açılmamış dosya: N" yazar; bir dosya imha edilince
+  ("Bir dosya imha edildi") ya da süresi dolunca isimsiz bir bildirim düşer (`FilePublicCount`, varsayılan açık).
+- **Toplantı oylaması (§4):** oylama başladığında çözülmemiş suçu olan görev oylanır; sonradan açılan dosya oylamadaki
+  suçu geri almaz. İsteğe bağlı fren `FileHeldBlocksVote` (varsayılan **kapalı**): dosyası hâlâ birinin elinde olan suç
+  oylanmaz.
+- **Final açılışında** her dosya görünür: kim tuttu, kimin hakkındaydı, ne oldu (hangi aşamada açıldı / imha edildi /
+  süresi doldu), yanında ikisi arasındaki havaleler.
+- Kısa yollar: kasa kutusunun kırmızı **İHBAR** düğmesi ve eski **Soruştur** düğmesinin yeri (klasördeki
+  "Dosyalarım") ilgili dosyayı açmanın kısa yoludur.
+
+**Neden?**
+- Tek atımlık soruşturma / ihbar **otomatikti**: bedava ve cezasız olduğu için herkes kullanıyordu, pazarlığa da
+  yalnızca 30 saniyelik mola kalıyordu. Karar yoktu, saat vardı.
+- İmha edilebilen bir dosya, pazarlığa bir **nesne** ve **doğrulanabilir bir teslimat** verir: "öde ↔ imha et". Eskiden
+  "susarım" sözü doğrulanamıyordu; şimdi hedef, dosyasının imha edildiğini oyundan öğrenir.
+- Süre uzadı: dosya molada, toplantıda, nöbet görevinde ve Kriz telefonlarında elde durur. §8.2'deki [İLERİDE] "ihbar
+  kozu" fikri budur; suçun masumdan suçluya aktarılması kısmı bilerek alınmadı (oylama suçu geri alınmaz: kural tek
+  cümle kalır, "sonradan açarım" tehdidi de masuma yazılan suçu silmez).
+- İsimsiz sayaç, masadaki herkese "hâlâ açılmamış bir şey var" bilgisini verir; kimin elinde olduğunu söylemez.
+- **Simülasyon kanıtı (karalama simülasyonu):** dosyaların geç (Kriz telefonlarında) açılması, kovulanlar kümesini
+  maçların en çok **%2,4**'ünde değiştiriyor; yani geç açmak oyunu bozmuyor ama pazarlığa zaman veriyor.
+- **Bilinen risk:** tutanların çoğu beklerse toplantıda çözülmemiş suç çok olur ve **masumlara yazılan oylama suçu
+  artar**. Fren hazır (`FileHeldBlocksVote`), varsayılan kapalı; oyun testlerinden sonra karar verilecek.
+
+**Botlar (test içindir):** Dürüst tutan, dosyayı toplantının dosya bölümünde (masadaki ilk fırsatta) açar ve söyler;
+susma parasını geri yollar. Açgözlü kip (Açgözlü; Karışık'ta arkadaş başına yazı tura): para almadıysa toplantıda açar;
+para aldıysa %50 imha eder, %50 parayı tutar ve dosyayı geç, Kriz telefonlarında açar (ihanet). Alan botlar bir kez susma
+parası yollar ve imhayı ister: "Dosyamı imha et, 1 prim senin." Açgözlü kipteki tutan, hedeften para isteyebilir:
+"Dosyan bende. 2 prim gönder, imha edeyim." Ayrıntı: `V5_BOT_TALK.md` §4.1.
+
+### 6.1 Önceki kural: Soruşturma Hakkı [KARAR 2026-11-15; yerini Dosya aldı]
+
+Aşağıdaki tek atımlık kural v5.1 ve v5.2'de geçerliydi; yalnızca eski istatistikler için motor ayarında durur
+(`LineConfig.Legacy`, LineSim `--rules v52` / `--rules old`). "Bedava ve kazançsız ceza", "alan parayı tutar" ve susma
+pazarlığı fikri Dosya'da aynen sürer.
 
 **Tasarım fikri (v5.1).** Prim = para = puan, en zengin kazanır. Suç = risk: kovulma adayları en çok suçu olanlardır,
 kovma oylamasıyla olur ve kovulanın masası ona oy verenlere gider. Açgözlü hamle parasını tutar; bedeli suç riskidir.
@@ -309,6 +362,23 @@ Güvenceyi oyuncular kendileri arar:
 - Sadece mağdur bilmeli. Diğerleri ya hiçbir şey bilmemeli ya da "biri yaptı" kadarını bilmeli.
 - Konuşmadan iyi sonuç alınamamalı.
 - Her görev ihanetin **farklı bir türünü** temsil etmeli.
+- **[KARAR 2026-11-24] Haftanın gündemi (v5.3): ödüller maçtan maça değişir, suç bedelleri hiç değişmez.** Maç
+  başında tohumlu bir çekiliş üç göreve birer seviye dağıtır: biri **küçük**, biri **orta**, biri **büyük** (6 hafta
+  türü). Seviyeler ve sayılar maçın ilk saniyesinden herkese açıktır ("Bu haftanın gündemi: KASA DOLU: 5 prim · Müşteri
+  orta: 6 · Nöbet primi düşük: +1"), her görev kartında yazar. Sayılar §12'de.
+  - **Neden?** Sabit ödüllerle her maç aynı açılıyordu: bir kez "doğru cevabı" bulan oyuncu her hafta aynı şeyi
+    yapıyordu. Suç bedeli sabitken ödül değişince doğru cevap haftadan haftaya değişir: küçük bonus için +4 suç
+    alınmaz, dolu kasa için alınabilir. Büyük ödül, susma parasına da yer açar (5 primlik kasadan 1–2 prim vermek
+    mantıklıdır).
+  - Çekiliş kendi tohumlu üretecini kullanır; eşleşmeler ona bağlı değildir. `StakesScheme` sabit orta seviyeye
+    alınabilir (eski istatistikler).
+  - **Simülasyon kanıtı (karalama simülasyonu):** seviyeler alma oranını yaklaşık **3 kat** değiştiriyor (küçükte az,
+    büyükte çok); permütasyon şeması **parada nötr** (hafta türleri arasında ortalama prim aynı kalıyor, çünkü her
+    maçta bir küçük, bir orta, bir büyük var). Oyunun kendi simülasyonu (`Tools/LineSim`, `V5_ENGINE_SPEC.md` §23.7)
+    aynı şeyi gösteriyor: Karışık bot küçük / orta / büyük seviyede %25 / %51 / %75 alıyor; sabit şemaya göre kovulanın
+    masası ortalama +0,03 prim, kazananın primi −0,18 prim oynuyor (16 hücre, hücre başına 300 maç).
+  - Kasanın büyük seviyesi bilerek **5** seçildi (simülasyon 4 öneriyordu): pazarlığa yer kalsın diye. Oyun
+    testlerinden sonra ayarlanacak.
 
 ### 8.2 Kabul edilen görevler
 
@@ -318,6 +388,11 @@ Güvenceyi oyuncular kendileri arar:
   1 / 1. Üçlüde kimse almazsa herkes **3** (eskiden 2); tek alan 5, diğerleri 0; iki ya da daha fazla alan varsa herkes
   1. Herkese açık "N kişi hepsini aldı" satırı ve görevin başarısız sayılması değişmedi. Paylaşan mağdur, alanı 1.
   toplantıda bedavaya soruşturabilir (§6).
+- **[KARAR 2026-11-24]** Soruşturmanın yerini **dosya** aldı (§6): paylaşan, alan hakkında bir dosya tutar; açarsa alan
+  +4 suç alır. **Haftanın gündemi (§8.1):** bonus havuzu **4 / 6 / 8** (küçük / orta / büyük). İkisi paylaşırsa kişi
+  başı havuzun yarısı (2 / 3 / 4); tek alan **havuz − 1** alır (3 / 5 / 7), paylaşan 0; ikisi alırsa 1 / 1. Üçlüde
+  kimse almazsa herkes havuzun yarısını alır; tek alan havuz − 1, diğerleri 0; iki ya da daha fazla alan varsa herkes
+  1. Orta seviye, v5.1 sayılarının aynısıdır.
 - Sadece ortak, diğerinin ne seçtiğini görür. Herkese sadece "kaç kişinin hepsini aldığı" gösterilir.
 - Başarısızlık: biri "hepsini al" dediyse müşteri ilişkisi zarar görür ve suç oluşur.
 - Üçlüde biri alırsa **iki mağdur** olur; iki kişinin aynı kişiyi suçlaması daha ikna edicidir, yani üçlüde çalmak
@@ -357,6 +432,11 @@ Güvenceyi oyuncular kendileri arar:
 - [ÖNERİ] İhbar kararı prototipte görev sonundaki molada verilir. [İLERİDE] **İhbar kozu:** hak maç sonuna kadar
   elde durur, her tur şantaj yapılabilir, finalden hemen önce kullanılabilir. Suç bu durumda masum birinden gerçek
   suçluya aktarılır.
+- **[KARAR 2026-11-24]** İhbarın yerini **dosya** aldı (§6): tanık, tek başına alan hakkında bir dosya tutar ve Kriz
+  telefonları bitene kadar açabilir (+3 suç, hemen ve herkese açık) ya da imha edebilir. Yukarıdaki "ihbar kozu" budur;
+  suç aktarımı yok (oylama suçu geri alınmaz). Tablodaki üç seçenek artık "tut / aç / imha et (para karşılığı ya da
+  karşılıksız)" diye okunur; kasa kutusunun İHBAR düğmesi dosyayı açmanın kısa yoludur. **Haftanın gündemi (§8.1):**
+  kasada **2 / 3 / 5** prim olur (küçük / orta / büyük).
 - Ödül ve suç miktarları: §12.
 
 **Kriz: Günah Keçisi (herkes)** [KARAR]
@@ -391,6 +471,8 @@ olduğu belirsiz kaldıkça bu, istediğimiz tartışmayı üretir: "Bence en ze
   alır ve Toplantı 2 atlanır. **Liste dolmazsa tutmayan prim almaz ve +2 suç alır**; suç Toplantı 2 açılınca
   kendiliğinden yazılır. Toplantı 2'de bu yüzden **oylama yoktur**: dosya ve tartışma olur ("Nöbet tutmayan N kişiye
   otomatik +2 suç yazıldı"). Gereken nöbetçi ceil(N/2) (değişmedi).
+- **[KARAR 2026-11-24] Haftanın gündemi (§8.1):** liste dolduğunda nöbet tutmayanın primi **+1 / +2 / +3** olur
+  (küçük / orta / büyük). Eksik nöbetin cezası (+2 suç) ve gönüllünün −1 suçu değişmez.
 - **[KARAR 2026-11-24, Toplantı 2 kaldırıldı]** Yukarıdaki "Toplantı 2" cümlelerinin yerine: liste dolmazsa tutmayanın
   +2 suçu **nöbet açıklandığı anda** yazılır ve maç doğrudan Kriz'e geçer (§4.1). Nöbet tutanın −1 suçu da aynı anda
   işler. Ceza ofiste nöbet çizelgesinde, suç tahtasında ve Kriz oylaması açılırken projektörde ("NÖBET CEZASI") görünür.
@@ -473,8 +555,13 @@ tartışma çıkıyor mu, oylar neye göre veriliyor, maç sonunda "bir daha" de
 İlk değerler (v0) kâğıt prototip ve bot simülasyonuna göre değişti; 2026-11-15'te v5.1 kuralları karara bağlandı
 (§6, §8.2; reddedilen seçenekler §6 "Neden böyle?"). **[KARAR 2026-11-24] v5.2:** prim beyanı (§5), Toplantı 2'nin
 kalkması, en az 4 oyuncu ve konuşma süresi seçeneği (§4.1), ödüller ve manşetler (§5); prim ve suç sayıları değişmedi.
-Sayıların hepsi `LineConfig`'te (`StreamingAssets/Config/line_config.json`, `ConfigVersion` 8); her alanın yorumu eski
-(v5.0) değerini de söyler. Kural kimliği `v5.2-kayit` (v5.1 ve v5.0 verileriyle birleştirilmez).
+**[KARAR 2026-11-24] v5.3:** Dosya (§6) ve Haftanın gündemi (§8.1); suç sayıları değişmedi, ödüller seviyeye göre
+değişir (aşağıdaki "Haftanın gündemi" tablosu).
+Sayıların hepsi `LineConfig`'te (`StreamingAssets/Config/line_config.json`, `ConfigVersion` 9); her alanın yorumu eski
+(v5.0) değerini de söyler. Kural kimliği `v5.3-kayit` (v5.2, v5.1 ve v5.0 verileriyle birleştirilmez). Artık anlamı
+kalmayan soruşturma / ihbar ayarları (`InvestigationSharerOnly`, `InvestigationCost`, `InvestigationRefund`,
+`InvestigationFalseBlame`, `CashWhistleReward`, `CashWhistledKeeps`, `ShiftFailVote`) ana ayardan çıktı ve yalnızca eski
+kuralları oynatan `LineConfig.Legacy` nesnesinde durur; `InvestigationsPerPlayer` tamamen kalktı.
 
 ### Prim
 
@@ -488,6 +575,19 @@ Sayıların hepsi `LineConfig`'te (`StreamingAssets/Config/line_config.json`, `C
 | Hafta Sonu Nöbeti | Liste dolarsa tutmayan +2; **dolmazsa tutmayan 0**; nöbet tutan 0 | tutmayan hep +2 |
 | Soruşturma maliyeti / iadesi | **0 / 0** (bedava; alan 5'i tutar) | 4 / haklıysa 3 |
 
+### Haftanın gündemi (v5.3)
+
+Aşağıdaki "Prim" tablosu **orta** seviyedir. Her maçta bir görev küçük, biri orta, biri büyük oynanır
+(`StakesScheme` = permütasyon; sabit orta için 0).
+
+| Görev | Küçük | Orta | Büyük | Ayar |
+|---|---|---|---|---|
+| Müşteri Bonusu havuzu (ikisi paylaşırsa yarısı; tek alan havuz − 1; ikisi alırsa 1 / 1) | 4 → 2 / 2, alan 3 | 6 → 3 / 3, alan 5 | 8 → 4 / 4, alan 7 | `StakeBonusSmall/Normal/Big`, `StakeTakerCut` |
+| Küçük Kasa | 2 | 3 | **5** | `StakeCashSmall/Normal/Big` |
+| Nöbet tutmayanın primi (liste dolarsa) | +1 | +2 | +3 | `StakeSkipSmall/Normal/Big` |
+
+Suç bedelleri her seviyede aynıdır: bonus dosyası +4, kasa dosyası +3, yakalanma +2, eksik nöbet +2, Kriz 4.
+
 ### Suç
 
 | Kalem | Değer (v5.1) | v5.0 |
@@ -496,6 +596,7 @@ Sayıların hepsi `LineConfig`'te (`StreamingAssets/Config/line_config.json`, `C
 | İhbar edilen kasa hırsızı | +3 suç, çaldığı 3 prim **onda kalır** | +3, 3'ü geri verir |
 | İki kişi birden kasadan alırsa | İkisine de +2 suç (oylama yapılmaz) | aynı |
 | Soruşturma | Sadece paylaşan, hepsini alanı: alan **+4 suç** (haksız soruşturma yok) | +3 ve 3 prim öder; haksızsa açana +3 |
+| Dosya (v5.3) | Bonus dosyası açılırsa alan **+4**, kasa dosyası açılırsa hırsız **+3**; hemen, herkese açık; prim hedefte kalır. İmha edilen ve süresi dolan dosya suç yazmaz | soruşturma / ihbar |
 | Nöbet tutan | **−1 suç** (0'ın altına inmez), liste dolsa da dolmasa da | yok |
 | Eksik nöbette tutmayan | **+2 suç**, nöbet açıklandığı anda, oylamasız (v5.1: Toplantı 2 açılınca) | oylama |
 | Kriz | 4 suç, gizli oyla en çok oyu alana; beraberlikte eşit paylaşılır | aynı |
@@ -504,7 +605,9 @@ Sayıların hepsi `LineConfig`'te (`StreamingAssets/Config/line_config.json`, `C
 
 | Kalem | Değer |
 |---|---|
-| Soruşturma hakkı | Maç başına 1 |
+| Soruşturma hakkı | Maç başına 1 (v5.2'ye kadar; v5.3'te yok: her suç için bir dosya) |
+| Dosya (v5.3) | Görev açıklanınca oluşur; Kriz telefonları bitene kadar aç ya da imha et; sonra geçersiz. Herkese açık sayaç `FilePublicCount` (açık); oylama freni `FileHeldBlocksVote` (kapalı) |
+| Haftanın gündemi (v5.3) | 6 hafta türü, tohumlu; `StakesScheme` 1 = permütasyon, 0 = sabit orta |
 | Kayıt cihazı | Maç başına 1 kullanım (4 kişide en fazla 4 sızıntı; az olduğu için her biri değerli) |
 | Aday olmak | En az **1 suç** (v5.1; eskiden 0 suç da aday olabiliyordu). Kovulan sayısı ≤ aday sayısı; aday yoksa kovulan yok |
 | Prim beyanı (v5.2) | Aday başına 1 kez, 0–99; Kriz sonucundan final tartışmasının 12. saniyesine kadar; etkisi yok (`DeclarationsEnabled`, `DeclareSeconds`, `DeclareMax`) |
@@ -521,9 +624,12 @@ Sayıların hepsi `LineConfig`'te (`StreamingAssets/Config/line_config.json`, `C
 - Açgözlü oyuncu kovulursa ona oy veren 3 kişi kişi başı ≈ **5 prim** alır. Kovmak için güçlü bir sebep; kovmak için
   de önce aday olması (suç) gerekir.
 - Mağdur ve tanık için ceza bedava ama kazançsız; asıl soru susma parasıdır ("Sus, sana 1 prim göndereyim.").
+- v5.3: aynı hesap orta seviye içindir. Kasanın dolu olduğu hafta açgözlü oyuncu kasadan 5, küçük olduğu hafta 2 alır;
+  bedeli (dosya açılırsa +3 suç) aynıdır. Asıl soru artık "Dosyamı imha et, 1 prim senin" pazarlığıdır.
 
 Bot simülasyonunun güncel sayıları: `Tools/LineSim/v5-sim.txt` (açıklaması `V5_ENGINE_SPEC.md` §20, v5.1 için §21, v5.2
-için §22: beyan ve ödül satırları).
+için §22: beyan ve ödül satırları, v5.3 için §23: dosya, seviye ve hafta türü satırları). v5.2 kurallarıyla sayılar:
+LineSim `--rules v52`.
 2026-11-15'ten beri botlar her oylamada kazanmak için en zengin olduğunu tahmin ettikleri rakibe oy verir (eski "bildiği
 suçlu, yoksa en yüksek suç" kuralının sayıları için LineSim `--vote blame`); cezalandırmayı susma pazarlığına göre
 yaparlar (`V5_BOT_TALK.md` §4.1). v5.0 kurallarıyla sayılar: LineSim `--rules old`.

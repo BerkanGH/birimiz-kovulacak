@@ -50,7 +50,7 @@ needed.
 | `Scripts/UI/Dev/BotTalkMock.cs` | Bot talk mocks (`-uimock "v5.office_botcall*"`, `"v5.meeting_botchat*"`). |
 | `Scripts/UI/Play/StoryText.cs` | v5.2 texts from typed data: prim declarations ("Beyanı: 7 prim", the YALAN / DOĞRU stamp) and the results story (`LineStory`: award names and reasons, headlines); the story is built once per result. |
 | `Scripts/UI/Meeting/MeetingDeclare.cs` | v5.2 declaration card of a candidate (stepper, keyboard, countdown, confirm) and its chip (waiting / sealed). |
-| `Scripts/UI/Dev/StoryMock.cs` | v5.2 mocks (`-uimock "v5.meeting_declare*"`, `"v5.meeting_penalty*"`, `"v5.meeting_awards*"`, `"v5.lobby_options*"`). |
+| `Scripts/UI/Dev/StoryMock.cs` | v5.2 mocks (`-uimock "v5.meeting_declare*"`, `"v5.meeting_penalty*"`, `"v5.meeting_awards*"`, `"v5.lobby_options*"`). The v5.3 mocks (`"v5.stakes_intro*"`, `"v5.files_*"`, `"v5.meeting_files*"`, `"v5.meeting_reveal_files*"`) are in `OfficeMock.cs` and `MeetingMock3b.cs`. |
 | `Scripts/UI/Dev/MeetingMock.cs`, `MeetingMock3b.cs`, `UI/Resources/ui/styles/meeting.uss`, `projector.uss` | Meeting room mocks (`-uimock "v5.meeting*"`, `"v5.office_partner*"`); meeting room, tablet, paper, whiteboard, results bar and projector styles. |
 
 **Office (v5 step 1).** Cursor locked, mouse look; WASD stands up from the chair and walks (2 m/s, local only:
@@ -420,6 +420,47 @@ from the seat and zoomed, then the crisis vote's slide), `v5.meeting_awards` (ra
 folder's Manşetler / Masa açılışları / Kim kimi soydu), `v5.lobby_options` (three seats with the hint, the talk-time
 buttons, the changed how-to pages), `v5.meeting_reveal` (the desk opening with a YALAN stamp) and
 `v5.meeting_reveal_true` (DOĞRU), `v5.meeting_reveal_later` (a desk that grew after the reveal: DOĞRU with the note).
+
+### v5.3 on screen (2026-11-24)
+
+Rules: `V5_DESIGN.md` §6 (Dosya), §8.1 (Haftanın gündemi) ([KARAR 2026-11-24]); engine: `V5_ENGINE_SPEC.md` §23. The
+one-shot "Soruştur" and "İhbar et" are gone from every screen; the file list replaces them. Names never carry a Turkish
+suffix: "Dosya: Sarı · Küçük Kasa", "Hakkında dosya var: Sarı", "Hedef: Pembe" (`loc_check.py` now fails on a suffix
+glued to a placeholder).
+
+**Dosya.**
+
+| Where | What |
+|---|---|
+| "Dosyalarım" (`PlayBlocks.BuildFiles`; the folder's Eylemler tab, the office computer's Görev app under the task card, the fallback play screen) | One row per file I hold: "Dosya: Sarı · Küçük Kasa · açılırsa +3 suç" with **[Aç]** (red) and **[İmha et]**. Either button first shows a confirmation in place of the row (`pl-confirm`): "Dosya açılsın mı? Hedef: Sarı (Küçük Kasa). Hemen +3 suç alır ve herkes görür. Geri alınmaz." [Evet, aç] [Vazgeç] / "Dosya imha edilsin mi? … yalnızca ikiniz bilirsiniz. Geri alınmaz." [Evet, imha et] [Vazgeç]. Decided files stay as a dim line with their state ("açıldı · Tartışma", "imha edildi", "geçersiz: başkası açtı", "süresi doldu"). The files on me: "Hakkında dosya var: Sarı (Küçük Kasa, açılırsa +3 suç)", then what became of them. Foot: "Açılmamış dosya: 2 · Kriz görüşmeleri bitince geçersiz olur". The card is orange (todo) while I hold an undecided file; the computer's Görev tile shows the count. |
+| Cash box (`OfficeObjects`) | The red **İHBAR** button is the shortcut to my Petty Cash file: lit for a witness from the reveal through the break, the card's confirm box "DOSYA" with [Dosyayı aç: Sarı] [Şimdi değil] and "Açmak zorunda değilsin: dosya Kriz görüşmeleri bitene kadar elinde…". After opening: "Dosyayı açtın. Hedef: Sarı · +3 suç aldı…", the button stays pressed. The thief sees "Sarı senin dosyanı açtı. 5 prim sende kalıyor; +3 suç aldın." or, after a shredding, "Sarı senin dosyanı imha etti." The notes never leave the desk. |
+| Office "Şimdi" strip (`OfficeText`) | Witness: "Tanıksın: Sarı kasadan tek başına aldı ve dosyası sende…"; any held file in a break: "Elinde 2 dosya var: aç ya da imha et (bilgisayar, Q)…"; crisis calls with a held file (orange): "Kriz: son fırsat. Elindeki 1 dosya görüşmeler bitince geçersiz olur…". |
+| Meeting "Şimdi" line (`MeetingText`) | Holding a file in the dossier / discussion (orange): "Elinde 1 dosya var: önündeki klasörde (Q) açabilir ya da imha edebilirsin. Oylama başlamadan açılan suç oylanmaz." |
+| Events (`PlayText.Event`; office and meeting toasts) | Opened (everyone, stamp sound): "Dosya açıldı: Sarı · Küçük Kasa · +3 suç (açan: Mavi)"; to the target: "Mavi senin dosyanı açtı: … Prim sende kalıyor." The matching `BlameAdded` toast is dropped. Shredded: the holder "Dosyayı imha ettin. Hedef: Pembe", the target "Mavi senin dosyanı imha etti."; everyone else the anonymous "Bir dosya imha edildi." Expiry: "Kriz görüşmeleri bitti: açılmamış 2 dosyanın süresi doldu." The shredder sound (`SfxSynth.Shredder`, "shred") plays for the one who shreds and with both notices. No shredder prop. |
+| Projector (`MeetingProjector`) | A new stamp **"DOSYA AÇILDI"** for `DossierKind.FileOpened`: "Dosya açıldı: Sarı · Müşteri Bonusu · +4 suç (açan: Mavi)" with the two faces ("dosyayı açtı" / "hepsini aldı" or "kasadan aldı"); it stamps itself in when a file is opened in the room. The agenda slide's foot: **"Açılmamış dosya: 2 · imha edilen: 1"** (orange while any is held) and the week's agenda line. |
+| Whiteboard (`MeetingBoard`) | The side column ends with "Açılmamış dosya: N" (`wb-side-files`). |
+| Results (`MeetingReveal`) | A new tab **"Dosyalar (n)"**: per file "Küçük Kasa · dosyayı tutan: Pembe · hedef: Yeşil" with a state chip (red "açıldı · Kriz görüşmeleri", green "imha edildi", grey for void / expired) and under it "Aralarındaki havale: Yeşil → Pembe: 1 prim". "Olaylar" lists the opened files. Awards and headlines: "Satılmış … yine de bonus dosyasını açtı", "Sözünün Eri … dosyayı imha etti", "Ayın İspiyoncusu: 2 dosya açtı", headline "Anlaşma tuttu: Yeşil sus payı gönderdi (1 prim), Pembe dosyayı imha etti." |
+| How-to | Page 7 is now **"Dosya"** (was "Soruşturma"); pages 2–6 (flow, the three tasks, the blame vote) mention the file and the week's agenda. `HowToPlayScreen.PageFiles`. |
+
+**Haftanın gündemi.**
+
+| Where | What |
+|---|---|
+| Intro (office) | The "Şimdi" strip: "Bu haftanın gündemi: KASA DOLU: 5 prim · Müşteri orta: 6 · Nöbet primi düşük: +1. Telefonla (Tab) ittifak kur…"; the manager's line as a 12 s toast ("Müdür: "Bu haftanın gündemi: …""); the computer's intro card: a "Bu haftanın gündemi" row of three chips (the big one orange, the small one dimmed) and "Ödüller haftadan haftaya değişir; suç bedelleri hiç değişmez." (`PlayBlocks.AgendaChips`, `PlayText.Agenda / Stake`). The computer's sticky note keeps the short Intro text, so the manager's toast under it never covers it. |
+| Task cards (computer, cash box, roster) | The task's chip above the rule text ("KASA DOLU: 5 prim"); every number in the text is the match's (`lc.Config` is the engine's config with the amounts written in). |
+| Projector, results | The agenda slide and the results' story open with "Bu haftanın gündemi: …" (`stakes.line`). |
+| How-to | The task pages give this match's amounts and then the three levels ("Haftanın gündemine göre kasada 2, 3 ya da 5 prim olur."); in the menu the amounts are the normal level. |
+
+Mocks (`Builds/mock/s9_1920`, `s9_1600`): `v5.stakes_intro` (+ `_en`: the strip and the manager's toast, the computer's
+agenda chips, the "Dosya" how-to page), `v5.files_office` (+ `_en`: the witness strip, the cash box's "DOSYA" confirm
+card, "Dosyalarım" on the computer, the open and the shred confirmations, the shredding and the opening with their
+toasts, the anonymous notice), `v5.files_target` ("Hakkında dosya var", then "Sarı senin dosyanı imha etti."),
+`v5.files_crisis` (the last-chance strip), `v5.meeting_files` (+ `_en`: the folder's "Dosyalarım", both confirmations,
+"DOSYA AÇILDI" on the projector, the agenda foot, the whiteboard counter, the anonymous notice),
+`v5.meeting_reveal_files` (+ `_en`: the "Dosyalar" tab, the story with the agenda line, the balances); the changed
+`v5.office_cashbox*`, `v5.office_witness`, `v5.office_task`, `v5.office_roster*`, `v5.meeting_folder`,
+`v5.meeting_projector`, `v5.meeting_board`, `v5.meeting_results`, `v5.howto` and the bot-call mocks follow v5.3. The
+mock week is "KASA DOLU: 5 · Müşteri orta: 6 · Nöbet primi düşük: +1" (`LineMock.Week`).
 
 ---
 
