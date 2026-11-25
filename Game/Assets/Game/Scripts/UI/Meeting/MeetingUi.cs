@@ -47,6 +47,8 @@ namespace BirimizKovulacak.Game
         public bool BoardOpen => _boardZoom;
         public bool ProjectorOpen => _projZoom;
         public MeetingFolder Folder => _folder;
+        /// <summary>The meeting room's local selections (transfer target, the file waiting for its confirmation, …).</summary>
+        public PlayState State => _st;
         public MeetingBallot Ballot => _ballot;
         public MeetingProjector Projector => _projector;
         public MeetingSubtitles Subs => _subs;
@@ -239,12 +241,13 @@ namespace BirimizKovulacak.Game
                     Toast(PlayText.Event(e, me), "of-toast-money", 6f);
                     Sfx.Play("complete", 0.6f);
                     break;
-                case LineEventType.Investigated:
+                case LineEventType.FileOpened:
+                case LineEventType.FileShredded:
+                case LineEventType.FileNotice:
                 case LineEventType.Leaked:
                 case LineEventType.BlameAdded:
                 case LineEventType.CrisisResolved:
                 case LineEventType.Fired:
-                case LineEventType.Whistled:
                 case LineEventType.Presence:
                 case LineEventType.RecordingPlayed:
                 case LineEventType.DeclarationsRevealed:
@@ -253,7 +256,10 @@ namespace BirimizKovulacak.Game
                     if (e.Type == LineEventType.Fired) break;
                     string line = PlayText.Event(e, me);
                     if (line != null) Toast(line, e.Type == LineEventType.Presence ? null : e.Type == LineEventType.BlameAdded ? "of-toast-warn" : "of-toast-call", 6f);
-                    if (e.Type == LineEventType.Investigated || e.Type == LineEventType.Whistled || e.Type == LineEventType.DeclarationsRevealed) Sfx.Play("stamp", 0.6f);
+                    if (e.Type == LineEventType.DeclarationsRevealed) Sfx.Play("stamp", 0.6f);
+                    // (an opened file stamps itself onto the projector with its own thud; my own shredding made its noise already)
+                    if (e.Type == LineEventType.FileNotice || e.Type == LineEventType.FileShredded && e.Actor != me) Sfx.Play("shred", 0.6f);
+                    if (e.Type == LineEventType.FileOpened || e.Type == LineEventType.FileShredded || e.Type == LineEventType.FileNotice) _folder.MarkDirty();
                     break;
                 }
             }

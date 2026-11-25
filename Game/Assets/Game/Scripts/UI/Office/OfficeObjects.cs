@@ -13,14 +13,14 @@ namespace BirimizKovulacak.Game
     /// <item><b>Kasa kutusu</b> (Petty Cash, TaskPlay → its break): E opens the lid; "Al" / "Geri koy" move the notes
     /// between the box and the desk (the box always shows your current choice), the reveal shows your group's outcome
     /// (empty box, notes beside it, the red seal when both took), a witness's İhbar button lights up in the break and the
-    /// card asks to confirm the whistle; the sole taker is warned.</item>
+    /// card asks to confirm opening the thief's file (v5.3: the button is a shortcut to it); the sole taker is warned.</item>
     /// <item><b>Nöbet çizelgesi</b> (Weekend Shift): the pencil writes your name (Volunteer) or rubs it out (Skip);
     /// others stay hidden until the reveal fills in the public roster (<see cref="RosterSheet"/>).</item>
     /// <item><b>Çekmece</b>: the prim stack (bundles of five, a tag with the number); prim coming in jolts the drawer
     /// with a thunk and a toast (transfers keep their own toast), prim going out shrinks the stack.</item>
     /// </list>
     /// The world side is <see cref="OfficeRoom"/> (OfficeRoom.Tasks.cs); this class decides its states from the view
-    /// and shows the object card while one of them is in focus. Choices and the whistle are the same verbs as before.
+    /// and shows the object card while one of them is in focus. Choices are the same verbs as before; the button sends FileOpen.
     /// </summary>
     public sealed class OfficeObjects
     {
@@ -34,7 +34,7 @@ namespace BirimizKovulacak.Game
         int _week = int.MinValue;
         float _flashUntil;
         // cash box
-        int _cashTask = -1, _whistledTarget = -1, _whistledBy = -1, _whistledLost;
+        int _cashTask = -1;
         bool _tookKnown, _took, _boxShown;
         // roster
         int _shiftTask = -1, _lastNeeded = -1;
@@ -72,23 +72,20 @@ namespace BirimizKovulacak.Game
             _week = int.MinValue;
             _cashTask = _shiftTask = -1;
             _tookKnown = _signKnown = _stroke = false;
-            _whistledTarget = _whistledBy = -1;
             _lastRoster = null; _lastNeeded = -1;
             _lastPrim = -1; _pendingIn = 0; _explained = 0;
             _dirty = true;
         }
 
-        /// <summary>Petty Cash break: a witness whistled on me (the "Şimdi" line stops warning about it; v5.0 also took my notes back).</summary>
-        public bool WhistledOnMe => _whistledBy >= 0;
-
-        /// <summary>A witness whistled on me: v5.1 the cash stays with me (the suç comes in meeting 1); v5.0 it was taken back.</summary>
-        public string WhistledOnMeText(LineConfig c)
+        /// <summary>The Petty Cash file on me was opened or shredded (the "Şimdi" line says so instead of warning): the
+        /// opener's suç landed at once and the cash stays with me; a shredding is told to me alone. Null otherwise.</summary>
+        public static string FileOnMeText(LineView v, int me, LineConfig c)
         {
-            return _whistledLost > 0 ? F("office.cash.out_whistled_me", Name(_whistledBy), _whistledLost)
-                : F("office.cash.out_whistled_me_keep", Name(_whistledBy), c.CashTake, c.CashWhistleBlame);
+            var f = PlayBlocks.FileOf(v, me, TaskKind.PettyCash, false);
+            if (f == null) return null;
+            if (f.State == LineFileState.Opened) return F("office.cash.out_whistled_me_keep", Name(f.Holder), c.CashTake, f.Blame);
+            return f.State == LineFileState.Shredded ? F("event.file_shredded_me", Name(f.Holder)) : null;
         }
-        public int WhistledBy => _whistledBy;
-        public int WhistledLost => _whistledLost;
 
         // ------------------------------------------------------------------ events
 
@@ -100,23 +97,17 @@ namespace BirimizKovulacak.Game
                     _explained += Math.Max(0, e.A);
                     _explainedUntil = Time.unscaledTime + 2.5f;
                     break;
-                case LineEventType.Whistled:
-                    if (e.Actor == me)
-                    {
-                        _whistledTarget = e.Target;
-                        _explained += c.Legacy != null ? c.Legacy.CashWhistleReward : 0;
-                        _explainedUntil = Time.unscaledTime + 2.5f;
-                    }
-                    if (e.Target == me) { _whistledBy = e.Actor; _whistledLost = e.A; if (e.A > 0) Sfx.Play("bills", 0.6f); }
+                case LineEventType.FileOpened:
+                case LineEventType.FileShredded:
                     _dirty = true;
                     break;
             }
         }
 
-        /// <summary>A phase began in the office: the sole taker of Petty Cash hears that a witness may report them.</summary>
+        /// <summary>A phase began in the office: the sole taker of Petty Cash hears that the witness holds a file on them.</summary>
         public void OnPhase(LinePhase to, LineClient lc, LineView v)
         {
-            if (to == LinePhase.Break && v.Task != null && v.Features.WhistleOpen && PlayBlocks.SoleTaker(v.Task, lc.MySlot))
+            if (to == LinePhase.Break && v.Task != null && PlayBlocks.SoleTaker(v.Task, lc.MySlot) && PlayBlocks.FileOnMeHeld(v, lc.MySlot, TaskKind.PettyCash))
                 _ui.Toast(T("office.cash.toast_thief"), "of-toast-warn", 8f);
             _dirty = true;
         }
@@ -132,7 +123,7 @@ namespace BirimizKovulacak.Game
                 case OfficeUi.Focus.CashBox:
                     if (t != null && t.Kind == TaskKind.PettyCash && v.Phase == LinePhase.TaskPlay) { Choose(t.Submitted && t.MyChoice == LineChoice.Take ? LineChoice.Leave : LineChoice.Take); return; }
                     if (Witness(v)) { Deny(T("office.cash.deny_confirm")); return; }
-                    Deny(T(v.Phase == LinePhase.Break && v.Features.WhistleOpen ? "office.cash.deny_whistle" : "office.cash.deny_closed"));
+                    Deny(T(v.Phase == LinePhase.Break ? "office.cash.deny_whistle" : "office.cash.deny_closed"));
                     return;
                 case OfficeUi.Focus.Roster:
                     if (t != null && t.Kind == TaskKind.WeekendShift && v.Phase == LinePhase.TaskPlay) { Choose(t.Submitted && t.MyChoice == LineChoice.Volunteer ? LineChoice.Skip : LineChoice.Volunteer); return; }
@@ -159,7 +150,12 @@ namespace BirimizKovulacak.Game
             UiMotion.Pulse(_card, 0.03f, 0.2f);
         }
 
-        static bool Witness(LineView v) { return v.Phase == LinePhase.Break && v.Features.WhistleOpen && v.Mine.WitnessOf.Count > 0; }
+        /// <summary>The cash box's İhbar button is live: the box is on the desk (Petty Cash's reveal or break) and I hold
+        /// the file on the colleague who took it alone.</summary>
+        public static bool Witness(LineView v)
+        {
+            return v != null && CashTask(v) && v.Phase != LinePhase.TaskPlay && PlayBlocks.HeldFile(v, v.Me, -1, TaskKind.PettyCash) != null;
+        }
 
         /// <summary>Petty Cash is running (its TaskPlay, reveal or break): the box is on the desk.</summary>
         public static bool CashTask(LineView v)
@@ -250,6 +246,7 @@ namespace BirimizKovulacak.Game
             if (t == null || t.Kind != TaskKind.PettyCash) { Big(p, T("office.cash.none")); return; }
             if (v.Phase == LinePhase.TaskPlay)
             {
+                PlayBlocks.StakeChip(p, v.Stakes, TaskKind.PettyCash);
                 Big(p, F("focus.task.petty_cash", c.CashTake, c.CashWhistleBlame, c.CashCaughtBlame));
                 Line(p, F("task.group", PlayText.Names(t.Group.FindAll(id => id != me))) + "  ·  " + F("office.cash.amount", c.CashTake), "pl-dim");
                 bool took = t.Submitted && t.MyChoice == LineChoice.Take;
@@ -267,33 +264,34 @@ namespace BirimizKovulacak.Game
             if (!t.Revealed) { Big(p, T("task.not_revealed")); return; }
             var takers = new List<int>();
             foreach (var ch in t.Choices) if (ch.Choice == LineChoice.Take) takers.Add(ch.Player);
-            if (_whistledBy >= 0) Big(p, WhistledOnMeText(c), "pl-bad");
-            else if (_whistledTarget >= 0) Big(p, F("office.cash.out_whistled", Name(_whistledTarget), c.CashWhistleBlame), "pl-good");
+            string onMe = FileOnMeText(v, me, c);
+            var mine = PlayBlocks.FileOf(v, me, TaskKind.PettyCash, true);
+            if (onMe != null) Big(p, onMe, PlayBlocks.FileOf(v, me, TaskKind.PettyCash, false).State == LineFileState.Opened ? "pl-bad" : "pl-good");
+            else if (mine != null && mine.State == LineFileState.Opened) Big(p, F("office.cash.out_whistled", Name(mine.Target), mine.Blame), "pl-good");
+            else if (mine != null && mine.State == LineFileState.Shredded) Big(p, F("event.file_shredded_mine", Name(mine.Target)), "pl-dim");
             else if (Witness(v))
             {
-                foreach (int thief in v.Mine.WitnessOf)
-                {
-                    int id = thief;
-                    var box = Box("oc-confirm").AddTo(p);
-                    Bold(T("office.cash.confirm_kicker"), "oc-confirm-kicker").AddTo(box);
-                    Big(box, F("break.witness", Name(id), c.CashWhistleBlame));
-                    var row = Box("oc-buttons").AddTo(box);
-                    Btn(F("break.whistle_btn", Name(id)), () => { Sfx.Play("alarm_btn", 0.7f); Send(LineVerb.Whistle, id); }, "pl-danger", "pl-big").AddTo(row);
-                    Btn(T("office.cash.btn_not_now"), () => _ui.CloseFocus(), "pl-big").AddTo(row);
-                    Line(box, T("focus.witness_or"), "pl-dim");
-                }
+                // the İhbar button: a shortcut to opening the file I hold on the thief (shredding it: "Dosyalarım")
+                var file = PlayBlocks.HeldFile(v, me, -1, TaskKind.PettyCash);
+                var box = Box("oc-confirm").AddTo(p);
+                Bold(T("office.cash.confirm_kicker"), "oc-confirm-kicker").AddTo(box);
+                Big(box, F("break.witness", Name(file.Target), file.Blame));
+                var row = Box("oc-buttons").AddTo(box);
+                Btn(F("break.whistle_btn", Name(file.Target)), () => { Sfx.Play("alarm_btn", 0.7f); PlayBlocks.OpenFile(file); }, "pl-danger", "pl-big").AddTo(row);
+                Btn(T("office.cash.btn_not_now"), () => _ui.CloseFocus(), "pl-big").AddTo(row);
+                Line(box, T("focus.witness_or"), "pl-dim");
             }
             else if (takers.Count == 0) Big(p, T("office.cash.out_none"));
             else if (takers.Count == 1 && takers[0] == me)
             {
                 Big(p, F("office.cash.out_me", Math.Max(0, t.MyPayout)));
-                if (v.Phase == LinePhase.Break && v.Features.WhistleOpen) Line(p, F("focus.thief", c.CashWhistleBlame), "oc-status-took");
+                if (v.Phase == LinePhase.Break && PlayBlocks.FileOnMeHeld(v, me, TaskKind.PettyCash)) Line(p, F("focus.thief", c.CashWhistleBlame), "oc-status-took");
                 else Line(p, T("office.cash.out_me_wait"), "pl-dim");
             }
             else if (takers.Count == 1)
             {
                 Big(p, F("office.cash.out_other", Name(takers[0])));
-                Line(p, T(v.Phase == LinePhase.Break ? "office.cash.out_other_closed" : "office.cash.out_other_wait"), "pl-dim");
+                Line(p, T(mine != null && mine.State == LineFileState.Void ? "office.cash.out_other_closed" : "office.cash.out_other_wait"), "pl-dim");
             }
             else if (takers.Contains(me)) Big(p, F("office.cash.out_caught_me", c.CashCaughtBlame), "pl-bad");
             else Big(p, F("office.cash.out_caught", PlayText.Names(takers), c.CashCaughtBlame));
@@ -311,6 +309,7 @@ namespace BirimizKovulacak.Game
             int needed = shift && t.Needed >= 0 ? t.Needed : LineConfig.ShiftNeeded(v.Players.Count);
             if (shift && v.Phase == LinePhase.TaskPlay)
             {
+                PlayBlocks.StakeChip(p, v.Stakes, TaskKind.WeekendShift);
                 Big(p, PlayText.ShiftFocus(c, needed));
                 Line(p, F("office.roster.needed", needed), "oc-needed");
                 bool signed = t.Submitted && t.MyChoice == LineChoice.Volunteer;
@@ -360,7 +359,7 @@ namespace BirimizKovulacak.Game
 
             // ---- the Petty Cash box
             bool cash = CashTask(v);
-            if (cash && _cashTask != t.Number) { _cashTask = t.Number; _tookKnown = false; _whistledTarget = _whistledBy = -1; }
+            if (cash && _cashTask != t.Number) { _cashTask = t.Number; _tookKnown = false; }
             if (cash)
             {
                 bool onDesk = false, gone = false, seal = false;
@@ -380,14 +379,15 @@ namespace BirimizKovulacak.Game
                 {
                     int takers = 0, taker = -1;
                     foreach (var ch in t.Choices) if (ch.Choice == LineChoice.Take) { takers++; taker = ch.Player; }
-                    // whistled on: v5.1 the notes stay on my desk (nothing taken back); v5.0 they were taken
-                    bool takenBack = _whistledBy >= 0 && _whistledLost > 0;
-                    if (takers == 1 && taker == me) { onDesk = !takenBack; gone = takenBack; }
+                    // (a file opened on me costs suç, never the cash: the notes stay on my desk)
+                    if (takers == 1 && taker == me) onDesk = true;
                     else if (takers == 1) gone = true;
                     else if (takers >= 2) seal = true;
                 }
                 if (!_boxShown && _ui.Visible) Sfx.Play("box_drop", 0.6f);
-                room.SetCashBox(true, Mathf.Clamp(c.CashTake, 1, 6), onDesk, gone, focus == OfficeUi.Focus.CashBox, Witness(v), _whistledTarget >= 0, seal);
+                var myFile = PlayBlocks.FileOf(v, me, TaskKind.PettyCash, true);
+                room.SetCashBox(true, Mathf.Clamp(c.CashTake, 1, 6), onDesk, gone, focus == OfficeUi.Focus.CashBox, Witness(v),
+                    myFile != null && myFile.State == LineFileState.Opened, seal);
             }
             else room.SetCashBox(false, 0, false, false, false, false, false, false);
             _boxShown = cash;

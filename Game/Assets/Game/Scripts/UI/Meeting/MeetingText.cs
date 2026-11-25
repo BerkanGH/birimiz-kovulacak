@@ -32,7 +32,8 @@ namespace BirimizKovulacak.Game
                 case LinePhase.MeetingDossier:
                 case LinePhase.MeetingDiscussion:
                     if (mt != null && mt.FailedTasks.Count == 0) return F("meeting.now.clean", q);
-                    return F(v.Features.InvestigationOpen || PlayBlocks.LeakableCount(v) > 0 ? "meeting.now.discuss_actions" : "meeting.now.discuss", q, tab);
+                    if (PlayBlocks.HeldFiles(v, lc.MySlot) > 0) { todo = true; return F("meeting.now.discuss_files", q, PlayBlocks.HeldFiles(v, lc.MySlot)); }
+                    return F(PlayBlocks.LeakableCount(v) > 0 ? "meeting.now.discuss_actions" : "meeting.now.discuss", q, tab);
                 case LinePhase.MeetingVote:
                 case LinePhase.CrisisVote:
                 case LinePhase.FinalVote:

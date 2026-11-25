@@ -9,7 +9,7 @@ namespace BirimizKovulacak.Game
     /// <summary>
     /// v5 step 3a: the folder in front of you at the meeting table (docs/V5_INTERACTION.md §3). E (or Q) picks it up:
     /// the folder comes up to the camera, its cover flips open and this tablet UI is laid exactly over the tablet screen.
-    /// Tabs: <b>Eylemler</b> (Soruştur, Kaydı sızdır — your own moves in the meeting), <b>Sohbet</b> (meeting chat and private
+    /// Tabs: <b>Eylemler</b> (Dosyalarım: open / shred the files you hold; Kaydı sızdır — your own moves in the meeting), <b>Sohbet</b> (meeting chat and private
     /// texts, one thread), <b>Havale</b> (send prim; sealed for candidates), <b>Dosya</b> (the meeting's public record,
     /// earlier firings; in the results the full reveal of step 3b, <see cref="MeetingReveal"/>: every balance, who robbed
     /// whom, every vote per round, desk openings, transfers, task choices), <b>Kurallar</b>. Esc / E puts it down.
@@ -141,9 +141,8 @@ namespace BirimizKovulacak.Game
 
         static bool ActionsAvailable(LineView v)
         {
-            var m = v.Mine;
-            bool investigate = v.Features.InvestigationOpen && !m.InvestigationUsed && m.InvestigationTargets.Count > 0;
-            return investigate || PlayBlocks.LeakableCount(v) > 0;
+            var lc = LineClient.I;
+            return PlayBlocks.HeldFiles(v, lc != null ? lc.MySlot : v.Me) > 0 || PlayBlocks.LeakableCount(v) > 0;
         }
 
         /// <summary>Lays the tablet UI over the folder's screen (panel units); fades in once the folder is up.</summary>
@@ -230,7 +229,7 @@ namespace BirimizKovulacak.Game
         {
             switch (_tab)
             {
-                case Tab.Actions: BuildActions(p, lc, v, now); break;
+                case Tab.Actions: BuildActions(p, lc, v, now, _st); break;
                 case Tab.Pranks: _ui.Pranks.BuildTab(p, lc, v, now); break;
                 case Tab.Chat: BuildChat(p, lc); break;
                 case Tab.Transfer: PlayBlocks.BuildTransfer(p, lc, v, _st, false); break;
@@ -242,31 +241,15 @@ namespace BirimizKovulacak.Game
             }
         }
 
-        /// <summary>Soruştur and Kaydı sızdır: your own moves in this meeting, with the rules and the reasons when closed.</summary>
-        static void BuildActions(VisualElement p, LineClient lc, LineView v, double now)
+        /// <summary>Dosyalarım and Kaydı sızdır: your own moves in this meeting, with the rules and the reasons when closed.</summary>
+        static void BuildActions(VisualElement p, LineClient lc, LineView v, double now, PlayState st)
         {
             var m = v.Mine;
-            var c = lc.Config;
             var f = v.Features;
-            // ---- investigation (meeting 1)
-            var inv = Box("pl-focus", "mt-card").AddTo(p);
-            Bold(Loc.Upper(T("investigate.title")), "pl-focus-kicker").AddTo(inv);
-            bool canInvestigate = f.InvestigationOpen && !m.InvestigationUsed && m.InvestigationTargets.Count > 0;
-            if (canInvestigate)
-            {
-                Big(inv, T("meeting.folder.investigate_how"));
-                var row = Wrap(inv);
-                foreach (int t in m.InvestigationTargets)
-                {
-                    int id = t;
-                    Btn(F("investigate.btn", Name(id)), () => Send(LineVerb.Investigate, id), "pl-danger", "pl-big").AddTo(row);
-                }
-                Line(inv, F("investigate.rules", c.InvestigationGuiltyBlame), "pl-dim");
-                inv.AddToClassList("pl-focus-todo");
-            }
-            else if (m.InvestigationUsed) Line(inv, T("investigate.used"), "pl-dim");
-            else if (f.InvestigationOpen) Line(inv, T("investigate.none"), "pl-dim");
-            else Line(inv, T(v.Day == 0 && v.Phase < LinePhase.MeetingVote ? "investigate.none" : "meeting.folder.investigate_closed"), "pl-dim");
+            // ---- "Dosyalarım" (v5.3): the files I hold (Aç / İmha et, each with a confirmation) and the files on me
+            var files = Box("pl-focus", "mt-card").AddTo(p);
+            Bold(Loc.Upper(T("files.title")), "pl-focus-kicker").AddTo(files);
+            if (PlayBlocks.BuildFiles(files, lc, v, st) == Todo) files.AddToClassList("pl-focus-todo");
 
             // ---- leaks (meeting discussion and the final discussion)
             var leak = Box("pl-focus", "mt-card").AddTo(p);

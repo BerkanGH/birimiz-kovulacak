@@ -24,7 +24,11 @@ namespace BirimizKovulacak.Game
             switch (v.Phase)
             {
                 case LinePhase.Intro:
+                {
+                    string agenda = PlayText.Agenda(v.Stakes);
+                    if (agenda != null) return F("office.now.intro_agenda", agenda, Key(GameInput.Phone), Key(GameInput.Computer));
                     return F("office.now.intro", Key(GameInput.Phone), Key(GameInput.Computer));
+                }
                 case LinePhase.TaskPlay:
                     if (t == null) return T("hint.TaskPlay");
                     if (!t.Submitted)
@@ -48,15 +52,26 @@ namespace BirimizKovulacak.Game
                             : F("office.now.reveal_payout", t.MyPayout, Key(GameInput.Computer));
                     return T("office.now.reveal");
                 case LinePhase.Break:
-                    if (v.Features.WhistleOpen && m.WitnessOf.Count > 0)
+                {
+                    // v5.3: the witness of a sole theft holds the thief's file (the cash box's button opens it)
+                    var file = t != null && t.Kind == TaskKind.PettyCash ? PlayBlocks.HeldFile(v, me, -1, TaskKind.PettyCash) : null;
+                    if (file != null)
                     {
                         todo = true;
-                        return F("office.now.witness", PlayText.Names(m.WitnessOf), Key(GameInput.Interact));
+                        return F("office.now.witness", PlayText.Name(file.Target), Key(GameInput.Interact));
                     }
-                    if (v.Features.WhistleOpen && t != null && PlayBlocks.SoleTaker(t, me)) return T("office.now.thief");
+                    if (t != null && PlayBlocks.SoleTaker(t, me) && PlayBlocks.FileOnMeHeld(v, me, TaskKind.PettyCash)) return T("office.now.thief");
+                    int held = PlayBlocks.HeldFiles(v, me);
+                    if (held > 0) return F("office.now.files", held, Key(GameInput.Computer));
                     return T(t != null && t.Number == 0 ? "office.now.break_task" : "office.now.break_meeting");
+                }
                 case LinePhase.CrisisCalls:
+                {
+                    // the last chance: what is still held expires when the calls end
+                    int held = PlayBlocks.HeldFiles(v, me);
+                    if (held > 0) { todo = true; return F("office.now.crisis_files", held, Key(GameInput.Computer)); }
                     return F("office.now.crisis", lc.Config.CrisisBlame, Key(GameInput.Phone));
+                }
                 default:
                     return PlayText.Hint(v.Phase);
             }
@@ -71,7 +86,7 @@ namespace BirimizKovulacak.Game
                     if (v != null && PlayBlocks.RecordingCurrentCall(v)) return T("office.use.Recorder_on");
                     return T(v != null && v.Mine.Phone.Status == CallStatus.Connected ? "office.use.Recorder" : "office.use.Recorder_idle");
                 case DeskTarget.CashBox:
-                    if (v != null && v.Phase == LinePhase.Break && v.Features.WhistleOpen && v.Mine.WitnessOf.Count > 0) return T("office.use.CashBox_whistle");
+                    if (OfficeObjects.Witness(v)) return T("office.use.CashBox_whistle");
                     return T(v != null && v.Phase == LinePhase.TaskPlay ? "office.use.CashBox_play" : "office.use.CashBox");
                 case DeskTarget.Roster:
                     if (v != null && v.Phase == LinePhase.TaskPlay && v.Task != null && v.Task.Kind == TaskKind.WeekendShift)

@@ -438,6 +438,30 @@ namespace BirimizKovulacak.Game
             return Normalize(d, 0.75f);
         }
 
+        /// <summary>A paper shredder taking one file (~0.75 s): the motor spinning up, the blades chewing, the last strips.</summary>
+        public static float[] Shredder()
+        {
+            var rnd = new System.Random(131);
+            int len = N(0.75f);
+            var d = new float[len];
+            var teeth = Biquad.BandPass(3100f, 1.1f);
+            var body = Biquad.LowPass(900f);
+            double ph = 0;
+            for (int i = 0; i < len; i++)
+            {
+                float t = i / (float)Rate, u = i / (float)len;
+                float spin = Mathf.Min(1f, t / 0.07f) * Mathf.Min(1f, (1f - u) / 0.22f);
+                ph += Mathf.Lerp(70f, 118f, Mathf.Min(1f, t / 0.12f)) * (0.82f + 0.18f * spin) / Rate;
+                float motor = Osc(Wave.Saw, ph) * 0.2f + Osc(Wave.Square, ph * 2.0) * 0.06f;
+                float x = (float)(rnd.NextDouble() * 2 - 1);
+                // the blades: paper noise gated at the cutters' rate, densest in the middle
+                float chew = 0.3f + 0.7f * Mathf.Abs(Mathf.Sin(t * 2f * Mathf.PI * 46f));
+                float paper = teeth.Process(x) * chew * Mathf.Sin(Mathf.Clamp01((u - 0.06f) / 0.86f) * Mathf.PI);
+                d[i] = (body.Process(motor) + paper * 0.95f) * spin;
+            }
+            return Normalize(d, 0.5f);
+        }
+
         // ------------------------------------------------------------------ coffee spill
 
         public static float[] Splash()

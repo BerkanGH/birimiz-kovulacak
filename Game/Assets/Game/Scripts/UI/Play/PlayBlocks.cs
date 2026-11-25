@@ -19,23 +19,147 @@ namespace BirimizKovulacak.Game
         public int MsgTarget = -2;
         /// <summary>v5.2: the prim the fallback screen's declaration row shows (-1 = start from my real prim).</summary>
         public int DeclareAmount = -1;
+        /// <summary>v5.3 "Dosyalarım": the file whose open (1) / shred (2) is waiting for its confirmation (0 = none).</summary>
+        public int FileTarget = LineIds.None, FileAction;
+        public TaskKind FileTask;
         public Action Dirty;
         public Action<string> Toast;
         public Action FocusMessageField;
 
-        public void ResetWeek() { TransferTarget = LineIds.None; TransferAmount = 1; MsgTarget = -2; DeclareAmount = -1; }
+        public void ResetWeek() { TransferTarget = LineIds.None; TransferAmount = 1; MsgTarget = -2; DeclareAmount = -1; AskFile(null, 0); }
+
+        /// <summary>Asks to confirm opening (1) / shredding (2) a file; null or 0 takes the question back.</summary>
+        public void AskFile(LineFileView f, int action)
+        {
+            FileTarget = f != null && action != 0 ? f.Target : LineIds.None;
+            FileTask = f != null ? f.Task : TaskKind.None;
+            FileAction = f != null ? action : 0;
+            MarkDirty();
+        }
         public void MarkDirty() { Dirty?.Invoke(); }
     }
 
     /// <summary>
     /// Content blocks shared by the meeting screen (<see cref="PlayUi"/>) and the office computer
-    /// (<see cref="OfficeComputer"/>): the task card (instruction, group, choices, default, reveal, whistle), the task
-    /// rules with the host's numbers, the intro, the crisis-calls card, the transfer panel, messages and compose
-    /// targets, and the call log. Every rule text comes from PlayText / the v5 tables, never duplicated.
+    /// (<see cref="OfficeComputer"/>): the task card (instruction, group, choices, default, reveal), "Dosyalarım" (the
+    /// files I hold: open / shred with a confirmation), the task rules with the match's numbers, the intro with the
+    /// week's agenda, the crisis-calls card, the transfer panel, messages and compose targets, and the call log. Every
+    /// rule text comes from PlayText / the v5 tables, never duplicated.
     /// </summary>
     public static class PlayBlocks
     {
-        // ---- task (TaskPlay: choose; TaskReveal / Break: results and the whistle)
+        // ---- files ("Dosya", v5.3)
+
+        /// <summary>A file I hold that can still be opened or shredded (on <paramref name="target"/> / of
+        /// <paramref name="task"/> when given), or null.</summary>
+        public static LineFileView HeldFile(LineView v, int me, int target = -1, TaskKind task = TaskKind.None)
+        {
+            if (v == null || !v.Features.FilesOpen || v.Mine.Files == null) return null;
+            foreach (var f in v.Mine.Files)
+                if (f.Holder == me && f.State == LineFileState.Held && (target < 0 || f.Target == target) && (task == TaskKind.None || f.Task == task)) return f;
+            return null;
+        }
+
+        public static int HeldFiles(LineView v, int me)
+        {
+            int n = 0;
+            if (v != null && v.Features.FilesOpen && v.Mine.Files != null)
+                foreach (var f in v.Mine.Files) if (f.Holder == me && f.State == LineFileState.Held) n++;
+            return n;
+        }
+
+        /// <summary>My file / the file on me of a task, whatever became of it (mine: I am the holder), or null.</summary>
+        public static LineFileView FileOf(LineView v, int me, TaskKind task, bool mine)
+        {
+            if (v == null || v.Mine.Files == null) return null;
+            LineFileView best = null;
+            foreach (var f in v.Mine.Files)
+            {
+                if (f.Task != task || (mine ? f.Holder != me : f.Target != me)) continue;
+                // (a trio's thief has two files on them: the opened one tells the story, then the shredded one)
+                if (best == null || f.State == LineFileState.Opened || f.State == LineFileState.Shredded && best.State != LineFileState.Opened) best = f;
+            }
+            return best;
+        }
+
+        public static void OpenFile(LineFileView f) { Send(LineVerb.FileOpen, f.Target, (int)f.Task); }
+        public static void ShredFile(LineFileView f) { Sfx.Play("shred", 0.7f); Send(LineVerb.FileShred, f.Target, (int)f.Task); }
+
+        /// <summary>
+        /// "Dosyalarım": every file I hold (target, task, what it costs the target) with Aç / İmha et and a confirmation
+        /// for each, what became of the others, and the files colleagues hold on me ("Hakkında dosya var: …"). Returns
+        /// Todo while a file of mine is still to be decided.
+        /// </summary>
+        public static int BuildFiles(VisualElement card, LineClient lc, LineView v, PlayState st)
+        {
+            int me = lc.MySlot;
+            var files = v.Mine.Files ?? new List<LineFileView>();
+            bool open = v.Features.FilesOpen;
+            int held = 0, shown = 0;
+            foreach (var f in files) if (f.Holder == me && f.State == LineFileState.Held) held++;
+            if (held > 0 && open) Line(card, T("files.how"));
+            foreach (var f in files)
+            {
+                if (f.Holder != me) continue;
+                shown++;
+                var file = f;
+                string task = PlayText.Task(f.Task);
+                if (f.State != LineFileState.Held || !open) { Line(card, F("files.mine_done", Name(f.Target), task, PlayText.FileState(f)), "pl-dim"); continue; }
+                if (st != null && st.FileAction != 0 && st.FileTarget == f.Target && st.FileTask == f.Task)
+                {
+                    bool shred = st.FileAction == 2;
+                    var box = Box("pl-confirm").AddTo(card);
+                    Big(box, F(shred ? "files.confirm_shred" : "files.confirm_open", Name(f.Target), task, f.Blame), shred ? "pl-warn" : "pl-bad");
+                    var yesNo = Row(box);
+                    Btn(T(shred ? "files.yes_shred" : "files.yes_open"), () =>
+                    {
+                        if (shred) ShredFile(file); else OpenFile(file);
+                        st.AskFile(null, 0);
+                    }, "pl-danger", "pl-big").AddTo(yesNo);
+                    Btn(T("files.no"), () => st.AskFile(null, 0), "pl-big").AddTo(yesNo);
+                    continue;
+                }
+                var row = Box("pl-row", "pl-file").AddTo(card);
+                Line(row, F("files.entry", Name(f.Target), task, f.Blame), "grow");
+                Btn(T("files.open_btn"), () => { if (st != null) st.AskFile(file, 1); else OpenFile(file); }, "pl-danger").AddTo(row);
+                Btn(T("files.shred_btn"), () => { if (st != null) st.AskFile(file, 2); else ShredFile(file); }).AddTo(row);
+            }
+            foreach (var f in files)
+            {
+                if (f.Target != me) continue;
+                shown++;
+                string task = PlayText.Task(f.Task);
+                if (f.State == LineFileState.Held && open) Line(card, F("files.on_me", Name(f.Holder), task, f.Blame), "pl-warn");
+                else Line(card, F("files.on_me_done", Name(f.Holder), task, PlayText.FileState(f)),
+                    f.State == LineFileState.Opened ? "pl-bad" : f.State == LineFileState.Shredded ? "pl-good" : "pl-dim");
+            }
+            if (shown == 0) Line(card, T(open ? "files.none" : "files.none_closed"), "pl-dim");
+            string counter = PlayText.FilesCounter(v);
+            if (counter != null) Line(card, counter + (open ? " · " + T("files.window") : ""), "pl-dim");
+            return held > 0 && open ? Todo : Info;
+        }
+
+        /// <summary>The week's agenda as chips (the big task stands out); nothing with fixed stakes.</summary>
+        public static void AgendaChips(VisualElement p, LineView v)
+        {
+            var s = v != null ? v.Stakes : null;
+            if (s == null || s.Scheme != LineStakes.Permutation) return;
+            Sub(p, T("stakes.title"));
+            var row = Wrap(p);
+            foreach (var task in new[] { TaskKind.ClientBonus, TaskKind.PettyCash, TaskKind.WeekendShift }) StakeChip(row, s, task);
+            Line(p, T("stakes.note"), "pl-dim");
+        }
+
+        /// <summary>One task's level chip ("KASA DOLU: 5 prim"); nothing with fixed stakes.</summary>
+        public static void StakeChip(VisualElement p, LineStakesView s, TaskKind task)
+        {
+            string text = PlayText.Stake(s, task);
+            if (text == null) return;
+            int level = s.Level(task);
+            Bold(text, "pl-chip", "pl-stake", level == LineStakes.Big ? "pl-chip-warn" : level == LineStakes.Small ? "pl-chip-dim" : null).AddTo(p);
+        }
+
+        // ---- task (TaskPlay: choose; TaskReveal / Break: results and the files of the task)
 
         /// <summary>The task card. <paramref name="goTo"/> (office computer): Petty Cash and Weekend Shift are played on
         /// their desk objects, so instead of the two choices the card says where and offers one button that turns the
@@ -46,6 +170,7 @@ namespace BirimizKovulacak.Game
             if (t == null) { Big(card, T("hint.TaskPlay")); return Info; }
             int me = lc.MySlot;
             var c = lc.Config;
+            StakeChip(card, v.Stakes, t.Kind); // this week's level of the task; the numbers below are the match's
             switch (t.Kind)
             {
                 case TaskKind.ClientBonus: Big(card, F("focus.task.client_bonus", t.Group.Count >= 3 ? c.BonusTrioNone : c.BonusPairShare, c.BonusPairTaker, c.InvestigationGuiltyBlame)); break;
@@ -74,7 +199,8 @@ namespace BirimizKovulacak.Game
             return t.Submitted ? Done : Todo;
         }
 
-        /// <summary>Reveal / break card; with <paramref name="goTo"/> (office) the whistle is done on the cash box.</summary>
+        /// <summary>Reveal / break card: a witness's Petty Cash file can be opened right here (with <paramref name="goTo"/>,
+        /// the office, by the cash box's button); every file is in "Dosyalarım" until the crisis calls end.</summary>
         public static int FocusReveal(VisualElement card, LineClient lc, LineView v, Action<TaskKind> goTo = null)
         {
             var t = v.Task;
@@ -83,16 +209,13 @@ namespace BirimizKovulacak.Game
             var m = v.Mine;
             var c = lc.Config;
             int state = Info;
-            bool witness = v.Phase == LinePhase.Break && v.Features.WhistleOpen && m.WitnessOf.Count > 0;
-            if (witness)
+            var cashFile = t.Kind == TaskKind.PettyCash ? HeldFile(v, me, -1, TaskKind.PettyCash) : null;
+            if (cashFile != null)
             {
-                foreach (int thief in m.WitnessOf)
-                {
-                    int id = thief;
-                    Big(card, F("break.witness", Name(id), c.CashWhistleBlame), "pl-bad");
-                    if (goTo == null) Btn(F("break.whistle_btn", Name(id)), () => Send(LineVerb.Whistle, id), "pl-danger", "pl-choice").AddTo(card);
-                }
-                if (goTo != null)
+                var file = cashFile;
+                Big(card, F("break.witness", Name(file.Target), file.Blame), "pl-bad");
+                if (goTo == null) Btn(F("break.whistle_btn", Name(file.Target)), () => OpenFile(file), "pl-danger", "pl-choice").AddTo(card);
+                else
                 {
                     Line(card, T("office.task_where.whistle"), "pl-where");
                     Btn(T("office.goto.whistle"), () => goTo(TaskKind.PettyCash), "pl-danger", "pl-choice").AddTo(card);
@@ -100,7 +223,7 @@ namespace BirimizKovulacak.Game
                 Line(card, T("focus.witness_or"), "pl-dim");
                 state = Todo;
             }
-            else if (v.Phase == LinePhase.Break && v.Features.WhistleOpen && SoleTaker(t, me)) Big(card, F("focus.thief", c.CashWhistleBlame), "pl-warn");
+            else if (v.Phase == LinePhase.Break && SoleTaker(t, me) && FileOnMeHeld(v, me, TaskKind.PettyCash)) Big(card, F("focus.thief", c.CashWhistleBlame), "pl-warn");
             else if (v.Phase == LinePhase.Break) Big(card, T(t.Number == 0 ? "break.next_task" : "break.meeting")); // breaks follow tasks 1 and 2 only
             else Big(card, T("hint.TaskReveal"));
             if (!t.Revealed) { Line(card, T("task.not_revealed"), "pl-dim"); return state; }
@@ -117,7 +240,15 @@ namespace BirimizKovulacak.Game
             return state;
         }
 
-        /// <summary>Petty Cash: I am the only taker in my group (a witness may whistle on me in the break).</summary>
+        /// <summary>A colleague still holds a file of this task on me.</summary>
+        public static bool FileOnMeHeld(LineView v, int me, TaskKind task)
+        {
+            if (v == null || !v.Features.FilesOpen || v.Mine.Files == null) return false;
+            foreach (var f in v.Mine.Files) if (f.Target == me && f.Task == task && f.State == LineFileState.Held) return true;
+            return false;
+        }
+
+        /// <summary>Petty Cash: I am the only taker in my group (the witnesses hold a file on me).</summary>
         public static bool SoleTaker(LineTaskView t, int me)
         {
             if (t.Kind != TaskKind.PettyCash || !t.Revealed) return false;
@@ -173,7 +304,7 @@ namespace BirimizKovulacak.Game
                     if (v.Task == null) return HowToPlayScreen.PageFlow;
                     return v.Task.Kind == TaskKind.ClientBonus ? HowToPlayScreen.PageBonus : v.Task.Kind == TaskKind.PettyCash ? HowToPlayScreen.PageCash : HowToPlayScreen.PageShift;
                 case LinePhase.MeetingDossier:
-                case LinePhase.MeetingDiscussion: return v.Day == 0 ? HowToPlayScreen.PageInvestigation : HowToPlayScreen.PageBlame;
+                case LinePhase.MeetingDiscussion: return v.Day == 0 ? HowToPlayScreen.PageFiles : HowToPlayScreen.PageBlame;
                 case LinePhase.MeetingVote:
                 case LinePhase.MeetingVerdict: return HowToPlayScreen.PageBlame;
                 case LinePhase.CrisisCalls:
@@ -266,7 +397,7 @@ namespace BirimizKovulacak.Game
             if (mt.Dossier.Count > 0)
             {
                 Sub(p, T(mt.Index < 2 ? "meeting.dossier" : "meeting.final_dossier"));
-                foreach (var e in mt.Dossier) Line(p, "• " + PlayText.Dossier(e), e.Kind == DossierKind.Investigation || e.Kind == DossierKind.Leak ? "pl-warn" : null);
+                foreach (var e in mt.Dossier) Line(p, "• " + PlayText.Dossier(e), e.Kind == DossierKind.FileOpened || e.Kind == DossierKind.Leak ? "pl-warn" : null);
             }
             if (mt.BlameGained.Exists(g => g.Amount > 0) && v.Phase != LinePhase.MeetingVerdict)
             {
@@ -296,11 +427,8 @@ namespace BirimizKovulacak.Game
                 }
             }
             else if (v.Features.LeakOpen && v.Features.RecordingsEnabled) Line(p, T("leak.none"), "pl-dim");
-            if (v.Features.InvestigationOpen && (m.InvestigationUsed || m.InvestigationTargets.Count == 0))
-            {
-                Sub(p, T("investigate.title"));
-                Line(p, T(m.InvestigationUsed ? "investigate.used" : "investigate.none"), "pl-dim");
-            }
+            string counter = PlayText.FilesCounter(v);
+            if (counter != null) Line(p, counter, "pl-dim");
         }
 
         /// <summary>v5.2, the fallback screen (the meeting room has its own card, <see cref="MeetingDeclare"/>): a candidate's

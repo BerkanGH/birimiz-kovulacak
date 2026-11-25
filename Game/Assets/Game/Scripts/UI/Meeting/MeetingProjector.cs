@@ -13,8 +13,8 @@ namespace BirimizKovulacak.Game
     /// A 1280 x 720 UI Toolkit panel rendered into the screen's texture (<see cref="MeetingRoom.SetProjector"/>), in the
     /// default slide's template (green bands, cream body). What it shows follows the phase:
     /// <list type="bullet">
-    /// <item>discussion: the dossier as slides (the agenda, then one slide per entry: failed tasks, whistles,
-    /// investigations and their results, leaks; in the final the candidates and the crisis result with the board shift);
+    /// <item>discussion: the dossier as slides (the agenda with the count of unopened files, then one slide per entry:
+    /// failed tasks, opened files, leaks; in the final the candidates and the crisis result with the board shift);
     /// the slides page every few seconds, a new entry slides in and stays a little longer;</item>
     /// <item>a leaked recording: the cassette deck (<see cref="TapeDeck"/>) with the live waveform, "Sarı ↔ Yeşil" and the time;</item>
     /// <item>a vote: what is voted, the papers in the box (who dropped one, never the content), the time;</item>
@@ -322,6 +322,7 @@ namespace BirimizKovulacak.Game
                     if (mt != null)
                     {
                         sb.Append(':').Append(mt.Dossier.Count).Append(':').Append(mt.VoteableCount);
+                        if (v.Files != null) sb.Append(":f").Append(v.Files.Held).Append('/').Append(v.Files.Shredded).Append('/').Append(v.Files.Expired);
                         foreach (var r in mt.Recordings) sb.Append(',').Append(r.Index).Append(r.Played ? 'p' : '-').Append(r.Empty ? 'e' : '-');
                     }
                     if (fv != null) foreach (var g in fv.Crisis) sb.Append(";k").Append(g.Player).Append('=').Append(g.Amount);
@@ -545,6 +546,7 @@ namespace BirimizKovulacak.Game
                 H(_content, T("projector.agenda.clean_title"), "pj-title", "pj-good");
                 L(_content, T("projector.agenda.clean"), "pj-line");
                 if (mt != null && mt.Roster.Count > 0) L(_content, F("meeting.roster", PlayText.Names(mt.Roster)), "pj-small");
+                AgendaFoot(v);
                 return;
             }
             H(_content, T("projector.agenda.failed"), "pj-title");
@@ -559,6 +561,21 @@ namespace BirimizKovulacak.Game
                 : mt.VoteableCount == 0 ? PlayText.NoVote(mt, c) : T("focus.meeting_vote_next");
             L(_content, vote, "pj-line", "pj-warn");
             if (mt.Roster.Count > 0) L(_content, F("meeting.roster", PlayText.Names(mt.Roster)), "pj-small");
+            AgendaFoot(v);
+        }
+
+        /// <summary>v5.3, under the agenda: how many files are still unopened (anonymous) and the week's stakes.</summary>
+        void AgendaFoot(LineView v)
+        {
+            string files = PlayText.FilesCounter(v);
+            if (files != null)
+            {
+                var fs = v.Files;
+                string more = fs.Shredded > 0 ? " · " + F("files.count_shredded", fs.Shredded) : "";
+                B(_content, files + more, "pj-line", fs.Held > 0 ? "pj-warn" : null);
+            }
+            string agenda = PlayText.Agenda(v.Stakes);
+            if (agenda != null) L(_content, F("stakes.line", agenda), "pj-small");
         }
 
         void BuildCandidates(LineClient lc, LineView v)
@@ -661,6 +678,8 @@ namespace BirimizKovulacak.Game
         {
             switch (k)
             {
+                case DossierKind.FileOpened:
+                case DossierKind.Whistle:
                 case DossierKind.Investigation: return "pj-stamp-navy";
                 case DossierKind.Leak: return "pj-stamp-orange";
                 case DossierKind.ShiftRoster: return "pj-stamp-green";
@@ -672,19 +691,20 @@ namespace BirimizKovulacak.Game
         void BuildEntry(LineClient lc, LineView v, LineDossierEntry e)
         {
             var box = Bx(_content, "pj-entry");
-            var stamp = Stamp(box, T("projector.kind." + e.Kind), KindStampClass(e.Kind));
+            // (the legacy rules' whistle / investigation show as the opened file they became)
+            bool file = e.Kind == DossierKind.FileOpened || e.Kind == DossierKind.Whistle || e.Kind == DossierKind.Investigation;
+            var stamp = Stamp(box, T("projector.kind." + (file ? DossierKind.FileOpened : e.Kind)), KindStampClass(e.Kind));
             // a new entry stamps itself in with a thud; paging through the deck stays quiet
             bool fresh = _deckNew;
             _deckNew = false;
             UiMotion.Stamp(stamp, -5f, 0.22f, 0.15f, fresh ? (Action)(() => Sfx.Play("stamp", 0.45f)) : null);
             string text = PlayText.Dossier(e);
-            if (e.Kind == DossierKind.Investigation) text = F(e.N1 == 1 ? "projector.investigation_guilty" : "projector.investigation_innocent", Name(e.Player), Name(e.Other));
-            B(box, text, "pj-entry-text", e.Kind == DossierKind.Investigation && e.N1 == 1 || e.Kind == DossierKind.Whistle || e.Kind == DossierKind.CashCaught
-                || e.Kind == DossierKind.ShiftSkipBlame ? "pj-bad" : null);
+            B(box, text, "pj-entry-text", file || e.Kind == DossierKind.CashCaught || e.Kind == DossierKind.ShiftSkipBlame ? "pj-bad" : null);
             var row = Bx(box, "pj-row");
             var who = new List<int>();
             switch (e.Kind)
             {
+                case DossierKind.FileOpened:
                 case DossierKind.Whistle:
                 case DossierKind.Investigation: who.Add(e.Player); who.Add(e.Other); break;
                 case DossierKind.CashCaught: who.Add(e.Player); break;
@@ -707,8 +727,9 @@ namespace BirimizKovulacak.Game
         {
             switch (e.Kind)
             {
-                case DossierKind.Whistle: return T(i == 0 ? "projector.role.whistler" : "projector.role.thief");
-                case DossierKind.Investigation: return T(i == 0 ? "projector.role.investigator" : (e.N1 == 1 ? "projector.role.guilty" : "projector.role.innocent"));
+                case DossierKind.FileOpened: return T(i == 0 ? "projector.role.opener" : e.Task == TaskKind.PettyCash ? "projector.role.thief" : "projector.role.taker");
+                case DossierKind.Whistle: return T(i == 0 ? "projector.role.opener" : "projector.role.thief");
+                case DossierKind.Investigation: return T(i == 0 ? "projector.role.opener" : "projector.role.taker");
                 case DossierKind.CashCaught: return T("projector.role.caught");
                 case DossierKind.Leak:
                     if (i == 0) return T("projector.role.leaker");

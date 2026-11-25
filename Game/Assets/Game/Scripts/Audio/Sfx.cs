@@ -224,6 +224,7 @@ namespace BirimizKovulacak.Game
             Add("cheer", SfxSynth.Tone(new[] { 523f, 659f, 784f, 1046f, 784f, 1046f }, 0.09f, 0.35f, SfxSynth.Wave.Triangle));
             Add("toast", SfxSynth.Tone(new[] { 1174f }, 0.04f, 0.2f));
             Add("stamp", SfxSynth.Stamp());
+            Add("shred", SfxSynth.Shredder()); // v5.3: a file goes through the shredder
             // desk phone and mail
             Add("ringtone", SfxSynth.Ringtone());
             Add("ringback", SfxSynth.Ringback());

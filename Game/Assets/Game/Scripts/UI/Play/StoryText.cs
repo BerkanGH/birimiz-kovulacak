@@ -81,7 +81,7 @@ namespace BirimizKovulacak.Game
                 case AwardKind.WrongMan: return F(id + ".text", a.N1);
                 case AwardKind.Liar: return F(id + ".text", a.N1, a.N2, a.N3);
                 case AwardKind.Sellout: return F(id + ".text", Name(a.Other), a.N1, T("award.sellout.how." + System.Math.Max(0, System.Math.Min(3, a.N2))));
-                case AwardKind.Loyal: return F(id + ".text", Name(a.Other), a.N1);
+                case AwardKind.Loyal: return F(id + (a.N2 == (int)LineFileState.Shredded ? ".text_shred" : ".text"), Name(a.Other), a.N1);
                 case AwardKind.Robber:
                     if (a.Other < 0) return F(id + ".text_none", a.N1);
                     return a.N2 >= 2 ? F(id + ".text_many", Name(a.Other), a.N1, a.N2 - 1) : F(id + ".text", Name(a.Other), a.N1);
@@ -113,6 +113,8 @@ namespace BirimizKovulacak.Game
                     return h.Player >= 0 ? F("headline.crisis", Name(h.Player), h.N1, h.N3) : F("headline.crisis_tie", h.N2, h.N1);
                 case HeadlineKind.BigTransfer:
                     return F("headline.transfer", Name(h.Player), Name(h.Other), h.N1);
+                case HeadlineKind.FileShredded:
+                    return F("headline.shred", Name(h.Player), Name(h.Other), h.N1);
                 default:
                     return "";
             }

@@ -62,6 +62,12 @@
 .pl-award-text { margin: 0 0 6px 4px; white-space: normal; }
 .pl-chip-warn { background-color: rgba(220, 120, 40, 0.4); }
 .pl-chip-me { background-color: rgba(120, 222, 150, 0.35); border-width: 1px; border-color: rgb(150, 236, 180); }
+/* v5.3: the week's agenda chips (the small level steps back) and "Dosyalarım" (a file row, the open / shred confirmation) */
+.pl-chip-dim { opacity: 0.72; }
+.pl-stake { align-self: flex-start; }
+.pl-file { margin: 2px 0; }
+.pl-file .pl-btn { margin-left: 8px; }
+.pl-confirm { border-width: 2px; border-color: rgb(210, 56, 47); border-radius: 10px; padding: 6px 12px 8px 12px; margin: 4px 0; }
 
 /* ---- desk reveal (FinalVerdict, results) */
 .pl-fire { background-color: rgba(190, 50, 42, 0.16); border-width: 2px; border-color: rgb(210, 56, 47); border-radius: 10px; padding: 6px 12px 8px 12px; margin: 6px 0; }

@@ -229,11 +229,19 @@ namespace BirimizKovulacak.Game
             }
             if (mt == null) return;
             Ink(PlayText.F("meeting.board.meeting", mt.Index + 1), hand, "wb-side-head").AddTo(col);
-            if (mt.FailedTasks.Count == 0) { Ink(PlayText.T("meeting.board.clean"), hand, "wb-side-line", "wb-side-good").AddTo(col); return; }
+            // v5.3: the anonymous count of the files still in somebody's hands
+            string files = PlayText.FilesCounter(v);
+            if (mt.FailedTasks.Count == 0)
+            {
+                Ink(PlayText.T("meeting.board.clean"), hand, "wb-side-line", "wb-side-good").AddTo(col);
+                if (files != null) Ink(files, hand, "wb-side-note").AddTo(col);
+                return;
+            }
             Ink(PlayText.T("meeting.board.failed"), hand, "wb-side-sub").AddTo(col);
             foreach (var t in mt.FailedTasks) Ink("- " + PlayText.Task(t), hand, "wb-side-line", "wb-side-bad").AddTo(col);
             if (mt.VoteableCount > 0) Ink(PlayText.F("meeting.board.ballots", mt.VoteableCount), hand, "wb-side-note").AddTo(col);
             else if (mt.VoteableCount == 0) Ink(PlayText.NoVote(mt, lc.Config), hand, "wb-side-note").AddTo(col);
+            if (files != null) Ink(files, hand, "wb-side-note", "wb-side-files").AddTo(col);
         }
     }
 }

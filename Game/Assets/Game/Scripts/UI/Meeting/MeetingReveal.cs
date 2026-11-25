@@ -15,12 +15,14 @@ namespace BirimizKovulacak.Game
     /// (public at Results) and what this client saw itself during the match (its own task groups, <see cref="RevealMemory"/>).
     /// v5.2: the first tab is the story of the match (<see cref="LineStory"/>): "Manşetler", "Ödüller" and "Beyanlar" (every
     /// candidate's prim declaration against the truth); the results now carry the task groups, so who robbed whom is exact.
+    /// v5.3: "Dosyalar": every file of the match (who held it on whom, opened when / shredded / expired) next to the prim
+    /// that moved between the two; the story opens with the week's agenda.
     /// </summary>
     public static class MeetingReveal
     {
         public const string TabStory = "story", TabSummary = "summary", TabRobbed = "robbed", TabBallots = "ballots", TabFirings = "firings",
-            TabTransfers = "transfers", TabChoices = "choices", TabIncidents = "incidents", TabPranks = "pranks";
-        static readonly string[] Tabs = { TabStory, TabSummary, TabRobbed, TabBallots, TabFirings, TabTransfers, TabChoices, TabIncidents, TabPranks };
+            TabTransfers = "transfers", TabChoices = "choices", TabIncidents = "incidents", TabPranks = "pranks", TabFiles = "files";
+        static readonly string[] Tabs = { TabStory, TabSummary, TabRobbed, TabFiles, TabBallots, TabFirings, TabTransfers, TabChoices, TabIncidents, TabPranks };
 
         public static void Build(VisualElement p, LineClient lc, LineView v, string tab, Action<string> setTab)
         {
@@ -44,7 +46,7 @@ namespace BirimizKovulacak.Game
             foreach (var id in Tabs)
             {
                 if (id == TabPranks && v.Pranks == null) continue;
-                int n = id == TabPranks ? v.Pranks.Log.Count : id == TabStory ? (story != null ? story.Headlines.Count : 0) : id == TabSummary ? r.Players.Count : id == TabRobbed ? robbed.Count : id == TabBallots ? r.Ballots.Count : id == TabFirings ? r.Firings.Count
+                int n = id == TabFiles ? (r.Files != null ? r.Files.Count : 0) : id == TabPranks ? v.Pranks.Log.Count : id == TabStory ? (story != null ? story.Headlines.Count : 0) : id == TabSummary ? r.Players.Count : id == TabRobbed ? robbed.Count : id == TabBallots ? r.Ballots.Count : id == TabFirings ? r.Firings.Count
                     : id == TabTransfers ? r.Transfers.Count : id == TabChoices ? r.Choices.Count : r.Incidents.Count;
                 string tid = id;
                 Btn(F("reveal.tab." + id, n), () => setTab(tid), tab == id ? "pl-on" : null).AddTo(tabs);
@@ -53,6 +55,7 @@ namespace BirimizKovulacak.Game
             switch (tab)
             {
                 case TabRobbed: BuildRobbed(body, lc, r, robbed); break;
+                case TabFiles: BuildFiles(body, lc, r); break;
                 case TabBallots: PlayBlocks.BuildBallots(body, r); break;
                 case TabFirings:
                     if (r.Firings.Count == 0) Line(body, T("common.none"), "pl-dim");
@@ -84,6 +87,32 @@ namespace BirimizKovulacak.Game
             }
         }
 
+        // ------------------------------------------------------------------ files
+
+        /// <summary>v5.3: every file of the match: its holder, its target, the task, what became of it (opened in which
+        /// phase, shredded, void, expired), and under it the prim that moved between the two (the price of silence).</summary>
+        static void BuildFiles(VisualElement p, LineClient lc, LineWeekResult r)
+        {
+            int me = lc.MySlot;
+            Sub(p, T("reveal.files_title"));
+            if (r.Files == null || r.Files.Count == 0) { Line(p, T("reveal.files_none"), "pl-good"); return; }
+            foreach (var f in r.Files)
+            {
+                bool mine = f.Holder == me || f.Target == me;
+                var row = Row(p);
+                Line(row, F("reveal.file", Name(f.Holder), Name(f.Target), PlayText.Task(f.Task)), mine ? "pl-private" : null);
+                Bold(PlayText.FileState(f), "pl-chip", f.State == LineFileState.Opened ? "pl-chip-bad" : f.State == LineFileState.Shredded ? "pl-chip-good" : null).AddTo(row);
+                int paid = 0, back = 0;
+                foreach (var t in r.Transfers)
+                {
+                    if (t.From == f.Target && t.To == f.Holder) paid += t.Amount;
+                    else if (t.From == f.Holder && t.To == f.Target) back += t.Amount;
+                }
+                if (paid > 0 || back > 0) Line(p, F(back > 0 ? "reveal.file_money_back" : "reveal.file_money", Name(f.Target), Name(f.Holder), paid, back), "pl-dim", "pl-award-text");
+            }
+            Line(p, T("reveal.files_note"), "pl-dim");
+        }
+
         // ------------------------------------------------------------------ the story: headlines, awards, declarations
 
         /// <summary>v5.2: what happened in a few lines ("Manşetler"), who earned which title ("Ödüller") and every
@@ -92,6 +121,9 @@ namespace BirimizKovulacak.Game
         {
             var r = v.Results;
             int me = lc.MySlot;
+            // v5.3: the week the match was played at
+            string agenda = PlayText.Agenda(r.Stakes);
+            if (agenda != null) Line(p, F("stakes.line", agenda), "pl-dim");
             Sub(p, T("reveal.headlines"));
             if (story == null || story.Headlines.Count == 0) Line(p, T("reveal.no_headlines"), "pl-dim");
             else
@@ -121,8 +153,7 @@ namespace BirimizKovulacak.Game
 
         // ------------------------------------------------------------------ balances
 
-        /// <summary>Every colleague's prim, now public, and how it came about (start, tasks, whistles, investigation,
-        /// transfers, desks).</summary>
+        /// <summary>Every colleague's prim, now public, and how it came about (start, tasks, transfers, pranks, desks).</summary>
         static void BuildSummary(VisualElement p, LineClient lc, LineWeekResult r, List<LineWeekPlayerResult> players)
         {
             int me = lc.MySlot;
@@ -130,17 +161,13 @@ namespace BirimizKovulacak.Game
             int start = lc.Config.StartPrim;
             foreach (var pr in players)
             {
-                int task = 0, whistle = 0, inv = 0, transfer = 0, desk = 0, prank = 0;
+                int task = 0, transfer = 0, desk = 0, prank = 0;
                 foreach (var c in r.PrimLog)
                 {
                     if (c.Player != pr.Player) continue;
                     switch (c.Reason)
                     {
                         case PrimReason.Task: task += c.Delta; break;
-                        case PrimReason.Whistled:
-                        case PrimReason.WhistleReward: whistle += c.Delta; break;
-                        case PrimReason.InvestigationCost:
-                        case PrimReason.InvestigationRefund: inv += c.Delta; break;
                         case PrimReason.TransferIn:
                         case PrimReason.TransferOut: transfer += c.Delta; break;
                         case PrimReason.DeskShare:
@@ -158,8 +185,6 @@ namespace BirimizKovulacak.Game
                 var parts = new StringBuilder();
                 parts.Append(F("reveal.start", start));
                 Part(parts, "reveal.part.task", task);
-                Part(parts, "reveal.part.whistle", whistle);
-                Part(parts, "reveal.part.investigation", inv);
                 Part(parts, "reveal.part.transfer", transfer);
                 Part(parts, "reveal.part.prank", prank);
                 Part(parts, "reveal.part.desk", desk);

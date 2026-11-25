@@ -48,6 +48,8 @@ namespace BirimizKovulacak.Game
         public bool WantsCursor => _focus == Focus.Computer || _focus == Focus.Phone || _focus == Focus.CashBox || _focus == Focus.Roster;
         public bool PhoneOpen => _focus == Focus.Phone;
         public OfficeComputer Computer => _computer;
+        /// <summary>The office's local selections (transfer target, the file waiting for its confirmation, …).</summary>
+        public PlayState State => _st;
 
         public OfficeUi(VisualElement parent) : base(parent, "of-screen")
         {
@@ -221,13 +223,17 @@ namespace BirimizKovulacak.Game
                     else if (reason == CallEndReason.HungUp && _lastStatus == CallStatus.Connected) Toast(F("office.toast_call_over", Name(e.Actor)), "of-toast-call", 3.5f);
                     break;
                 }
-                case LineEventType.Whistled:
+                case LineEventType.FileOpened:
+                case LineEventType.FileShredded:
+                case LineEventType.FileNotice:
                 case LineEventType.BlameAdded:
                 case LineEventType.Presence:
                 {
                     string line = PlayText.Event(e, me);
-                    if (line != null) Toast(line, e.Type == LineEventType.Presence ? null : "of-toast-warn");
-                    if (e.Type == LineEventType.Whistled) Sfx.Play("stamp", 0.6f);
+                    if (line != null) Toast(line, e.Type == LineEventType.Presence ? null : "of-toast-warn", e.Type == LineEventType.Presence ? 5f : 7f);
+                    if (e.Type == LineEventType.FileOpened) Sfx.Play("stamp", 0.6f);
+                    // (my own shredding already made its noise when I confirmed it)
+                    if (e.Type == LineEventType.FileNotice || e.Type == LineEventType.FileShredded && e.Actor != me) Sfx.Play("shred", 0.6f);
                     break;
                 }
             }
@@ -257,7 +263,7 @@ namespace BirimizKovulacak.Game
             // an office phase never follows itself: the same phase again (a re-sent view) is not news
             if (from == to) return;
             _objects.OnPhase(to, lc, v);
-            if (to == LinePhase.Intro) return; // the strip says it
+            if (to == LinePhase.Intro) return; // the strip says what to do; the manager's agenda line comes with the week (Tick)
             _pendingPhaseToast = PlayText.PhaseTitle(v);
             if (_focus == Focus.Computer) _computer.MarkDirty();
             // v5 step 3a: a pair / trio task starts: who your partner is and how to call them
@@ -462,6 +468,9 @@ namespace BirimizKovulacak.Game
                 _dirty = true;
                 _hintTask = -1;
                 CountMatch(v);
+                // the manager announces the week's agenda ("Haftanın gündemi") as the match opens
+                string agenda = v.Phase == LinePhase.Intro ? PlayText.Agenda(v.Stakes) : null;
+                if (agenda != null) _pendingPhaseToast = F("stakes.manager", agenda);
             }
             double now = lc.Now;
             float dt = Time.unscaledDeltaTime;
@@ -487,7 +496,7 @@ namespace BirimizKovulacak.Game
             _strip.Show(_focus != Focus.Computer && _focus != Focus.Board);
             if (_pendingPhaseToast != null && ScreenFade.Alpha < 0.5f)
             {
-                Toast(_pendingPhaseToast, "of-toast-phase", 4f);
+                Toast(_pendingPhaseToast, "of-toast-phase", v.Phase == LinePhase.Intro ? 12f : 4f);
                 Sfx.Play("phase", 0.5f);
                 _pendingPhaseToast = null;
             }
@@ -578,7 +587,8 @@ namespace BirimizKovulacak.Game
             }
             bool todo;
             string text = OfficeText.Now(lc, v, out todo);
-            if (v.Phase == LinePhase.Break && _objects.WhistledOnMe) text = _objects.WhistledOnMeText(lc.Config);
+            string onMe = v.Phase == LinePhase.Break && v.Task != null && v.Task.Kind == TaskKind.PettyCash ? OfficeObjects.FileOnMeText(v, lc.MySlot, lc.Config) : null;
+            if (onMe != null) text = onMe;
             _now.SetText(text);
             _strip.EnableInClassList("of-strip-todo", todo);
         }

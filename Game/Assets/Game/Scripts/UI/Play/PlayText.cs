@@ -49,8 +49,49 @@ namespace BirimizKovulacak.Game
         public static string Failure(LineFailure f) { return Loc.Has("v5.fail." + f) ? T("fail." + f) : f.ToString(); }
         public static string Signed(int d) { return d > 0 ? "+" + d : d.ToString(); }
 
-        /// <summary>The task's rules with the host's numbers (the v5.1 rules: free sharer-only investigation, the whistled
-        /// thief keeps the cash, shift cleaning and the unstaffed shift's automatic suç).</summary>
+        /// <summary>"Haftanın gündemi" (v5.3): one task's level with this match's number ("KASA DOLU: 5 prim"); null with
+        /// fixed stakes (every task plays at the normal level: nothing to announce).</summary>
+        public static string Stake(LineStakesView s, TaskKind task)
+        {
+            if (s == null || s.Scheme != LineStakes.Permutation) return null;
+            int amount = task == TaskKind.ClientBonus ? s.BonusPot : task == TaskKind.PettyCash ? s.CashTake : s.ShiftSkipPay;
+            return F("stakes." + LineTasks.Id(task) + "." + LineStakes.Id(s.Level(task)), amount);
+        }
+
+        /// <summary>The week's agenda in one line, the biggest stake first ("KASA DOLU: 5 prim · Müşteri bonusu orta: 6 ·
+        /// Nöbet primi düşük: +1"); null with fixed stakes.</summary>
+        public static string Agenda(LineStakesView s)
+        {
+            if (s == null || s.Scheme != LineStakes.Permutation) return null;
+            var sb = new StringBuilder();
+            for (int level = LineStakes.Big; level >= LineStakes.Small; level--)
+                foreach (var task in AgendaTasks)
+                {
+                    if (s.Level(task) != level) continue;
+                    if (sb.Length > 0) sb.Append(" · ");
+                    sb.Append(Stake(s, task));
+                }
+            return sb.ToString();
+        }
+
+        static readonly TaskKind[] AgendaTasks = { TaskKind.ClientBonus, TaskKind.PettyCash, TaskKind.WeekendShift };
+
+        /// <summary>What became of a file ("açıldı · Toplantı: dosya", "imha edildi", "süresi doldu", …).</summary>
+        public static string FileState(LineFileView f)
+        {
+            return f.State == LineFileState.Opened ? F("files.state.Opened", Phase(f.Phase)) : T("files.state." + f.State);
+        }
+
+        /// <summary>The public counter ("Açılmamış dosya: N"); null when it is not public or the match has no file yet.</summary>
+        public static string FilesCounter(LineView v)
+        {
+            var fs = v != null ? v.Files : null;
+            if (fs == null || fs.Held < 0 || fs.Held + fs.Opened.Count + fs.Shredded + fs.Expired == 0) return null;
+            return F("files.count", fs.Held);
+        }
+
+        /// <summary>The task's rules with the match's numbers (a file on whoever takes, shift cleaning and the unstaffed
+        /// shift's automatic suç).</summary>
         public static string TaskRules(LineTaskView t, LineConfig c, int players)
         {
             switch (t.Kind)
@@ -101,11 +142,15 @@ namespace BirimizKovulacak.Game
                 case DossierKind.TaskFailed: return F("dossier.task_failed", Task(e.Task));
                 case DossierKind.BonusTakers: return F("dossier.bonus_takers", e.N1);
                 case DossierKind.CashCaught: return F("dossier.cash_caught", Name(e.Player), e.N1);
-                case DossierKind.Whistle: return F("dossier.whistle", Name(e.Player), Name(e.Other), e.N1);
+                // (a whistle / a guilty investigation of the legacy rules reads like the file it became)
+                case DossierKind.Whistle: return F("dossier.file_opened", Name(e.Player), Name(e.Other), Task(TaskKind.PettyCash), e.N1);
+                case DossierKind.FileOpened: return F("dossier.file_opened", Name(e.Player), Name(e.Other), Task(e.Task), e.N1);
                 case DossierKind.CashMissing: return F("dossier.cash_missing", e.N1, e.N2);
                 case DossierKind.ShiftRoster: return F("dossier.shift_roster", e.N1, e.N2);
                 case DossierKind.ShiftSkipBlame: return F("dossier.shift_skip_blame", e.N1, e.N2);
-                case DossierKind.Investigation: return F(e.N1 == 1 ? "dossier.investigation_guilty" : "dossier.investigation_innocent", Name(e.Player), Name(e.Other));
+                case DossierKind.Investigation:
+                    return e.N1 == 1 ? F("dossier.file_opened", Name(e.Player), Name(e.Other), Task(TaskKind.ClientBonus), LineClient.I != null ? LineClient.I.Config.InvestigationGuiltyBlame : 0)
+                        : e.Kind.ToString();
                 case DossierKind.Leak: return F("dossier.leak", Name(e.Player), Name(e.N1), Name(e.N2));
                 default: return e.Kind.ToString();
             }
@@ -125,16 +170,20 @@ namespace BirimizKovulacak.Game
             switch (e.Type)
             {
                 case LineEventType.TransferReceived: return F("event.transfer", Name(e.Actor), e.A);
-                case LineEventType.Whistled:
-                {
-                    // A = prim taken back: 0 when the thief keeps it (v5.1)
-                    var c = LineClient.I != null ? LineClient.I.Config : LineConfig.CreateDefault();
-                    if (e.Target == me) return e.A > 0 ? F("event.whistled_me", Name(e.Actor), e.A) : F("event.whistled_me_keep", Name(e.Actor), c.CashWhistleBlame);
-                    return F("event.whistled", Name(e.Target), c.CashWhistleBlame);
-                }
-                case LineEventType.Investigated: return F(e.A == 1 ? "event.investigated_guilty" : "event.investigated_innocent", Name(e.Actor), Name(e.Target));
+                // v5.3 files: an opening is public; a shredding is told to its holder and its target, everyone else gets
+                // the anonymous notice (so does everyone when files expire)
+                case LineEventType.FileOpened:
+                    if (e.Target == me) return F("event.file_opened_me", Name(e.Actor), Task((TaskKind)e.A), e.B);
+                    return F("event.file_opened", Name(e.Actor), Name(e.Target), Task((TaskKind)e.A), e.B);
+                case LineEventType.FileShredded:
+                    return e.Target == me ? F("event.file_shredded_me", Name(e.Actor)) : F("event.file_shredded_mine", Name(e.Target));
+                case LineEventType.FileNotice:
+                    return e.A == (int)LineFileState.Shredded ? T("event.file_notice_shredded") : F("event.file_notice_expired", e.B);
                 case LineEventType.Leaked: return F("event.leaked", Name(e.Actor), Name(e.A), Name(e.B));
                 case LineEventType.BlameAdded:
+                    // (the suç of an opened file is announced by its FileOpened line: who opened it on whom)
+                    if (e.A > 0 && ((BlameReason)e.B == BlameReason.Whistled || (BlameReason)e.B == BlameReason.InvestigationGuilty)
+                        && LineClient.I != null && LineClient.I.Config.FilesOn()) return null;
                     // a volunteer's cleaning is a negative change
                     return e.A < 0 ? F("event.blame_down", Name(e.Target), -e.A, T("blame." + (BlameReason)e.B))
                         : F("event.blame", Name(e.Target), e.A, T("blame." + (BlameReason)e.B));

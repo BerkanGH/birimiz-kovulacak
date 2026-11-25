@@ -303,15 +303,16 @@ UiSettings.SetFloat(Rooms.PrefSensitivity, v), v => v.ToString("0.00") + "×");
     }
 
     /// <summary>
-    /// "Nasıl Oynanır" (v5): eleven illustrated pages, a few short lines each — goal, match flow, the three tasks,
-    /// blame votes, investigation, phone/recorder/leaks, transfers and promises, crisis and candidates (sealed desks),
-    /// final and the desk split. Numbers come from the host's LineConfig during a match, else from the local config
-    /// file (GameConfig.Line), so the pages never drift from the rules. The play screen opens the page for its phase.
+    /// "Nasıl Oynanır" (v5): twelve illustrated pages, a few short lines each — goal, match flow, the three tasks,
+    /// blame votes, files ("Dosya", v5.3), phone/recorder/leaks, transfers and promises, crisis and candidates (sealed
+    /// desks), final and the desk split, pranks. Numbers come from the host's LineConfig during a match (this match's
+    /// amounts: "Haftanın gündemi"), else from the local config file (GameConfig.Line: the normal level; the task pages
+    /// also give the three levels), so the pages never drift from the rules. The play screen opens the page for its phase.
     /// </summary>
     public sealed class HowToPlayScreen : UiKit.Screen
     {
         static HowToPlayScreen _i;
-        public const int PageGoal = 0, PageFlow = 1, PageBonus = 2, PageCash = 3, PageShift = 4, PageBlame = 5, PageInvestigation = 6,
+        public const int PageGoal = 0, PageFlow = 1, PageBonus = 2, PageCash = 3, PageShift = 4, PageBlame = 5, PageFiles = 6,
             PageRecorder = 7, PageTransfers = 8, PageCrisis = 9, PageFinal = 10, PagePranks = 11;
         public const int Pages = 12;
         /// <summary>Illustration per page; null = the icon tile below.</summary>
@@ -345,11 +346,13 @@ UiSettings.SetFloat(Rooms.PrefSensitivity, v), v => v.ToString("0.00") + "×");
             switch (page)
             {
                 case PageGoal: return new object[] { c.StartPrim };
-                case PageBonus: return new object[] { c.BonusPairShare, c.BonusPairTaker, c.BonusPairSharer, c.BonusPairBothTake, c.InvestigationGuiltyBlame };
-                case PageCash: return new object[] { c.CashTake, c.CashCaughtBlame, c.CashWhistleBlame };
-                case PageShift: return new object[] { c.ShiftSkipPay, c.ShiftVolunteerClean, c.ShiftFailSkipBlame };
+                // (the task pages: this match's amounts, then the three levels of the week's agenda)
+                case PageBonus: return new object[] { c.BonusPairShare, c.BonusPairTaker, c.BonusPairSharer, c.BonusPairBothTake, c.InvestigationGuiltyBlame,
+                    c.StakeBonusSmall, c.StakeBonusNormal, c.StakeBonusBig };
+                case PageCash: return new object[] { c.CashTake, c.CashCaughtBlame, c.CashWhistleBlame, c.StakeCashSmall, c.StakeCashNormal, c.StakeCashBig };
+                case PageShift: return new object[] { c.ShiftSkipPay, c.ShiftVolunteerClean, c.ShiftFailSkipBlame, c.StakeSkipSmall, c.StakeSkipNormal, c.StakeSkipBig };
                 case PageBlame: return new object[] { c.BlamePerVote };
-                case PageInvestigation: return new object[] { c.InvestigationGuiltyBlame };
+                case PageFiles: return new object[] { c.InvestigationGuiltyBlame, c.CashWhistleBlame };
                 case PageRecorder: return new object[] { c.RecorderUses, Mathf.RoundToInt(c.LeakSeconds) };
                 case PageTransfers: return new object[] { c.TransferMax };
                 case PageCrisis: return new object[] { c.CrisisBlame, c.CandidatesFor(4), c.CandidatesFor(6) };

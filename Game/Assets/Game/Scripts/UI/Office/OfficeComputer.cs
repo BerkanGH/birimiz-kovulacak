@@ -9,8 +9,9 @@ namespace BirimizKovulacak.Game
     /// <summary>
     /// The office computer ("KOVA OS"): an OS-like desktop laid exactly over the monitor's screen while the camera is
     /// framed on it (wallpaper, app icons, one app window, a sticky note with the "Şimdi" hint, taskbar with the phase
-    /// clock and your prim). Apps: Görev (task card: Client Bonus is chosen here; Petty Cash, Weekend Shift and the
-    /// whistle are played on the desk objects, so the card says where and one button turns the view there), Havale
+    /// clock and your prim). Apps: Görev (task card: Client Bonus is chosen here; Petty Cash and Weekend Shift are
+    /// played on the desk objects, so the card says where and one button turns the view there; under it "Dosyalarım":
+    /// the files you hold, to open or shred), Havale
     /// (transfers), Mesajlar (private texts), Arama geçmişi (call log and line board), Kurallar (the how-to pages).
     /// Content comes from the shared <see cref="PlayBlocks"/>.
     /// </summary>
@@ -197,8 +198,11 @@ namespace BirimizKovulacak.Game
             _tbPhase.SetText(PlayText.PhaseTitle(v));
             _tbTimer.SetText(UiKit.Clock(Math.Max(0, v.PhaseEndTime - now)));
             _tbPrim.SetText(F("header.my_prim", m.Prim));
-            bool todo;
-            _stickyText.SetText(OfficeText.Now(lc, v, out todo));
+            bool todo = false;
+            // Intro: the agenda is on the card beside the note, so the note keeps its short text (the toasts sit right under it)
+            _stickyText.SetText(v.Phase == LinePhase.Intro
+                ? F("office.now.intro", OfficeText.Key(GameInput.Phone), OfficeText.Key(GameInput.Computer))
+                : OfficeText.Now(lc, v, out todo));
             _stickyText.EnableInClassList("os-sticky-todo", todo);
             _winSub.SetText(Subtitle(v));
             if (dirty || _dirty)
@@ -248,9 +252,10 @@ namespace BirimizKovulacak.Game
         void UpdateBadges(LineClient lc, LineView v)
         {
             var m = v.Mine;
-            bool taskTodo = (v.Phase == LinePhase.TaskPlay && v.Task != null && !v.Task.Submitted)
-                            || (v.Phase == LinePhase.Break && v.Features.WhistleOpen && m.WitnessOf.Count > 0);
-            SetBadge(App.Task, taskTodo ? "!" : null);
+            bool taskTodo = v.Phase == LinePhase.TaskPlay && v.Task != null && !v.Task.Submitted;
+            // (a file in my hands is a decision waiting, not a duty: the tile counts them)
+            int held = PlayBlocks.HeldFiles(v, lc.MySlot);
+            SetBadge(App.Task, taskTodo ? "!" : held > 0 ? held.ToString() : null);
             int unread = Math.Max(0, CountIncoming(lc) - _seenMessages);
             SetBadge(App.Messages, unread > 0 && !(_open && _app == App.Messages) ? unread.ToString() : null);
             int missed = Math.Max(0, CountMissed(v) - _seenMissed);
@@ -298,6 +303,7 @@ namespace BirimizKovulacak.Game
                 case LinePhase.Intro:
                     Big(card, T("hint.Intro"));
                     Line(card, F("focus.intro_goal", lc.Config.StartPrim));
+                    PlayBlocks.AgendaChips(card, v);
                     break;
                 case LinePhase.TaskPlay:
                     state = PlayBlocks.FocusTask(card, lc, v, _ui.OpenTaskObject);
@@ -320,6 +326,13 @@ namespace BirimizKovulacak.Game
             }
             card.EnableInClassList("pl-focus-todo", state == Todo);
             card.EnableInClassList("pl-focus-done", state == Done);
+            // "Dosyalarım" (v5.3): once a file exists that I hold or that is on me
+            if (v.Mine.Files != null && v.Mine.Files.Count > 0)
+            {
+                var files = Box("pl-focus", "os-card").AddTo(p);
+                Bold(Loc.Upper(T("files.title")), "pl-focus-kicker").AddTo(files);
+                if (PlayBlocks.BuildFiles(files, lc, v, _st) == Todo) files.AddToClassList("pl-focus-todo");
+            }
             if (v.Phase == LinePhase.Intro) PlayBlocks.BuildIntro(p, lc, v);
             else PlayBlocks.BuildTask(p, lc, v);
         }

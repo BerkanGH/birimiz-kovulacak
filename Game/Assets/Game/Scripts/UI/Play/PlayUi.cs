@@ -11,8 +11,8 @@ namespace BirimizKovulacak.Game
 {
     /// <summary>
     /// v5 play UI: one screen for every match phase. Header (phase, timer, my prim, voice mode), left column (players:
-    /// suç board, call / whistle / investigate / transfer / text shortcuts), centre column (a "what do you do now?"
-    /// focus card with this phase's main actions — task choice, whistle, ballots, defence order, the desk reveal, the
+    /// suç board, call / open the file / transfer / text shortcuts), centre column (a "what do you do now?"
+    /// focus card with this phase's main actions — task choice, the files I hold, ballots, defence order, the desk reveal, the
     /// results summary — then the cassette deck while a leak plays, then secondary information: task rules, dossier,
     /// candidates, results details) and right column (phone and line board, transfers, events, private texts and
     /// meeting chat).
@@ -152,7 +152,8 @@ namespace BirimizKovulacak.Game
             _feed.Add(line);
             if (_feed.Count > 10) _feed.RemoveAt(0);
             _dirty = true;
-            if (e.Type == LineEventType.TransferReceived || e.Type == LineEventType.Whistled) Sfx.Play("notify");
+            if (e.Type == LineEventType.TransferReceived || e.Type == LineEventType.FileOpened) Sfx.Play("notify");
+            if (e.Type == LineEventType.FileNotice || e.Type == LineEventType.FileShredded && lc != null && e.Actor != lc.MySlot) Sfx.Play("shred", 0.6f);
         }
 
         void OnResult(LineActionResult r, LineAction req)
@@ -215,7 +216,10 @@ namespace BirimizKovulacak.Game
             var sb = new StringBuilder();
             sb.Append(lc.NameOf(lc.MySlot));
             if (v.Features.RecordingsEnabled) sb.Append(" · ").Append(F("header.recorder", m.RecorderUsesLeft));
-            if (v.Day == 0) sb.Append(" · ").Append(T(m.InvestigationUsed ? "header.investigation_used" : "header.investigation_left"));
+            int held = PlayBlocks.HeldFiles(v, lc.MySlot);
+            if (held > 0) sb.Append(" · ").Append(F("header.files", held));
+            string counter = PlayText.FilesCounter(v);
+            if (counter != null) sb.Append(" · ").Append(counter);
             _me.SetText(sb.ToString());
             string voice;
             if (v.Phase == LinePhase.FinalDefense && v.Final != null && v.Final.Defender >= 0) voice = F("voice.defense", Name(v.Final.Defender));
@@ -327,9 +331,9 @@ namespace BirimizKovulacak.Game
                 var acts = Wrap(card);
                 if (f.CallsOpen && m.Phone.Status == CallStatus.Idle && pl.Connected && !pl.IsBot) Btn(T("act.call"), () => Send(LineVerb.Call, id)).AddTo(acts);
                 else if (f.CallsOpen && m.Phone.Status == CallStatus.Idle && pl.Connected) Btn(T("act.call"), () => Send(LineVerb.Call, id), "pl-dimbtn").AddTo(acts);
-                if (f.WhistleOpen && m.WitnessOf.Contains(id)) Btn(T("act.whistle"), () => Send(LineVerb.Whistle, id), "pl-danger").AddTo(acts);
-                if (f.InvestigationOpen && !m.InvestigationUsed && m.InvestigationTargets.Contains(id))
-                    Btn(T("act.investigate"), () => Send(LineVerb.Investigate, id), "pl-danger").AddTo(acts);
+                // v5.3: the shortcut to "Dosyalarım" for a colleague I hold a file on (the confirmation is asked there)
+                var file = PlayBlocks.HeldFile(v, me, id);
+                if (file != null) Btn(T("act.file_open"), () => _st.AskFile(file, 1), "pl-danger").AddTo(acts);
                 if (canSend) Btn(T("act.transfer"), () => { _st.TransferTarget = id; _dirty = true; }, _st.TransferTarget == id ? "pl-on" : null).AddTo(acts);
                 if (f.TextsOpen) Btn(T("act.text"), () => { _st.MsgTarget = id; _dirty = true; _msgField.Focus(); }, _st.MsgTarget == id ? "pl-on" : null).AddTo(acts);
             }
@@ -352,6 +356,7 @@ namespace BirimizKovulacak.Game
                 case LinePhase.Intro:
                     Big(card, T("hint.Intro"));
                     Line(card, F("focus.intro_goal", lc.Config.StartPrim));
+                    PlayBlocks.AgendaChips(card, v);
                     break;
                 case LinePhase.TaskPlay: state = PlayBlocks.FocusTask(card, lc, v); break;
                 case LinePhase.TaskReveal:
@@ -375,6 +380,13 @@ namespace BirimizKovulacak.Game
             }
             card.EnableInClassList("pl-focus-todo", state == Todo);
             card.EnableInClassList("pl-focus-done", state == Done);
+            // v5.3 "Dosyalarım": the files I hold (open / shred, each with a confirmation) and the files on me
+            if (v.Phase < LinePhase.Results && v.Mine.Files != null && v.Mine.Files.Count > 0)
+            {
+                var files = Box("pl-focus").AddTo(p);
+                Bold(Loc.Upper(T("files.title")), "pl-focus-kicker").AddTo(files);
+                if (PlayBlocks.BuildFiles(files, lc, v, _st) == Todo) files.AddToClassList("pl-focus-todo");
+            }
         }
 
         void FocusMeeting(VisualElement card, LineClient lc, LineView v)
@@ -390,19 +402,9 @@ namespace BirimizKovulacak.Game
                 Line(card, F("meeting.failed", JoinTasks(mt.FailedTasks)), "pl-bad");
                 Line(card, mt.VoteableCount == 0 ? PlayText.NoVote(mt, c) : T("focus.meeting_vote_next"));
             }
-            bool investigate = v.Features.InvestigationOpen && !m.InvestigationUsed && m.InvestigationTargets.Count > 0;
-            bool leak = LeakableCount(v) > 0;
-            if (!investigate && !leak) return;
+            if (LeakableCount(v) == 0) return;
             Sub(card, T("focus.optional"));
-            var row = Wrap(card);
-            if (investigate)
-                foreach (int t in m.InvestigationTargets)
-                {
-                    int id = t;
-                    Btn(F("investigate.btn", Name(id)), () => Send(LineVerb.Investigate, id), "pl-danger", "pl-big").AddTo(row);
-                }
-            LeakButtons(row, v);
-            if (investigate) Line(card, F("investigate.rules", c.InvestigationGuiltyBlame), "pl-dim");
+            LeakButtons(Wrap(card), v);
         }
 
         int FocusVote(VisualElement card, LineClient lc, LineView v, double now)
